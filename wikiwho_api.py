@@ -10,7 +10,8 @@ cgitb.enable(format="html")
 import io
 
 import logging
-logging.basicConfig(filename='log.log',level=logging.DEBUG)
+logging.basicConfig(filename='log.log',level=logging.DEBUG, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M')
 
 #import msgpack
 
@@ -116,8 +117,8 @@ if __name__ == '__main__':
 	i += 1
         if rev_timestamp > timestamp:
             logging.debug("NEED TO DO SOMETHING")
-            logging.debug(type(rev_timestamp))
-            logging.debug(type(timestamp))
+            #logging.debug(type(rev_timestamp))
+            #logging.debug(type(timestamp))
             logging.debug("wikiwho timestamp first")
             logging.debug(timestamp)
             if timestamp.year == 1900:
@@ -131,16 +132,10 @@ if __name__ == '__main__':
             # print timestamp
             # #	enc = {'pages':art,'limit':'47','action':'submit'}
             try:
-                data = urllib.urlencode(enc)
-                req = urllib2.Request(url=url,data=data)
-                response = urllib2.urlopen(req)
-		#print response.read()
-		#sys.exit()
-		#print vars(req)
-		#print 'xml/' + art + str(i)
-		#f = open('xml/' + art + str(i) + '.xml','w')
-		#f.write(response.read())
-                #sys.exit()
+                #data = urllib.urlencode(enc)
+                #req = urllib2.Request(url=url,data=data)
+                #response = urllib2.urlopen(req)
+                r = requests.post(url, params=enc, stream=True)
             except: 
 		#print str(e)
                 Wikiwho.printFail(reviid, message="HTTP Response error! Try again later!")
@@ -148,9 +143,26 @@ if __name__ == '__main__':
         # reviid = 27
             #sys.exit()
 	    #try:
-            wikiwho.analyseArticle(StringIO(response.read()))
+            #if timestamp <= wikiwho.lastrev_date:
+            #    Wikiwho.printFail(reviid, message="Something went awfully wrong with the timestamps!")
+            text = r.content
+            
+            text_file = open("test.xml", "w+")
+            text_file.write(text)
+            text_file.close()
+            
+            try:
+                wikiwho.analyseArticle(StringIO(text))
+            except:
+                logging.debug("ouch, Wikipedia returns bullshit!")
+                logging.debug("pickling")
+                f = io.open("pickle/" + art + ".p",'wb')
+                cPickle.dump(wikiwho, f, protocol =-1)
+                Wikiwho.printFail(reviid, message="Some problems with the returned XML by Wikipedia! Parsing error! Please try again!")
+            #wikiwho.analyseArticle(StringIO(response.read()))
             #except:
 	#	Wikiwho.printFail(reviid, message="Some problems with the returned XML by Wikipedia! Parsing error!")
+
 
             timestamp = wikiwho.lastrev_date
             logging.debug("wikiwho timestamp after")
