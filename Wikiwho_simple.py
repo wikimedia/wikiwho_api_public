@@ -586,7 +586,7 @@ class Wikiwho:
     @staticmethod
     def printFail(reviid, message = None, format ="json"):
         import os
-	response = {}
+        response = {}
         response["success"] = "false"
         response["revision"] = None
         dict_list = None
@@ -595,7 +595,7 @@ class Wikiwho:
             response["tokens"] = dict_list
             response["message"] = message
             print simplejson.dumps(response)
-	sys.exit()
+        sys.exit()
 
     def printRevision(self, reviid, format = "json"):
 
