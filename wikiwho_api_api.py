@@ -49,13 +49,13 @@ if __name__ == '__main__':
     # reviid = 601975046
     # format = "json"
 
-    #art = fs.getvalue('name') #for running through browser
-    #reviid=int(fs.getvalue('revid')) #for running through browser
-    #format = fs.getvalue('format')
+    art = fs.getvalue('name') #for running through browser
+    reviid=int(fs.getvalue('revid')) #for running through browser
+    format = fs.getvalue('format')
 
-    art = 'graz'
-    reviid = 45618658
-    format = "json"
+    #art = 'graz'
+    #reviid = 45618658
+    #format = "json"
 
     logging.debug("--------")
     logging.debug(art)
