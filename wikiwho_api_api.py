@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
     logging.debug("STARTING NOW")
 
-    params = {'titles':'Graz', 'action':'query', 'prop':'revisions', 'rvprop':'content|ids|timestamp|sha1|comment|flags|user|userid', 'rvlimit':'max', 'format':'json', 'continue':'', 'rvdir':'newer'}
+    params = {'titles':art, 'action':'query', 'prop':'revisions', 'rvprop':'content|ids|timestamp|sha1|comment|flags|user|userid', 'rvlimit':'max', 'format':'json', 'continue':'', 'rvdir':'newer'}
     rvcontinue = wikiwho.rvcontinue
     start = rvcontinue
     #print rvcontinue
