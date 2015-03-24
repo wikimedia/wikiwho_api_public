@@ -10,7 +10,7 @@ cgitb.enable(format="html")
 import io
 
 import logging
-logging.basicConfig(filename='log.log',level=logging.DEBUG, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+logging.basicConfig(filename='log_api_api.log',level=logging.DEBUG, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M')
 
 #import msgpack
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     params = {'titles':'Graz', 'action':'query', 'prop':'revisions', 'rvprop':'content|ids|timestamp|sha1|comment|flags|user|userid', 'rvlimit':'max', 'format':'json', 'continue':'', 'rvdir':'newer'}
     rvcontinue = wikiwho.rvcontinue
     start = rvcontinue
-    print rvcontinue
+    #print rvcontinue
     #rvcontinue = '643899697'
 
     #THINK ABOUT NO RVCONTINUE
@@ -182,7 +182,7 @@ if __name__ == '__main__':
 #     logging.debug(wikiwho.lastrev_date)
 #
 
-    print len(wikiwho.revisions)
+    #print len(wikiwho.revisions)
 
     if reviid in wikiwho.revisions:
         wikiwho.printRevision(reviid)
