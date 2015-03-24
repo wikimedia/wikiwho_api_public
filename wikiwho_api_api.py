@@ -114,9 +114,9 @@ if __name__ == '__main__':
         if 'error' in result: Wikiwho.printFail(reviid, message="Wikipedia API returned the following error:" + result['error'])
         if 'warnings' in result: Wikiwho.printFail(reviid, message="Wikipedia API returned the following warning:" + result['warning'])
         if 'query' in result:
-            try:
-                if "-1" in result['query']['pages']:
+            if "-1" in result['query']['pages']:
                     Wikiwho.printFail(reviid, message="The article you are trying to request does not exist!")
+            try:
                 wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
             except:
                 Wikiwho.printFail(reviid, message="Some problems with the returned XML by Wikipedia!")

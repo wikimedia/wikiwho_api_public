@@ -597,7 +597,6 @@ class Wikiwho:
             response["tokens"] = dict_list
             response["message"] = message
             print simplejson.dumps(response)
-        time.sleep(2)
         sys.exit()
         #os._exit(1)
 
