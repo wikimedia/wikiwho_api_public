@@ -23,6 +23,7 @@ import sys
 from sys import argv,exit
 import getopt
 import os
+import time
 
 from copy import deepcopy
 
@@ -596,7 +597,8 @@ class Wikiwho:
             response["tokens"] = dict_list
             response["message"] = message
             print simplejson.dumps(response)
-        exit()
+        time.sleep(2)
+        sys.exit()
         #os._exit(1)
 
     def printRevision(self, reviid, format = "json"):
