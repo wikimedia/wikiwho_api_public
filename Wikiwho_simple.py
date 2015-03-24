@@ -22,6 +22,7 @@ import urllib, urllib2
 import sys
 from sys import argv,exit
 import getopt
+import os
 
 from copy import deepcopy
 
@@ -595,7 +596,8 @@ class Wikiwho:
             response["tokens"] = dict_list
             response["message"] = message
             print simplejson.dumps(response)
-        sys.exit()
+        #sys.exit()
+        os._exit(1)
 
     def printRevision(self, reviid, format = "json"):
 
