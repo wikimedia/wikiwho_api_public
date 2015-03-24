@@ -49,15 +49,17 @@ class Wikiwho:
         self.spam = []
         self.revisions = {}
 
-        self.lastrev_date = dateutil.parser.parse('1900-01-01T00:00:00')
-        self.lastrev = 0
+        #self.lastrev_date = dateutil.parser.parse('1900-01-01T00:00:00')
+        #self.lastrev = 0
+
+        self.rvcontinue = 0
 
         self.article = article
 
         self.revision_curr = Revision()
         self.revision_prev = Revision()
 
-    def analyseArticle(self, file_name):
+    def analyseArticle(self, revisions):
 
         # Container of revisions.
 
@@ -67,99 +69,92 @@ class Wikiwho:
         revision_prev = self.revision_prev
         text_curr = None
 
-        # Access the file.
-        dumpIterator = dump.Iterator(file_name)
+        i = 1
 
-        # Iterate over the pages.
-        #print "WOOT"
-        for page in dumpIterator.readPages():
-            i = 0
+        # Iterate over revisions of the article.
+        for revision in revisions:
 
-            # Iterate over revisions of the article.
-            for revision in page.readRevisions():
-		#print revision.getId()
-                #revid = revision.getId()
-                timestamp = revision.getTimestamp()
-                #print timestamp
-                timestamp_iso = dateutil.parser.parse(datetime.datetime.utcfromtimestamp(timestamp).isoformat())
-                #print timestamp_iso, revision.getId()
-            #print type(timestamp_iso), timestamp_iso
-            #sys.exit()
-            #print revid, self.lastrev
-                if timestamp_iso > self.lastrev_date:
-                #print timestamp_iso, self.lastrev_date
-                    revid = revision.getId()
-                    self.lastrev_date = timestamp_iso
-                    self.lastrev = revid
+            #revid = revision.getId()
+            timestamp = revision['timestamp']
 
-                vandalism = False
+            #timestamp_iso = dateutil.parser.parse(datetime.datetime.utcfromtimestamp(timestamp).isoformat())
 
-                # Update the information about the previous revision.
-                revision_prev = revision_curr
+            # if timestamp_iso > self.lastrev_date:
+            # #print timestamp_iso, self.lastrev_date
+            #     revid = revision.getId()
+            #     self.lastrev_date = timestamp_iso
+            #     self.lastrev = revid
 
-		text = revision.getText()
+            vandalism = False
 
-		if text == None:
-		    text = ''
+            # Update the information about the previous revision.
+            revision_prev = revision_curr
 
-                if (revision.getSha1() == None):
-                    revision.setSha1(Text.calculateHash(text.encode("utf-8")))
+            text = revision['*']
 
-                if (revision.getSha1() in self.spam):
+            # if text == None:
+            #     text = ''
+
+            if (revision['sha1'] == ""):
+                revision['sha1'] = Text.calculateHash(text.encode("utf-8"))
+
+            if (revision['sha1'] in self.spam):
+                vandalism = True
+
+            #TODO: self.spam detection: DELETION
+            text_len = len(text)
+            if (revision['comment'] != '' and 'minor' in revision):
+                pass
+            else:
+                if (revision_prev.length > PREVIOUS_LENGTH) and (text_len < CURR_LENGTH) and (((text_len-revision_prev.length)/float(revision_prev.length)) <= CHANGE_PERCENTAGE):
                     vandalism = True
+                    revision_curr = revision_prev
 
-                #TODO: self.spam detection: DELETION
-                if (revision.getComment()!= None and revision.getComment().find(FLAG) > 0):
-                    pass
+            #if (vandalism):
+                #print "---------------------------- FLAG 1"
+                #print revision.getId()
+                #print revision.getText()
+                #print
+
+            if (not vandalism):
+                # Information about the current revision.
+                revision_curr = Revision()
+                revision_curr.id = i
+                revision_curr.wikipedia_id = int(revision['revid'])
+                revision_curr.length = text_len
+                revision_curr.time = revision['timestamp']
+                    #datetime.datetime.utcfromtimestamp(revision['timestamp']).isoformat()
+
+                # Some revisions don't have contributor.
+                #if (revision.getContributor() != None):
+                revision_curr.contributor_id = revision['userid']
+                revision_curr.contributor_name = revision['user']
+                #else:
+                #revision_curr.contributor_id = 'Not Available'
+                #revision_curr.contribur_name = 'Not Available'
+
+                # Content within the revision.
+                text_curr = text.encode('utf-8')
+                text_curr = text_curr.lower()
+                #revision_curr.content = text_curr
+
+                # Perform comparison.
+                vandalism = self.determineAuthorship(revision_curr, revision_prev, text_curr)
+
+
+                if (not vandalism):
+                    # Add the current revision with all the information.
+                    self.revisions.update({revision_curr.wikipedia_id : revision_curr})
+                    # Update the fake revision id.
+                    i = i+1
+
                 else:
-                    if (revision_prev.length > PREVIOUS_LENGTH) and (len(text) < CURR_LENGTH) and (((len(text)-revision_prev.length)/float(revision_prev.length)) <= CHANGE_PERCENTAGE):
-                        vandalism = True
-                        revision_curr = revision_prev
-
-                #if (vandalism):
-                    #print "---------------------------- FLAG 1"
+                    #print "---------------------------- FLAG 2"
                     #print revision.getId()
                     #print revision.getText()
                     #print
-
-                if (not vandalism):
-                    # Information about the current revision.
-                    revision_curr = Revision()
-                    revision_curr.id = i
-                    revision_curr.wikipedia_id = int(revision.getId())
-                    revision_curr.length = len(text)
-                    revision_curr.time = datetime.datetime.utcfromtimestamp(revision.getTimestamp()).isoformat()
-
-                    # Some revisions don't have contributor.
-                    if (revision.getContributor() != None):
-                        revision_curr.contributor_id = revision.getContributor().getId()
-                        revision_curr.contributor_name = revision.getContributor().getUsername()
-                    else:
-                        revision_curr.contributor_id = 'Not Available'
-                        revision_curr.contribur_name = 'Not Available'
-
-                    # Content within the revision.
-                    text_curr = text.encode('utf-8')
-                    text_curr = text_curr.lower()
-                    #revision_curr.content = text_curr
-
-                    # Perform comparison.
-                    vandalism = self.determineAuthorship(revision_curr, revision_prev, text_curr)
-
-
-                    if (not vandalism):
-                        # Add the current revision with all the information.
-                        self.revisions.update({revision_curr.wikipedia_id : revision_curr})
-                        # Update the fake revision id.
-                        i = i+1
-
-                    else:
-                        #print "---------------------------- FLAG 2"
-                        #print revision.getId()
-                        #print revision.getText()
-                        #print
-                        revision_curr = revision_prev
-                        self.spam.append(revision.getSha1())
+                    revision_curr = revision_prev
+                    self.spam.append(revision['sha1'])
 
         self.revision_prev = revision_prev
         self.revision_curr = revision_curr
@@ -726,13 +721,13 @@ def main(my_argv):
         try:
             opts, args = getopt.getopt(my_argv,"i:",["ifile="])
         except getopt.GetoptError:
-            print 'Usage: Wikiwho.py -i <inputfile> [-rev <revision_id>]'
+            print 'Usage: Wikiwho_simple.py -i <inputfile> [-rev <revision_id>]'
             exit(2)
     else:
         try:
             opts, args = getopt.getopt(my_argv,"i:r:",["ifile=","revision="])
         except getopt.GetoptError:
-            print 'Usage: Wikiwho.py -i <inputfile> [-rev <revision_id>]'
+            print 'Usage: Wikiwho_simple.py -i <inputfile> [-rev <revision_id>]'
             exit(2)
     
     for opt, arg in opts:
@@ -740,7 +735,7 @@ def main(my_argv):
 	if opt in ('-h', "--help"):
             print "WikiWho: An algorithm for detecting attribution of authorship in revisioned content"
             print
-            print 'Usage: Wikiwho.py -i <inputfile> [-rev <revision_id>]'
+            print 'Usage: Wikiwho_simple.py -i <inputfile> [-rev <revision_id>]'
             print "-i --ifile File to analyze"
             print "-r --revision Revision to analyse. If not specified, the last revision is printed."
             print "-h --help This help."

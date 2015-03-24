@@ -7,7 +7,7 @@ Created on 22.10.2014
 from sys import argv,exit
 import getopt
 import WikiwhoAPIOutput
-import Wikiwho
+import Wikiwho_simple
 import random
 import httplib, urllib
 from difflib import Differ
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     
     # Compute authorship information.
     revisions  = WikiwhoAPIOutput.analyseArticle(file_name)
-    w = Wikiwho.Wikiwho(article_name)
+    w = Wikiwho_simple.Wikiwho(article_name)
     w.analyseArticle(file_name)
     revisions2 = w.revisions
     #revisions2  = WikiwhoAPIOutput.analyseArticle(file_name)
@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
     # Call the API for each revision in rev_ids.
     #server = "wikiwho.aifb.kit.edu:80"
-    #service = "cgi-bin/wikiwho_api.py"
+    #service = "cgi-bin/wikiwho_api_api.py"
     #headers = {"User-Agent": "APIValidator/0.1", "Accept": "*/*", "Host": server}
         
     #api_res = {}

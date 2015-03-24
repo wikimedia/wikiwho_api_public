@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     # Call the API for each revision in rev_ids.
     server = "wikiwho.aifb.kit.edu:80"
-    service = "cgi-bin/wikiwho_api.py"
+    service = "cgi-bin/wikiwho_api_api.py"
     headers = {"User-Agent": "APIValidator/0.1", "Accept": "*/*", "Host": server}
         
     api_res = {}
