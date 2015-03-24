@@ -117,6 +117,7 @@ if __name__ == '__main__':
             try:
                 if "-1" in result['query']['pages']:
                     Wikiwho.printFail(reviid, message="The article you are trying to request does not exist!")
+                    sys.exit()
                 wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
             except:
                 Wikiwho.printFail(reviid, message="Some problems with the returned XML by Wikipedia!")
