@@ -72,7 +72,7 @@ if __name__ == '__main__':
         format = "json"
 
     try:
-        par = set(fs.getvalue('params').split('|'))
+        par = set(fs.getvalue('params').split('-'))
     except:
         par = set()
 
