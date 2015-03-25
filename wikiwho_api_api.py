@@ -72,11 +72,11 @@ if __name__ == '__main__':
         format = "json"
 
     try:
-        params = set(fs.getvalue('params').split('|'))
+        par = set(fs.getvalue('params').split('|'))
     except:
-        params = set(['revid', 'author'])
+        par = set(['revid', 'author'])
 
-    if params.issubset(set(['revid', 'author'])) == False:
+    if par.issubset(set(['revid', 'author'])) == False:
         Wikiwho.printFail(message="Wrong parameter in list!")
     
     #art = 'graz'
@@ -164,7 +164,7 @@ if __name__ == '__main__':
         if r not in wikiwho.revisions:
             wikiwho.printFail(message="Revision ID does not exist for this article!")
 
-    wikiwho.printRevision(revisions, params)
+    wikiwho.printRevision(revisions, par)
 
 #
     logging.debug(wikiwho.rvcontinue)
