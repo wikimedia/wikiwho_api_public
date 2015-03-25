@@ -74,7 +74,7 @@ if __name__ == '__main__':
     try:
         par = set(fs.getvalue('params').split('|'))
     except:
-        par = set(['revid', 'author'])
+        par = set()
 
     if par.issubset(set(['revid', 'author'])) == False:
         Wikiwho.printFail(message="Wrong parameter in list!")
