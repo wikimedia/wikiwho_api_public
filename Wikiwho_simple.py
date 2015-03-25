@@ -655,9 +655,9 @@ class Wikiwho:
                             #ss = unicode(word.value,'utf-8')
                             ss = word.value
                             dict_json['str'] = ss#.encode('utf-8')
+                            dict_json['revid'] = str(word.revision)
                             if 'author' in params:
                                 dict_json['author'] = str(word.author_name.encode("utf-8"))
-                            if 'revid' in params:
                                 dict_json['revid'] = str(word.revision)
                             dict_list.append(dict_json)
             # if format == 'normal':
