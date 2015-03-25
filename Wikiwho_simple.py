@@ -75,7 +75,9 @@ class Wikiwho:
 
         # Iterate over revisions of the article.
         for revision in revisions:
-
+	    
+            if 'texthidden' in revision:
+                continue
             #revid = revision.getId()
             timestamp = revision['timestamp']
 

@@ -40,6 +40,10 @@ import dateutil.parser
 # reviid = 620303077
 
 
+def pickle(art, obj):
+    logging.debug("pickling")
+    f = io.open("pickle_api/" + art + ".p",'wb')
+    cPickle.dump(obj, f, protocol =-1)
 
 if __name__ == '__main__':
 
@@ -69,7 +73,7 @@ if __name__ == '__main__':
 
     #art = "test4"
 
-
+    logging.debug("trying to load pickle")
     try:
         f = open("pickle_api/" + art + ".p",'rb')
         wikiwho = cPickle.load(f)
@@ -116,10 +120,13 @@ if __name__ == '__main__':
         if 'query' in result:
             if "-1" in result['query']['pages']:
                     Wikiwho.printFail(reviid, message="The article you are trying to request does not exist!")
-            try:
-                wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
-            except:
-                Wikiwho.printFail(reviid, message="Some problems with the returned XML by Wikipedia!")
+            #try:
+            wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
+            #except Exception, e:
+		#print e
+		#print result
+		#pickle(art, wikiwho)
+                #Wikiwho.printFail(reviid, message="Some problems with the returned XML by Wikipedia!")
         if 'continue' not in result: break
         rvcontinue = result['continue']['rvcontinue']
         wikiwho.rvcontinue = rvcontinue
@@ -138,11 +145,12 @@ if __name__ == '__main__':
     #logging.debug(wikiwho.lastrev_date)
 #
     if rvcontinue != start:
-        # f = io.open("pickle/" + art + ".msg",'wb')
+        pickle(art, wikiwho)
+	# f = io.open("pickle/" + art + ".msg",'wb')
         # msgpack.dump(wikiwho.spam, f)
-        logging.debug("pickling")
-        f = io.open("pickle_api/" + art + ".p",'wb')
-        cPickle.dump(wikiwho, f, protocol =-1)
+        #logging.debug("pickling")
+        #f = io.open("pickle_api/" + art + ".p",'wb')
+        #cPickle.dump(wikiwho, f, protocol =-1)
 #
 #     logging.debug("time at the end :")
 #     time2 = time()
