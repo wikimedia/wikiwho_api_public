@@ -120,13 +120,13 @@ if __name__ == '__main__':
         if 'query' in result:
             if "-1" in result['query']['pages']:
                     Wikiwho.printFail(reviid, message="The article you are trying to request does not exist!")
-            #try:
-            wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
-            #except Exception, e:
+            try:
+            	wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
+            except:
 		#print e
 		#print result
-		#pickle(art, wikiwho)
-                #Wikiwho.printFail(reviid, message="Some problems with the returned XML by Wikipedia!")
+		pickle(art, wikiwho)
+                Wikiwho.printFail(reviid, message="Some problems with the returned XML by Wikipedia!")
         if 'continue' not in result: break
         rvcontinue = result['continue']['rvcontinue']
         wikiwho.rvcontinue = rvcontinue
