@@ -625,15 +625,6 @@ class Wikiwho:
 
             revision = self.revisions[revid]
 
-            #print "-------- Revision: ", revision.wikipedia_id
-            #print revision.content
-            #print "------------------------------------------"
-            text = ''
-            response = []
-
-            lst_revision = 0
-            authors = []
-
             response["revisions"][revid] = {"author":revision.contributor_name.encode("utf-8"), "time":revision.time, "tokens":[]}
             dict_list =[]
             #print "format :"
