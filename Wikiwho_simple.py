@@ -592,74 +592,90 @@ class Wikiwho:
         return (matched_words_prev, possible_vandalism)
 
     @staticmethod
-    def printFail(reviid, message = None, format ="json"):
+    def printFail(message = None, format ="json"):
         import os
         response = {}
         response["success"] = "false"
-        response["revision"] = None
-        dict_list = None
+        response["revisions"] = None
+        response["article"] = None
+        #dict_list = None
 
         if format == 'json':
-            response["tokens"] = dict_list
+            #response["tokens"] = dict_list
             response["message"] = message
             print simplejson.dumps(response)
         sys.exit()
         #os._exit(1)
 
-    def printRevision(self, reviid, params, format = "json"):
+    def printRevision(self, revisions, params, format = "json"):
 
-        revision = self.revisions[reviid]
-
-        #print "-------- Revision: ", revision.wikipedia_id
-        #print revision.content
-        #print "------------------------------------------"
-        text = ''
-        response = []
-
-        lst_revision = 0
-        authors = []
         response = {}
         response["success"] = "true"
-        response["revision"] = {"article":self.article, "reviid":reviid, "author":revision.contributor_name.encode("utf-8"), "time":revision.time}
-        dict_list =[]
-        #print "format :"
-        #print format
-        for hash_paragraph in revision.ordered_paragraphs:
 
+        response["revisions"] = {}
+        response["article"] = self.article
+        for revid in self.revisions:
+
+            if len(revisions) == 2:
+                if revid < revisions[0] or revid > revisions[1]:
+                    continue
+            else:
+                if revid != revisions[0]:
+                    continue
+
+            revision = self.revisions[revid]
+
+            #print "-------- Revision: ", revision.wikipedia_id
+            #print revision.content
+            #print "------------------------------------------"
             text = ''
+            response = []
 
-            #p_copy = deepcopy(revision.paragraphs[hash_paragraph])
-            #paragraph = p_copy.pop(0) # "paragraph" will contain the hash for the paragraph.
+            lst_revision = 0
+            authors = []
 
-	    para = revision.paragraphs[hash_paragraph]
-	    paragraph = para[-1]
+            response["revisions"][revid] = {"author":revision.contributor_name.encode("utf-8"), "time":revision.time, "tokens":[]}
+            dict_list =[]
+            #print "format :"
+            #print format
+            for hash_paragraph in revision.ordered_paragraphs:
 
-            for hash_sentence in paragraph.ordered_sentences:
-                sentence = paragraph.sentences[hash_sentence][-1]
-		#sentence = paragraph.sentences[hash_sentence].pop(0) #"sentence" will contain the hash for the sentence.
-                for word in sentence.words:
-                    # if format == 'normal':
-                    #    if (word.revision == lst_revision):
-                    #        text = text + ' ' + unicode(word.value,'utf-8')
-                    #    else:
-                    #        text = text + ' ' + "@@@@" + str(word.revision) +',' + word.author_name + "@@@@" + unicode(word.value,'utf-8')
-                    #    lst_revision = word.revision
-                    #    authors.append(word.revision)
-                    if format == 'json':
-                       dict_json = {}
-                       #ss = unicode(word.value,'utf-8')
-                       ss = word.value
-                       dict_json['token'] = ss#.encode('utf-8')
-                       dict_json['author_name'] = str(word.author_name.encode("utf-8"))
-                       dict_json['rev_id'] = str(word.revision)
-                       dict_list.append(dict_json)
-        # if format == 'normal':
-        #     print text.encode('utf-8')
-        if format == 'json':
-            response["tokens"] = dict_list
-            response["message"] = None
-            #print response
-            print simplejson.dumps(response)
+                text = ''
+
+                #p_copy = deepcopy(revision.paragraphs[hash_paragraph])
+                #paragraph = p_copy.pop(0) # "paragraph" will contain the hash for the paragraph.
+
+                para = revision.paragraphs[hash_paragraph]
+                paragraph = para[-1]
+
+                for hash_sentence in paragraph.ordered_sentences:
+                    sentence = paragraph.sentences[hash_sentence][-1]
+                    #sentence = paragraph.sentences[hash_sentence].pop(0) #"sentence" will contain the hash for the sentence.
+                    for word in sentence.words:
+                        # if format == 'normal':
+                        #    if (word.revision == lst_revision):
+                        #        text = text + ' ' + unicode(word.value,'utf-8')
+                        #    else:
+                        #        text = text + ' ' + "@@@@" + str(word.revision) +',' + word.author_name + "@@@@" + unicode(word.value,'utf-8')
+                        #    lst_revision = word.revision
+                        #    authors.append(word.revision)
+                        if format == 'json':
+                            dict_json = {}
+                            #ss = unicode(word.value,'utf-8')
+                            ss = word.value
+                            dict_json['token'] = ss#.encode('utf-8')
+                            if 'author' in params:
+                                dict_json['author'] = str(word.author_name.encode("utf-8"))
+                            if 'revid' in params:
+                                dict_json['revid'] = str(word.revision)
+                            dict_list.append(dict_json)
+            # if format == 'normal':
+            #     print text.encode('utf-8')
+            if format == 'json':
+                response["revisions"]["revid"]["tokens"] = dict_list
+                response["message"] = None
+                #print response
+                print simplejson.dumps(response)
 
     # def printRevision(self,revision):
     #

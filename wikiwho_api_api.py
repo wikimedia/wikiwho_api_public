@@ -54,10 +54,16 @@ if __name__ == '__main__':
     # format = "json"
 
     art = fs.getvalue('name') #for running through browser
-    reviid=int(fs.getvalue('revid')) #for running through browser
-    format = fs.getvalue('format')
-    para = fs.getvalue('para').split('|')
+    revisions = [int(x) for x in fs.getvalue('revid').split('|')] #for running through browser
 
+    if len(revisions) > 2:
+        Wikiwho.printFail(message="Too many revision ids provided!")
+
+    format = fs.getvalue('format')
+    params = set(fs.getvalue('params').split('|'))
+
+    if params.issubset(set(['revid', 'author'])) == False:
+        Wikiwho.printFail(message="Wrong parameter in list!")
     
     #art = 'graz'
     #reviid = 45618658
@@ -65,13 +71,13 @@ if __name__ == '__main__':
 
     logging.debug("--------")
     logging.debug(art)
-    logging.debug(reviid)
+    logging.debug(revisions)
 
     art = art.replace(" ", "_")
 
 
     if format != "json":
-        Wikiwho.printFail(reviid, message="Currently, only json works as format!")
+        Wikiwho.printFail(message="Currently, only json works as format!")
 
     #art = "test4"
 
@@ -106,7 +112,7 @@ if __name__ == '__main__':
     #THINK ABOUT NO RVCONTINUE
 
     i = 0
-    while reviid >= rvcontinue:
+    while max(revisions) >= rvcontinue:
         logging.debug('doing partial download')
         logging.debug(rvcontinue)
         if rvcontinue != 0:
@@ -115,22 +121,20 @@ if __name__ == '__main__':
         try:
             result = requests.get(url=url, headers=headers, params=params).json()
         except:
-            Wikiwho.printFail(reviid, message="HTTP Response error! Try again later!")
+            Wikiwho.printFail(message="HTTP Response error! Try again later!")
 
-        if 'error' in result: Wikiwho.printFail(reviid, message="Wikipedia API returned the following error:" + result['error'])
+        if 'error' in result: Wikiwho.printFail(message="Wikipedia API returned the following error:" + result['error'])
         #if 'warnings' in result: Wikiwho.printFail(reviid, message="Wikipedia API returned the following warning:" + result['warnings'])
         if 'query' in result:
             if "-1" in result['query']['pages']:
-                    Wikiwho.printFail(reviid, message="The article you are trying to request does not exist!")
+                    Wikiwho.printFail(message="The article you are trying to request does not exist!")
             try:
                 wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
             except:
-		#print e
-		#print result
-		pickle(art, wikiwho)
-                Wikiwho.printFail(reviid, message="Some problems with the returned XML by Wikipedia!")
+                pickle(art, wikiwho)
+                Wikiwho.printFail(message="Some problems with the returned XML by Wikipedia!")
         if 'continue' not in result: 
-	    #hackish
+            #hackish
             wikiwho.rvcontinue = wikiwho.revision_curr.wikipedia_id + 1 
             break
         rvcontinue = result['continue']['rvcontinue']
@@ -142,24 +146,15 @@ if __name__ == '__main__':
 
     #print len(wikiwho.revisions)
 
-    if reviid in wikiwho.revisions:
-        wikiwho.printRevision(reviid, para)
-    else:
-        wikiwho.printFail(reviid, message="Revision ID does not exist for this article!")
+    for r in revisions:
+        if r not in wikiwho.revisions:
+            wikiwho.printFail(message="Revision ID does not exist for this article!")
+
+    wikiwho.printRevision(revisions, params)
+
 #
     logging.debug(wikiwho.rvcontinue)
     #logging.debug(wikiwho.lastrev_date)
 #
     if wikiwho.rvcontinue != start:
         pickle(art, wikiwho)
-	# f = io.open("pickle/" + art + ".msg",'wb')
-        # msgpack.dump(wikiwho.spam, f)
-        #logging.debug("pickling")
-        #f = io.open("pickle_api/" + art + ".p",'wb')
-        #cPickle.dump(wikiwho, f, protocol =-1)
-#
-#     logging.debug("time at the end :")
-#     time2 = time()
-#     logging.debug(time2 - time1)
-#     logging.debug("ENDING NOW")
-#     #print(time2 - time1)
