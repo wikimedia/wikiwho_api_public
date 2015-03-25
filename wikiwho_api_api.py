@@ -66,6 +66,10 @@ if __name__ == '__main__':
     if len(revisions) > 2:
         Wikiwho.printFail(message="Too many revision ids provided!")
 
+    if len(revisions) == 2:
+        if revisions[1] <= revisions[0]:
+            Wikiwho.printFail(message="Second revision id has to be larger than first revision id!")
+
     try:
         format = fs.getvalue('format')
     except:

@@ -609,7 +609,6 @@ class Wikiwho:
 
     def printRevision(self, revisions, params, format = "json"):
 
-        print revisions
 
         response = {}
         response["success"] = "true"
@@ -625,7 +624,6 @@ class Wikiwho:
                 if revid != revisions[0]:
                     continue
 
-            print "aaaaa"
 
             revision = self.revisions[revid]
 
@@ -668,9 +666,9 @@ class Wikiwho:
             #     print text.encode('utf-8')
             if format == 'json':
                 response["revisions"][revid]["tokens"] = dict_list
-                response["message"] = None
-                #print response
-                print simplejson.dumps(response)
+        response["message"] = None
+        print simplejson.dumps(response)
+
 
     # def printRevision(self,revision):
     #
