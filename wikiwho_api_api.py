@@ -53,14 +53,28 @@ if __name__ == '__main__':
     # reviid = 601975046
     # format = "json"
 
-    art = fs.getvalue('name') #for running through browser
-    revisions = [int(x) for x in fs.getvalue('revid').split('|')] #for running through browser
+    try:
+        art = fs.getvalue('name') #for running through browser
+    except:
+        Wikiwho.printFail(message="Name missing!")
+
+    try:
+        revisions = [int(x) for x in fs.getvalue('revid').split('|')] #for running through browser
+    except:
+        Wikiwho.printFail(message="Revision ids missing!")
 
     if len(revisions) > 2:
         Wikiwho.printFail(message="Too many revision ids provided!")
 
-    format = fs.getvalue('format')
-    params = set(fs.getvalue('params').split('|'))
+    try:
+        format = fs.getvalue('format')
+    except:
+        format = "json"
+
+    try:
+        params = set(fs.getvalue('params').split('|'))
+    except:
+        params = set(['revid', 'author'])
 
     if params.issubset(set(['revid', 'author'])) == False:
         Wikiwho.printFail(message="Wrong parameter in list!")
