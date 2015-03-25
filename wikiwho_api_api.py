@@ -56,7 +56,9 @@ if __name__ == '__main__':
     art = fs.getvalue('name') #for running through browser
     reviid=int(fs.getvalue('revid')) #for running through browser
     format = fs.getvalue('format')
+    para = fs.getvalue('para').split('|')
 
+    
     #art = 'graz'
     #reviid = 45618658
     #format = "json"
@@ -116,35 +118,39 @@ if __name__ == '__main__':
             Wikiwho.printFail(reviid, message="HTTP Response error! Try again later!")
 
         if 'error' in result: Wikiwho.printFail(reviid, message="Wikipedia API returned the following error:" + result['error'])
-        if 'warnings' in result: Wikiwho.printFail(reviid, message="Wikipedia API returned the following warning:" + result['warning'])
+        #if 'warnings' in result: Wikiwho.printFail(reviid, message="Wikipedia API returned the following warning:" + result['warnings'])
         if 'query' in result:
             if "-1" in result['query']['pages']:
                     Wikiwho.printFail(reviid, message="The article you are trying to request does not exist!")
             try:
-            	wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
+                wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
             except:
 		#print e
 		#print result
 		pickle(art, wikiwho)
                 Wikiwho.printFail(reviid, message="Some problems with the returned XML by Wikipedia!")
-        if 'continue' not in result: break
+        if 'continue' not in result: 
+	    #hackish
+            wikiwho.rvcontinue = wikiwho.revision_curr.wikipedia_id + 1 
+            break
         rvcontinue = result['continue']['rvcontinue']
         wikiwho.rvcontinue = rvcontinue
         #print rvcontinue
 
+    logging.debug('final rvcontinue ' + str(wikiwho.rvcontinue))
 
 
     #print len(wikiwho.revisions)
 
     if reviid in wikiwho.revisions:
-        wikiwho.printRevision(reviid)
+        wikiwho.printRevision(reviid, para)
     else:
         wikiwho.printFail(reviid, message="Revision ID does not exist for this article!")
 #
     logging.debug(wikiwho.rvcontinue)
     #logging.debug(wikiwho.lastrev_date)
 #
-    if rvcontinue != start:
+    if wikiwho.rvcontinue != start:
         pickle(art, wikiwho)
 	# f = io.open("pickle/" + art + ".msg",'wb')
         # msgpack.dump(wikiwho.spam, f)

@@ -107,12 +107,16 @@ class Wikiwho:
 
             #TODO: self.spam detection: DELETION
             text_len = len(text)
-            if (revision['comment'] != '' and 'minor' in revision):
+
+       	    try:
+                if (revision['comment'] != '' and 'minor' in revision):
+                    pass
+            	else:
+                    if (revision_prev.length > PREVIOUS_LENGTH) and (text_len < CURR_LENGTH) and (((text_len-revision_prev.length)/float(revision_prev.length)) <= CHANGE_PERCENTAGE):
+                        vandalism = True
+                        revision_curr = revision_prev
+            except:
                 pass
-            else:
-                if (revision_prev.length > PREVIOUS_LENGTH) and (text_len < CURR_LENGTH) and (((text_len-revision_prev.length)/float(revision_prev.length)) <= CHANGE_PERCENTAGE):
-                    vandalism = True
-                    revision_curr = revision_prev
 
             #if (vandalism):
                 #print "---------------------------- FLAG 1"
@@ -602,7 +606,7 @@ class Wikiwho:
         sys.exit()
         #os._exit(1)
 
-    def printRevision(self, reviid, format = "json"):
+    def printRevision(self, reviid, params, format = "json"):
 
         revision = self.revisions[reviid]
 
