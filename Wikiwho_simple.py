@@ -663,7 +663,7 @@ class Wikiwho:
             # if format == 'normal':
             #     print text.encode('utf-8')
             if format == 'json':
-                response["revisions"]["revid"]["tokens"] = dict_list
+                response["revisions"][revid]["tokens"] = dict_list
                 response["message"] = None
                 #print response
                 print simplejson.dumps(response)
