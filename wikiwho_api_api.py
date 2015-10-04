@@ -10,7 +10,7 @@ cgitb.enable(format="html")
 import io
 
 import logging
-logging.basicConfig(filename='log_api_api_new.log',level=logging.DEBUG, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+logging.basicConfig(filename='log_api_api.log',level=logging.DEBUG, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M')
 
 #import msgpack
