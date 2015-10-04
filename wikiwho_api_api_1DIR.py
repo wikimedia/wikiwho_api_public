@@ -10,7 +10,7 @@ cgitb.enable(format="html")
 import io
 
 import logging
-logging.basicConfig(filename='log_api_api_new.log',level=logging.DEBUG, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+logging.basicConfig(filename='log_api_api.log',level=logging.DEBUG, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M')
 
 #import msgpack
@@ -34,14 +34,15 @@ import json
 from time import time
 
 import dateutil.parser
-from datetime import datetime, timedelta
 
 
+# art = "Hermann_Beitzke"
+# reviid = 620303077
 
 
-def pickle(art, obj, path):
+def pickle(art, obj):
     logging.debug("pickling")
-    f = io.open(path + art + ".p",'wb')
+    f = io.open("pickle_api/" + art + ".p",'wb')
     cPickle.dump(obj, f, protocol =-1)
 
 if __name__ == '__main__':
@@ -79,7 +80,7 @@ if __name__ == '__main__':
     except:
         par = set()
 
-    if par.issubset(set(['revid', 'author', 'tokenid'])) == False:
+    if par.issubset(set(['revid', 'author'])) == False:
         Wikiwho.printFail(message="Wrong parameter in list!")
     
     #art = 'graz'
@@ -100,20 +101,10 @@ if __name__ == '__main__':
 
     logging.debug("trying to load pickle")
     try:
-        # TODO: change the path
         f = open("pickle_api/" + art + ".p",'rb')
         wikiwho = cPickle.load(f)
-        path = "pickle_api/"
     except:
-        try:
-            # TODO: change the path
-            f = open("../disk2/pickle_api_2/" + art + ".p",'rb')
-            wikiwho = cPickle.load(f)
-            path = "../disk2/pickle_api_2/"
-        except:
-            wikiwho = Wikiwho(art)
-            path = "../disk2/pickle_api_2/"
-
+        wikiwho = Wikiwho(art)
 
     assert (wikiwho.article == art)
 
@@ -139,10 +130,10 @@ if __name__ == '__main__':
     #THINK ABOUT NO RVCONTINUE
 
     i = 0
-    while revisions[-1] >= int(rvcontinue.split('|')[-1]):
+    while max(revisions) >= rvcontinue:
         logging.debug('doing partial download')
         logging.debug(rvcontinue)
-        if rvcontinue != '0':
+        if rvcontinue != 0:
             params['rvcontinue'] = rvcontinue
 
         try:
@@ -150,24 +141,19 @@ if __name__ == '__main__':
         except:
             Wikiwho.printFail(message="HTTP Response error! Try again later!")
 
-        if 'error' in result: Wikiwho.printFail(message="Wikipedia API returned the following error:" + str(result['error']))
+        if 'error' in result: Wikiwho.printFail(message="Wikipedia API returned the following error:" + result['error'])
         #if 'warnings' in result: Wikiwho.printFail(reviid, message="Wikipedia API returned the following warning:" + result['warnings'])
         if 'query' in result:
             if "-1" in result['query']['pages']:
                     Wikiwho.printFail(message="The article you are trying to request does not exist!")
             try:
-            
-            
                 wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
             except:
-                pickle(art, wikiwho, path)
-                Wikiwho.printFail(message="Some problems with the returned JSON by Wikipedia!")
+                pickle(art, wikiwho)
+                Wikiwho.printFail(message="Some problems with the returned XML by Wikipedia!")
         if 'continue' not in result: 
             #hackish
-            timestamp = datetime.strptime(wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
-            
-            wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') + "|" + str(wikiwho.revision_curr.wikipedia_id + 1)
-            #print wikiwho.rvcontinue 
+            wikiwho.rvcontinue = wikiwho.revision_curr.wikipedia_id + 1 
             break
         rvcontinue = result['continue']['rvcontinue']
         wikiwho.rvcontinue = rvcontinue
@@ -180,7 +166,7 @@ if __name__ == '__main__':
 
     for r in revisions:
         if r not in wikiwho.revisions:
-            wikiwho.printFail(message="Revision ID does not exist or is spam or deleted!")
+            wikiwho.printFail(message="Revision ID does not exist for this article!")
 
     wikiwho.printRevision(revisions, par)
 
@@ -189,6 +175,4 @@ if __name__ == '__main__':
     #logging.debug(wikiwho.lastrev_date)
 #
     if wikiwho.rvcontinue != start:
-        pickle(art, wikiwho, path)
-
-print result
+        pickle(art, wikiwho)
