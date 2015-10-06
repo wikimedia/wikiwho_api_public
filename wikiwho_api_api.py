@@ -190,5 +190,3 @@ if __name__ == '__main__':
 #
     if wikiwho.rvcontinue != start:
         pickle(art, wikiwho, path)
-
-print result
