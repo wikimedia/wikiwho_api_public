@@ -1,31 +1,8 @@
-
-
 #!/usr/bin/python2.7
 
-
-
-__author__ = 'psinger, ffloeck'
-
-
-import requests
-
-user    = 'Fabian%20Fl%C3%B6ck'
-passw   = 'rumkugeln'
-authu   = 'apacheuser'    # For Apache Basic Auth
-authp   = 'apachepass'    # For Apache Basic Auth
-baseurl = 'https://en.wikipedia.org/w/'
-params  = '?action=login&lgname=%s&lgpassword=%s&format=json'% (user,passw)
-
-# Login request
-r1 = requests.post(baseurl+'api.php'+params,auth=(authu,authp))
-token = r1.json()['login']['token']
-params2 = params+'&lgtoken=%s'% token
-#print r1.cookies
-# Confirm token; should give "Success"
-r2 = requests.post(baseurl+'api.php'+params2,auth=(authu,authp),cookies=r1.cookies)
-#print r2.json()['login']['result']
-
 from __future__ import division
+
+__author__ = 'psinger'
 
 # enable debugging
 import cgitb
@@ -104,7 +81,7 @@ if __name__ == '__main__':
 
     if par.issubset(set(['revid', 'author', 'tokenid'])) == False:
         Wikiwho.printFail(message="Wrong parameter in list!")
-
+    
     #art = 'graz'
     #reviid = 45618658
     #format = "json"
@@ -179,18 +156,18 @@ if __name__ == '__main__':
             if "-1" in result['query']['pages']:
                     Wikiwho.printFail(message="The article you are trying to request does not exist!")
             try:
-
-
+            
+            
                 wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
             except:
                 pickle(art, wikiwho, path)
                 Wikiwho.printFail(message="Some problems with the returned JSON by Wikipedia!")
-        if 'continue' not in result:
+        if 'continue' not in result: 
             #hackish
             timestamp = datetime.strptime(wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
-
+            
             wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') + "|" + str(wikiwho.revision_curr.wikipedia_id + 1)
-            #print wikiwho.rvcontinue
+            #print wikiwho.rvcontinue 
             break
         rvcontinue = result['continue']['rvcontinue']
         wikiwho.rvcontinue = rvcontinue
@@ -213,5 +190,3 @@ if __name__ == '__main__':
 #
     if wikiwho.rvcontinue != start:
         pickle(art, wikiwho, path)
-
-print result

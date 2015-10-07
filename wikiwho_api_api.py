@@ -128,6 +128,21 @@ if __name__ == '__main__':
     }
 
 
+    session = requests.session()
+
+    user    = 'Fabian%20Fl%C3%B6ck'
+    passw   = 'rumkugeln'
+
+    params  = '?action=login&lgname=%s&lgpassword=%s&format=json'% (user,passw)
+
+    # Login request
+    r1 = session.post(url+params)
+    token = r1.json()['login']['token']
+    params2 = params+'&lgtoken=%s'% token
+
+    # Confirm token; should give "Success"
+    r2 = session.post(url+params2)
+
     logging.debug("STARTING NOW")
 
     params = {'titles':art, 'action':'query', 'prop':'revisions', 'rvprop':'content|ids|timestamp|sha1|comment|flags|user|userid', 'rvlimit':'max', 'format':'json', 'continue':'', 'rvdir':'newer'}
@@ -146,7 +161,7 @@ if __name__ == '__main__':
             params['rvcontinue'] = rvcontinue
 
         try:
-            result = requests.get(url=url, headers=headers, params=params).json()
+            result = session.get(url=url, headers=headers, params=params).json()
         except:
             Wikiwho.printFail(message="HTTP Response error! Try again later!")
 
