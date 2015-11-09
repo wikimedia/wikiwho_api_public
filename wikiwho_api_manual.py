@@ -27,6 +27,8 @@ import urllib, urllib2
 import cPickle
 import sys
 import requests
+from sys import argv,exit
+import getopt
 
 from cStringIO import StringIO
 
@@ -36,7 +38,36 @@ from time import time
 import dateutil.parser
 from datetime import datetime, timedelta
 
+def main(my_argv):
+    inputfile = ''
+    revision = None
 
+    if (len(my_argv) == 0):
+        print 'Usage: Wikiwho.py -i <inputfile> [-rev <revision_id>]\n'
+        exit(2)
+    elif (len(my_argv) <= 2):
+        try:
+            opts, args = getopt.getopt(my_argv,"i:",["ifile="])
+        except getopt.GetoptError:
+            print 'Usage: Wikiwho.py -i <inputfile> [-r <revision_id>]\n'
+            exit(2)
+    else:
+        try:
+            opts, args = getopt.getopt(my_argv,"i:r:",["ifile=","revision="])
+        except getopt.GetoptError:
+            print 'Usage: Wikiwho.py -i <inputfile> [-r <revision_id>]\n'
+            exit(2)
+
+    for opt, arg in opts:
+        if opt in ('-h', "--help"):
+            help()
+            exit()
+        elif opt in ("-i", "--ifile"):
+            inputfile = arg
+        elif opt in ("-r", "--revision"):
+            revision = arg
+
+    return (inputfile,revision)
 
 
 def pickle(art, obj, path):
@@ -47,37 +78,36 @@ def pickle(art, obj, path):
 if __name__ == '__main__':
 
     time1 = time()
+    (file_name, revision) = main(argv[1:])
+    print revision
+    print file_name
 
     # art = "Memex"
     # reviid = 601975046
     # format = "json"
 
     try:
-        art = fs.getvalue('name') #for running through browser
+        art = file_name
+        #art = fs.getvalue('name') #for running through browser
     except:
         Wikiwho.printFail(message="Name missing!")
 
     try:
-        revisions = [int(x) for x in fs.getvalue('revid').split('|')] #for running through browser
+        revisions = [int(revision)]
+        #revisions = [int(x) for x in fs.getvalue('revid').split('|')] #for running through browser
     except:
         Wikiwho.printFail(message="Revision ids missing!")
 
-    if len(revisions) > 2:
-        Wikiwho.printFail(message="Too many revision ids provided!")
+    #if len(revisions) > 2:
+        #Wikiwho.printFail(message="Too many revision ids provided!")
 
-    if len(revisions) == 2:
-        if revisions[1] <= revisions[0]:
-            Wikiwho.printFail(message="Second revision id has to be larger than first revision id!")
+    #if len(revisions) == 2:
+        #if revisions[1] <= revisions[0]:
+           # Wikiwho.printFail(message="Second revision id has to be larger than first revision id!")
 
-    try:
-        format = fs.getvalue('format')
-    except:
-        format = "json"
+    format = "json"
 
-    try:
-        par = set(fs.getvalue('params').split('|'))
-    except:
-        par = set()
+    par = set()
 
     if par.issubset(set(['revid', 'author', 'tokenid'])) == False:
         Wikiwho.printFail(message="Wrong parameter in list!")
@@ -159,6 +189,7 @@ if __name__ == '__main__':
         logging.debug(rvcontinue)
         if rvcontinue != '0':
             params['rvcontinue'] = rvcontinue
+            print rvcontinue
 
         try:
             result = session.get(url=url, headers=headers, params=params).json()
