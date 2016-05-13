@@ -16,11 +16,11 @@ class Word(object):
         self.revision = 0     # Revision where the word was included.
         self.value = ''       # The word (simple text).
         self.matched = False  #
-        self.length = 0
-        self.freq = []
-        self.deleted = []
+        #self.length = 0
+        #self.freq = []
+        #self.deleted = []
         self.internal_id = 0
-        self.used = []
+        #self.used = []
         
     
     def __repr__(self):

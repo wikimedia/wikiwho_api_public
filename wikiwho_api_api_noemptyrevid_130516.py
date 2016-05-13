@@ -27,7 +27,6 @@ import urllib, urllib2
 import cPickle
 import sys
 import requests
-import httplib
 
 from cStringIO import StringIO
 
@@ -44,35 +43,6 @@ def pickle(art, obj, path):
     logging.debug("pickling")
     f = io.open(path + art + ".p",'wb')
     cPickle.dump(obj, f, protocol =-1)
-    
-    
-def getLatestRevId(article_name):
-    
-    # Set up request for Wikipedia API.
-    server = "en.wikipedia.org"
-    service = "w/api.php"
-    headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
-    
-    # Open connection to server.
-    conn = httplib.HTTPSConnection(server)
-    
-    # Set parameters for API.
-    params = urllib.urlencode({'action': "query", 'prop': 'revisions', 'titles': article_name, 'format': 'json'})
-    
-    # Execute GET request to the API.
-    conn.request("GET", "/" + service + "?" + params, None, headers)
-    
-    # Get the response
-    response = conn.getresponse()
-    response = response.read()
-    
-    # Parse the response to JSON and get the last revid.
-    response = json.loads(response)
-    pageid = response["query"]["pages"].keys()[0]
-    revid = response["query"]["pages"][pageid]["revisions"][0]["revid"]
-    
-    conn.close()
-    return [revid] 
 
 if __name__ == '__main__':
 
@@ -90,8 +60,7 @@ if __name__ == '__main__':
     try:
         revisions = [int(x) for x in fs.getvalue('revid').split('|')] #for running through browser
     except:
-        revisions = getLatestRevId(art)
-        #Wikiwho.printFail(message="Revision ids missing!")
+        Wikiwho.printFail(message="Revision ids missing!")
 
     if len(revisions) > 2:
         Wikiwho.printFail(message="Too many revision ids provided!")

@@ -54,7 +54,7 @@ class Wikiwho:
         #self.lastrev_date = dateutil.parser.parse('1900-01-01T00:00:00')
         #self.lastrev = 0
 
-        self.rvcontinue = 0
+        self.rvcontinue = '0'
 
         self.article = article
 
@@ -78,6 +78,8 @@ class Wikiwho:
 	    
             if 'texthidden' in revision:
                 continue
+            if 'textmissing' in revision:
+                continue
             #revid = revision.getId()
             timestamp = revision['timestamp']
 
@@ -93,7 +95,8 @@ class Wikiwho:
 
             # Update the information about the previous revision.
             revision_prev = revision_curr
-
+            #print "----"
+            #print revision
             text = revision['*']
 
             # if text == None:
@@ -135,8 +138,14 @@ class Wikiwho:
 
                 # Some revisions don't have contributor.
                 #if (revision.getContributor() != None):
-                revision_curr.contributor_id = revision['userid']
-                revision_curr.contributor_name = revision['user']
+                try:
+                    revision_curr.contributor_id = revision['userid']
+                except:
+                    revision_curr.contributor_id = ""
+                try:
+                    revision_curr.contributor_name = revision['user']
+                except:
+                    revision_curr.contributor_name = ""
                 #else:
                 #revision_curr.contributor_id = 'Not Available'
                 #revision_curr.contribur_name = 'Not Available'
@@ -194,10 +203,10 @@ class Wikiwho:
                 (matched_words_prev, vandalism) = self.analyseWordsInSentences(unmatched_sentences_curr, unmatched_sentences_prev, revision_curr, possible_vandalism)
 
         # Add the information of 'deletion' to words
-        for unmatched_sentence in unmatched_sentences_prev:
-                    for word in unmatched_sentence.words:
-                        if not(word.matched):
-                            word.deleted.append(revision_curr.wikipedia_id)
+        #for unmatched_sentence in unmatched_sentences_prev:
+        #            for word in unmatched_sentence.words:
+        #                if not(word.matched):
+        #                    word.deleted.append(revision_curr.wikipedia_id)
 
         # Reset matched structures from old revisions.
         for matched_paragraph in matched_paragraphs_prev:
@@ -270,7 +279,7 @@ class Wikiwho:
                                 sentence_prev.matched = True
                                 for word_prev in sentence_prev.words:
                                     #word_prev.freq = word_prev.freq + 1
-                                    word_prev.freq.append(revision_curr.wikipedia_id)
+                                    #word_prev.freq.append(revision_curr.wikipedia_id)
                                     word_prev.matched = True
 
                         # Add paragraph to current revision.
@@ -299,7 +308,7 @@ class Wikiwho:
                                 sentence_prev.matched = True
                                 for word_prev in sentence_prev.words:
                                     #word_prev.freq = word_prev.freq + 1
-                                    word_prev.freq.append(revision_curr.wikipedia_id)
+                                    #word_prev.freq.append(revision_curr.wikipedia_id)
                                     word_prev.matched = True
 
 
@@ -388,7 +397,7 @@ class Wikiwho:
                                     # TODO: CHECK this
                                     for word_prev in sentence_prev.words:
                                         #word_prev.freq = word_prev.freq + 1
-                                        word_prev.freq.append(revision_curr.wikipedia_id)
+                                        #word_prev.freq.append(revision_curr.wikipedia_id)
                                         word_prev.matched = True
 
                                     # Add the sentence information to the paragraph.
@@ -427,7 +436,7 @@ class Wikiwho:
 
                                 # TODO: CHECK this
                                 for word_prev in sentence_prev.words:
-                                    word_prev.freq.append(revision_curr.wikipedia_id)
+                                    #word_prev.freq.append(revision_curr.wikipedia_id)
                                     #word_prev.freq = word_prev.freq + 1
                                     word_prev.matched = True
 
@@ -515,7 +524,7 @@ class Wikiwho:
                     word_curr.author_name = revision_curr.contributor_name
                     word_curr.revision = revision_curr.wikipedia_id
                     word_curr.value = word
-                    word_curr.freq.append(revision_curr.wikipedia_id)
+                    #word_curr.freq.append(revision_curr.wikipedia_id)
                     word_curr.internal_id = GLOBAL_ID
                     sentence_curr.words.append(word_curr)
                     GLOBAL_ID = GLOBAL_ID + 1
@@ -543,7 +552,7 @@ class Wikiwho:
                             for word_prev in unmatched_words_prev:
                                 if ((not word_prev.matched) and (word_prev.value == word)):
                                     #word_prev.freq = word_prev.freq + 1
-                                    word_prev.freq.append(revision_curr.wikipedia_id)
+                                    #word_prev.freq.append(revision_curr.wikipedia_id)
                                     word_prev.matched = True
                                     curr_matched = True
                                     sentence_curr.words.append(word_prev)
@@ -556,7 +565,7 @@ class Wikiwho:
                             for word_prev in unmatched_words_prev:
                                 if ((not word_prev.matched) and (word_prev.value == word)):
                                     word_prev.matched = True
-                                    word_prev.deleted.append(revision_curr.wikipedia_id)
+                                    #word_prev.deleted.append(revision_curr.wikipedia_id)
                                     matched_words_prev.append(word_prev)
                                     diff[pos] = ''
                                     break
@@ -569,7 +578,7 @@ class Wikiwho:
                             word_curr.author_name = revision_curr.contributor_name
                             word_curr.revision = revision_curr.wikipedia_id
                             word_curr.internal_id = GLOBAL_ID
-                            word_curr.freq.append(revision_curr.wikipedia_id)
+                            #word_curr.freq.append(revision_curr.wikipedia_id)
                             sentence_curr.words.append(word_curr)
                             GLOBAL_ID = GLOBAL_ID + 1
 
@@ -584,7 +593,7 @@ class Wikiwho:
                     word_curr.author_id = revision_curr.contributor_name
                     word_curr.author_name = revision_curr.contributor_name
                     word_curr.revision = revision_curr.wikipedia_id
-                    word_curr.freq.append(revision_curr.wikipedia_id)
+                    #word_curr.freq.append(revision_curr.wikipedia_id)
                     sentence_curr.words.append(word_curr)
                     word_curr.internal_id = GLOBAL_ID
                     GLOBAL_ID = GLOBAL_ID + 1
@@ -609,7 +618,6 @@ class Wikiwho:
 
     def printRevision(self, revisions, params, format = "json"):
 
-        print revisions
 
         response = {}
         response["success"] = "true"
@@ -625,7 +633,6 @@ class Wikiwho:
                 if revid != revisions[0]:
                     continue
 
-            print "aaaaa"
 
             revision = self.revisions[revid]
 
@@ -662,15 +669,16 @@ class Wikiwho:
                             dict_json['revid'] = str(word.revision)
                             if 'author' in params:
                                 dict_json['author'] = str(word.author_name.encode("utf-8"))
-                                dict_json['revid'] = str(word.revision)
+                            if 'tokenid' in params:
+                                dict_json['tokenid'] = str(word.internal_id)
                             dict_list.append(dict_json)
             # if format == 'normal':
             #     print text.encode('utf-8')
             if format == 'json':
                 response["revisions"][revid]["tokens"] = dict_list
-                response["message"] = None
-                #print response
-                print simplejson.dumps(response)
+        response["message"] = None
+        print simplejson.dumps(response)
+
 
     # def printRevision(self,revision):
     #

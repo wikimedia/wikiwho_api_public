@@ -2,7 +2,7 @@
 
 from __future__ import division
 
-__author__ = 'psinger,ffloeck'
+__author__ = 'psinger'
 
 # enable debugging
 import cgitb
@@ -27,7 +27,6 @@ import urllib, urllib2
 import cPickle
 import sys
 import requests
-import httplib
 
 from cStringIO import StringIO
 
@@ -38,41 +37,14 @@ import dateutil.parser
 from datetime import datetime, timedelta
 
 
+# art = "Hermann_Beitzke"
+# reviid = 620303077
 
 
-def pickle(art, obj, path):
+def pickle(art, obj):
     logging.debug("pickling")
-    f = io.open(path + art + ".p",'wb')
+    f = io.open("pickle_api/" + art + ".p",'wb')
     cPickle.dump(obj, f, protocol =-1)
-    
-    
-def getLatestRevId(article_name):
-    
-    # Set up request for Wikipedia API.
-    server = "en.wikipedia.org"
-    service = "w/api.php"
-    headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
-    
-    # Open connection to server.
-    conn = httplib.HTTPSConnection(server)
-    
-    # Set parameters for API.
-    params = urllib.urlencode({'action': "query", 'prop': 'revisions', 'titles': article_name, 'format': 'json'})
-    
-    # Execute GET request to the API.
-    conn.request("GET", "/" + service + "?" + params, None, headers)
-    
-    # Get the response
-    response = conn.getresponse()
-    response = response.read()
-    
-    # Parse the response to JSON and get the last revid.
-    response = json.loads(response)
-    pageid = response["query"]["pages"].keys()[0]
-    revid = response["query"]["pages"][pageid]["revisions"][0]["revid"]
-    
-    conn.close()
-    return [revid] 
 
 if __name__ == '__main__':
 
@@ -90,8 +62,7 @@ if __name__ == '__main__':
     try:
         revisions = [int(x) for x in fs.getvalue('revid').split('|')] #for running through browser
     except:
-        revisions = getLatestRevId(art)
-        #Wikiwho.printFail(message="Revision ids missing!")
+        Wikiwho.printFail(message="Revision ids missing!")
 
     if len(revisions) > 2:
         Wikiwho.printFail(message="Too many revision ids provided!")
@@ -131,21 +102,10 @@ if __name__ == '__main__':
 
     logging.debug("trying to load pickle")
     try:
-        #see if exists in primary disk, load, extend
         f = open("pickle_api/" + art + ".p",'rb')
         wikiwho = cPickle.load(f)
-        path = "pickle_api/"
     except:
-        try:
-            # see if exists in secondary  disk, load, extend
-            f = open("../disk2/pickle_api_2/" + art + ".p",'rb')
-            wikiwho = cPickle.load(f)
-            path = "../disk2/pickle_api_2/"
-        except:
-            #create new pickle in secondary disk
-            wikiwho = Wikiwho(art)
-            path = "../disk2/pickle_api_2/"
-
+        wikiwho = Wikiwho(art)
 
     assert (wikiwho.article == art)
 
@@ -159,21 +119,6 @@ if __name__ == '__main__':
         'From': 'philipp.singer@gesis.org and fabian.floeck@gesis.org'
     }
 
-
-    session = requests.session()
-
-    user    = 'Fabian%20Fl%C3%B6ck'
-    passw   = 'rumkugeln'
-
-    params  = '?action=login&lgname=%s&lgpassword=%s&format=json'% (user,passw)
-
-    # Login request
-    r1 = session.post(url+params)
-    token = r1.json()['login']['token']
-    params2 = params+'&lgtoken=%s'% token
-
-    # Confirm token; should give "Success"
-    r2 = session.post(url+params2)
 
     logging.debug("STARTING NOW")
 
@@ -193,7 +138,7 @@ if __name__ == '__main__':
             params['rvcontinue'] = rvcontinue
 
         try:
-            result = session.get(url=url, headers=headers, params=params).json()
+            result = requests.get(url=url, headers=headers, params=params).json()
         except:
             Wikiwho.printFail(message="HTTP Response error! Try again later!")
 
@@ -203,12 +148,10 @@ if __name__ == '__main__':
             if "-1" in result['query']['pages']:
                     Wikiwho.printFail(message="The article you are trying to request does not exist!")
             try:
-            
-            
                 wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
             except:
-                pickle(art, wikiwho, path)
-                Wikiwho.printFail(message="Some problems with the JSON returned by Wikipedia!")
+                pickle(art, wikiwho)
+                Wikiwho.printFail(message="Some problems with the returned JSON by Wikipedia!")
         if 'continue' not in result: 
             #hackish
             timestamp = datetime.strptime(wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
@@ -236,4 +179,4 @@ if __name__ == '__main__':
     #logging.debug(wikiwho.lastrev_date)
 #
     if wikiwho.rvcontinue != start:
-        pickle(art, wikiwho, path)
+        pickle(art, wikiwho)
