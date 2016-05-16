@@ -17,7 +17,7 @@ from structuresML.Word import Word
 from structuresML import Text
 
 import simplejson
-
+import json
 import urllib, urllib2
 import httplib
 import sys
