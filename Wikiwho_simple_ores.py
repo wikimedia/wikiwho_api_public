@@ -64,7 +64,7 @@ class Timeout():
 
 class Wikiwho:
 
-    def contactOresAPI(VcandID):
+    def contactOresAPI(self, VcandID):
     
         # Set up request for WikiWho API.
         server = "ores.wmflabs.org:443"
