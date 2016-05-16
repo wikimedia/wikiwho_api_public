@@ -22,7 +22,7 @@ def run(input_file, output_file):
         page_id = line[1]
         
         try:
-            with Timeout(300):
+            with Timeout(119):
                 res = contactWikiWhoAPI(article_name)
                 output_file.write(article_name + "\t" + str(res) + "\n")
                 output_file.flush()
