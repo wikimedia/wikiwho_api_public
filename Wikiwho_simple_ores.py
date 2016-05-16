@@ -89,7 +89,7 @@ class Wikiwho:
         # Parse the JSON and get damaging(VanIndicator) true/false.
         response = json.loads(response)
 
-        VanIndicator = response["scores"]["enwiki"]["damaging"]["scores"][VcandID]["prediction"]
+        VanIndicator = response["scores"]["enwiki"]["damaging"]["scores"][str(VcandID)]["prediction"]
         return VanIndicator
 
     def __init__(self, article):
