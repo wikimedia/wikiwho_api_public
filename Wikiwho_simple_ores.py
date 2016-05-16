@@ -19,6 +19,7 @@ from structuresML import Text
 import simplejson
 
 import urllib, urllib2
+import httplib
 import sys
 from sys import argv,exit
 import getopt
