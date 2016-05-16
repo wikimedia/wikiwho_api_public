@@ -166,7 +166,7 @@ class Wikiwho:
                     if (revision_prev.length > PREVIOUS_LENGTH) and (text_len < CURR_LENGTH) and (((text_len-revision_prev.length)/float(revision_prev.length)) <= CHANGE_PERCENTAGE):
                       try:
                         with Timeout(2):
-                          o_res = contactOresAPI(revision['revid'])
+                          o_res = self.contactOresAPI(revision['revid'])
                           vandalism = o_res
                           if vandalism:
                             revision_curr = revision_prev
@@ -570,7 +570,7 @@ class Wikiwho:
             if (density > WORD_DENSITY):
                 try:
                     with Timeout(2):
-                        o_res = contactOresAPI(revision['revid'])
+                        o_res = self.contactOresAPI(revision['revid'])
                         possible_vandalism = o_res
                         if possible_vandalism:
                             return (matched_words_prev, possible_vandalism)
