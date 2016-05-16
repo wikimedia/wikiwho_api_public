@@ -570,7 +570,7 @@ class Wikiwho:
             if (density > WORD_DENSITY):
                 try:
                     with Timeout(2):
-                        o_res = self.contactOresAPI(revision['revid'])
+                        o_res = self.contactOresAPI(revision_curr.wikipedia_id)
                         possible_vandalism = o_res
                         if possible_vandalism:
                             return (matched_words_prev, possible_vandalism)
