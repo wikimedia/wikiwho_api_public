@@ -22,7 +22,7 @@ fs=cgi.FieldStorage()
 print "Content-Type: application/json"
 print
 
-import Wikiwho_simple_ores 
+from Wikiwho_simple_ores import Wikiwho
 import urllib, urllib2
 import cPickle
 import sys
