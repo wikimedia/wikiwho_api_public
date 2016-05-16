@@ -3,7 +3,7 @@ Created on Feb 20, 2013
 
 @author: Maribel Acosta 
 @author: Fabian Floeck 
-@author: Philipp Singer
+@author: Andriy Rodchenko 
 '''
 
 from wmf import dump
@@ -35,8 +35,7 @@ import datetime
 CHANGE_PERCENTAGE = -0.40
 PREVIOUS_LENGTH = 1000
 CURR_LENGTH = 1000
-FLAG1 = "move" 
-FLAG2 = "redirect"
+FLAG = "move"   
 UNMATCHED_PARAGRAPH = 0.0
 WORD_DENSITY = 10
 WORD_LEN = 100
@@ -61,10 +60,9 @@ class Timeout():
     def raise_timeout(self, *args):
         raise Timeout.Timeout()
 
-
 class Wikiwho:
 
-    def contactOresAPI(VcandID):
+	def contactOresAPI(VcandID):
     
     # Set up request for WikiWho API.
     server = "ores.wmflabs.org:443"
@@ -160,7 +158,7 @@ class Wikiwho:
             text_len = len(text)
 
        	    try:
-                if (revision['comment'] != '' and (revision['comment'].find(FLAG1) > 0 or revision['comment'].find(FLAG2) > 0 or 'minor' in revision )):
+                if (revision['comment'] != '' and 'minor' in revision):
                     pass
             	else:
                     if (revision_prev.length > PREVIOUS_LENGTH) and (text_len < CURR_LENGTH) and (((text_len-revision_prev.length)/float(revision_prev.length)) <= CHANGE_PERCENTAGE):
