@@ -72,7 +72,7 @@ class Wikiwho:
         service = "/v2/scores/enwiki/damaging/"
         headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
         
-        print 'HHHHHHH', VcandID
+        #print 'HHHHHHH', VcandID
         # Open connection to server.
         conn = httplib.HTTPSConnection(server)
         
@@ -84,7 +84,7 @@ class Wikiwho:
         response = conn.getresponse()
         
         response = response.read()#str(response.read())
-        print 'HHHHHHH',response
+        #print 'HHHHHHH',response
         
         # Parse the JSON and get damaging(VanIndicator) true/false.
         response = json.loads(response)
