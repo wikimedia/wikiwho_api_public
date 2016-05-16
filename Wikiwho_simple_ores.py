@@ -66,30 +66,30 @@ class Wikiwho:
 
     def contactOresAPI(VcandID):
     
-    # Set up request for WikiWho API.
-    server = "ores.wmflabs.org:443"
-    service = "/v2/scores/enwiki/damaging/"
-    headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
-    
-    
-    # Open connection to server.
-    conn = httplib.HTTPSConnection(server)
-    
+        # Set up request for WikiWho API.
+        server = "ores.wmflabs.org:443"
+        service = "/v2/scores/enwiki/damaging/"
+        headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
         
-    # Execute GET request to the API.
-    conn.request("GET", service + VcandID + "/", None, headers)
-    
-    # Get the response
-    response = conn.getresponse()
-    
-    response = response.read()#str(response.read())
-    #print response
-    
-    # Parse the JSON and get damaging(VanIndicator) true/false.
-    response = json.loads(response)
+        
+        # Open connection to server.
+        conn = httplib.HTTPSConnection(server)
+        
+                
+        # Execute GET request to the API.
+        conn.request("GET", service + VcandID + "/", None, headers)
+        
+        # Get the response
+        response = conn.getresponse()
+        
+        response = response.read()#str(response.read())
+        #print response
+        
+        # Parse the JSON and get damaging(VanIndicator) true/false.
+        response = json.loads(response)
 
-    VanIndicator = response["scores"]["enwiki"]["damaging"]["scores"][VcandID]["prediction"]
-    return VanIndicator
+        VanIndicator = response["scores"]["enwiki"]["damaging"]["scores"][VcandID]["prediction"]
+        return VanIndicator
 
     def __init__(self, article):
 
