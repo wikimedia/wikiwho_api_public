@@ -568,7 +568,15 @@ class Wikiwho:
             density = Text.computeAvgWordFreq(text_curr, revision_curr.wikipedia_id)
 
             if (density > WORD_DENSITY):
-                return (matched_words_prev, possible_vandalism)
+                try:
+                    with Timeout(2):
+                        o_res = contactOresAPI(revision['revid'])
+                        possible_vandalism = o_res
+                        if possible_vandalism:
+                            return (matched_words_prev, possible_vandalism)
+                                                                  
+                except Timeout.Timeout:
+                    return (matched_words_prev, possible_vandalism)
             else:
                 possible_vandalism = False
 
