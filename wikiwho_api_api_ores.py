@@ -202,13 +202,11 @@ if __name__ == '__main__':
         if 'query' in result:
             if "-1" in result['query']['pages']:
                     Wikiwho.printFail(message="The article you are trying to request does not exist!")
-            try:
-            
-            
-                wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
-            except:
-                pickle(art, wikiwho, path)
-                Wikiwho.printFail(message="Some problems with the JSON returned by Wikipedia!")
+            #try:
+            wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
+            #except:
+            #    pickle(art, wikiwho, path)
+            #    Wikiwho.printFail(message="Some problems with the JSON returned by Wikipedia!")
         if 'continue' not in result: 
             #hackish
             timestamp = datetime.strptime(wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
