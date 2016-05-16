@@ -84,7 +84,7 @@ class Wikiwho:
         response = conn.getresponse()
         
         response = response.read()#str(response.read())
-        #print response
+        print response
         
         # Parse the JSON and get damaging(VanIndicator) true/false.
         response = json.loads(response)
