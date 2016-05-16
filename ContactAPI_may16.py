@@ -31,6 +31,11 @@ def run(input_file, output_file):
             print "WikiWho API timeout"
             output_file.write(article_name + "\t" + "TIMEOUT" +  "\n")
             output_file.flush()
+            
+        except:
+            print "Something failed in contactWikiWhoAPI"
+            output_file.write(article_name + "\t" + "ERROR in contactWikiWhoAPI" +  "\n")
+            output_file.flush()
 
         ''#print
         
