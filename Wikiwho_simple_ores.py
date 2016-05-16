@@ -72,7 +72,7 @@ class Wikiwho:
         service = "/v2/scores/enwiki/damaging/"
         headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
         
-        print 'HHHHHHH', VcanID
+        print 'HHHHHHH', VcandID
         # Open connection to server.
         conn = httplib.HTTPSConnection(server)
         
