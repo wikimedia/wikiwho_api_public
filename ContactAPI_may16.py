@@ -22,7 +22,7 @@ def run(input_file, output_file):
         page_id = line[1]
         
         try:
-            with Timeout(119):
+            with Timeout(120):
                 res = contactWikiWhoAPI(article_name)
                 output_file.write(article_name + "\t" + str(res) + "\n")
                 output_file.flush()
@@ -30,11 +30,6 @@ def run(input_file, output_file):
         except Timeout.Timeout:
             print "WikiWho API timeout"
             output_file.write(article_name + "\t" + "TIMEOUT" +  "\n")
-            output_file.flush()
-            
-        except:
-            print "Something failed in contactWikiWhoAPI"
-            output_file.write(article_name + "\t" + "ERROR in contactWikiWhoAPI" +  "\n")
             output_file.flush()
 
         ''#print
