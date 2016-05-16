@@ -78,7 +78,7 @@ class Wikiwho:
         
                 
         # Execute GET request to the API.
-        conn.request("GET", service + VcandID + "/", None, headers)
+        conn.request("GET", service + str(VcandID) + "/", None, headers)
         
         # Get the response
         response = conn.getresponse()
