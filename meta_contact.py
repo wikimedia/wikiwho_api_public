@@ -8,8 +8,9 @@ if __name__ == '__main__':
     mypath = sys.argv[1]
     range1 = int(sys.argv[2])
     range2 = int(sys.argv[3])
-    
-    for f in listdir(mypath):
+    l = listdir(mypath)
+    print l
+    for f in l:
         full_path = join(mypath, f)
         if isfile(full_path):
             pos1 = f.find("-")
