@@ -18,7 +18,7 @@ if __name__ == '__main__':
             if (pos1>-1 and pos2 >-1):
                 i = int(f[pos1+1:pos2])
                 #print "f", f, "i", i
-                if (i >= range1 and i < range2):
+                if (i >= range1 and i <= range2):
                     print "Run file", f
                     run(full_path, mypath + "/log/" + f +"_output")   
                 
