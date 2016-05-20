@@ -9,7 +9,7 @@ if __name__ == '__main__':
     range1 = int(sys.argv[2])
     range2 = int(sys.argv[3])
     l = listdir(mypath)
-    print l
+    #print l
     for f in l:
         full_path = join(mypath, f)
         if isfile(full_path):
