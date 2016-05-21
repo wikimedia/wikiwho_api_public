@@ -3,7 +3,7 @@ Created on Feb 20, 2013
 
 @author: Maribel Acosta 
 @author: Fabian Floeck 
-@author: Andriy Rodchenko 
+@author: Philipp Singer
 '''
 
 from wmf import dump
@@ -13,12 +13,13 @@ from time import time
 from structuresML.Revision import Revision
 from structuresML.Paragraph import Paragraph
 from structuresML.Sentence import Sentence
-from structuresML.Word import Word
+from structuresML.Word import Word_testwithininout as Word
 from structuresML import Text
 
 import simplejson
-
+import json
 import urllib, urllib2
+import httplib
 import sys
 from sys import argv,exit
 import getopt
@@ -35,7 +36,8 @@ import datetime
 CHANGE_PERCENTAGE = -0.40
 PREVIOUS_LENGTH = 1000
 CURR_LENGTH = 1000
-FLAG = "move"   
+FLAG1 = "move" 
+FLAG2 = "redirect"
 UNMATCHED_PARAGRAPH = 0.0
 WORD_DENSITY = 10
 WORD_LEN = 100
@@ -60,34 +62,35 @@ class Timeout():
     def raise_timeout(self, *args):
         raise Timeout.Timeout()
 
+
 class Wikiwho:
 
-	def contactOresAPI(VcandID):
+    def contactOresAPI(self, VcandID):
     
-    # Set up request for WikiWho API.
-    server = "ores.wmflabs.org:443"
-    service = "/v2/scores/enwiki/damaging/"
-    headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
-    
-    
-    # Open connection to server.
-    conn = httplib.HTTPSConnection(server)
-    
+        # Set up request for WikiWho API.
+        server = "ores.wmflabs.org:443"
+        service = "/v2/scores/enwiki/damaging/"
+        headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
         
-    # Execute GET request to the API.
-    conn.request("GET", service + VcandID + "/", None, headers)
-    
-    # Get the response
-    response = conn.getresponse()
-    
-    response = response.read()#str(response.read())
-    #print response
-    
-    # Parse the JSON and get damaging(VanIndicator) true/false.
-    response = json.loads(response)
+        #print 'HHHHHHH', VcandID
+        # Open connection to server.
+        conn = httplib.HTTPSConnection(server)
+        
+                
+        # Execute GET request to the API.
+        conn.request("GET", service + str(VcandID) + "/", None, headers)
+        
+        # Get the response
+        response = conn.getresponse()
+        
+        response = response.read()#str(response.read())
+        #print 'HHHHHHH',response
+        
+        # Parse the JSON and get damaging(VanIndicator) true/false.
+        response = json.loads(response)
 
-    VanIndicator = response["scores"]["enwiki"]["damaging"]["scores"][VcandID]["prediction"]
-    return VanIndicator
+        VanIndicator = response["scores"]["enwiki"]["damaging"]["scores"][str(VcandID)]["prediction"]
+        return VanIndicator
 
     def __init__(self, article):
 
@@ -158,13 +161,13 @@ class Wikiwho:
             text_len = len(text)
 
        	    try:
-                if (revision['comment'] != '' and 'minor' in revision):
+                if (revision['comment'] != '' and (revision['comment'].find(FLAG1) > 0 or revision['comment'].find(FLAG2) > 0 or 'minor' in revision )):
                     pass
             	else:
                     if (revision_prev.length > PREVIOUS_LENGTH) and (text_len < CURR_LENGTH) and (((text_len-revision_prev.length)/float(revision_prev.length)) <= CHANGE_PERCENTAGE):
                       try:
                         with Timeout(2):
-                          o_res = contactOresAPI(revision['revid'])
+                          o_res = self.contactOresAPI(revision['revid'])
                           vandalism = o_res
                           if vandalism:
                             revision_curr = revision_prev
@@ -256,11 +259,11 @@ class Wikiwho:
             if (len(unmatched_sentences_curr)>0):
                 (matched_words_prev, vandalism) = self.analyseWordsInSentences(unmatched_sentences_curr, unmatched_sentences_prev, revision_curr, possible_vandalism)
 
-        # Add the information of 'deletion' to words
-        #for unmatched_sentence in unmatched_sentences_prev:
-        #            for word in unmatched_sentence.words:
-        #                if not(word.matched):
-        #                    word.deleted.append(revision_curr.wikipedia_id)
+            # Add the information of 'deletion' to words
+            for unmatched_sentence in unmatched_sentences_prev:
+                for word in unmatched_sentence.words:
+                    if not(word.matched):
+                        word.deleted.append(revision_curr.wikipedia_id)
 
         # Reset matched structures from old revisions.
         for matched_paragraph in matched_paragraphs_prev:
@@ -333,7 +336,7 @@ class Wikiwho:
                                 sentence_prev.matched = True
                                 for word_prev in sentence_prev.words:
                                     #word_prev.freq = word_prev.freq + 1
-                                    #word_prev.freq.append(revision_curr.wikipedia_id)
+                                    word_prev.freq.append(revision_curr.wikipedia_id)
                                     word_prev.matched = True
 
                         # Add paragraph to current revision.
@@ -362,7 +365,7 @@ class Wikiwho:
                                 sentence_prev.matched = True
                                 for word_prev in sentence_prev.words:
                                     #word_prev.freq = word_prev.freq + 1
-                                    #word_prev.freq.append(revision_curr.wikipedia_id)
+                                    word_prev.freq.append(revision_curr.wikipedia_id)
                                     word_prev.matched = True
 
 
@@ -451,7 +454,7 @@ class Wikiwho:
                                     # TODO: CHECK this
                                     for word_prev in sentence_prev.words:
                                         #word_prev.freq = word_prev.freq + 1
-                                        #word_prev.freq.append(revision_curr.wikipedia_id)
+                                        word_prev.freq.append(revision_curr.wikipedia_id)
                                         word_prev.matched = True
 
                                     # Add the sentence information to the paragraph.
@@ -490,7 +493,7 @@ class Wikiwho:
 
                                 # TODO: CHECK this
                                 for word_prev in sentence_prev.words:
-                                    #word_prev.freq.append(revision_curr.wikipedia_id)
+                                    word_prev.freq.append(revision_curr.wikipedia_id)
                                     #word_prev.freq = word_prev.freq + 1
                                     word_prev.matched = True
 
@@ -566,7 +569,15 @@ class Wikiwho:
             density = Text.computeAvgWordFreq(text_curr, revision_curr.wikipedia_id)
 
             if (density > WORD_DENSITY):
-                return (matched_words_prev, possible_vandalism)
+                try:
+                    with Timeout(2):
+                        o_res = self.contactOresAPI(revision_curr.wikipedia_id)
+                        possible_vandalism = o_res
+                        if possible_vandalism:
+                            return (matched_words_prev, possible_vandalism)
+                                                                  
+                except Timeout.Timeout:
+                    return (matched_words_prev, possible_vandalism)
             else:
                 possible_vandalism = False
 
@@ -606,7 +617,7 @@ class Wikiwho:
                             for word_prev in unmatched_words_prev:
                                 if ((not word_prev.matched) and (word_prev.value == word)):
                                     #word_prev.freq = word_prev.freq + 1
-                                    #word_prev.freq.append(revision_curr.wikipedia_id)
+                                    word_prev.freq.append(revision_curr.wikipedia_id)
                                     word_prev.matched = True
                                     curr_matched = True
                                     sentence_curr.words.append(word_prev)
@@ -619,7 +630,7 @@ class Wikiwho:
                             for word_prev in unmatched_words_prev:
                                 if ((not word_prev.matched) and (word_prev.value == word)):
                                     word_prev.matched = True
-                                    #word_prev.deleted.append(revision_curr.wikipedia_id)
+                                    word_prev.deleted.append(revision_curr.wikipedia_id)
                                     matched_words_prev.append(word_prev)
                                     diff[pos] = ''
                                     break
