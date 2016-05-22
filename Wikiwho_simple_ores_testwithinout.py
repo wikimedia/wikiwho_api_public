@@ -259,11 +259,11 @@ class Wikiwho:
             if (len(unmatched_sentences_curr)>0):
                 (matched_words_prev, vandalism) = self.analyseWordsInSentences(unmatched_sentences_curr, unmatched_sentences_prev, revision_curr, possible_vandalism)
 
-            # Add the information of 'deletion' to words
-            for unmatched_sentence in unmatched_sentences_prev:
-                for word in unmatched_sentence.words:
-                    if not(word.matched):
-                        word.deleted.append(revision_curr.wikipedia_id)
+        # Add the information of 'deletion' to words
+        for unmatched_sentence in unmatched_sentences_prev:
+            for word in unmatched_sentence.words:
+                if not(word.matched):
+                    word.deleted.append(revision_curr.wikipedia_id)
 
         # Reset matched structures from old revisions.
         for matched_paragraph in matched_paragraphs_prev:
