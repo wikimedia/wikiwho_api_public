@@ -336,7 +336,7 @@ class Wikiwho:
                                 sentence_prev.matched = True
                                 for word_prev in sentence_prev.words:
                                     #word_prev.freq = word_prev.freq + 1
-                                    word_prev.freq.append(revision_curr.wikipedia_id)
+                                    #word_prev.freq.append(revision_curr.wikipedia_id)
                                     word_prev.matched = True
 
                         # Add paragraph to current revision.
@@ -454,7 +454,7 @@ class Wikiwho:
                                     # TODO: CHECK this
                                     for word_prev in sentence_prev.words:
                                         #word_prev.freq = word_prev.freq + 1
-                                        word_prev.freq.append(revision_curr.wikipedia_id)
+                                        #word_prev.freq.append(revision_curr.wikipedia_id)
                                         word_prev.matched = True
 
                                     # Add the sentence information to the paragraph.
@@ -617,7 +617,7 @@ class Wikiwho:
                             for word_prev in unmatched_words_prev:
                                 if ((not word_prev.matched) and (word_prev.value == word)):
                                     #word_prev.freq = word_prev.freq + 1
-                                    word_prev.freq.append(revision_curr.wikipedia_id)
+                                    #word_prev.freq.append(revision_curr.wikipedia_id)
                                     word_prev.matched = True
                                     curr_matched = True
                                     sentence_curr.words.append(word_prev)
