@@ -109,7 +109,7 @@ if __name__ == '__main__':
     except:
         par = set()
 
-    if par.issubset(set(['revid', 'author', 'tokenid', 'changes'])) == False:
+    if par.issubset(set(['revid', 'author', 'tokenid', 'in', 'out'])) == False:
         Wikiwho.printFail(message="Wrong parameter in list!")
 
     #art = 'graz'

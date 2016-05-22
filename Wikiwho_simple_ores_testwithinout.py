@@ -734,8 +734,10 @@ class Wikiwho:
                             dict_json['revid'] = str(word.revision)
                             if 'author' in params:
                                 dict_json['author'] = str(word.author_name.encode("utf-8"))
-                            if 'changes' in params:
-                                dict_json['changes'] = str(word.freq)
+                            if 'in' in params:
+                                dict_json['in'] = str(word.freq)
+                            if 'out' in params:
+                                dict_json['out'] = str(word.deleted)
                             if 'tokenid' in params:
                                 dict_json['tokenid'] = str(word.internal_id)
                             dict_list.append(dict_json)
