@@ -365,7 +365,7 @@ class Wikiwho:
                                 sentence_prev.matched = True
                                 for word_prev in sentence_prev.words:
                                     #word_prev.freq = word_prev.freq + 1
-                                    word_prev.freq.append(revision_curr.wikipedia_id)
+                                    #word_prev.freq.append(revision_curr.wikipedia_id)
                                     word_prev.matched = True
 
 
