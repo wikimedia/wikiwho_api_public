@@ -13,7 +13,7 @@ from time import time
 from structuresML.Revision import Revision
 from structuresML.Paragraph import Paragraph
 from structuresML.Sentence import Sentence
-from structuresML.Word import Word_testwithinout as Word
+import Word_testwithinout as Word
 from structuresML import Text
 
 import simplejson
