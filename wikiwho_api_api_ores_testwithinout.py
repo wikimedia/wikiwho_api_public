@@ -43,35 +43,35 @@ def pickle(art, obj, path):
     logging.debug("pickling")
     f = io.open(path + art + ".p",'wb')
     cPickle.dump(obj, f, protocol =-1)
-    
-    
+
+
 def getLatestRevId(article_name):
-    
+
     # Set up request for Wikipedia API.
     server = "en.wikipedia.org"
     service = "w/api.php"
     headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
-    
+
     # Open connection to server.
     conn = httplib.HTTPSConnection(server)
-    
+
     # Set parameters for API.
     params = urllib.urlencode({'action': "query", 'prop': 'revisions', 'titles': article_name, 'format': 'json'})
-    
+
     # Execute GET request to the API.
     conn.request("GET", "/" + service + "?" + params, None, headers)
-    
+
     # Get the response
     response = conn.getresponse()
     response = response.read()
-    
+
     # Parse the response to JSON and get the last revid.
     response = json.loads(response)
     pageid = response["query"]["pages"].keys()[0]
     revid = response["query"]["pages"][pageid]["revisions"][0]["revid"]
-    
+
     conn.close()
-    return [revid] 
+    return [revid]
 
 if __name__ == '__main__':
 
@@ -109,9 +109,9 @@ if __name__ == '__main__':
     except:
         par = set()
 
-    if par.issubset(set(['revid', 'author', 'tokenid'])) == False:
+    if par.issubset(set(['revid', 'author', 'tokenid', 'changes'])) == False:
         Wikiwho.printFail(message="Wrong parameter in list!")
-    
+
     #art = 'graz'
     #reviid = 45618658
     #format = "json"
@@ -206,12 +206,12 @@ if __name__ == '__main__':
             #except:
             #    pickle(art, wikiwho, path)
             #    Wikiwho.printFail(message="Some problems with the JSON returned by Wikipedia!")
-        if 'continue' not in result: 
+        if 'continue' not in result:
             #hackish
             timestamp = datetime.strptime(wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
-            
+
             wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') + "|" + str(wikiwho.revision_curr.wikipedia_id + 1)
-            #print wikiwho.rvcontinue 
+            #print wikiwho.rvcontinue
             break
         rvcontinue = result['continue']['rvcontinue']
         wikiwho.rvcontinue = rvcontinue

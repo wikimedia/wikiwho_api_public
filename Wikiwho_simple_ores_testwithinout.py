@@ -1,8 +1,8 @@
 '''
 Created on Feb 20, 2013
 
-@author: Maribel Acosta 
-@author: Fabian Floeck 
+@author: Maribel Acosta
+@author: Fabian Floeck
 @author: Philipp Singer
 '''
 
@@ -36,7 +36,7 @@ import datetime
 CHANGE_PERCENTAGE = -0.40
 PREVIOUS_LENGTH = 1000
 CURR_LENGTH = 1000
-FLAG1 = "move" 
+FLAG1 = "move"
 FLAG2 = "redirect"
 UNMATCHED_PARAGRAPH = 0.0
 WORD_DENSITY = 10
@@ -48,17 +48,17 @@ class Timeout():
     """Timeout class using ALARM signal."""
     class Timeout(Exception):
         pass
- 
+
     def __init__(self, sec):
         self.sec = sec
- 
+
     def __enter__(self):
         signal.signal(signal.SIGALRM, self.raise_timeout)
         signal.alarm(self.sec)
- 
+
     def __exit__(self, *args):
         signal.alarm(0)    # disable alarm
- 
+
     def raise_timeout(self, *args):
         raise Timeout.Timeout()
 
@@ -66,26 +66,26 @@ class Timeout():
 class Wikiwho:
 
     def contactOresAPI(self, VcandID):
-    
+
         # Set up request for WikiWho API.
         server = "ores.wmflabs.org:443"
         service = "/v2/scores/enwiki/damaging/"
         headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
-        
+
         #print 'HHHHHHH', VcandID
         # Open connection to server.
         conn = httplib.HTTPSConnection(server)
-        
-                
+
+
         # Execute GET request to the API.
         conn.request("GET", service + str(VcandID) + "/", None, headers)
-        
+
         # Get the response
         response = conn.getresponse()
-        
+
         response = response.read()#str(response.read())
         #print 'HHHHHHH',response
-        
+
         # Parse the JSON and get damaging(VanIndicator) true/false.
         response = json.loads(response)
 
@@ -124,7 +124,7 @@ class Wikiwho:
 
         # Iterate over revisions of the article.
         for revision in revisions:
-	    
+
             if 'texthidden' in revision:
                 continue
             if 'textmissing' in revision:
@@ -171,7 +171,7 @@ class Wikiwho:
                           vandalism = o_res
                           if vandalism:
                             revision_curr = revision_prev
-                                                                  
+
                       except Timeout.Timeout:
                         vandalism = True
                         revision_curr = revision_prev
@@ -575,7 +575,7 @@ class Wikiwho:
                         possible_vandalism = o_res
                         if possible_vandalism:
                             return (matched_words_prev, possible_vandalism)
-                                                                  
+
                 except Timeout.Timeout:
                     return (matched_words_prev, possible_vandalism)
             else:
@@ -734,6 +734,8 @@ class Wikiwho:
                             dict_json['revid'] = str(word.revision)
                             if 'author' in params:
                                 dict_json['author'] = str(word.author_name.encode("utf-8"))
+                            if 'changes' in params:
+                                dict_json['changes'] = str(word.freq)
                             if 'tokenid' in params:
                                 dict_json['tokenid'] = str(word.internal_id)
                             dict_list.append(dict_json)
@@ -809,7 +811,7 @@ class Wikiwho:
 def main(my_argv):
     inputfile = ''
     revision = None
-    
+
     if (len(my_argv) <= 3):
         try:
             opts, args = getopt.getopt(my_argv,"i:",["ifile="])
@@ -822,9 +824,9 @@ def main(my_argv):
         except getopt.GetoptError:
             print 'Usage: Wikiwho_simple.py -i <inputfile> [-rev <revision_id>]'
             exit(2)
-    
+
     for opt, arg in opts:
-    
+
 	if opt in ('-h', "--help"):
             print "WikiWho: An algorithm for detecting attribution of authorship in revisioned content"
             print
@@ -837,9 +839,9 @@ def main(my_argv):
             inputfile = arg
         elif opt in ("-r", "--revision"):
             revision = arg
-         
+
     return (inputfile,revision)
-   
+
 if __name__ == '__main__':
     print "wo"
     ##main(sys.argv)
@@ -873,7 +875,7 @@ if __name__ == '__main__':
     #
     # print "Calculating authorship for:", file_name
     # time1 = time()
-    
+
     print sys.argv[1]
 
     revisions = wikiwho.analyseArticle(open(sys.argv[1]))
@@ -892,7 +894,3 @@ if __name__ == '__main__':
     #
     #
     # print "Execution time:", time2-time1
-    
-    
-
-    
