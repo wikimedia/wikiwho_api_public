@@ -44,35 +44,35 @@ def pickle(art, obj, path):
     logging.debug("pickling")
     f = io.open(path + art + ".p",'wb')
     cPickle.dump(obj, f, protocol =-1)
-    
-    
+
+
 def getLatestRevId(article_name):
-    
+
     # Set up request for Wikipedia API.
     server = "en.wikipedia.org"
     service = "w/api.php"
     headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
-    
+
     # Open connection to server.
     conn = httplib.HTTPSConnection(server)
-    
+
     # Set parameters for API.
     params = urllib.urlencode({'action': "query", 'prop': 'revisions', 'titles': article_name, 'format': 'json'})
-    
+
     # Execute GET request to the API.
     conn.request("GET", "/" + service + "?" + params, None, headers)
-    
+
     # Get the response
     response = conn.getresponse()
     response = response.read()
-    
+
     # Parse the response to JSON and get the last revid.
     response = json.loads(response)
     pageid = response["query"]["pages"].keys()[0]
     revid = response["query"]["pages"][pageid]["revisions"][0]["revid"]
-    
+
     conn.close()
-    return [revid] 
+    return [revid]
 
 if __name__ == '__main__':
 
@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
     if par.issubset(set(['revid', 'author', 'tokenid'])) == False:
         Wikiwho.printFail(message="Wrong parameter in list!")
-    
+
     #art = 'graz'
     #reviid = 45618658
     #format = "json"
@@ -149,8 +149,7 @@ if __name__ == '__main__':
 
     assert (wikiwho.article == art)
 
-    #lastrev = wikiwho.lastrev
-    #print wikiwho.lastrev
+
 
     url ='https://en.wikipedia.org/w/api.php'
 
@@ -159,21 +158,30 @@ if __name__ == '__main__':
         'From': 'philipp.singer@gesis.org and fabian.floeck@gesis.org'
     }
 
-
     session = requests.session()
 
-    user    = 'Fabian%20Fl%C3%B6ck'
-    passw   = 'rumkugeln'
+    #bot password
+    user    = 'Fabian%20Fl%C3%B6ck@wikiwho'
+    passw   = 'o2l009t25ddtlefdt6cboctj8hk8nbfs'
 
-    params  = '?action=login&lgname=%s&lgpassword=%s&format=json'% (user,passw)
+    params  = '?action=query&meta=tokens&type=login&format=json'
 
     # Login request
     r1 = session.post(url+params)
-    token = r1.json()['login']['token']
-    params2 = params+'&lgtoken=%s'% token
+    #print r1.json()
+    #r1 = json.loads(r1)
+    token = r1.json()["query"]["tokens"]["logintoken"]
+    token = urllib.quote(token)
 
+
+    params2 = '?action=login&lgname=%s&lgpassword=%s&lgtoken=%s&format=json'% (user,passw,token)
+    #print 'params2', params2
     # Confirm token; should give "Success"
     r2 = session.post(url+params2)
+    print r2.json()
+
+
+
 
     logging.debug("STARTING NOW")
 
@@ -203,18 +211,18 @@ if __name__ == '__main__':
             if "-1" in result['query']['pages']:
                     Wikiwho.printFail(message="The article you are trying to request does not exist!")
             try:
-            
-            
+
+
                 wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
             except:
                 pickle(art, wikiwho, path)
                 Wikiwho.printFail(message="Some problems with the JSON returned by Wikipedia!")
-        if 'continue' not in result: 
+        if 'continue' not in result:
             #hackish
             timestamp = datetime.strptime(wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
-            
+
             wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') + "|" + str(wikiwho.revision_curr.wikipedia_id + 1)
-            #print wikiwho.rvcontinue 
+            #print wikiwho.rvcontinue
             break
         rvcontinue = result['continue']['rvcontinue']
         wikiwho.rvcontinue = rvcontinue
