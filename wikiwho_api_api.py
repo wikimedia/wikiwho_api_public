@@ -178,7 +178,7 @@ if __name__ == '__main__':
     #print 'params2', params2
     # Confirm token; should give "Success"
     r2 = session.post(url+params2)
-    print r2.json()
+    #print r2.json()
 
 
 
