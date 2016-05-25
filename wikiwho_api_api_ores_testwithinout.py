@@ -158,19 +158,24 @@ if __name__ == '__main__':
         'From': 'philipp.singer@gesis.org and fabian.floeck@gesis.org'
     }
 
-
     session = requests.session()
 
-    user    = 'Fabian%20Fl%C3%B6ck'
-    passw   = 'rumkugeln'
+    #bot password
+    user    = 'Fabian%20Fl%C3%B6ck@wikiwho'
+    passw   = 'o2l009t25ddtlefdt6cboctj8hk8nbfs'
 
-    params  = '?action=login&lgname=%s&lgpassword=%s&format=json'% (user,passw)
+    params  = '?action=query&meta=tokens&type=login&format=json'
 
     # Login request
     r1 = session.post(url+params)
-    token = r1.json()['login']['token']
-    params2 = params+'&lgtoken=%s'% token
+    #print r1.json()
+    #r1 = json.loads(r1)
+    token = r1.json()["query"]["tokens"]["logintoken"]
+    token = urllib.quote(token)
 
+
+    params2 = '?action=login&lgname=%s&lgpassword=%s&lgtoken=%s&format=json'% (user,passw,token)
+    #print 'params2', params2
     # Confirm token; should give "Success"
     r2 = session.post(url+params2)
 
