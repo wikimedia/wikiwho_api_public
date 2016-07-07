@@ -55,21 +55,23 @@ def run(article_name, revision_ids, format_, parameters):
 
     logging.debug("trying to load pickle")
     # FIXME loading large pickle files
-    try:
-        # see if exists in primary disk, load, extend
-        with open("pickle_api/" + article_name + ".p", 'rb') as f:
-            wikiwho = cPickle.load(f)
-        path = "pickle_api/"
-    except:
-        try:
-            # see if exists in secondary  disk, load, extend
-            with open("../disk2/pickle_api_2/" + article_name + ".p", 'rb') as f:
-                wikiwho = cPickle.load(f)
-            path = "../disk2/pickle_api_2/"
-        except:
-            # a new pickle in secondary disk will be created
-            wikiwho = Wikiwho(article_name)
-            path = "../disk2/pickle_api_2/"
+    # try:
+    #     # see if exists in primary disk, load, extend
+    #     with open("pickle_api/" + article_name + ".p", 'rb') as f:
+    #         wikiwho = cPickle.load(f)
+    #     path = "pickle_api/"
+    # except:
+    #     try:
+    #         # see if exists in secondary  disk, load, extend
+    #         with open("../disk2/pickle_api_2/" + article_name + ".p", 'rb') as f:
+    #             wikiwho = cPickle.load(f)
+    #         path = "../disk2/pickle_api_2/"
+    #     except:
+    #         # a new pickle in secondary disk will be created
+    #         wikiwho = Wikiwho(article_name)
+    #         path = "../disk2/pickle_api_2/"
+    wikiwho = Wikiwho(article_name)
+    path = "../disk2/test_pickles/"
 
     assert (wikiwho.article == article_name)
 
