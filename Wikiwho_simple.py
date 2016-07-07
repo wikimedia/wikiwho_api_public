@@ -3,7 +3,7 @@ Created on Feb 20, 2013
 
 @author: Maribel Acosta 
 @author: Fabian Floeck 
-@author: Andriy Rodchenko 
+@author: Andriy Rodchenko
 '''
 
 from wmf import dump
@@ -34,7 +34,7 @@ import datetime
 CHANGE_PERCENTAGE = -0.40
 PREVIOUS_LENGTH = 1000
 CURR_LENGTH = 1000
-FLAG = "move"   
+FLAG = "move"
 UNMATCHED_PARAGRAPH = 0.0
 WORD_DENSITY = 10
 WORD_LEN = 100
@@ -75,7 +75,7 @@ class Wikiwho:
 
         # Iterate over revisions of the article.
         for revision in revisions:
-	    
+
             if 'texthidden' in revision:
                 continue
             if 'textmissing' in revision:
@@ -600,21 +600,21 @@ class Wikiwho:
 
         return (matched_words_prev, possible_vandalism)
 
-    @staticmethod
-    def printFail(message = None, format ="json"):
-        import os
-        response = {}
-        response["success"] = "false"
-        response["revisions"] = None
-        response["article"] = None
-        #dict_list = None
-
-        if format == 'json':
-            #response["tokens"] = dict_list
-            response["message"] = message
-            print simplejson.dumps(response)
-        sys.exit()
-        #os._exit(1)
+    # @staticmethod
+    # def printFail(message=None, format="json"):
+    #     import os
+    #     response = {}
+    #     response["success"] = "false"
+    #     response["revisions"] = None
+    #     response["article"] = None
+    #     #dict_list = None
+    #
+    #     if format == 'json':
+    #         #response["tokens"] = dict_list
+    #         response["message"] = message
+    #         print simplejson.dumps(response)
+    #     sys.exit()
+    #     #os._exit(1)
 
     def printRevision(self, revisions, params, format = "json"):
 
@@ -744,7 +744,7 @@ class Wikiwho:
 def main(my_argv):
     inputfile = ''
     revision = None
-    
+
     if (len(my_argv) <= 3):
         try:
             opts, args = getopt.getopt(my_argv,"i:",["ifile="])
@@ -757,9 +757,9 @@ def main(my_argv):
         except getopt.GetoptError:
             print 'Usage: Wikiwho_simple.py -i <inputfile> [-rev <revision_id>]'
             exit(2)
-    
+
     for opt, arg in opts:
-    
+
 	if opt in ('-h', "--help"):
             print "WikiWho: An algorithm for detecting attribution of authorship in revisioned content"
             print
@@ -772,9 +772,9 @@ def main(my_argv):
             inputfile = arg
         elif opt in ("-r", "--revision"):
             revision = arg
-         
+
     return (inputfile,revision)
-   
+
 if __name__ == '__main__':
     print "wo"
     ##main(sys.argv)
@@ -808,7 +808,7 @@ if __name__ == '__main__':
     #
     # print "Calculating authorship for:", file_name
     # time1 = time()
-    
+
     print sys.argv[1]
 
     revisions = wikiwho.analyseArticle(open(sys.argv[1]))
@@ -827,7 +827,7 @@ if __name__ == '__main__':
     #
     #
     # print "Execution time:", time2-time1
-    
-    
+
+
 
     
