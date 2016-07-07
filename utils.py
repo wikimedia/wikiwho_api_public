@@ -3,7 +3,9 @@ from __future__ import division
 import io
 import logging
 import cPickle
-import requests
+# import requests
+import urllib
+import httplib
 import json
 import sys
 
@@ -35,6 +37,7 @@ def pickle(article_name, obj, path_):
 
 
 def get_latest_revision_id(article_name):
+    """
     if not article_name:
         return []
     # set up request for Wikipedia API.
@@ -51,4 +54,34 @@ def get_latest_revision_id(article_name):
         # article name does not exist
         return []
     latest_revision_id = response["query"]["pages"][first_page_id]["revisions"][0]["revid"]
+    return [latest_revision_id]
+    """
+    if not article_name:
+        return []
+    # Set up request for Wikipedia API.
+    server = "en.wikipedia.org"
+    service = "w/api.php"
+    headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
+
+    # Open connection to server.
+    conn = httplib.HTTPSConnection(server)
+
+    # Set parameters for API.
+    params = urllib.urlencode({'action': "query", 'prop': 'revisions', 'titles': article_name, 'format': 'json'})
+
+    # Execute GET request to the API.
+    conn.request("GET", "/" + service + "?" + params, None, headers)
+
+    # Get the response
+    response = conn.getresponse()
+    response = response.read()
+
+    # Parse the response to JSON and get the last revid.
+    response = json.loads(response)
+    first_page_id = response["query"]["pages"].keys()[0]
+    if first_page_id == '-1':
+        # article name does not exist
+        return []
+    latest_revision_id = response["query"]["pages"][first_page_id]["revisions"][0]["revid"]
+    conn.close()
     return [latest_revision_id]
