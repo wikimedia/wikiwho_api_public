@@ -56,7 +56,7 @@ def run(article_name, revision_ids, format_, parameters):
     logging.debug("trying to load pickle")
     # FIXME loading large pickle files
     pickle_folder = 'pickle_api'
-    pickle_folder = 'test_pickles'
+    # pickle_folder = 'test_pickles'
     try:
         # see if exists in primary disk, load, extend
         path = "{}/".format(pickle_folder)
@@ -64,7 +64,7 @@ def run(article_name, revision_ids, format_, parameters):
             wikiwho = cPickle.load(f)
     except:
         pickle_folder = 'pickle_api_2'
-        pickle_folder = 'test_pickles'
+        # pickle_folder = 'test_pickles'
         try:
             # see if exists in secondary  disk, load, extend
             path = "../disk2/{}/".format(pickle_folder)
