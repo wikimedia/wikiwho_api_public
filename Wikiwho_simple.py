@@ -6,9 +6,9 @@ Created on Feb 20, 2013
 @author: Andriy Rodchenko
 '''
 
-from wmf import dump
+# from wmf import dump
 from difflib import Differ
-from time import time
+# from time import time
 
 from structuresML.Revision import Revision
 from structuresML.Paragraph import Paragraph
@@ -16,21 +16,26 @@ from structuresML.Sentence import Sentence
 from structuresML.Word import Word
 from structuresML import Text
 
-import simplejson
+import json
 
-import urllib, urllib2
-import sys
-from sys import argv,exit
-import getopt
-import os
-import time
+# import urllib, urllib2
+# import sys
+# from sys import argv,exit
+# import getopt
+# import os
+# import time
 
-from copy import deepcopy
+import argparse
+import logging
 
-import dateutil.parser
-import datetime
+# from copy import deepcopy
+
+# import dateutil.parser
+# import datetime
 
 # self.spam detection variables.
+from utils import get_latest_revision_id
+
 CHANGE_PERCENTAGE = -0.40
 PREVIOUS_LENGTH = 1000
 CURR_LENGTH = 1000
@@ -41,18 +46,17 @@ WORD_LEN = 100
 
 GLOBAL_ID = 0
 
+
 class Wikiwho:
-
     def __init__(self, article):
-
         # Hash tables.
         self.paragraphs_ht = {}
         self.sentences_ht = {}
         self.spam = []
         self.revisions = {}
 
-        #self.lastrev_date = dateutil.parser.parse('1900-01-01T00:00:00')
-        #self.lastrev = 0
+        # self.lastrev_date = dateutil.parser.parse('1900-01-01T00:00:00')
+        # self.lastrev = 0
 
         self.rvcontinue = '0'
 
@@ -600,46 +604,27 @@ class Wikiwho:
 
         return (matched_words_prev, possible_vandalism)
 
-    # @staticmethod
-    # def printFail(message=None, format="json"):
-    #     import os
-    #     response = {}
-    #     response["success"] = "false"
-    #     response["revisions"] = None
-    #     response["article"] = None
-    #     #dict_list = None
-    #
-    #     if format == 'json':
-    #         #response["tokens"] = dict_list
-    #         response["message"] = message
-    #         print simplejson.dumps(response)
-    #     sys.exit()
-    #     #os._exit(1)
-
-    def printRevision(self, revisions, params, format = "json"):
-
-
-        response = {}
+    def print_revision(self, revisions, params, format_="json"):
+        response = dict()
         response["success"] = "true"
-
         response["revisions"] = {}
         response["article"] = self.article
-        for revid in self.revisions:
 
+        for rev_id in self.revisions:
             if len(revisions) == 2:
-                if revid < revisions[0] or revid > revisions[1]:
+                if rev_id < revisions[0] or rev_id > revisions[1]:
                     continue
             else:
-                if revid != revisions[0]:
+                if rev_id != revisions[0]:
                     continue
+            revision = self.revisions[rev_id]
 
-
-            revision = self.revisions[revid]
-
-            response["revisions"][revid] = {"author":revision.contributor_name.encode("utf-8"), "time":revision.time, "tokens":[]}
-            dict_list =[]
-            #print "format :"
-            #print format
+            response["revisions"][rev_id] = {"author": revision.contributor_name.encode("utf-8"),
+                                             "time": revision.time,
+                                             "tokens": []}
+            dict_list = []
+            # print "format_ :"
+            # print format_
             for hash_paragraph in revision.ordered_paragraphs:
 
                 text = ''
@@ -654,180 +639,138 @@ class Wikiwho:
                     sentence = paragraph.sentences[hash_sentence][-1]
                     #sentence = paragraph.sentences[hash_sentence].pop(0) #"sentence" will contain the hash for the sentence.
                     for word in sentence.words:
-                        # if format == 'normal':
+                        # if format_ == 'normal':
                         #    if (word.revision == lst_revision):
                         #        text = text + ' ' + unicode(word.value,'utf-8')
                         #    else:
                         #        text = text + ' ' + "@@@@" + str(word.revision) +',' + word.author_name + "@@@@" + unicode(word.value,'utf-8')
                         #    lst_revision = word.revision
                         #    authors.append(word.revision)
-                        if format == 'json':
+                        if format_ == 'json':
                             dict_json = {}
                             #ss = unicode(word.value,'utf-8')
                             ss = word.value
                             dict_json['str'] = ss#.encode('utf-8')
-                            dict_json['revid'] = str(word.revision)
+                            dict_json['rev_id'] = str(word.revision)
                             if 'author' in params:
                                 dict_json['author'] = str(word.author_name.encode("utf-8"))
                             if 'tokenid' in params:
                                 dict_json['tokenid'] = str(word.internal_id)
                             dict_list.append(dict_json)
-            # if format == 'normal':
+            # if format_ == 'normal':
             #     print text.encode('utf-8')
-            if format == 'json':
-                response["revisions"][revid]["tokens"] = dict_list
+            if format_ == 'json':
+                response["revisions"][rev_id]["tokens"] = dict_list
         response["message"] = None
-        print simplejson.dumps(response)
+        print json.dumps(response)
+
+    def print_revision_console(self, revisions, parameters):
+        for rev_id in self.revisions:
+            if len(revisions) == 2:
+                if rev_id < revisions[0] or rev_id > revisions[1]:
+                    continue
+            else:
+                if rev_id != revisions[0]:
+                    continue
+            revision = self.revisions[rev_id]
+
+            print("Printing authorship for revision: {}".format(revision.wikipedia_id))
+            text = []
+            authors = []
+            for hash_paragraph in revision.ordered_paragraphs:
+                logging.debug(hash_paragraph)
+                # text = ''
+
+                para = revision.paragraphs[hash_paragraph]
+                paragraph = para[-1]
+
+                logging.debug(paragraph.value)
+                logging.debug(len(paragraph.sentences))
+                for hash_sentence in paragraph.ordered_sentences:
+                    logging.debug(hash_sentence)
+                    sentence = paragraph.sentences[hash_sentence][-1]
+                    logging.debug(sentence.words)
+
+                    for word in sentence.words:
+                        logging.debug(word)
+                        # text = text + ' ' + unicode(word.value,'utf-8') + "@@" + str(word.revision)
+                        text.append(word.value)
+                        authors.append(word.revision)
+            print(text)
+            print(authors)
 
 
-    # def printRevision(self,revision):
-    #
-    #     print "Printing authorhship for revision: ", revision.wikipedia_id
-    #     text = []
-    #     authors = []
-    #     ids = []
-    #     freqs = []
-    #     authors_id = []
-    #     len_paragraph = []
-    #     len_sentence = []
-    #     deletions = []
-    #
-    #     for hash_paragraph in revision.ordered_paragraphs:
-    #         #print hash_paragraph
-    #         #text = ''
-    #
-    #         p_copy = deepcopy(revision.paragraphs[hash_paragraph])
-    #         paragraph = p_copy.pop(0)
-    #
-    #         p_len = 0
-    #
-    #         for p in paragraph.sentences.keys():
-    #             p_len = p_len + len(paragraph.sentences[p][0].words)
-    #             #print "p", p
-    #         #print "p", p_len
-    #
-    #         #print paragraph.value
-    #         #print len(paragraph.sentences)
-    #         for hash_sentence in paragraph.ordered_sentences:
-    #             #print hash_sentence
-    #             sentence = paragraph.sentences[hash_sentence].pop(0)
-    #             #print sentence.words
-    #
-    #             for word in sentence.words:
-    #                 #print word
-    #                 #text = text + ' ' + unicode(word.value,'utf-8') + "@@" + str(word.revision)
-    #                 text.append(word.value)
-    #                 authors.append(word.revision)
-    #                 authors_id.append(word.author_id)
-    #                 ids.append(word.internal_id)
-    #                 i = 0
-    #                 while i < len(word.freq):
-    #                     if word.freq[i] > revision.wikipedia_id:
-    #                         break
-    #                     i = i+1
-    #                 freqs.append(i)
-    #                 len_paragraph.append(p_len)
-    #                 len_sentence.append(len(sentence.words))
-    #                 deletions.append(word.deleted)
-    #
-    #     print text
-    #     print authors
-    #     print authors_id
-    #     print ids
-    #     print freqs
-    #     print len_paragraph
-    #     print len_sentence
-    #     print deletions
+def get_args():
+    parser = argparse.ArgumentParser(description='WikiWho: An algorithm for detecting attribution of authorship in '
+                                                 'revisioned content.')
+    # parser.add_argument('input_file', help='File to analyze')
+    parser.add_argument('-i', '--ifile', help='File to analyze')
+    parser.add_argument('-a', '--article', help='Article name to analyze')
+    parser.add_argument('-rev', '--revision',  # type=int,
+                        help='Revision to analyse. If not specified, all revisions are printed.')
+    parser.add_argument('-d', '--debug', help='Run in debug mode', action='store_true')
+
+    args = parser.parse_args()
+
+    if not args.ifile and not args.article:
+        parser.error("argument -i/--ifile or -a/--article is required")
+    elif args.ifile and args.article:
+        parser.error("only one of -i/--ifile or -a/--article is required")
+    # check # given rev_ids
+    revision_ids = args.revision
+    if revision_ids:
+        revision_ids = [int(x) for x in str(revision_ids).split('|')]
+    if len(revision_ids) > 2:
+        parser.error("Too many revision ids provided!")
+
+    return args
 
 
+def main():
+    args = get_args()
+    input_file = args.ifile
+    article_name = args.article
+    revision_ids = args.revision
+    if args.debug:
+        # logging.basicConfig(level=logging.DEBUG,  format='%(asctime)s - %(levelname)s - %(message)s')
+        # BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
+        logging.basicConfig(level=logging.DEBUG)
 
-def main(my_argv):
-    inputfile = ''
-    revision = None
+    if article_name:
+        # TODO get results from ww_api, otherwise user must have a bot always. remove is_api in handler.py
+        if revision_ids:
+            revision_ids = [int(x) for x in str(revision_ids).split('|')]
+            if len(revision_ids) == 2 and revision_ids[1] <= revision_ids[0]:
+                revision_ids.reverse()
+        else:
+            revision_ids = get_latest_revision_id(article_name)
+        from handler import handle
+        handle(article_name, revision_ids, 'json', {'author'}, is_api=False)
+    elif input_file:
+        print('Not implemented yet.')
+        """
+        from time import time
+        print("Calculating authorship for: {}".format(input_file))
 
-    if (len(my_argv) <= 3):
-        try:
-            opts, args = getopt.getopt(my_argv,"i:",["ifile="])
-        except getopt.GetoptError:
-            print 'Usage: Wikiwho_simple.py -i <inputfile> [-rev <revision_id>]'
-            exit(2)
-    else:
-        try:
-            opts, args = getopt.getopt(my_argv,"i:r:",["ifile=","revision="])
-        except getopt.GetoptError:
-            print 'Usage: Wikiwho_simple.py -i <inputfile> [-rev <revision_id>]'
-            exit(2)
+        time1 = time()
+        wikiwho = Wikiwho()
+        revisions, ordered_revisions = analyse_article(input_file)
+        time2 = time()
 
-    for opt, arg in opts:
+        # pos = input_file.rfind("/")
+        # print input_file[pos+1: len(input_file)-len(".xml")], time2-time1
 
-	if opt in ('-h', "--help"):
-            print "WikiWho: An algorithm for detecting attribution of authorship in revisioned content"
-            print
-            print 'Usage: Wikiwho_simple.py -i <inputfile> [-rev <revision_id>]'
-            print "-i --ifile File to analyze"
-            print "-r --revision Revision to analyse. If not specified, the last revision is printed."
-            print "-h --help This help."
-            exit()
-        elif opt in ("-i", "--ifile"):
-            inputfile = arg
-        elif opt in ("-r", "--revision"):
-            revision = arg
+        if revision_ids:
+            print_revision(revisions[revision_ids])
+        else:
+            for (rev, vandalism) in ordered_revisions:
+                if not vandalism:
+                    print_revision(revisions[rev])
+                else:
+                    print("Revision {} was detected as vandalism.".format(rev))
 
-    return (inputfile,revision)
+        print("Execution time: {}".format(time2-time1))
+        """
 
 if __name__ == '__main__':
-    print "wo"
-    ##main(sys.argv)
-    #file_name = "Hermann_Beitzke"
-
-    #rev = 620303041
-
-    wikiwho = Wikiwho("Gamergate")
-
-    #url ='http://en.wikipedia.org/w/index.php?title=Special:Export'
-    #	timestamp = '2004-04-20T11:56:34Z'
-    #TODO: the timestamp thing doesnt seem right here -- as it is a function
-    #timestamp = '2014-04-12T07:50:44Z'
-    #timestamp = '1900-00-00T00:00:00'
-    #enc = {'pages':"Hermann_Beitzke",'offset':timestamp,'action':'submit'}
-
-    #	enc = {'pages':art,'limit':'47','action':'submit'}
-    #TODO: the code needs some error handling ... what happens if the request cant be finished?
-    #data = urllib.urlencode(enc)
-    #req = urllib2.Request(url,data)
-    #response = urllib2.urlopen(req)
-
-
-    #revisions = wikiwho.analyseArticle(response)
-
-    #wikiwho.printRevision(revisions[rev])
-
-    #print wikiwho.lastrev_date
-
-    #(file_name, revision) = main(sys.argv[1:])
-    #
-    # print "Calculating authorship for:", file_name
-    # time1 = time()
-
-    print sys.argv[1]
-
-    revisions = wikiwho.analyseArticle(open(sys.argv[1]))
-    # time2 = time()
-    #
-    # if (revision != None and revision!='all'):
-    #     printRevision(revisions[int(revision)])
-    # elif (revision != None and revision=='all'):
-    #     ordered = revisions.keys()
-    #     ordered.sort()
-    #     for rev in ordered:
-    #         printRevision(revisions[rev])
-    # else:
-    #     rev_ids = revisions.keys()
-    #     printRevision(revisions[max(rev_ids)])
-    #
-    #
-    # print "Execution time:", time2-time1
-
-
-
-    
+    main()
