@@ -16,7 +16,11 @@ from structuresML.Sentence import Sentence
 from structuresML.Word import Word
 from structuresML import Text
 
-import json
+try:
+    # TODO remove simplejson
+    import simplejson as json
+except ImportError:
+    import json
 
 # import urllib, urllib2
 # import sys
