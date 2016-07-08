@@ -129,7 +129,7 @@ def handle(article_name, revision_ids, format_, parameters, is_api=True):
             # elif not pages.get('revision'):
             #     print_fail(message="End revision ID does not exist!")
             try:
-                wikiwho.analyseArticle(result['query']['pages'].itervalues().next()['revisions'])
+                wikiwho.analyse_article(result['query']['pages'].itervalues().next()['revisions'])
             except:
                 if is_api:
                     # if there is a problem, save pickle file until last given unproblematic rev_id
