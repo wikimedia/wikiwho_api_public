@@ -130,10 +130,12 @@ def handle(article_name, revision_ids, format_, parameters, is_api=True):
             #     print_fail(message="End revision ID does not exist!")
             try:
                 wikiwho.analyse_article(result['query']['pages'].itervalues().next()['revisions'])
-            except:
+            except Exception as e:
                 if is_api:
                     # if there is a problem, save pickle file until last given unproblematic rev_id
+                    wikiwho._clean()
                     pickle(article_name, wikiwho, path)
+                logging.exception(e)
                 print_fail(message="Some problems with the JSON returned by Wikipedia!")
         if 'continue' not in result:
             # hackish: ?
@@ -168,3 +170,4 @@ def handle(article_name, revision_ids, format_, parameters, is_api=True):
             pickle(article_name, wikiwho, path)
     else:
         wikiwho.print_revision_console(revision_ids, parameters)
+        # wikiwho.print_revision(revision_ids, parameters)
