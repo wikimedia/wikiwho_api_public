@@ -97,9 +97,8 @@ class Wikiwho:
                 # print("---------------------------- FLAG 1")
                 # print(revision.id)
                 # print(self.text_curr)
-                pass
-                # self.revision_curr = revision_prev
-                # self.spam.append(revision['sha1'])  # skip revision with vandalism in history
+                self.revision_curr = revision_prev
+                self.spam.append(revision['sha1'])  # skip revision with vandalism in history
             else:
                 # Information about the current revision.
                 self.revision_curr = Revision()
