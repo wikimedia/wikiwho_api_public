@@ -5,6 +5,9 @@ Created on Feb 20, 2013
 @author: Fabian Floeck 
 @author: Andriy Rodchenko
 '''
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from difflib import Differ
 import argparse
 import logging
@@ -50,7 +53,6 @@ class Wikiwho:
         # self.revision_prev = None
         self.text_curr = ''
         self.token_id = 0
-        pass
 
     def analyse_article(self, revisions):
         i = 1
@@ -67,7 +69,7 @@ class Wikiwho:
 
             text = revision['*']
             if revision['sha1'] == "":
-                revision['sha1'] = Text.calculateHash(text.encode("utf-8"))
+                revision['sha1'] = Text.calculateHash(text)  # .encode("utf-8"))
             if revision['sha1'] in self.spam:
                 vandalism = True
 
@@ -81,7 +83,7 @@ class Wikiwho:
                     # if revisions have reached a certain size
                     if revision_prev.length > PREVIOUS_LENGTH and \
                        text_len < CURR_LENGTH and \
-                       ((text_len-revision_prev.length) / float(revision_prev.length)) <= CHANGE_PERCENTAGE:
+                       ((text_len-revision_prev.length) / revision_prev.length) <= CHANGE_PERCENTAGE:
                         # VANDALISM: CHANGE PERCENTAGE
                         vandalism = True
                         self.revision_curr = revision_prev
@@ -108,7 +110,7 @@ class Wikiwho:
                 self.revision_curr.contributor_name = revision.get('user', '')
 
                 # Content within the revision.
-                self.text_curr = text.encode('utf-8').lower()
+                self.text_curr = text.lower()  # .encode("utf-8")
 
                 # Perform comparison.
                 vandalism = self.determine_authorship(revision_prev)
@@ -147,7 +149,7 @@ class Wikiwho:
                 self.analyse_sentences_in_paragraphs(unmatched_paragraphs_curr, unmatched_paragraphs_prev)
 
             # TODO: spam detection
-            if len(unmatched_paragraphs_curr) / float(len(self.revision_curr.ordered_paragraphs)) > UNMATCHED_PARAGRAPH:
+            if len(unmatched_paragraphs_curr) / len(self.revision_curr.ordered_paragraphs) > UNMATCHED_PARAGRAPH:
                 # will be used to detect copy-paste vandalism - token density
                 possible_vandalism = True
 
@@ -166,7 +168,7 @@ class Wikiwho:
         # Reset matched structures from old revisions.
         for matched_paragraph in matched_paragraphs_prev:
             matched_paragraph.matched = False
-            for sentence_hash in matched_paragraph.sentences.keys():
+            for sentence_hash in matched_paragraph.sentences:
                 for sentence in matched_paragraph.sentences[sentence_hash]:
                     sentence.matched = False
                     for word in sentence.words:
@@ -183,14 +185,14 @@ class Wikiwho:
         if not vandalism:
             # Add the new paragraphs to hash table of paragraphs.
             for unmatched_paragraph in unmatched_paragraphs_curr:
-                if unmatched_paragraph.hash_value in self.paragraphs_ht.keys():
+                if unmatched_paragraph.hash_value in self.paragraphs_ht:
                     self.paragraphs_ht[unmatched_paragraph.hash_value].append(unmatched_paragraph)
                 else:
                     self.paragraphs_ht.update({unmatched_paragraph.hash_value: [unmatched_paragraph]})
 
             # Add the new sentences to hash table of sentences.
             for unmatched_sentence in unmatched_sentences_curr:
-                if unmatched_sentence.hash_value in self.sentences_ht.keys():
+                if unmatched_sentence.hash_value in self.sentences_ht:
                     self.sentences_ht[unmatched_sentence.hash_value].append(unmatched_sentence)
                 else:
                     self.sentences_ht.update({unmatched_sentence.hash_value: [unmatched_sentence]})
@@ -223,7 +225,7 @@ class Wikiwho:
 
                     # TODO: added this (CHECK).
                     # Set all sentences and words of this paragraph as matched
-                    for hash_sentence_prev in paragraph_prev.sentences.keys():
+                    for hash_sentence_prev in paragraph_prev.sentences:
                         for sentence_prev in paragraph_prev.sentences[hash_sentence_prev]:
                             sentence_prev.matched = True
                             for word_prev in sentence_prev.words:
@@ -232,7 +234,7 @@ class Wikiwho:
                                 word_prev.matched = True
 
                     # Add paragraph to current revision.
-                    if hash_curr in self.revision_curr.paragraphs.keys():
+                    if hash_curr in self.revision_curr.paragraphs:
                         self.revision_curr.paragraphs[hash_curr].append(paragraph_prev)
                     else:
                         self.revision_curr.paragraphs.update({paragraph_prev.hash_value: [paragraph_prev]})
@@ -250,7 +252,7 @@ class Wikiwho:
 
                         # TODO: added this (CHECK).
                         # Set all sentences and words of this paragraph as matched
-                        for hash_sentence_prev in paragraph_prev.sentences.keys():
+                        for hash_sentence_prev in paragraph_prev.sentences:
                             for sentence_prev in paragraph_prev.sentences[hash_sentence_prev]:
                                 sentence_prev.matched = True
                                 for word_prev in sentence_prev.words:
@@ -259,7 +261,7 @@ class Wikiwho:
                                     word_prev.matched = True
 
                         # Add paragraph to current revision.
-                        if hash_curr in self.revision_curr.paragraphs.keys():
+                        if hash_curr in self.revision_curr.paragraphs:
                             self.revision_curr.paragraphs[hash_curr].append(paragraph_prev)
                         else:
                             self.revision_curr.paragraphs.update({paragraph_prev.hash_value: [paragraph_prev]})
@@ -272,7 +274,7 @@ class Wikiwho:
                 paragraph_curr = Paragraph()
                 paragraph_curr.hash_value = hash_curr
                 paragraph_curr.value = paragraph
-                if hash_curr in self.revision_curr.paragraphs.keys():
+                if hash_curr in self.revision_curr.paragraphs:
                     self.revision_curr.paragraphs[hash_curr].append(paragraph_curr)
                 else:
                     self.revision_curr.paragraphs.update({hash_curr: [paragraph_curr]})
@@ -332,7 +334,7 @@ class Wikiwho:
                                     word_prev.matched = True
 
                                 # Add the sentence information to the paragraph.
-                                if hash_curr in paragraph_curr.sentences.keys():
+                                if hash_curr in paragraph_curr.sentences:
                                     paragraph_curr.sentences[hash_curr].append(sentence_prev)
                                 else:
                                     paragraph_curr.sentences.update({sentence_prev.hash_value: [sentence_prev]})
@@ -370,7 +372,7 @@ class Wikiwho:
                                     word_prev.matched = True
 
                                 # Add the sentence information to the paragraph.
-                                if hash_curr in paragraph_curr.sentences.keys():
+                                if hash_curr in paragraph_curr.sentences:
                                     paragraph_curr.sentences[hash_curr].append(sentence_prev)
                                 else:
                                     paragraph_curr.sentences.update({sentence_prev.hash_value: [sentence_prev]})
@@ -388,7 +390,7 @@ class Wikiwho:
                     sentence_curr.value = sentence
                     sentence_curr.hash_value = hash_curr
 
-                    if hash_curr in paragraph_curr.sentences.keys():
+                    if hash_curr in paragraph_curr.sentences:
                         paragraph_curr.sentences[hash_curr].append(sentence_curr)
                     else:
                         paragraph_curr.sentences.update({hash_curr: [sentence_curr]})
@@ -527,7 +529,7 @@ class Wikiwho:
                     continue
             revision = self.revisions[rev_id]
 
-            response["revisions"][rev_id] = {"author": revision.contributor_name.encode("utf-8"),
+            response["revisions"][rev_id] = {"author": revision.contributor_name,  # .encode("utf-8"),
                                              "time": revision.time,
                                              "tokens": []}
             dict_list = []
@@ -542,7 +544,7 @@ class Wikiwho:
                             dict_json['str'] = word.value  # .encode('utf-8')
                             dict_json['revid'] = str(word.revision)
                             if 'author' in parameters:
-                                dict_json['author'] = str(word.author_name.encode("utf-8"))
+                                dict_json['author'] = word.author_name  # .encode("utf-8"))
                             if 'tokenid' in parameters:
                                 dict_json['tokenid'] = str(word.internal_id)
                             dict_list.append(dict_json)
@@ -551,7 +553,7 @@ class Wikiwho:
         response["message"] = None
         # with open('test.json', 'w') as f:
         #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True))
-        print json.dumps(response)
+        print(json.dumps(response))
 
     def print_revision_console(self, revision_ids, parameters):
         for rev_id in self.revisions:

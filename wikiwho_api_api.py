@@ -1,6 +1,7 @@
 #!/usr/bin/python2.7
 # -*- coding: utf-8 -*-
-from __future__ import division
+from __future__ import absolute_import
+from __future__ import print_function
 import cgitb
 import logging
 import cgi
@@ -34,8 +35,8 @@ logging.basicConfig(filename='log_api_api.log', level=logging.DEBUG,
 # CGI
 fs = cgi.FieldStorage()
 
-print "Content-Type: application/json"
-print
+print("Content-Type: application/json")
+print()
 
 
 def main():
@@ -43,7 +44,6 @@ def main():
     try:
         article_name = fs.getvalue('name')  # for running through browser
     except:
-        # FIXME fs.getvalue doesnt throw exception, so it doesnt enter here
         print_fail(message="Name missing!")
     if not article_name:
         print_fail(message="Name missing!")

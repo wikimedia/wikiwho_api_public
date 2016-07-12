@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 # TODO make a CLASS WikiwhoHandler
-from __future__ import division
+from __future__ import absolute_import
 import logging
-import urllib
-import cPickle
 import requests
 from datetime import datetime, timedelta
+import io
+import six
+from six.moves import cPickle as pickle, urllib
 
 from Wikiwho_simple import Wikiwho
-from utils import print_fail, pickle
+from utils import print_fail, pickle_
 
 
 def handle(article_name, revision_ids, format_, parameters, is_api=True):
@@ -41,16 +42,16 @@ def handle(article_name, revision_ids, format_, parameters, is_api=True):
         try:
             # see if exists in primary disk, load, extend
             path = "{}/".format(pickle_folder)
-            with open(path + article_name + ".p", 'rb') as f:
-                wikiwho = cPickle.load(f)
+            with io.open(path + article_name + ".p", 'rb') as f:
+                wikiwho = pickle.load(f)
         except:
             pickle_folder = 'pickle_api_2'
             # pickle_folder = 'test_pickles'
             try:
                 # see if exists in secondary  disk, load, extend
                 path = "../disk2/{}/".format(pickle_folder)
-                with open(path + article_name + ".p", 'rb') as f:
-                    wikiwho = cPickle.load(f)
+                with io.open(path + article_name + ".p", 'rb') as f:
+                    wikiwho = pickle.load(f)
             except:
                 # a new pickle in secondary disk will be created
                 path = "../disk2/{}/".format(pickle_folder)
@@ -80,7 +81,7 @@ def handle(article_name, revision_ids, format_, parameters, is_api=True):
         # print r1.json()
         # r1 = json.loads(r1)
         token = r1.json()["query"]["tokens"]["logintoken"]
-        token = urllib.quote(token)
+        token = urllib.parse.quote(token)
 
         params2 = '?action=login&lgname={}&lgpassword={}&lgtoken={}&format=json'.format(user, passw, token)
         # print 'params2', params2
@@ -103,8 +104,6 @@ def handle(article_name, revision_ids, format_, parameters, is_api=True):
     while revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
         # continue downloading as long as we reach to the given rev_id limit
         # if rvcontinue > revision_ids[-1], it means this rev_id is already in pickle file, so no calculation is needed
-        # TODO do this until last_rev_id?
-        # while latest_revision_id > int(rvcontinue.split('|')[-1]):
         logging.debug('doing partial download')
         logging.debug(rvcontinue)
 
@@ -129,13 +128,16 @@ def handle(article_name, revision_ids, format_, parameters, is_api=True):
             # elif not pages.get('revision'):
             #     print_fail(message="End revision ID does not exist!")
             try:
-                wikiwho.analyse_article(result['query']['pages'].itervalues().next()['revisions'])
+                # page_id, page = result['query']['pages'].popitem()
+                # wikiwho.analyse_article(page.get('revisions', []))
+                # pass first item in pages dict
+                wikiwho.analyse_article(six.next(six.itervalues(result['query']['pages'])).get('revisions', []))
             except Exception as e:
                 if is_api:
                     # if there is a problem, save pickle file until last given unproblematic rev_id
                     wikiwho._clean()
-                    pickle(article_name, wikiwho, path)
-                logging.exception(e)
+                    pickle_(article_name, wikiwho, path)
+                logging.exception(e)  # TODO raise exception if it comes from wikiwho code
                 print_fail(message="Some problems with the JSON returned by Wikipedia!")
         if 'continue' not in result:
             # hackish: ?
@@ -153,9 +155,8 @@ def handle(article_name, revision_ids, format_, parameters, is_api=True):
 
     # print len(wikiwho.revisions)
 
-    wikiwho_rev_ids = wikiwho.revisions.keys()
     for r in revision_ids:
-        if r not in wikiwho_rev_ids:
+        if r not in wikiwho.revisions:
             print_fail(message="Revision ID does not exist or is spam or deleted!")
 
     if is_api:
@@ -167,7 +168,6 @@ def handle(article_name, revision_ids, format_, parameters, is_api=True):
         if wikiwho.rvcontinue != rvcontinue_in_pickle:
             # if there is a new revision or first pickle of the article
             # save new pickle file
-            pickle(article_name, wikiwho, path)
+            pickle_(article_name, wikiwho, path)
     else:
         wikiwho.print_revision_console(revision_ids, parameters)
-        # wikiwho.print_revision(revision_ids, parameters)
