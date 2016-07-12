@@ -8,11 +8,7 @@ Created on Feb 20, 2013
 from difflib import Differ
 import argparse
 import logging
-try:
-    # TODO remove simplejson
-    import simplejson as json
-except ImportError:
-    import json
+import json
 
 from structuresML.Revision import Revision
 from structuresML.Paragraph import Paragraph
@@ -554,7 +550,7 @@ class Wikiwho:
                 response["revisions"][rev_id]["tokens"] = dict_list
         response["message"] = None
         # with open('test.json', 'w') as f:
-        #     f.write(json.dumps(response))
+        #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True))
         print json.dumps(response)
 
     def print_revision_console(self, revision_ids, parameters):
