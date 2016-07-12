@@ -1,10 +1,11 @@
-'''
+# -*- coding: utf-8 -*-
+"""
 Created on Feb 20, 2013
 
 @author: Maribel Acosta 
 @author: Fabian Floeck 
 @author: Andriy Rodchenko
-'''
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -13,12 +14,11 @@ import argparse
 import logging
 import json
 
-from structuresML.Revision import Revision
-from structuresML.Paragraph import Paragraph
-from structuresML.Sentence import Sentence
-from structuresML.Word import Word
-from structuresML import Text
-from utils import get_latest_revision_id
+from structures.Revision import Revision
+from structures.Paragraph import Paragraph
+from structures.Sentence import Sentence
+from structures.Word import Word
+from structures import Text
 
 
 # spam detection variables.
@@ -634,13 +634,8 @@ def main():
             revision_ids = [int(x) for x in str(revision_ids).split('|')]
             if len(revision_ids) == 2 and revision_ids[1] <= revision_ids[0]:
                 revision_ids.reverse()
-        else:
-            revision_ids = get_latest_revision_id(article_name)
-        if not revision_ids:
-            print("The article you are trying to request does not exist!")
-        else:
-            from handler import handle
-            handle(article_name, revision_ids, 'json', {'author'}, is_api=False)
+        from handler import handle
+        handle(article_name, revision_ids, 'json', {'author'}, is_api=False)
         # time2 = time()
         # print("Execution time: {}".format(time2-time1))
     elif input_file:

@@ -5,24 +5,9 @@ from __future__ import print_function
 import cgitb
 import logging
 import cgi
+
 from utils import print_fail, get_latest_revision_id
 from handler import handle
-
-# import io
-# from Wikiwho_simple import Wikiwho
-# import urllib  # , urllib2
-# import cPickle
-# import sys
-# import requests
-# import httplib
-# from cStringIO import StringIO
-# import json
-# from time import time
-# import dateutil.parser
-# from datetime import datetime, timedelta
-# import json
-# import sys
-
 
 __author__ = 'psinger,ffloeck'
 

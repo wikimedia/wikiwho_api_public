@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
 # TODO make a CLASS WikiwhoHandler
 from __future__ import absolute_import
+# from builtins import open
+import io
 import logging
 import requests
 from datetime import datetime, timedelta
-import io
 import six
 from six.moves import cPickle as pickle, urllib
 
-from Wikiwho_simple import Wikiwho
-from utils import print_fail, pickle_
+from wikiwho_simple import Wikiwho
+from utils import print_fail, pickle_, get_latest_revision_id
 
 
 def handle(article_name, revision_ids, format_, parameters, is_api=True):
+    if not revision_ids:
+        revision_ids = get_latest_revision_id(article_name)
+        if not revision_ids:
+            print_fail(message="The article you are trying to request does not exist!")
     # TODO get last_rev_id anyway and check if given rev_ids[-1] > last_rev_id or not.
     # if yes, print_fail(message="Revision ID does not exist!")
 
