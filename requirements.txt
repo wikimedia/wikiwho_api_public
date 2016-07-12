@@ -1,3 +1,4 @@
-requests
+future
 six
+requests
 # TODO add wikiwho_simple as a package

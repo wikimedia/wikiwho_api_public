@@ -502,6 +502,7 @@ class Wikiwho:
                     pos += 1
 
                 if not curr_matched:
+                    # TODO is here ever executed?
                     word_curr = Word()
                     word_curr.value = word
                     word_curr.author_id = self.revision_curr.contributor_name
@@ -551,7 +552,7 @@ class Wikiwho:
             if format_ == 'json':
                 response["revisions"][rev_id]["tokens"] = dict_list
         response["message"] = None
-        # with open('test.json', 'w') as f:
+        # with open('local/test.json', 'w') as f:
         #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True))
         print(json.dumps(response))
 
