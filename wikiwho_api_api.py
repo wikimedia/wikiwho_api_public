@@ -7,7 +7,7 @@ import logging
 import cgi
 
 from utils import print_fail, get_latest_revision_id
-from handler import handle
+from handler import WPHandler
 
 __author__ = 'psinger,ffloeck'
 
@@ -36,9 +36,10 @@ def main():
     try:
         revision_ids = [int(x) for x in fs.getvalue('revid').split('|')]  # for running through browser
     except:
-        revision_ids = get_latest_revision_id(article_name)
-        if not revision_ids:
+        latest_revision_id = get_latest_revision_id(article_name)
+        if not latest_revision_id:
             print_fail(message="The article you are trying to request does not exist!")
+        revision_ids = [latest_revision_id]
     if len(revision_ids) > 2:
         print_fail(message="Too many revision ids provided!")
     if len(revision_ids) == 2 and revision_ids[1] <= revision_ids[0]:
@@ -62,7 +63,9 @@ def main():
     if parameters.issubset({'revid', 'author', 'tokenid'}) is False:
         print_fail(message="Wrong parameter in list!")
 
-    handle(article_name, revision_ids, format_, parameters)
+    with WPHandler(article_name) as wp:
+        wp.handle(revision_ids, format_)
+        wp.wikiwho.print_revision(wp.revision_ids, parameters)
 
 if __name__ == '__main__':
     main()

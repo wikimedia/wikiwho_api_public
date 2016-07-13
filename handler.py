@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# TODO make a CLASS WikiwhoHandler
 from __future__ import absolute_import
 # from builtins import open
 import io
@@ -8,171 +7,162 @@ import requests
 from datetime import datetime, timedelta
 import six
 from six.moves import cPickle as pickle, urllib
+import os
 
 from wikiwho_simple import Wikiwho
 from utils import print_fail, pickle_, get_latest_revision_id
 
 
-def handle(article_name, revision_ids, format_, parameters, is_api=True):
-    if not revision_ids:
-        revision_ids = get_latest_revision_id(article_name)
-        if not revision_ids:
-            print_fail(message="The article you are trying to request does not exist!")
-    # TODO get last_rev_id anyway and check if given rev_ids[-1] > last_rev_id or not.
-    # if yes, print_fail(message="Revision ID does not exist!")
+class WPHandler(object):
+    def __init__(self, article_name, pickle_folder='', *args, **kwargs):
+        # super(WPHandler, self).__init__(article_name, pickle_folder=pickle_folder, *args, **kwargs)
+        self.article_name = article_name
+        self.revision_ids = []
+        self.wikiwho = None
+        self.pickle_folder = pickle_folder
+        self.pickle_path = ''
+        self.rvcontinue_in_pickle = ''
 
-    if is_api:
+    def __enter__(self):
         logging.debug("--------")
-        logging.debug(article_name)
-        logging.debug(revision_ids)
+        logging.debug(self.article_name)
         logging.debug("trying to load pickle")
 
-        article_name = article_name.replace(" ", "_")
-        # FIXME loading large pickle files
-        pickle_folder = 'pickle_api'
+        article_name = self.article_name.replace(" ", "_")
+        pickle_folder = self.pickle_folder or 'pickle_api'
         # pickle_folder = 'test_pickles'
-        """
-        path = "{}/".format(pickle_folder)
-        if os.path.exists(path + article_name + ".p"):
+        self.pickle_path = "{}/{}.p".format(pickle_folder, article_name)
+        if os.path.exists(self.pickle_path):
             create_new = False
         else:
-            pickle_folder = 'pickle_api_2'
-            # pickle_folder = 'test_pickles'
-            path = "../disk2/{}/".format(pickle_folder)
-            if os.path.exists(path + article_name + ".p"):
-                create_new = False
-            else:
-                create_new = True
-        """
-        try:
-            # see if exists in primary disk, load, extend
-            path = "{}/".format(pickle_folder)
-            with io.open(path + article_name + ".p", 'rb') as f:
-                wikiwho = pickle.load(f)
-        except:
-            pickle_folder = 'pickle_api_2'
-            # pickle_folder = 'test_pickles'
-            try:
-                # see if exists in secondary  disk, load, extend
-                path = "../disk2/{}/".format(pickle_folder)
-                with io.open(path + article_name + ".p", 'rb') as f:
-                    wikiwho = pickle.load(f)
-            except:
-                # a new pickle in secondary disk will be created
-                path = "../disk2/{}/".format(pickle_folder)
-                wikiwho = Wikiwho(article_name)
-        assert (wikiwho.article == article_name)
+            pickle_folder = self.pickle_folder or "../disk2/pickle_api_2"
+            # pickle_folder = '../disk2/test_pickles'
+            self.pickle_path = "{}/{}.p".format(pickle_folder, article_name)
+            create_new = not os.path.exists(self.pickle_path)
+        if create_new:
+            # a new pickle in secondary disk will be created
+            self.wikiwho = Wikiwho(article_name)
+        else:
+            with io.open(self.pickle_path, 'rb') as f:
+                self.wikiwho = pickle.load(f)
+
+        assert (self.wikiwho.article == article_name)
+
+        self.rvcontinue_in_pickle = self.wikiwho.rvcontinue
+        return self
+
+    def handle(self, revision_ids, format_='json'):
+        # check if article exists
+        latest_revision_id = get_latest_revision_id(self.article_name)
+        if not latest_revision_id:
+            print_fail(message="The article you are trying to request does not exist!")
+        self.revision_ids = revision_ids or [latest_revision_id]
+        # TODO if given rev_ids[-1] > last_rev_id, print_fail(message="Revision ID does not exist!")
 
         # holds the last revision id which is stored in pickle file. 0 for new article
-        rvcontinue_in_pickle = wikiwho.rvcontinue
-    else:
-        wikiwho = Wikiwho(article_name)
+        rvcontinue = self.rvcontinue_in_pickle
 
-    rvcontinue = wikiwho.rvcontinue
+        if self.revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
+            # if given rev_id is bigger than last one in pickle
+            url = 'https://en.wikipedia.org/w/api.php'
+            params = '?action=query&meta=tokens&type=login&format=json'
+            headers = {'User-Agent': 'Wikiwho API',
+                       'From': 'philipp.singer@gesis.org and fabian.floeck@gesis.org'}
+            # bot credentials
+            user = 'Fabian%20Fl%C3%B6ck@wikiwho'
+            passw = 'o2l009t25ddtlefdt6cboctj8hk8nbfs'
+            # Login request and create session
+            session = requests.session()
+            # TODO how to stay logged in for next queries and only login if logged out?
+            r1 = session.post(url + params)
+            token = r1.json()["query"]["tokens"]["logintoken"]
+            token = urllib.parse.quote(token)
 
-    if revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
-        # if given rev_id is bigger than last one in pickle
-        url = 'https://en.wikipedia.org/w/api.php'
-        params = '?action=query&meta=tokens&type=login&format=json'
-        headers = {'User-Agent': 'Wikiwho API',
-                   'From': 'philipp.singer@gesis.org and fabian.floeck@gesis.org'}
-        # bot credentials
-        user = 'Fabian%20Fl%C3%B6ck@wikiwho'
-        passw = 'o2l009t25ddtlefdt6cboctj8hk8nbfs'
-        # Login request and create session
-        session = requests.session()
-        # TODO how to stay logged in for next queries and only login if logged out?
-        r1 = session.post(url + params)
-        # print r1.json()
-        # r1 = json.loads(r1)
-        token = r1.json()["query"]["tokens"]["logintoken"]
-        token = urllib.parse.quote(token)
+            params2 = '?action=login&lgname={}&lgpassword={}&lgtoken={}&format=json'.format(user, passw, token)
+            r2 = session.post(url + params2)
 
-        params2 = '?action=login&lgname={}&lgpassword={}&lgtoken={}&format=json'.format(user, passw, token)
-        # print 'params2', params2
-        # Confirm token; should give "Success"
-        r2 = session.post(url + params2)
-        # print r2.json()
+            logging.debug("STARTING NOW")
 
-        logging.debug("STARTING NOW")
+            # revisions: Returns revisions for a given page
+            params = {'titles': self.article_name, 'action': 'query', 'prop': 'revisions',
+                      'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
+                      'rvlimit': 'max', 'format': format_, 'continue': '', 'rvdir': 'newer'}
 
-        # revisions: Returns revisions for a given page
-        params = {'titles': article_name, 'action': 'query', 'prop': 'revisions',
-                  'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
-                  'rvlimit': 'max', 'format': format_, 'continue': '', 'rvdir': 'newer'}
-        # rvcontinue = timestamp|next_rev_id
-        # print rvcontinue
-        # rvcontinue = '643899697'
+        while self.revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
+            # continue downloading as long as we reach to the given rev_id limit
+            # if rvcontinue > self.revision_ids[-1], it means this rev_id is already in pickle file,
+            # so no calculation is needed
+            logging.debug('doing partial download')
+            logging.debug(rvcontinue)
 
-        # THINK ABOUT NO RVCONTINUE
-
-    while revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
-        # continue downloading as long as we reach to the given rev_id limit
-        # if rvcontinue > revision_ids[-1], it means this rev_id is already in pickle file, so no calculation is needed
-        logging.debug('doing partial download')
-        logging.debug(rvcontinue)
-
-        if rvcontinue != '0':
-            params['rvcontinue'] = rvcontinue
-        try:
-            # TODO get revisions until revision_ids[1], check line: elif not pages.get('revision')
-            # if len(revision_ids) == 2:
-            #     params.update({'rvendid': revision_ids[1]})  # gets from beginning
-            result = session.get(url=url, headers=headers, params=params).json()
-        except:
-            print_fail(message="HTTP Response error! Try again later!")
-
-        if 'error' in result:
-            print_fail(message="Wikipedia API returned the following error:" + str(result['error']))
-        # if 'warnings' in result:
-        #   print_fail(reviid, message="Wikipedia API returned the following warning:" + result['warnings'])
-        if 'query' in result:
-            pages = result['query']['pages']
-            if "-1" in pages:
-                print_fail(message="The article you are trying to request does not exist!")
-            # elif not pages.get('revision'):
-            #     print_fail(message="End revision ID does not exist!")
+            if rvcontinue != '0':
+                params['rvcontinue'] = rvcontinue
             try:
-                # page_id, page = result['query']['pages'].popitem()
-                # wikiwho.analyse_article(page.get('revisions', []))
-                # pass first item in pages dict
-                wikiwho.analyse_article(six.next(six.itervalues(result['query']['pages'])).get('revisions', []))
-            except Exception as e:
-                if is_api:
+                # TODO ? get revisions until revision_ids[-1], check line: elif not pages.get('revision')
+                # params.update({'rvendid': self.revision_ids[-1]})  # gets from beginning
+                result = session.get(url=url, headers=headers, params=params).json()
+            except:
+                print_fail(message="HTTP Response error! Try again later!")
+
+            if 'error' in result:
+                print_fail(message="Wikipedia API returned the following error:" + str(result['error']))
+            # if 'warnings' in result:
+            #   print_fail(reviid, message="Wikipedia API returned the following warning:" + result['warnings'])
+            if 'query' in result:
+                pages = result['query']['pages']
+                if "-1" in pages:
+                    print_fail(message="The article you are trying to request does not exist!")
+                # elif not pages.get('revision'):
+                #     print_fail(message="End revision ID does not exist!")
+                try:
+                    # page_id, page = result['query']['pages'].popitem()
+                    # wikiwho.analyse_article(page.get('revisions', []))
+                    # pass first item in pages dict
+                    self.wikiwho.analyse_article(six.next(six.itervalues(result['query']['pages'])).
+                                                 get('revisions', []))
+                except Exception as e:
                     # if there is a problem, save pickle file until last given unproblematic rev_id
-                    wikiwho._clean()
-                    pickle_(article_name, wikiwho, path)
-                logging.exception(e)  # TODO raise exception if it comes from wikiwho code
-                print_fail(message="Some problems with the JSON returned by Wikipedia!")
-        if 'continue' not in result:
-            # hackish: ?
-            # create a rvcontinue with last revision id of this article
-            timestamp = datetime.strptime(wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
-            wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') + "|" + str(wikiwho.revision_curr.wikipedia_id + 1)
-            # print wikiwho.rvcontinue
-            break
-        rvcontinue = result['continue']['rvcontinue']
-        wikiwho.rvcontinue = rvcontinue  # used in the end to decide if a new pickle file should be saved or not
-        # print rvcontinue
+                    self.wikiwho._clean()
+                    pickle_(self.wikiwho, self.pickle_path)
+                    # TODO raise exception if it comes from wikiwho code
+                    logging.exception(e)
+                    print_fail(message="Some problems with the JSON returned by Wikipedia!")
+            if 'continue' not in result:
+                # hackish: ?
+                # create a rvcontinue with last revision id of this article
+                timestamp = datetime.strptime(self.wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
+                self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') + "|" + str(self.wikiwho.revision_curr.wikipedia_id + 1)
+                # print wikiwho.rvcontinue
+                break
+            rvcontinue = result['continue']['rvcontinue']
+            self.wikiwho.rvcontinue = rvcontinue  # used at end to decide if a new pickle file should be saved or not
+            # print rvcontinue
 
-    if is_api:
-        logging.debug('final rvcontinue ' + str(wikiwho.rvcontinue))
+        logging.debug('final rvcontinue ' + str(self.wikiwho.rvcontinue))
+        # print len(wikiwho.revisions)
 
-    # print len(wikiwho.revisions)
+        for r in self.revision_ids:
+            if r not in self.wikiwho.revisions:
+                print_fail(message="Revision ID does not exist or is spam or deleted!")
 
-    for r in revision_ids:
-        if r not in wikiwho.revisions:
-            print_fail(message="Revision ID does not exist or is spam or deleted!")
-
-    if is_api:
-        wikiwho.print_revision(revision_ids, parameters)
-
-        logging.debug(wikiwho.rvcontinue)
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        If the context was exited without an exception, all three arguments will be None.
+        If an exception is supplied, and the method wishes to suppress the exception (i.e., prevent it from being
+        propagated), it should return a true value. Otherwise, the exception will be processed normally upon exit
+        from this method.
+        Note that __exit__() methods should not reraise the passed-in exception; this is the caller’s responsibility.
+        :param exc_type:
+        :param exc_val:
+        :param exc_tb:
+        :return:
+        """
+        # print(exc_type, exc_val, exc_tb)
+        logging.debug(self.wikiwho.rvcontinue)
         # logging.debug(wikiwho.lastrev_date)
-
-        if wikiwho.rvcontinue != rvcontinue_in_pickle:
+        if self.wikiwho.rvcontinue != self.rvcontinue_in_pickle:
             # if there is a new revision or first pickle of the article
             # save new pickle file
-            pickle_(article_name, wikiwho, path)
-    else:
-        wikiwho.print_revision_console(revision_ids, parameters)
+            pickle_(self.wikiwho, self.pickle_path)
+        # return True
+

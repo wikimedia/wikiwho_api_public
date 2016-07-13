@@ -629,13 +629,17 @@ def main():
     if article_name:
         # from time import time
         # time1 = time()
-        # TODO get results from ww_api, otherwise user must have a bot always. remove is_api in handler.py
+        # TODO get results from ww_api, otherwise user must have a bot always.
         if revision_ids:
             revision_ids = [int(x) for x in str(revision_ids).split('|')]
             if len(revision_ids) == 2 and revision_ids[1] <= revision_ids[0]:
                 revision_ids.reverse()
-        from handler import handle
-        handle(article_name, revision_ids, 'json', {'author'}, is_api=False)
+        from handler import WPHandler
+        pickle_folder = '' or 'local/test_pickles'
+        with WPHandler(article_name, pickle_folder) as wp:
+            wp.handle(revision_ids, 'json')
+            wp.wikiwho.print_revision_console(wp.revision_ids, {'author'})
+            # wp.wikiwho.print_revision(wp.revision_ids, {'author'})
         # time2 = time()
         # print("Execution time: {}".format(time2-time1))
     elif input_file:
