@@ -459,8 +459,8 @@ class Wikiwho:
             for word in sentence_curr.splitted:
                 curr_matched = False
                 pos = 0
-                next_word = False
-                while not next_word:
+                # next_word = False
+                while pos < len(diff):
                     word_diff = diff[pos]
                     if word == word_diff[2:]:
                         if word_diff[0] == ' ':
@@ -474,7 +474,7 @@ class Wikiwho:
                                     sentence_curr.words.append(word_prev)
                                     matched_words_prev.append(word_prev)
                                     diff[pos] = ''
-                                    next_word = True
+                                    pos = len(diff) + 1
                                     break
                         elif word_diff[0] == '-':
                             # deleted / reintroduced ??
@@ -498,7 +498,7 @@ class Wikiwho:
                             sentence_curr.words.append(word_curr)
                             self.token_id += 1
                             diff[pos] = ''
-                            next_word = True
+                            pos = len(diff) + 1
                     pos += 1
 
                 if not curr_matched:
