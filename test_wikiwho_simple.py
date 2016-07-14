@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from builtins import range  # , int
+from builtins import range
 from openpyxl import load_workbook
-import csv
+import os
 import pytest
 
 from handler import WPHandler
@@ -29,30 +29,6 @@ def pytest_generate_tests(metafunc):
                 'correct_rev_id': int(row[5].value),
             }
             metafunc.addcall(funcargs=funcargs)
-        # with open('test_wikiwho_simple.csv', newline='') as csvfile:
-        # with open('test_wikiwho_simple.csv', 'rb') as csvfile:
-        #     article_reader = csv.reader(csvfile, delimiter=str(','), quotechar=str('|'))
-        #     c = 0
-        #     for row in article_reader:
-        #         if c == 0:
-        #             c += 1
-        #             continue
-        #         print(row)
-        #         funcargs = {
-        #             'article_name': row[0],
-        #             'revision_ids': [int(row[2])],
-        #             'token': '{}'.format(row[3]).lower(),
-        #             'context': '{}'.format(row[4]).lower(),
-        #             'correct_rev_id': int(row[5]),
-        #         }
-        #         # print(funcargs)
-        #         # article_name = row[0].value
-        #         # revision_ids = [int(row[2].value)]
-        #         # token = row[3].value
-        #         # context = row[4].value
-        #         # correct_rev_id = int(row[5].value)
-        #         # print(article_name, revision_ids, token, context, correct_rev_id, '***')
-        #         metafunc.addcall(funcargs=funcargs)
 
 
 class TestWikiwho:
@@ -70,25 +46,30 @@ class TestWikiwho:
 
     @pytest.fixture(scope='session')
     def temp_folder(self, tmpdir_factory):
-        return tmpdir_factory.getbasetemp()
+        tmp = 'tmp_test'
+        if not os.path.exists(tmp):
+            os.mkdir(tmp)
+        return tmp
+        # in os' tmp dir
+        # return tmpdir_factory.getbasetemp()
 
     def test_authorship(self, temp_folder, article_name, revision_ids, token, context, correct_rev_id):
         sub_text = splitIntoWords(context)
-        # with WPHandler(article_name, temp_folder) as wp:
-        with WPHandler(article_name, '/tmp/pytest-of-kenan/pytest-0') as wp:
+        with WPHandler(article_name, temp_folder) as wp:
             wp.handle(revision_ids, 'json')
         text, authors = wp.wikiwho.get_revision_text(revision_ids[0])
         n = len(sub_text)
         found = 0
         print(token, context)
         print(sub_text)
-        # print('1153–57' in text, '1153–57' in text)
         for i in range(len(text) - n + 1):
             if sub_text == text[i:i + n]:
                 token_i = i + sub_text.index(token)
-                print(token_i)
                 ww_rev_id = authors[token_i]
                 found = 1
-                assert ww_rev_id == correct_rev_id, "{}: rev id was {}, should be {}".format(token, ww_rev_id, correct_rev_id)
+                assert ww_rev_id == correct_rev_id, "{}: {}: rev id was {}, should be {}".format(article_name,
+                                                                                                 token,
+                                                                                                 ww_rev_id,
+                                                                                                 correct_rev_id)
                 break
-        assert found, "{}: {} -> not found".format(article_name, token)
+        assert found, "{}: {} -> token not found".format(article_name, token)
