@@ -1,4 +1,6 @@
 future
 six
 requests
+pytest
+openpyxl
 # TODO add wikiwho_simple as a package

@@ -589,6 +589,19 @@ class Wikiwho:
             print(text)
             print(authors)
 
+    def get_revision_text(self, revision_id):
+        revision = self.revisions[revision_id]
+        text = []
+        authors = []
+        for hash_paragraph in revision.ordered_paragraphs:
+            paragraph = revision.paragraphs[hash_paragraph][-1]
+            for hash_sentence in paragraph.ordered_sentences:
+                sentence = paragraph.sentences[hash_sentence][-1]
+                for word in sentence.words:
+                    text.append(word.value)
+                    authors.append(word.revision)
+        return text, authors
+
 
 def get_args():
     parser = argparse.ArgumentParser(description='WikiWho: An algorithm for detecting attribution of authorship in '
