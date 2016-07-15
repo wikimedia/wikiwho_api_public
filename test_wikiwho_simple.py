@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from builtins import range
 from openpyxl import load_workbook
 import os
+import sys
 import pytest
 
 from handler import WPHandler
@@ -12,14 +13,20 @@ from structures.Text import splitIntoWords
 
 
 def pytest_generate_tests(metafunc):
-    # print(metafunc)
+    """
+    Generates tests dynamically according to lines command option.
+    :param metafunc:
+    :return:
+    """
+    # print(metafunc)  # http://docs.pytest.org/en/latest/parametrize.html#the-metafunc-object
+    # print(metafunc.config.option.lines)
+    lines = metafunc.config.option.lines
+    lines = [] if lines == 'all' else [int(l) for l in lines.split(',')]
     if "article_name" in metafunc.fixturenames:
         wb = load_workbook(filename='test_wikiwho_simple.xlsx', data_only=True, read_only=True)
         ws = wb[wb.sheetnames[0]]
-        c = 0
-        for row in ws.iter_rows():
-            if c == 0:
-                c += 1
+        for i, row in enumerate(ws.iter_rows()):
+            if i == 0 or lines and i+1 not in lines:
                 continue
             funcargs = {
                 'article_name': row[0].value,
@@ -38,15 +45,17 @@ class TestWikiwho:
         usually contains tests).
         """
 
-    @classmethod
-    def teardown_class(cls):
-        """ teardown any state that was previously setup with a call to
-        setup_class.
-        """
-
     @pytest.fixture(scope='session')
     def temp_folder(self, tmpdir_factory):
-        tmp = 'tmp_test'
+        """
+        Creates temporary folder for whole test session.
+        :param tmpdir_factory:
+        :return:
+        """
+        if int(sys.version[0]) > 2:
+            tmp = 'tmp_test_3'
+        else:
+            tmp = 'tmp_test'
         if not os.path.exists(tmp):
             os.mkdir(tmp)
         return tmp
@@ -73,3 +82,15 @@ class TestWikiwho:
                                                                                                  correct_rev_id)
                 break
         assert found, "{}: {} -> token not found".format(article_name, token)
+
+    @classmethod
+    def teardown_class(cls):
+        """ teardown any state that was previously setup with a call to
+        setup_class.
+        """
+        # if sys.version[0] > 2:
+        #     tmp = 'tmp_test_3'
+        # else:
+        #     tmp = 'tmp_test'
+        # if os.path.exists(tmp):
+        #     os.removedirs(tmp)
