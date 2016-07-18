@@ -28,6 +28,8 @@ def pytest_generate_tests(metafunc):
         for i, row in enumerate(ws.iter_rows()):
             if i == 0 or lines and i+1 not in lines:
                 continue
+            if not row[0].value:
+                break
             funcargs = {
                 'article_name': row[0].value,
                 'revision_ids': [int(row[2].value)],

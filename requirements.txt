@@ -2,5 +2,6 @@ future
 six
 requests
 pytest
+#coverage
 openpyxl
 # TODO add wikiwho_simple as a package
