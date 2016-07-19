@@ -21,11 +21,11 @@ def splitIntoParagraphs(text):
 def splitIntoSentences(text):
     p = text
 
-    p = p.replace('.', '.@@@@')
+    p = p.replace('. ', '.@@@@')
     p = p.replace('\n', '\n@@@@')
-    p = p.replace(';', ';@@@@')
-    p = p.replace('?', '?@@@@')
-    p = p.replace('!', '!@@@@')
+    p = p.replace('; ', ';@@@@')
+    p = p.replace('? ', '?@@@@')
+    p = p.replace('! ', '!@@@@')
     # p = p.replace('.{', '.||{')
     # p = p.replace('!{', '!||{')
     # p = p.replace('?{', '?||{')
@@ -37,7 +37,7 @@ def splitIntoSentences(text):
     # p = p.replace('?[', '?||[')
     p = p.replace('<ref', '@@@@<ref')
     p = p.replace('/ref>', '/ref>@@@@')
-    
+
     while '@@@@@@@@' in p:
         p = p.replace('@@@@@@@@', '@@@@')
 
@@ -48,7 +48,7 @@ def splitIntoSentences(text):
 def splitIntoWords(text):
     p = text
     p = p.replace('|', '||@||')
-            
+
     p = p.replace('<', '||<').replace('>', '>||')
     p = p.replace('?', '?||').replace('!', '!||').replace('.[[', '.||[[').replace('\n', '||')
 
@@ -72,52 +72,52 @@ def splitIntoWords(text):
     p = p.replace('<||||!||||--||', '||<!--||').replace('||--||||>', '||-->||')
     p = p.replace(' ', '||')
 
-    while '||||' in p :
+    while '||||' in p:
         p = p.replace('||||', '||')
 
     words = filter(lambda a: a != '', p.split('||'))
     words = ['|' if w == '@' else w for w in words]
-        
+
     return words
-    
+
 
 def computeAvgWordFreq(text_list, revision_id=0):
     d = {}
-    
+
     for elem in text_list:
         if elem not in d:
             d.update({elem: text_list.count(elem)})
-    
+
     if '<' in d:
         del d['<']
-    
+
     if '>' in d:
         del d['>']
-        
+
     if 'tr' in d:
         del d['tr']
-    
+
     if 'td' in d:
         del d['td']
-            
+
     # if '(' in d:
     #     del d['(']
     #
     # if ')' in d:
     #     del d[')']
-        
+
     if '[' in d:
         del d['[']
-        
+
     if ']' in d:
         del d[']']
-        
+
     if '"' in d:
         del d['"']
 
     # if '|' in d:
     #     del d['|']
-    
+
     if '*' in d:
         del d['*']
 
