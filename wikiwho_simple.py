@@ -28,6 +28,7 @@ CURR_LENGTH = 1000
 FLAG = "move"
 UNMATCHED_PARAGRAPH = 0.0
 WORD_DENSITY = 10
+# WORD_DENSITY = 12
 WORD_LEN = 100
 
 
@@ -70,13 +71,15 @@ class Wikiwho:
             text = revision['*']
             if revision['sha1'] == "":
                 revision['sha1'] = Text.calculateHash(text)  # .encode("utf-8"))
-            if revision['sha1'] in self.spam:
+            rev_id = int(revision['revid'])
+            if rev_id in self.spam:
                 vandalism = True
 
             # TODO: spam detection: DELETION
             text_len = len(text)
             try:
                 if revision['comment'] != '' and 'minor' in revision:
+                # if revision['comment'] != '' and FLAG in revision:
                     pass
                 else:
                     # if content is not moved (flag) to different article in good faith, check for vandalism
@@ -86,22 +89,20 @@ class Wikiwho:
                        ((text_len-revision_prev.length) / revision_prev.length) <= CHANGE_PERCENTAGE:
                         # VANDALISM: CHANGE PERCENTAGE
                         vandalism = True
-                        self.revision_curr = revision_prev
             except:
                 pass
 
             if vandalism:
-                # TODO why FF removed here?
                 # print("---------------------------- FLAG 1")
                 # print(revision.id)
                 # print(self.text_curr)
                 self.revision_curr = revision_prev
-                self.spam.append(revision['sha1'])  # skip revision with vandalism in history
+                self.spam.append(rev_id)  # skip revision with vandalism in history
             else:
                 # Information about the current revision.
                 self.revision_curr = Revision()
                 self.revision_curr.id = i
-                self.revision_curr.wikipedia_id = int(revision['revid'])
+                self.revision_curr.wikipedia_id = rev_id
                 self.revision_curr.length = text_len
                 self.revision_curr.time = revision['timestamp']
 
@@ -121,7 +122,7 @@ class Wikiwho:
                     # print revision.getText()
                     # print
                     self.revision_curr = revision_prev  # skip revision with vandalism in history
-                    self.spam.append(revision['sha1'])
+                    self.spam.append(rev_id)
                 else:
                     # Add the current revision with all the information.
                     self.revisions.update({self.revision_curr.wikipedia_id: self.revision_curr})
@@ -424,7 +425,7 @@ class Wikiwho:
         for sentence_curr in unmatched_sentences_curr:
             words = Text.splitIntoWords(sentence_curr.value)
             text_curr.extend(words)
-            sentence_curr.splitted.extend(words)  # TODO extend or = words ?
+            sentence_curr.splitted.extend(words)
 
         # Edit consists of removing sentences, not adding new content.
         if not text_curr:
@@ -502,7 +503,7 @@ class Wikiwho:
                     pos += 1
 
                 if not curr_matched:
-                    # TODO is here ever executed?
+                    # if diff returns a word as '? ...'
                     word_curr = Word()
                     word_curr.value = word
                     word_curr.author_id = self.revision_curr.contributor_name
