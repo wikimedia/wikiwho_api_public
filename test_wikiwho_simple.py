@@ -71,6 +71,7 @@ class TestWikiwho:
         text, authors = wp.wikiwho.get_revision_text(revision_ids[0])
         n = len(sub_text)
         found = 0
+        # print(wp.wikiwho.spam)
         print(token, context)
         print(sub_text)
         for i in range(len(text) - n + 1):
