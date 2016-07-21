@@ -37,6 +37,7 @@ def get_article_xml(article_name):
 
     rvcontinue = True
     # document = None
+    # xml_file = '/home/kenan/PycharmProjects/wikiwho_api/local/original_code_xml_tests/{}.xml'.format(article_name)
     xml_file = '{}.xml'.format(article_name)
     mediawiki = etree.Element("mediawiki")
     etree.SubElement(mediawiki, "siteinfo")
@@ -50,7 +51,8 @@ def get_article_xml(article_name):
         except:
             print("HTTP Response error! Try again later!")
         # root = etree.fromstring(result.content)
-        root = etree.fromstringlist(list(result.content))
+        p = etree.XMLParser(huge_tree=True)
+        root = etree.fromstringlist(list(result.content), parser=p)
         if root.find('error') is not None:
             print("Wikipedia API returned the following error: " + str(root.find('error').get('info')))
         query = root.find('query')
