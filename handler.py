@@ -31,13 +31,13 @@ class WPHandler(object):
         article_name = self.article_name.replace(" ", "_")
         pickle_folder = self.pickle_folder or 'pickle_api'
         # pickle_folder = 'test_pickles'
-        self.pickle_path = "{}/{}.p".format(pickle_folder, article_name)
+        self.pickle_path = "{}/{}.p".format(pickle_folder, article_name.replace("/", "0x2f"))  # 0x2f is UTF-8 hex of /
         if os.path.exists(self.pickle_path):
             create_new = False
         else:
             pickle_folder = self.pickle_folder or "../disk2/pickle_api_2"
             # pickle_folder = '../disk2/test_pickles'
-            self.pickle_path = "{}/{}.p".format(pickle_folder, article_name)
+            self.pickle_path = "{}/{}.p".format(pickle_folder, article_name.replace("/", "0x2f"))
             create_new = not os.path.exists(self.pickle_path)
         if create_new:
             # a new pickle in secondary disk will be created
@@ -51,12 +51,13 @@ class WPHandler(object):
         self.rvcontinue_in_pickle = self.wikiwho.rvcontinue
         return self
 
-    def handle(self, revision_ids, format_='json'):
+    def handle(self, revision_ids, format_='json', is_api=True):
         # check if article exists
         latest_revision_id = get_latest_revision_id(self.article_name)
         if not latest_revision_id:
-            print_fail(message="The article you are trying to request does not exist!")
+            print_fail(message="The article you are trying to request does not exist!", is_api=is_api)
         self.revision_ids = revision_ids or [latest_revision_id]
+        # latest_revision_id_used = not any(revision_ids)
         # TODO if given rev_ids[-1] > last_rev_id, print_fail(message="Revision ID does not exist!")
 
         # holds the last revision id which is stored in pickle file. 0 for new article
@@ -102,18 +103,18 @@ class WPHandler(object):
                 # params.update({'rvendid': self.revision_ids[-1]})  # gets from beginning
                 result = session.get(url=url, headers=headers, params=params).json()
             except:
-                print_fail(message="HTTP Response error! Try again later!")
+                print_fail(message="HTTP Response error! Try again later!", is_api=is_api)
 
             if 'error' in result:
-                print_fail(message="Wikipedia API returned the following error:" + str(result['error']))
+                print_fail(message="Wikipedia API returned the following error:" + str(result['error']), is_api=is_api)
             # if 'warnings' in result:
-            #   print_fail(reviid, message="Wikipedia API returned the following warning:" + result['warnings'])
+            #   print_fail(reviid, message="Wikipedia API returned the following warning:" + result['warnings'], is_api=is_api)
             if 'query' in result:
                 pages = result['query']['pages']
                 if "-1" in pages:
-                    print_fail(message="The article you are trying to request does not exist!")
+                    print_fail(message="The article you are trying to request does not exist!", is_api=is_api)
                 # elif not pages.get('revision'):
-                #     print_fail(message="End revision ID does not exist!")
+                #     print_fail(message="End revision ID does not exist!", is_api=is_api)
                 try:
                     # page_id, page = result['query']['pages'].popitem()
                     # wikiwho.analyse_article(page.get('revisions', []))
@@ -126,7 +127,7 @@ class WPHandler(object):
                     pickle_(self.wikiwho, self.pickle_path)
                     # TODO raise exception if it comes from wikiwho code
                     logging.exception(e)
-                    print_fail(message="Some problems with the JSON returned by Wikipedia!")
+                    print_fail(message="Some problems with the JSON returned by Wikipedia!", is_api=is_api)
             if 'continue' not in result:
                 # hackish: ?
                 # create a rvcontinue with last revision id of this article
@@ -142,8 +143,10 @@ class WPHandler(object):
         # print len(wikiwho.revisions)
 
         for r in self.revision_ids:
+            # TODO sometimes latest_rev_id is a spam, how to handle this better when user gives no rev_id as input
+            # if not latest_revision_id_used and r not in self.wikiwho.revisions:
             if r not in self.wikiwho.revisions:
-                print_fail(message="Revision ID does not exist or is spam or deleted!")
+                print_fail(message="Revision ID ({}) does not exist or is spam or deleted!".format(r), is_api=is_api)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """

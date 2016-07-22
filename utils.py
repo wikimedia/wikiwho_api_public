@@ -10,19 +10,22 @@ import six
 import six.moves.cPickle as pickle
 
 
-def print_fail(message=None, format_="json"):
-    # import os
-    response = {"success": "false",
-                "revisions": None,
-                "article": None}
-    # dict_list = None
+def print_fail(message=None, format_="json", is_api=True):
+    if is_api:
+        # import os
+        response = {"success": "false",
+                    "revisions": None,
+                    "article": None}
+        # dict_list = None
 
-    if format_ == 'json':
-        # response["tokens"] = dict_list
-        response["message"] = message
-        print(json.dumps(response))
-    sys.exit()
-    # os._exit(1)
+        if format_ == 'json':
+            # response["tokens"] = dict_list
+            response["message"] = message
+            print(json.dumps(response))
+        sys.exit()
+        # os._exit(1)
+    else:
+        raise Exception(message)
 
 
 def pickle_(obj, pickle_path):

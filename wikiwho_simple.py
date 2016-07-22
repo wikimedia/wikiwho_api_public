@@ -516,7 +516,7 @@ class Wikiwho:
 
         return matched_words_prev, possible_vandalism
 
-    def print_revision(self, revision_ids, parameters, format_="json"):
+    def print_revision(self, revision_ids, parameters, format_="json", return_response=False):
         response = dict()
         response["success"] = "true"
         response["revisions"] = {}
@@ -555,6 +555,8 @@ class Wikiwho:
         response["message"] = None
         # with open('local/test.json', 'w') as f:
         #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True))
+        if return_response:
+            return response
         print(json.dumps(response))
 
     def print_revision_console(self, revision_ids, parameters):
