@@ -9,11 +9,7 @@ import requests
 import json
 import sys
 import six
-import six.moves.cPickle as pickle
-try:
-    from urllib.parse import quote
-except ImportError:
-    from urllib import quote
+from six.moves import cPickle as pickle, urllib
 
 
 def print_fail(message=None, format_="json", is_api=True):
@@ -80,7 +76,7 @@ def create_wp_session():
     # get token
     r1 = session.post(url + params)
     token = r1.json()["query"]["tokens"]["logintoken"]
-    token = quote(token)
+    token = urllib.parse.quote(token)
     # log in
     params2 = '?action=login&lgname={}&lgpassword={}&lgtoken={}&format=json'.format(user, passw, token)
     r2 = session.post(url + params2)
