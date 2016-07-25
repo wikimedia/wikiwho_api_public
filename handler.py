@@ -3,14 +3,15 @@ from __future__ import absolute_import
 # from builtins import open
 import io
 import logging
-import requests
 from datetime import datetime, timedelta
 import six
-from six.moves import cPickle as pickle, urllib
+from six.moves import cPickle as pickle
 import os
 
 from wikiwho_simple import Wikiwho
-from utils import print_fail, pickle_, get_latest_revision_id
+from utils import print_fail, pickle_, get_latest_revision_id, create_wp_session
+
+session = create_wp_session()
 
 
 class WPHandler(object):
@@ -65,25 +66,11 @@ class WPHandler(object):
 
         if self.revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
             # if given rev_id is bigger than last one in pickle
-            url = 'https://en.wikipedia.org/w/api.php'
-            params = '?action=query&meta=tokens&type=login&format=json'
+            logging.debug("STARTING NOW")
             headers = {'User-Agent': 'Wikiwho API',
                        'From': 'philipp.singer@gesis.org and fabian.floeck@gesis.org'}
-            # bot credentials
-            user = 'Fabian%20Fl%C3%B6ck@wikiwho'
-            passw = 'o2l009t25ddtlefdt6cboctj8hk8nbfs'
-            # Login request and create session
-            session = requests.session()
-            # TODO how to stay logged in for next queries and only login if logged out?
-            r1 = session.post(url + params)
-            token = r1.json()["query"]["tokens"]["logintoken"]
-            token = urllib.parse.quote(token)
-
-            params2 = '?action=login&lgname={}&lgpassword={}&lgtoken={}&format=json'.format(user, passw, token)
-            r2 = session.post(url + params2)
-
-            logging.debug("STARTING NOW")
-
+            # Login request
+            url = 'https://en.wikipedia.org/w/api.php'
             # revisions: Returns revisions for a given page
             params = {'titles': self.article_name, 'action': 'query', 'prop': 'revisions',
                       'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
