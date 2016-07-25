@@ -9,6 +9,7 @@ from os.path import isfile, join, exists, basename
 import csv
 import concurrent.futures
 import logging
+import re
 
 from handler import WPHandler
 
@@ -43,17 +44,13 @@ def main():
     max_workers = args.thread or 5
     start = args.start
     end = args.end
+
+    file_list = [join(path, f) for f in listdir(path) if isfile(join(path, f)) and re.search(r'-(\d*).', f)]
+    ordered_file_list = sorted(file_list, key=lambda x: (int(re.search(r'-(\d*).', x).group(1)), x))
     article_list_files = OrderedDict()
-    file_list = listdir(path)
-    file_list.sort()
-    for f in file_list:
-        if isfile(join(path, f)):
-            pos1 = f.find("-")
-            pos2 = f.find(".")
-            if pos1 > -1 and pos2 > -1:
-                i = int(f[pos1+1:pos2])
-                article_list_files[join(path, f)] = i
-    # article_list_files = [join(path, f) for f in listdir(path) if isfile(join(path, f))]
+    for f in ordered_file_list:
+        article_list_files[join(path, f)] = int(re.search(r'-(\d*).', f).group(1))
+
     start = 0 if not start and end else start
     end = len(article_list_files) - 1 if not end and start else end
 
