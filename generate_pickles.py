@@ -18,6 +18,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='Script to generate pickle files of articles in given path.')
     parser.add_argument('-p', '--path', help='Path where list of articles are saved', required=True)
     parser.add_argument('-f', '--pickle_folder', help='Folder where pickle files will be stored', required=True)
+    parser.add_argument('-f2', '--pickle_folder_2', help='Second folder where pickle files are stored', required=False)
     parser.add_argument('-t', '--thread', type=int, help='Number of threads per core', required=False)
     parser.add_argument('-s', '--start', type=int, help='From range', required=False)
     parser.add_argument('-e', '--end', type=int, help='To range', required=False)
@@ -27,9 +28,13 @@ def get_args():
     return args
 
 
-def generate_pickle(article_name, pickle_folder):
-    article_name = article_name.replace(" ", "_").replace("/", "0x2f")
-    if not exists('{}/{}.p'.format(pickle_folder, article_name)):
+def generate_pickle(article_name, pickle_folder, pickle_folder_2=''):
+    pickle_article_name = article_name.replace(" ", "_").replace("/", "0x2f")
+    pickle_path = '{}/{}.p'.format(pickle_folder, pickle_article_name)
+    pickle_path_2 = '{}/{}.p'.format(pickle_folder_2, pickle_article_name) if pickle_folder_2 else ''
+    already = exists(pickle_path)
+    already = exists(pickle_path_2) if not already and pickle_folder_2 else already
+    if not already:
         with WPHandler(article_name, pickle_folder) as wp:
             wp.handle([], 'json', is_api=False)
     # else:
@@ -41,7 +46,8 @@ def main():
     args = get_args()
     path = args.path
     pickle_folder = args.pickle_folder
-    max_workers = args.thread or 5
+    pickle_folder_2 = args.pickle_folder_2
+    max_workers = args.thread or None
     start = args.start
     end = args.end
 
@@ -68,12 +74,13 @@ def main():
                 # with concurrent.futures.ProcessPoolExecutor() as executor:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                     # Start the load operations and mark each future with its article
-                    future_to_article = {executor.submit(generate_pickle, article[0],  pickle_folder): article[0]
+                    future_to_article = {executor.submit(generate_pickle, article[0],  pickle_folder, pickle_folder_2):
+                                         article[0]
                                          for article in input_articles}
                     for future in concurrent.futures.as_completed(future_to_article):
                         article_name = future_to_article[future]
                         try:
-                            data = future.result()
+                            data = future.result(timeout=None)
                         except Exception as exc:
                             logging.exception(article_name)
                         # else:
