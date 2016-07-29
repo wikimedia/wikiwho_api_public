@@ -5,4 +5,5 @@ pytest
 #coverage
 openpyxl
 lxml
+futures
 # TODO add wikiwho_simple as a package
