@@ -21,6 +21,8 @@ def get_args():
     parser.add_argument('-f', '--pickle_folder', help='Folder where pickle files will be stored', required=True)
     parser.add_argument('-f2', '--pickle_folder_2', help='Second folder where pickle files are stored', required=False)
     parser.add_argument('-t', '--thread', type=int, help='Number of threads per core', required=False)
+    parser.add_argument('-ppe', '--processor_pool_executor', action='store_true',
+                        help='Use ProcessPoolExecutor, default is ThreadPoolExecutor', default=False, required=False)
     parser.add_argument('-s', '--start', type=int, help='From range', required=False)
     parser.add_argument('-e', '--end', type=int, help='To range', required=False)
 
@@ -49,6 +51,7 @@ def main():
     pickle_folder = args.pickle_folder
     pickle_folder_2 = args.pickle_folder_2
     max_workers = args.thread or None
+    is_ppe = args.processor_pool_executor
     start = args.start
     end = args.end
 
@@ -72,20 +75,35 @@ def main():
                 input_articles = csv.reader(csv_file, delimiter=";")
 
                 # We can use a with statement to ensure threads are cleaned up promptly
-                # with concurrent.futures.ProcessPoolExecutor() as executor:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    # Start the load operations and mark each future with its article
-                    future_to_article = {executor.submit(generate_pickle, article[0],  pickle_folder, pickle_folder_2):
-                                         article[0]
-                                         for article in input_articles}
-                    for future in concurrent.futures.as_completed(future_to_article):
-                        article_name = future_to_article[future]
-                        try:
-                            data = future.result(timeout=None)
-                        except Exception as exc:
-                            logging.exception(article_name)
-                        # else:
-                        #     print('Success: {}'.format(article_name))
+                if is_ppe:
+                    # use ProcessPoolExecutor
+                    with concurrent.futures.ProcessPoolExecutor() as executor:
+                        # Start the load operations and mark each future with its article
+                        future_to_article = {executor.submit(generate_pickle, article[0],  pickle_folder, pickle_folder_2):
+                                             article[0]
+                                             for article in input_articles}
+                        for future in concurrent.futures.as_completed(future_to_article):
+                            article_name = future_to_article[future]
+                            try:
+                                data = future.result(timeout=None)
+                            except Exception as exc:
+                                logging.exception(article_name)
+                            # else:
+                            #     print('Success: {}'.format(article_name))
+                else:
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                        # Start the load operations and mark each future with its article
+                        future_to_article = {executor.submit(generate_pickle, article[0],  pickle_folder, pickle_folder_2):
+                                             article[0]
+                                             for article in input_articles}
+                        for future in concurrent.futures.as_completed(future_to_article):
+                            article_name = future_to_article[future]
+                            try:
+                                data = future.result(timeout=None)
+                            except Exception as exc:
+                                logging.exception(article_name)
+                            # else:
+                            #     print('Success: {}'.format(article_name))
             print('Done: {} at {}'.format(article_list_file, strftime("%H:%M:%S %d-%m-%Y")))
 
 if __name__ == '__main__':
