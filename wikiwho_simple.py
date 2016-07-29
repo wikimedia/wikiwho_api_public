@@ -278,8 +278,8 @@ class Wikiwho:
                 if hash_curr in self.revision_curr.paragraphs:
                     self.revision_curr.paragraphs[hash_curr].append(paragraph_curr)
                 else:
-                    self.revision_curr.paragraphs.update({hash_curr: [paragraph_curr]})
-                self.revision_curr.ordered_paragraphs.append(hash_curr)
+                    self.revision_curr.paragraphs.update({paragraph_curr.hash_value: [paragraph_curr]})
+                self.revision_curr.ordered_paragraphs.append(paragraph_curr.hash_value)
                 unmatched_paragraphs_curr.append(paragraph_curr)
 
         # Identify unmatched paragraphs in previous revision for further analysis.
@@ -394,8 +394,8 @@ class Wikiwho:
                     if hash_curr in paragraph_curr.sentences:
                         paragraph_curr.sentences[hash_curr].append(sentence_curr)
                     else:
-                        paragraph_curr.sentences.update({hash_curr: [sentence_curr]})
-                    paragraph_curr.ordered_sentences.append(hash_curr)
+                        paragraph_curr.sentences.update({sentence_curr.hash_value: [sentence_curr]})
+                    paragraph_curr.ordered_sentences.append(sentence_curr.hash_value)
                     unmatched_sentences_curr.append(sentence_curr)
 
         # Identify the unmatched sentences in the previous paragraph revision.
@@ -651,6 +651,7 @@ def main():
             if len(revision_ids) == 2 and revision_ids[1] <= revision_ids[0]:
                 revision_ids.reverse()
         from handler import WPHandler
+        # TODO get output folder from cmd line
         pickle_folder = '' or 'local/test_pickles'
         with WPHandler(article_name, pickle_folder) as wp:
             wp.handle(revision_ids, 'json')
