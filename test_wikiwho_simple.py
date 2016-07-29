@@ -114,11 +114,11 @@ class TestWikiwho:
             wp.handle(revision_ids, 'json')
         response = wp.wikiwho.print_revision(wp.revision_ids, {}, return_response=True)
         json_file_path = '{}/{}.json'.format(temp_folder, article_name)
-        test_json_file_path = 'test_jsons/{}.json'.format(article_name)
+        test_json_file_path = 'old_server_jsons/spliting_without_spaces/{}.json'.format(article_name)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         is_content_same = filecmp.cmp(json_file_path, test_json_file_path)
-        assert is_content_same
+        assert is_content_same, "{}: json doesn't match".format(article_name)
 
     @classmethod
     def teardown_class(cls):
