@@ -9,6 +9,7 @@ Created on Feb 20, 2013
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 from difflib import Differ
 import argparse
 import logging
@@ -111,6 +112,10 @@ class Wikiwho:
                 self.revision_curr.contributor_name = revision.get('user', '')
 
                 # Content within the revision.
+                # Software should only work with Unicode strings internally, converting to a particular encoding on
+                # output.
+                # https://docs.python.org/2/howto/unicode.html#tips-for-writing-unicode-aware-programs
+                # https://pythonhosted.org/kitchen/unicode-frustrations.html
                 self.text_curr = text.lower()  # .encode("utf-8")
 
                 # Perform comparison.
