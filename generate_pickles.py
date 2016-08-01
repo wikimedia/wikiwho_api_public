@@ -10,6 +10,7 @@ import csv
 import concurrent.futures
 import logging
 import re
+from time import strftime
 
 from handler import WPHandler
 
@@ -62,7 +63,7 @@ def main():
 
     for article_list_file in article_list_files:
         if not (start or end) or start <= article_list_files[article_list_file] <= end:
-            print('Start: {}'.format(article_list_file))
+            print('Start: {} at {}'.format(article_list_file, strftime("%H:%M:%S %d-%m-%Y")))
             logging.basicConfig(level=logging.ERROR,
                                 filename='{}/logs/{}.log'.format(path,
                                                                  basename(article_list_file).split('.')[0]),
@@ -85,7 +86,7 @@ def main():
                             logging.exception(article_name)
                         # else:
                         #     print('Success: {}'.format(article_name))
-            print('Done: {}'.format(article_list_file))
+            print('Done: {} at {}'.format(article_list_file, strftime("%H:%M:%S %d-%m-%Y")))
 
 if __name__ == '__main__':
     main()
