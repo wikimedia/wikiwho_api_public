@@ -19,8 +19,8 @@ import json
 import filecmp
 import io
 
-from handler import WPHandler
-from structures.Text import splitIntoWords
+from api.handler import WPHandler
+from .utils import splitIntoWords
 # TODO tests for structures: splitIntoWords ...
 
 
@@ -37,7 +37,8 @@ def pytest_generate_tests(metafunc):
     lines = [] if lines == 'all' else [int(l) for l in lines.split(',')]
     # file_or_dir = metafunc.config.option.file_or_dir  # TODO
     if "article_name" in metafunc.fixturenames:
-        wb = load_workbook(filename='test_wikiwho_simple.xlsx', data_only=True, read_only=True)
+        input_file = '{}/{}'.format(os.path.dirname(os.path.realpath(__file__)), 'test_wikiwho_simple.xlsx')
+        wb = load_workbook(filename=input_file, data_only=True, read_only=True)
         ws = wb[wb.sheetnames[0]]
         for i, row in enumerate(ws.iter_rows()):
             if i == 0 or lines and i+1 not in lines:
@@ -69,6 +70,7 @@ class TestWikiwho:
         """ setup any state specific to the execution of the given class (which
         usually contains tests).
         """
+        # sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
     @pytest.fixture(scope='session')
     def temp_folder(self, tmpdir_factory):
@@ -90,7 +92,7 @@ class TestWikiwho:
     def test_authorship(self, temp_folder, article_name, revision_ids, token, context, correct_rev_id):
         sub_text = splitIntoWords(context)
         with WPHandler(article_name, temp_folder) as wp:
-            wp.handle(revision_ids, 'json')
+            wp.handle(revision_ids, 'json', is_api=False)
         text, authors = wp.wikiwho.get_revision_text(revision_ids[0])
         n = len(sub_text)
         found = 0
@@ -111,12 +113,12 @@ class TestWikiwho:
 
     def test_json_output(self, temp_folder, article_name, revision_ids):
         with WPHandler(article_name, temp_folder) as wp:
-            wp.handle(revision_ids, 'json')
-        response = wp.wikiwho.print_revision(wp.revision_ids, {}, return_response=True)
+            wp.handle(revision_ids, 'json', is_api=False)
+        revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {})
         json_file_path = '{}/{}.json'.format(temp_folder, article_name)
-        test_json_file_path = 'old_server_jsons/spliting_without_spaces/{}.json'.format(article_name)
+        test_json_file_path = 'test_jsons/{}.json'.format(article_name)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+            f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         is_content_same = filecmp.cmp(json_file_path, test_json_file_path)
         assert is_content_same, "{}: json doesn't match".format(article_name)
 

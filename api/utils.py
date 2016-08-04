@@ -6,28 +6,10 @@ from lxml import etree
 import io
 import logging
 import requests
-import json
-import sys
 import six
 from six.moves import cPickle as pickle, urllib
 
-
-def print_fail(message=None, format_="json", is_api=True):
-    if is_api:
-        # import os
-        response = {"success": "false",
-                    "revisions": None,
-                    "article": None}
-        # dict_list = None
-
-        if format_ == 'json':
-            # response["tokens"] = dict_list
-            response["message"] = message
-            print(json.dumps(response))
-        sys.exit()
-        # os._exit(1)
-    else:
-        raise Exception(message)
+from django.conf import settings
 
 
 def pickle_(obj, pickle_path):
@@ -47,7 +29,10 @@ def get_latest_revision_id(article_name):
     wp_api_url = 'https://{}/w/api.php'.format(server)
     params = {'action': "query", 'prop': 'revisions', 'titles': article_name, 'format': 'json', 'rvlimit': '1'}
     # params = {'action': "query", 'titles': article_name, 'format': 'json'}
-    headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
+    # headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
+    headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
+               'From': settings.WP_HEADERS_FROM,
+               "Accept": "*/*", "Host": server}
     # make get request
     resp_ = requests.get(wp_api_url, params, headers=headers)
     # convert response into dict
@@ -61,14 +46,11 @@ def get_latest_revision_id(article_name):
 
 
 def create_wp_session():
-    # bot credentials
-    user = 'Fabian%20Fl%C3%B6ck@wikiwho'
-    passw = 'o2l009t25ddtlefdt6cboctj8hk8nbfs'
     # create session
     session = requests.session()
-    session.auth = (user, passw)
-    headers = {'User-Agent': 'Wikiwho API',
-               'From': 'philipp.singer@gesis.org and fabian.floeck@gesis.org'}
+    session.auth = (settings.WP_USER, settings.WP_PASSWORD)
+    headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
+               'From': settings.WP_HEADERS_FROM}
     session.headers.update(headers)
     # Login request
     url = 'https://en.wikipedia.org/w/api.php'
@@ -78,7 +60,9 @@ def create_wp_session():
     token = r1.json()["query"]["tokens"]["logintoken"]
     token = urllib.parse.quote(token)
     # log in
-    params2 = '?action=login&lgname={}&lgpassword={}&lgtoken={}&format=json'.format(user, passw, token)
+    params2 = '?action=login&lgname={}&lgpassword={}&lgtoken={}&format=json'.format(settings.WP_USER,
+                                                                                    settings.WP_PASSWORD,
+                                                                                    token)
     r2 = session.post(url + params2)
     return session
 
@@ -129,7 +113,7 @@ def get_article_xml(article_name):
                 page = pages.find('page')
                 if page is not None:
                     if page.get('_idx') == '-1':
-                        print("The article you are trying to request does not exist!")
+                        print("The article ({}) you are trying to request does not exist!".format(article_name))
                     else:
                         if mediawiki_page.find('title') is None:
                             title = etree.SubElement(mediawiki_page, "title")

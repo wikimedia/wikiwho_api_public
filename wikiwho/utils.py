@@ -7,7 +7,6 @@ Created on Feb 20, 2013
 from __future__ import division
 from __future__ import unicode_literals
 import hashlib
-# TODO rename as utils
 
 
 def calculateHash(text):

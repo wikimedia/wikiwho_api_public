@@ -13,13 +13,9 @@ from __future__ import unicode_literals
 from difflib import Differ
 import argparse
 import logging
-import json
 
-from structures.Revision import Revision
-from structures.Paragraph import Paragraph
-from structures.Sentence import Sentence
-from structures.Word import Word
-from structures import Text
+from wikiwho.structures import Word, Sentence, Paragraph, Revision
+from wikiwho.utils import calculateHash, splitIntoParagraphs, splitIntoSentences, splitIntoWords, computeAvgWordFreq
 
 
 # spam detection variables.
@@ -71,7 +67,7 @@ class Wikiwho:
 
             text = revision['*']
             if revision['sha1'] == "":
-                revision['sha1'] = Text.calculateHash(text)  # .encode("utf-8"))
+                revision['sha1'] = calculateHash(text)  # .encode("utf-8"))
             rev_id = int(revision['revid'])
             if rev_id in self.spam:
                 vandalism = True
@@ -212,13 +208,13 @@ class Wikiwho:
         matched_paragraphs_prev = []
 
         # Split the text of the current into paragraphs.
-        paragraphs = Text.splitIntoParagraphs(self.text_curr)
+        paragraphs = splitIntoParagraphs(self.text_curr)
 
         # Iterate over the paragraphs of the current version.
         for paragraph in paragraphs:
             # Build Paragraph structure and calculate hash value.
             paragraph = paragraph.strip()
-            hash_curr = Text.calculateHash(paragraph)
+            hash_curr = calculateHash(paragraph)
             matched_curr = False
 
             # If the paragraph is in the previous revision,
@@ -305,13 +301,13 @@ class Wikiwho:
         # Iterate over the unmatched paragraphs of the current revision.
         for paragraph_curr in unmatched_paragraphs_curr:
             # Split the current paragraph into sentences.
-            sentences = Text.splitIntoSentences(paragraph_curr.value)
+            sentences = splitIntoSentences(paragraph_curr.value)
             # Iterate over the sentences of the current paragraph
             for sentence in sentences:
                 # Create the Sentence structure.
                 sentence = sentence.strip()
-                sentence = ' '.join(Text.splitIntoWords(sentence))
-                hash_curr = Text.calculateHash(sentence)
+                sentence = ' '.join(splitIntoWords(sentence))
+                hash_curr = calculateHash(sentence)
                 matched_curr = False
                 total_sentences += 1
 
@@ -428,7 +424,7 @@ class Wikiwho:
 
         text_curr = []
         for sentence_curr in unmatched_sentences_curr:
-            words = Text.splitIntoWords(sentence_curr.value)
+            words = splitIntoWords(sentence_curr.value)
             text_curr.extend(words)
             sentence_curr.splitted.extend(words)
 
@@ -438,7 +434,7 @@ class Wikiwho:
 
         # spam detection.
         if possible_vandalism:
-            token_density = Text.computeAvgWordFreq(text_curr, self.revision_curr.wikipedia_id)
+            token_density = computeAvgWordFreq(text_curr, self.revision_curr.wikipedia_id)
             if token_density > WORD_DENSITY:
                 return matched_words_prev, possible_vandalism
             else:
@@ -521,9 +517,9 @@ class Wikiwho:
 
         return matched_words_prev, possible_vandalism
 
-    def print_revision(self, revision_ids, parameters, format_="json", return_response=False):
+    def get_revision_json(self, revision_ids, parameters, format_="json"):
         response = dict()
-        response["success"] = "true"
+        # response["success"] = "true"
         response["revisions"] = {}
         response["article"] = self.article
 
@@ -549,7 +545,8 @@ class Wikiwho:
                         if format_ == 'json':
                             dict_json = dict()
                             dict_json['str'] = word.value  # .encode('utf-8')
-                            dict_json['revid'] = str(word.revision)
+                            if 'revid' in parameters:
+                                dict_json['revid'] = str(word.revision)
                             if 'author' in parameters:
                                 dict_json['author'] = word.author_name  # .encode("utf-8"))
                             if 'tokenid' in parameters:
@@ -557,14 +554,12 @@ class Wikiwho:
                             dict_list.append(dict_json)
             if format_ == 'json':
                 response["revisions"][rev_id]["tokens"] = dict_list
-        response["message"] = None
+        # response["message"] = None
         # with open('local/test.json', 'w') as f:
         #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True))
-        if return_response:
-            return response
-        print(json.dumps(response))
+        return response
 
-    def print_revision_console(self, revision_ids, parameters):
+    def print_revision(self, revision_ids, parameters):
         for rev_id in self.revisions:
             if len(revision_ids) == 2:
                 if rev_id < revision_ids[0] or rev_id > revision_ids[1]:
@@ -655,13 +650,12 @@ def main():
             revision_ids = [int(x) for x in str(revision_ids).split('|')]
             if len(revision_ids) == 2 and revision_ids[1] <= revision_ids[0]:
                 revision_ids.reverse()
-        from handler import WPHandler
+        from api.handler import WPHandler
         # TODO get output folder from cmd line
         pickle_folder = '' or 'local/test_pickles'
         with WPHandler(article_name, pickle_folder) as wp:
             wp.handle(revision_ids, 'json')
-            wp.wikiwho.print_revision_console(wp.revision_ids, {'author'})
-            # wp.wikiwho.print_revision(wp.revision_ids, {'author'})
+            wp.wikiwho.print_revision(wp.revision_ids, {'author'})
         # time2 = time()
         # print("Execution time: {}".format(time2-time1))
     elif input_file:

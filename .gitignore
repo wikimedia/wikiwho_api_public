@@ -1,8 +1,16 @@
 .idea/
-.cache/
+.cache
 *.pyc
+*.sqlite3
 
-local/
-tmp_test
-tmp_test_3
-old_server_jsons
+wikiwho_api/settings.py
+
+wikiwho/local/
+wikiwho/tmp_test/
+wikiwho/tmp_test_3/
+master_old_test/
+test_jsons
+assets/images/fav/
+tmp_pickles/
+static/
+wikiwho_api_api.py
