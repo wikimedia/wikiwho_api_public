@@ -21,7 +21,7 @@ query_params = [
 custom_data = {
     # 'info': {'title': 'WikiWho API', 'version': ''},
     'paths':
-        {'/api/authorship/{article_name}/':
+        {'/authorship/{article_name}/':
              {'get': {'description': '# Some description \n **with** *markdown* \n\n '
                                      '[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)',
                       'parameters': [{'description': 'Add some description',
@@ -34,7 +34,7 @@ custom_data = {
                       'tags': ['authorship']
                       }
               },
-         '/api/authorship/{article_name}/{revision_id}/':
+         '/authorship/{article_name}/{revision_id}/':
              {'get': {'description': '',
                       'parameters': [{'description': '',
                                       'in': 'path',
@@ -51,7 +51,7 @@ custom_data = {
                       'tags': ['authorship']
                       }
               },
-         '/api/authorship/{article_name}/{start_revision_id}/{end_revision_id}/':
+         '/authorship/{article_name}/{start_revision_id}/{end_revision_id}/':
              {'get': {'description': '',
                       'parameters': [{'description': '',
                                       'in': 'path',
@@ -88,16 +88,17 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
         super(MyOpenAPIRenderer, self).add_customizations(data)
         # print(type(data), data)
         data['paths'].update(custom_data['paths'])
+        data['info']['version'] = '1.0.0-beta'
+        data['basePath'] = '/api'
         # print(type(data), data)
 
 
 @api_view()
 @renderer_classes([MyOpenAPIRenderer, SwaggerUIRenderer])
 def schema_view(request):
-    generator = SchemaGenerator(title='WikiWho API')
+    generator = SchemaGenerator(title='WikiWho API', url='/api', urlconf='api.urls')
     schema = generator.get_schema(request=request)
     # print(type(schema), schema)
-    schema = schema.delete('api')
     return Response(schema)
 
 
