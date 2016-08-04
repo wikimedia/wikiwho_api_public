@@ -1,4 +1,5 @@
 from django.conf.urls import url
+
 from .views import WikiwhoApiView, schema_view
 
 urlpatterns = [
@@ -12,7 +13,3 @@ urlpatterns = [
     # url(r'^authorship/(?P<revision_id>[0-9]+)/$',
     #     WikiwhoApiView.as_view(actions={'get': 'get_article_by_revision'}), name='rev_id'),
 ]
-
-# http://127.0.0.1:8001/api/2.json
-# http://127.0.0.1:8001/api/2.api
-# urlpatterns = format_suffix_patterns(urlpatterns)
