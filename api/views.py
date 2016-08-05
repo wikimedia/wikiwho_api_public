@@ -112,7 +112,7 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
 @api_view()
 @renderer_classes([MyOpenAPIRenderer, SwaggerUIRenderer])
 def schema_view(request, version):
-    generator = SchemaGenerator(title='WikiWho API', url='/api/{}'.format(request.version), urlconf='api.urls')
+    generator = SchemaGenerator(title='WikiWho API', urlconf='api.urls')
     schema = generator.get_schema(request=request)
     # print(type(schema), schema)
     return Response(schema)
