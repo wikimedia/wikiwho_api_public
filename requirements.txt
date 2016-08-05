@@ -19,3 +19,4 @@ markdown
 django-rest-swagger
 #drfdocs
 python-memcached
+drf-extensions

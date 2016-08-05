@@ -164,6 +164,10 @@ SWAGGER_SETTINGS = {
     },
 }
 
+REST_FRAMEWORK_EXTENSIONS = {
+    'DEFAULT_CACHE_ERRORS': False
+}
+
 # where pickles are saved
 PICKLE_FOLDER = 'pickle_api'
 PICKLE_FOLDER_2 = '../disk2/pickle_api_2'

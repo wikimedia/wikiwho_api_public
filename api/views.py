@@ -1,3 +1,4 @@
+from django.utils.translation import get_language
 from rest_framework.decorators import detail_route, api_view, renderer_classes
 from rest_framework.renderers import StaticHTMLRenderer, JSONRenderer
 from rest_framework import permissions, status, authentication, throttling
@@ -5,10 +6,12 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework.schemas import SchemaGenerator, as_query_fields
 from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
+from rest_framework_extensions.cache.decorators import cache_response
 # from rest_framework.compat import coreapi, urlparse
 # import time, json
 # from django.core.signals import request_started, request_finished
 # from django.http import HttpResponse
+import hashlib, json
 
 from .handler import WPHandler, WPHandlerException
 
@@ -173,13 +176,25 @@ class WikiwhoApiView(ViewSet):
 
     @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_article_revision(self, request, version, article_name, revision_id):
+        # TODO cache this if only rev id is the last rev id
         parameters = self.get_parameters()
         return self.get_response(article_name, parameters, [int(revision_id)])
 
+    @cache_response(key_func='calculate_cache_key')
     @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_article_by_name(self, request, version, article_name):
+        # TODO when models are created, delete cache.delete(this_key) if last_rev_id is changed or obj is deleted!
         parameters = self.get_parameters()
         return self.get_response(article_name, parameters)
+
+    def calculate_cache_key(self, view_instance, view_method, request, args, kwargs):
+        # FIXME for different query parameters
+        l = list(kwargs.values())
+        l.remove(request.version)
+        l.append(request.accepted_renderer.format)
+        l.append(get_language())
+        key = hashlib.sha256(json.dumps(l, sort_keys=True).encode('utf-8')).hexdigest()
+        return key
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     # def get_article_by_revision(self, request, revision_id):
