@@ -162,7 +162,7 @@ class WikiwhoApiView(ViewSet):
 
     # TODO http://www.django-rest-framework.org/api-guide/renderers/
     @detail_route(renderer_classes=(StaticHTMLRenderer,))
-    def get_slice(self, request, article_name, start_revision_id, end_revision_id):
+    def get_slice(self, request, version, article_name, start_revision_id, end_revision_id):
         start_revision_id = int(start_revision_id)
         end_revision_id = int(end_revision_id)
         if start_revision_id >= end_revision_id:
@@ -172,12 +172,12 @@ class WikiwhoApiView(ViewSet):
         return self.get_response(article_name, parameters, [start_revision_id, end_revision_id])
 
     @detail_route(renderer_classes=(StaticHTMLRenderer,))
-    def get_article_revision(self, request, article_name, revision_id):
+    def get_article_revision(self, request, version, article_name, revision_id):
         parameters = self.get_parameters()
         return self.get_response(article_name, parameters, [int(revision_id)])
 
     @detail_route(renderer_classes=(StaticHTMLRenderer,))
-    def get_article_by_name(self, request, article_name):
+    def get_article_by_name(self, request, version, article_name):
         parameters = self.get_parameters()
         return self.get_response(article_name, parameters)
 
