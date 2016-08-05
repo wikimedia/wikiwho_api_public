@@ -18,3 +18,4 @@ markdown
 #django-guardian
 django-rest-swagger
 #drfdocs
+python-memcached

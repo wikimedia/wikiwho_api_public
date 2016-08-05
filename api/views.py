@@ -115,9 +115,17 @@ def schema_view(request, version):
     return Response(schema)
 
 
+class BurstRateThrottle(throttling.UserRateThrottle):
+    """
+    Limit authenticated users when they burst the api. Check DEFAULT_THROTTLE_RATES settings: 100/min
+    """
+    scope = 'burst'
+
+
 class WikiwhoApiView(ViewSet):
-    # authentication_classes = (authentication.TokenAuthentication,)
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    authentication_classes = (authentication.SessionAuthentication, authentication.BasicAuthentication)
+    throttle_classes = (throttling.UserRateThrottle, throttling.AnonRateThrottle, BurstRateThrottle)
     # serializer_class = WikiWhoSerializer
     # filter_fields = ('query_option_1', 'query_option_2',)
     query_fields = ('revid', 'author', 'tokenid', )

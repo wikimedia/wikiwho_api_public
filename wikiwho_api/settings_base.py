@@ -117,18 +117,37 @@ STATICFILES_DIRS = (
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media').replace('\\', '/')
 # MEDIA_URL = '/media/'
 
-# TODO
-# REST_FRAMEWORK = {
-#     # Use Django's standard `django.contrib.auth` permissions,
-#     # or allow read-only access for unauthenticated users.
-#     'DEFAULT_PERMISSION_CLASSES': [
-#         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-#     ]
-# }
+# CACHE
+def make_key(key, key_prefix, version):
+    return ':'.join([key_prefix, str(version), key])
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': 'localhost:11211',
+    #     'LOCATION': 'unix:/tmp/memcached.sock',
+    # One excellent feature of Memcached is its ability to share a cache over multiple servers. This means you can run
+    # Memcached daemons on multiple machines, and the program will treat the group of machines as a single cache,
+    # without the need to duplicate cache values on each machine.
+    #     'LOCATION': [
+    #         '172.19.26.240:11211',
+    #         '172.19.26.242:11211',
+    #     ]
+        'TIMEOUT': None,  # default is 300 in seconds
+        'KEY_PREFIX': '',
+        'VERSION': '',
+        'KEY_FUNCTION': 'wikiwho_api.settings_base.make_key',
+    }
+}
 
 
 # REST_FRAMEWORK and Swagger UI
 REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '2000/day',
+        'burst': '100/minute'
+    },
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
 }
 
