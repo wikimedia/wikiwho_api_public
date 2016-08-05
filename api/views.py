@@ -1,6 +1,6 @@
 from rest_framework.decorators import detail_route, api_view, renderer_classes
-from rest_framework.renderers import StaticHTMLRenderer, JSONRenderer, BrowsableAPIRenderer
-from rest_framework import permissions, status
+from rest_framework.renderers import StaticHTMLRenderer, JSONRenderer
+from rest_framework import permissions, status, authentication, throttling
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework.schemas import SchemaGenerator, as_query_fields
@@ -93,7 +93,8 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
         # print(type(data), data)
         # TODO update
         data['paths'].update(custom_data['paths'])
-        data['info']['version'] = '1.0.0-beta'
+        version = '1.0.0-beta'
+        data['info']['version'] = version
         data['info']['description'] = 'A short description of the application. ' \
                                       'GFM syntax can be used for rich text representation. \n\n' \
                                       'Specification: http://swagger.io/specification \n\n' \
@@ -101,14 +102,14 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
         data['info']['contact'] = {'name': 'GESIS - Leibniz Institute for the Social Sciences',
                                    # 'email': 'kenan.erdogan@gesis.org',
                                    'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/computational-social-science/'}
-        data['basePath'] = '/api'
+        data['basePath'] = '/api/v{}'.format(version)
         # print(type(data), data)
 
 
 @api_view()
 @renderer_classes([MyOpenAPIRenderer, SwaggerUIRenderer])
-def schema_view(request):
-    generator = SchemaGenerator(title='WikiWho API', url='/api', urlconf='api.urls')
+def schema_view(request, version):
+    generator = SchemaGenerator(title='WikiWho API', url='/api/{}'.format(request.version), urlconf='api.urls')
     schema = generator.get_schema(request=request)
     # print(type(schema), schema)
     return Response(schema)

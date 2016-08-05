@@ -20,7 +20,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE_CLASSES = [
-    # TODO check which ones do we need
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -126,10 +125,11 @@ STATICFILES_DIRS = (
 #     ]
 # }
 
-# REST_FRAMEWORK_DOCS = {
-#     'HIDE_DOCS': False
-# }
 
+# REST_FRAMEWORK and Swagger UI
+REST_FRAMEWORK = {
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+}
 
 SWAGGER_SETTINGS = {
     'LOGIN_URL': 'rest_framework:login',
