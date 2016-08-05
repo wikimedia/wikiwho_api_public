@@ -18,6 +18,7 @@ query_params = [
     {'description': 'Add some description', 'in': 'query', 'name': 'author', 'required': True, 'type': 'boolean'},
     {'description': 'Add some description', 'in': 'query', 'name': 'tokenid', 'required': True, 'type': 'boolean'}
 ]
+
 custom_data = {
     # 'info': {'title': 'WikiWho API', 'version': ''},
     'paths':
@@ -31,7 +32,8 @@ custom_data = {
                                       'type': 'string'},
                                      ] + query_params,
                       'responses': {'200': {'description': ''}},
-                      'tags': ['authorship']
+                      'tags': ['authorship'],
+                      'summary': 'Get authorship of last revision of article'
                       }
               },
          '/authorship/{article_name}/{revision_id}/':
@@ -48,7 +50,8 @@ custom_data = {
                                       'type': 'string'},
                                      ] + query_params,
                       'responses': {'200': {'description': ''}},
-                      'tags': ['authorship']
+                      'tags': ['authorship'],
+                      'summary': 'Get authorship of given revision of article'
                       }
               },
          '/authorship/{article_name}/{start_revision_id}/{end_revision_id}/':
@@ -70,7 +73,8 @@ custom_data = {
                                       'type': 'string'},
                                      ] + query_params,
                       'responses': {'200': {'description': ''}},
-                      'tags': ['authorship']
+                      'tags': ['authorship'],
+                      'summary': 'Get authorship of given revisions of article'
                       }
               },
          },
@@ -87,8 +91,16 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
         """
         super(MyOpenAPIRenderer, self).add_customizations(data)
         # print(type(data), data)
+        # TODO update
         data['paths'].update(custom_data['paths'])
         data['info']['version'] = '1.0.0-beta'
+        data['info']['description'] = 'A short description of the application. ' \
+                                      'GFM syntax can be used for rich text representation. \n\n' \
+                                      'Specification: http://swagger.io/specification \n\n' \
+                                      'Example api: http://petstore.swagger.io/'
+        data['info']['contact'] = {'name': 'GESIS - Leibniz Institute for the Social Sciences',
+                                   # 'email': 'kenan.erdogan@gesis.org',
+                                   'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/computational-social-science/'}
         data['basePath'] = '/api'
         # print(type(data), data)
 
