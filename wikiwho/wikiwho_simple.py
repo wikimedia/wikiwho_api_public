@@ -520,7 +520,7 @@ class Wikiwho:
     def get_revision_json(self, revision_ids, parameters, format_="json"):
         response = dict()
         # response["success"] = "true"
-        response["revisions"] = {}
+        revisions = []
         response["article"] = self.article
 
         for rev_id in self.revisions:
@@ -532,9 +532,9 @@ class Wikiwho:
                     continue
             revision = self.revisions[rev_id]
 
-            response["revisions"][rev_id] = {"author": revision.contributor_name,  # .encode("utf-8"),
-                                             "time": revision.time,
-                                             "tokens": []}
+            revisions.append({rev_id: {"author": revision.contributor_name,  # .encode("utf-8"),
+                                       "time": revision.time,
+                                       "tokens": []}})
             dict_list = []
             for hash_paragraph in revision.ordered_paragraphs:
                 # text = ''
@@ -553,10 +553,11 @@ class Wikiwho:
                                 dict_json['tokenid'] = str(word.internal_id)
                             dict_list.append(dict_json)
             if format_ == 'json':
-                response["revisions"][rev_id]["tokens"] = dict_list
+                revisions[-1][rev_id]["tokens"] = dict_list
         # response["message"] = None
         # with open('local/test.json', 'w') as f:
         #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True))
+        response["revisions"] = sorted(revisions, key=lambda x: sorted(x.keys())) if len(revision_ids) > 1 else revisions
         return response
 
     def print_revision(self, revision_ids, parameters):
