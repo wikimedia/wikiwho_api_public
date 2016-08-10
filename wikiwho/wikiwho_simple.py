@@ -36,7 +36,7 @@ class Wikiwho:
         self.sentences_ht = {}
 
         self.spam = []
-        self.revisions = {}
+        self.revisions = {}  # {rev_id : rev_obj, ...}
         self.rvcontinue = '0'
         self.article = article
         # Revisions to compare.
@@ -445,7 +445,7 @@ class Wikiwho:
             for sentence_curr in unmatched_sentences_curr:
                 for word in sentence_curr.splitted:
                     word_curr = Word()
-                    word_curr.author_id = self.revision_curr.contributor_name
+                    word_curr.author_id = self.revision_curr.contributor_id
                     word_curr.author_name = self.revision_curr.contributor_name
                     word_curr.revision = self.revision_curr.wikipedia_id
                     word_curr.value = word
@@ -492,7 +492,7 @@ class Wikiwho:
                             curr_matched = True
                             word_curr = Word()
                             word_curr.value = word
-                            word_curr.author_id = self.revision_curr.contributor_name
+                            word_curr.author_id = self.revision_curr.contributor_id
                             word_curr.author_name = self.revision_curr.contributor_name
                             word_curr.revision = self.revision_curr.wikipedia_id
                             word_curr.internal_id = self.token_id
@@ -507,7 +507,7 @@ class Wikiwho:
                     # if diff returns a word as '? ...'
                     word_curr = Word()
                     word_curr.value = word
-                    word_curr.author_id = self.revision_curr.contributor_name
+                    word_curr.author_id = self.revision_curr.contributor_id
                     word_curr.author_name = self.revision_curr.contributor_name
                     word_curr.revision = self.revision_curr.wikipedia_id
                     # word_curr.freq.append(self.revision_curr.wikipedia_id)
@@ -548,7 +548,7 @@ class Wikiwho:
                             if 'revid' in parameters:
                                 dict_json['revid'] = str(word.revision)
                             if 'author' in parameters:
-                                dict_json['author'] = word.author_name  # .encode("utf-8"))
+                                dict_json['author'] = str(word.author_id)  # .encode("utf-8"))
                             if 'tokenid' in parameters:
                                 dict_json['tokenid'] = str(word.internal_id)
                             dict_list.append(dict_json)
