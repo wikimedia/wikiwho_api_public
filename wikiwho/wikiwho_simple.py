@@ -523,14 +523,13 @@ class Wikiwho:
         revisions = []
         response["article"] = self.article
 
-        for rev_id in self.revisions:
+        for rev_id, revision in self.revisions.items():
             if len(revision_ids) == 2:
                 if rev_id < revision_ids[0] or rev_id > revision_ids[1]:
                     continue
             else:
                 if rev_id != revision_ids[0]:
                     continue
-            revision = self.revisions[rev_id]
 
             revisions.append({rev_id: {"author": revision.contributor_name,  # .encode("utf-8"),
                                        "time": revision.time,
@@ -554,10 +553,12 @@ class Wikiwho:
                             dict_list.append(dict_json)
             if format_ == 'json':
                 revisions[-1][rev_id]["tokens"] = dict_list
+        response["revisions"] = sorted(revisions, key=lambda x: sorted(x.keys())) \
+            if len(revision_ids) > 1 else revisions
         # response["message"] = None
-        # with open('local/test.json', 'w') as f:
+        # import json
+        # with open('wikiwho/local/test.json', 'w') as f:
         #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True))
-        response["revisions"] = sorted(revisions, key=lambda x: sorted(x.keys())) if len(revision_ids) > 1 else revisions
         return response
 
     def print_revision(self, revision_ids, parameters):
