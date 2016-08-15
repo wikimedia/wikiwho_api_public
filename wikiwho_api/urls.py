@@ -19,11 +19,13 @@ from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns, static
 from django.views.generic import TemplateView
 
+from base.views import clear_cache, clear_sessions
+
 urlpatterns = [
     url(r'^grappelli/', include('grappelli.urls')),
     url(r'^admin/', admin.site.urls),
-    url(r'^admin/clear_cache', 'base.views.clear_cache', name='clear_cache'),
-    url(r'^admin/clear_sessions', 'base.views.clear_sessions', name='clear_sessions'),
+    url(r'^admin/clear_cache', clear_cache, name='clear_cache'),
+    url(r'^admin/clear_sessions', clear_sessions, name='clear_sessions'),
     url(r'^api/(?P<version>(v1.0.0-beta|v1.0.0))/', include('api.urls', namespace='api')),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     # url(r'^docs/', include('rest_framework_docs.urls')),
