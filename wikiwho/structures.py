@@ -66,7 +66,7 @@ class Paragraph(object):
     def __init__(self):
         self.hash_value = ''  # The hash value of the paragraph.
         self.value = ''  # The text of the paragraph.
-        self.sentences = {}  # Dictionary of sentences in the paragraph. It is a dictionary of the form {sentence_hash : Sentence}
+        self.sentences = {}  # Dictionary of sentences in the paragraph. It is a dictionary of the form {sentence_hash : [Sentence, ..]}
         self.ordered_sentences = []  # List with the hash of the sentences, ordered by hash appeareances.
         self.matched = False  # Flag.
 
@@ -103,13 +103,13 @@ class Revision(object):
         self.contributor_id = 0  # Id of the contributor who performed the revision.
         self.contributor_name = ''  # Name of the contributor who performed the revision.
         self.contributor_ip = ''  # Name of the contributor who performed the revision.
-        self.paragraphs = {}  # Dictionary of paragraphs. It is of the form {paragraph_hash : [Paragraph]}.
+        self.paragraphs = {}  # Dictionary of paragraphs. It is of the form {paragraph_hash : [Paragraph, ..]}.
         self.ordered_paragraphs = []  # Ordered list of paragraph hashes.
         self.length = 0  # Content length (bytes).
         # self.content = ''  # TODO: this should be removed. Just for debugging process.
         # self.ordered_content = []  # TODO: this should be removed. Just for debugging process.
         # self.total_tokens = 0  # Number of tokens in the revision.
-        self.time = 0
+        self.time = 0  # timestamp
 
     def __repr__(self):
         return str(id(self))
