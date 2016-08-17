@@ -41,7 +41,7 @@ class CustomIndexDashboard(Dashboard):
                 modules.AppList(
                     _('Administration'),
                     column=1,
-                    collapsible=False,
+                    collapsible=True,
                     models=('django.contrib.*',),
                 ),
                 modules.AppList(
@@ -53,22 +53,22 @@ class CustomIndexDashboard(Dashboard):
             ]
         ))
         
-        # append an app list module for "Applications"
-        self.children.append(modules.AppList(
-            _('AppList: Applications'),
-            collapsible=True,
-            column=1,
-            css_classes=('collapse closed',),
-            exclude=('django.contrib.*',),  # Apps are displayed according to permissions!
-        ))
-        
-        # append an app list module for "Administration"
-        self.children.append(modules.ModelList(
-            _('ModelList: Administration'),
-            column=1,
-            collapsible=False,
-            models=('django.contrib.*',),
-        ))
+        # # append an app list module for "Applications"
+        # self.children.append(modules.AppList(
+        #     _('AppList: Applications'),
+        #     collapsible=True,
+        #     column=1,
+        #     css_classes=('collapse closed',),
+        #     exclude=('django.contrib.*',),  # Apps are displayed according to permissions!
+        # ))
+        #
+        # # append an app list module for "Administration"
+        # self.children.append(modules.ModelList(
+        #     _('ModelList: Administration'),
+        #     column=1,
+        #     collapsible=False,
+        #     models=('django.contrib.*',),
+        # ))
 
         # append another link list module for "tools".
         self.children.append(modules.LinkList(
