@@ -9,6 +9,8 @@ ALLOWED_HOSTS = ['local_host']
 PICKLE_FOLDER = 'tmp_pickles'  # ''pickle_api'
 PICKLE_FOLDER_2 = 'tmp_pickles'  # ''../disk2/pickle_api_2'
 
+SWAGGER_SETTINGS['VALIDATOR_URL'] = 'https://online.swagger.io/validator'
+
 # CACHES = {
 #     'default': {
 #         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',

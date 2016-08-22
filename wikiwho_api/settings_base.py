@@ -164,6 +164,11 @@ SWAGGER_SETTINGS = {
             # For more information on available options, please consult the OpenAPI Security Object Definition.
         }
     },
+    'OPERATIONS_SORTER': 'alpha',  # or 'method'
+    'APIS_SORTER': 'alpha',
+    'DOC_EXPANSION': 'list',
+    # 'JSON_EDITOR': True,
+    # 'SHOW_REQUEST_HEADERS': True,
 }
 
 REST_FRAMEWORK_EXTENSIONS = {

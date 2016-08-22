@@ -88,11 +88,11 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
     """
     Custom OpenAPIRenderer to update field types and descriptions.
     """
-    def add_customizations(self, data):
+    def add_customizations(self, data, renderer_context):
         """
         Adds settings, overrides, etc. to the specification.
         """
-        super(MyOpenAPIRenderer, self).add_customizations(data)
+        super(MyOpenAPIRenderer, self).add_customizations(data, renderer_context)
         # print(type(data), data)
         # TODO update
         data['paths'].update(custom_data['paths'])
