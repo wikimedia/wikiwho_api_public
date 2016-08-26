@@ -521,7 +521,7 @@ class Wikiwho:
 
     def get_revision_json(self, revision_ids, parameters, format_="json"):
         response = dict()
-        # response["success"] = "true"
+        response["success"] = "true"
         revisions = []
         response["article"] = self.article
 
@@ -558,10 +558,12 @@ class Wikiwho:
                 revisions[-1][rev_id]["tokens"] = dict_list
         response["revisions"] = sorted(revisions, key=lambda x: sorted(x.keys())) \
             if len(revision_ids) > 1 else revisions
-        # response["message"] = None
+        response["message"] = None
+        # test_json_file_path = 'test_jsons/{}.json'.format(self.article)
+        # with open(test_json_file_path, 'w') as f:
         # import json
         # with open('wikiwho/local/test.json', 'w') as f:
-        #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True))
+        #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return response
 
     def print_revision(self, revision_ids, parameters):
