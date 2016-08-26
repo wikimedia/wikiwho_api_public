@@ -114,7 +114,7 @@ class TestWikiwho:
     def test_json_output(self, temp_folder, article_name, revision_ids):
         with WPHandler(article_name, temp_folder) as wp:
             wp.handle(revision_ids, 'json', is_api=False)
-        revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {})
+        revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'revid', 'author', 'tokenid'})
         json_file_path = '{}/{}.json'.format(temp_folder, article_name)
         test_json_file_path = 'test_jsons/{}.json'.format(article_name)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
