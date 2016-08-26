@@ -1,0 +1,14 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>wikiwho</title>
+    <link rel="icon" type="image/png" href="{% static 'images/favicon-32x32.png' %}" sizes="32x32" />
+    <link rel="icon" type="image/png" href="{% static 'images/favicon-16x16.png' %}" sizes="16x16" />
+</head>
+<body>
+    <h1>Welcome to the wikiwho server</h1>
+    <p><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">WikiWho API</a></p>
+</body>
+</html>

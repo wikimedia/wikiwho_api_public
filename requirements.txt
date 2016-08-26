@@ -1,0 +1,26 @@
+Django<1.10
+future
+six
+requests
+#pytest
+pytest-django
+#coverage
+openpyxl
+lxml
+futures
+# TODO add wikiwho_simple as a package
+
+djangorestframework
+#coreapi
+markdown
+#django-filter
+#django-crispy-forms
+#django-guardian
+django-rest-swagger
+#drfdocs
+python-memcached
+drf-extensions
+
+django-grappelli
+feedparser
+#django-admin-tools
