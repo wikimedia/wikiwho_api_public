@@ -10,6 +10,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
+
+from copy import deepcopy
 from difflib import Differ
 import argparse
 import logging
@@ -535,11 +537,12 @@ class Wikiwho:
                                        "time": revision.time,
                                        "tokens": []}})
             dict_list = []
+            ps_copy = deepcopy(revision.paragraphs)
             for hash_paragraph in revision.ordered_paragraphs:
                 # text = ''
-                paragraph = revision.paragraphs[hash_paragraph][-1]
+                paragraph = ps_copy[hash_paragraph].pop(0)
                 for hash_sentence in paragraph.ordered_sentences:
-                    sentence = paragraph.sentences[hash_sentence][-1]
+                    sentence = paragraph.sentences[hash_sentence].pop(0)
                     for word in sentence.words:
                         if format_ == 'json':
                             dict_json = dict()
@@ -574,16 +577,17 @@ class Wikiwho:
             print("Printing authorship for revision: {}".format(revision.wikipedia_id))
             text = []
             authors = []
+            ps_copy = deepcopy(revision.paragraphs)
             for hash_paragraph in revision.ordered_paragraphs:
                 logging.debug(hash_paragraph)
                 # text = ''
-                paragraph = revision.paragraphs[hash_paragraph][-1]
+                paragraph = ps_copy[hash_paragraph].pop(0)
                 logging.debug(paragraph.value)
                 logging.debug(len(paragraph.sentences))
 
                 for hash_sentence in paragraph.ordered_sentences:
                     logging.debug(hash_sentence)
-                    sentence = paragraph.sentences[hash_sentence][-1]
+                    sentence = paragraph.sentences[hash_sentence].pop(0)
                     logging.debug(sentence.words)
 
                     for word in sentence.words:
@@ -598,10 +602,11 @@ class Wikiwho:
         revision = self.revisions[revision_id]
         text = []
         authors = []
+        ps_copy = deepcopy(revision.paragraphs)
         for hash_paragraph in revision.ordered_paragraphs:
-            paragraph = revision.paragraphs[hash_paragraph][-1]
+            paragraph = ps_copy[hash_paragraph].pop(0)
             for hash_sentence in paragraph.ordered_sentences:
-                sentence = paragraph.sentences[hash_sentence][-1]
+                sentence = paragraph.sentences[hash_sentence].pop(0)
                 for word in sentence.words:
                     text.append(word.value)
                     authors.append(word.revision)
