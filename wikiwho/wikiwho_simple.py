@@ -47,12 +47,14 @@ class Wikiwho:
 
         self.text_curr = ''
         self.token_id = 0
+        self.temp = []
 
     def _clean(self):
         # empty attributes
         # self.revision_prev = None
         self.text_curr = ''
         self.token_id = 0
+        self.temp = []
 
     def analyse_article(self, revisions):
         i = 1
@@ -131,6 +133,7 @@ class Wikiwho:
                     self.revisions.update({self.revision_curr.wikipedia_id: self.revision_curr})
                     # Update the fake revision id.
                     i += 1
+            self.temp = []
 
         self._clean()
 
@@ -216,6 +219,9 @@ class Wikiwho:
         for paragraph in paragraphs:
             # Build Paragraph structure and calculate hash value.
             paragraph = paragraph.strip()
+            if not paragraph:
+                # dont track empty lines
+                continue
             hash_curr = calculateHash(paragraph)
             matched_curr = False
 
@@ -287,9 +293,15 @@ class Wikiwho:
 
         # Identify unmatched paragraphs in previous revision for further analysis.
         for paragraph_prev_hash in revision_prev.ordered_paragraphs:
-            for paragraph_prev in revision_prev.paragraphs[paragraph_prev_hash]:
-                if not paragraph_prev.matched:
-                    unmatched_paragraphs_prev.append(paragraph_prev)
+            if len(revision_prev.paragraphs[paragraph_prev_hash]) > 1:
+                s = 'p-{}-{}'.format(revision_prev, paragraph_prev_hash)
+                self.temp.append(s)
+                count = self.temp.count(s)
+                paragraph_prev = revision_prev.paragraphs[paragraph_prev_hash][count - 1]
+            else:
+                paragraph_prev = revision_prev.paragraphs[paragraph_prev_hash][0]
+            if not paragraph_prev.matched:
+                unmatched_paragraphs_prev.append(paragraph_prev)
 
         return unmatched_paragraphs_curr, unmatched_paragraphs_prev, matched_paragraphs_prev
 
@@ -308,6 +320,9 @@ class Wikiwho:
             for sentence in sentences:
                 # Create the Sentence structure.
                 sentence = sentence.strip()
+                if not sentence:
+                    # dont track empty lines
+                    continue
                 sentence = ' '.join(splitIntoWords(sentence))
                 hash_curr = calculateHash(sentence)
                 matched_curr = False
@@ -404,11 +419,17 @@ class Wikiwho:
         # Identify the unmatched sentences in the previous paragraph revision.
         for paragraph_prev in unmatched_paragraphs_prev:
             for sentence_prev_hash in paragraph_prev.ordered_sentences:
-                for sentence_prev in paragraph_prev.sentences[sentence_prev_hash]:
-                    if not sentence_prev.matched:
-                        unmatched_sentences_prev.append(sentence_prev)
-                        sentence_prev.matched = True  # TODO why?
-                        matched_sentences_prev.append(sentence_prev)
+                if len(paragraph_prev.sentences[sentence_prev_hash]) > 1:
+                    s = 's-{}-{}'.format(paragraph_prev, sentence_prev_hash)
+                    self.temp.append(s)
+                    count = self.temp.count(s)
+                    sentence_prev = paragraph_prev.sentences[sentence_prev_hash][count - 1]
+                else:
+                    sentence_prev = paragraph_prev.sentences[sentence_prev_hash][0]
+                if not sentence_prev.matched:
+                    unmatched_sentences_prev.append(sentence_prev)
+                    sentence_prev.matched = True  # to reset them correctly in determine_authorship
+                    matched_sentences_prev.append(sentence_prev)
 
         return unmatched_sentences_curr, unmatched_sentences_prev, matched_sentences_prev, total_sentences
 
