@@ -14,4 +14,5 @@ test_jsons_without_fixed_deepcopy
 assets/images/fav/
 tmp_pickles/
 static/
-wikiwho_api_api.py
+Wikiwho_simple.py
+structuresML/
