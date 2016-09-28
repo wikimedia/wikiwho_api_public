@@ -73,7 +73,11 @@ def main():
                                 format='%(levelname)s:%(name)s:%(asctime)s:%(message)s')
             with open(article_list_file, 'r') as csv_file:
                 input_articles = csv.reader(csv_file, delimiter=";")
-
+                # for article in input_articles:
+                #     try:
+                #         generate_pickle(article[0], pickle_folder, pickle_folder_2)
+                #     except Exception as exc:
+                #         logging.exception(article[0])
                 # We can use a with statement to ensure threads are cleaned up promptly
                 if is_ppe:
                     # use ProcessPoolExecutor

@@ -69,9 +69,9 @@ class WPHandler(object):
         # check if article exists
         latest_revision_id = get_latest_revision_id(self.article_name)
         if not latest_revision_id:
-            raise WPHandlerException('The article ({}) you are trying to request does not exist!'.format(self.article_name))
+            raise WPHandlerException('The article ({}) you are trying to request does not exist'.format(self.article_name))
         self.revision_ids = revision_ids or [latest_revision_id]
-        # latest_revision_id_used = not any(revision_ids)
+        latest_revision_id_used = not any(revision_ids)
         # TODO if given rev_ids[-1] > last_rev_id, WPHandlerException(message="Revision ID does not exist!")
 
         # holds the last revision id which is stored in pickle file. 0 for new article
@@ -98,12 +98,16 @@ class WPHandler(object):
 
             if rvcontinue != '0':
                 params['rvcontinue'] = rvcontinue
-            # try:
+            try:
                 # TODO ? get revisions until revision_ids[-1], check line: elif not pages.get('revision')
                 # params.update({'rvendid': self.revision_ids[-1]})  # gets from beginning
-            result = session.get(url=url, headers=headers, params=params).json()
-            # except:
-            #     print_fail(message="HTTP Response error! Try again later!", is_api=is_api)
+                result = session.get(url=url, headers=headers, params=params).json()
+            except Exception as e:
+                if is_api:
+                    raise WPHandlerException('HTTP Response error! Try again later!'.format(self.article_name))
+                else:
+                    # if not api query, raise the original exception
+                    raise e
 
             if 'error' in result:
                 raise WPHandlerException('Wikipedia API returned the following error:' + str(result['error']))
@@ -145,9 +149,15 @@ class WPHandler(object):
         # print len(wikiwho.revisions)
 
         for r in self.revision_ids:
-            # TODO sometimes latest_rev_id is a spam, how to handle this better when user gives no rev_id as input
-            # if not latest_revision_id_used and r not in self.wikiwho.revisions:
-            if r not in self.wikiwho.revisions:
+            # sometimes latest_rev_id is a spam and this is important to us only if this is api query
+            if is_api:
+                # when user gives no rev_id as input to api
+                condition = r not in self.wikiwho.revisions
+            else:
+                # condition is always False if not api and we raise no exception.
+                # because we get the last rev id from wp
+                condition = not latest_revision_id_used and r not in self.wikiwho.revisions
+            if condition:
                 raise WPHandlerException('Revision ID ({}) does not exist or is spam or deleted!'.format(r))
         # time2 = time()
         # print("Execution time handle: {}".format(time2-time1))
