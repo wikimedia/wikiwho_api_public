@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-This script runs only with py3.
+This script runs both with py3 and py2. But py3 works better concurrently and also for smaller and faster pickle
+generation.
 """
 import argparse
 from collections import OrderedDict
@@ -11,15 +12,13 @@ import concurrent.futures
 import logging
 import re
 from time import strftime
-import sys
 
 from handler import WPHandler
 
-csv.field_size_limit(sys.maxsize)
 
 """
 Example usage:
-python generate_pickles.py -s 302 -e 305 -p '/home/kenan/PycharmProjects/wikiwho_stats/ww/all_articles_list' -f '/home/kenan/PycharmProjects/wikiwho_stats/ww/all_articles_list/pickles/missing' -m 40
+python generate_pickles.py -s 311 -e 314 -p '/home/kenan/PycharmProjects/wikiwho_stats/ww/all_articles_list' -f '/home/kenan/PycharmProjects/wikiwho_stats/ww/all_articles_list/pickles/missing' -m 40
 """
 
 
