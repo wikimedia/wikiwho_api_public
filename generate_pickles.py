@@ -48,9 +48,7 @@ def generate_pickle(article_name, already_list_file, pickle_folder, pickle_folde
     if not already:
         with WPHandler(article_name, pickle_folder) as wp:
             wp.handle([], 'json', is_api=False)
-    else:
-        with open(already_list_file, 'a') as f:
-            f.write('{}\n'.format(article_name))
+    # else:
     #     print('Already processed: ', article_name)
     return True
 
@@ -121,12 +119,10 @@ def main():
                     #         article_name = future_to_article[future]
                     #         try:
                     #             data = future.result(timeout=None)
-                    #             with open(success_list_file, 'a') as f:
-                    #                 f.write('{}\n'.format(article_name))
                     #         except Exception as exc:
+                    #             # TODO use queue or lock for logging with multiPROCESSING
+                    #             # https://docs.python.org/3/howto/logging-cookbook.html#logging-to-a-single-file-from-multiple-processes
                     #             logger.exception(article_name)
-                    #             with open(fail_list_file, 'a') as f:
-                    #                 f.write('{}\n'.format(article_name))
                     #         # else:
                     #         #     print('Success: {}'.format(article_name))
                 else:
@@ -139,12 +135,9 @@ def main():
                             article_name = future_to_article[future]
                             try:
                                 data = future.result(timeout=None)
-                                with open(success_list_file, 'a') as f:
-                                    f.write('{}\n'.format(article_name))
                             except Exception as exc:
+                                # no need for lock, logger is thread safe
                                 logger.exception(article_name)
-                                with open(fail_list_file, 'a') as f:
-                                    f.write('{}\n'.format(article_name))
                             # else:
                             #     print('Success: {}'.format(article_name))
             print('Done: {} at {}'.format(article_list_file, strftime("%H:%M:%S %d-%m-%Y")))
