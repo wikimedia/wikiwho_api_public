@@ -79,8 +79,8 @@ class Wikiwho:
             # TODO: spam detection: DELETION
             text_len = len(text)
             try:
-                if revision['comment'] != '' and 'minor' in revision:
-                # if revision['comment'] != '' and FLAG in revision:
+                if revision['comment'] != '' and 'minor' in revision['comment']:
+                # if revision['comment'] != '' and FLAG in revision['comment']:
                     pass
                 else:
                     # if content is not moved (flag) to different article in good faith, check for vandalism
