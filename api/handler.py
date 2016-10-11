@@ -56,6 +56,7 @@ class WPHandler(object):
         else:
             with io.open(self.pickle_path, 'rb') as f:
                 self.wikiwho = pickle.load(f)
+                # print(self.article_name, '-> rvcontinue_in_pickle:', self.wikiwho.rvcontinue)
 
         assert (self.wikiwho.article == article_name)
 
@@ -72,7 +73,6 @@ class WPHandler(object):
             raise WPHandlerException('The article ({}) you are trying to request does not exist'.format(self.article_name))
         self.revision_ids = revision_ids or [latest_revision_id]
         latest_revision_id_used = not any(revision_ids)
-        # TODO if given rev_ids[-1] > last_rev_id, WPHandlerException(message="Revision ID does not exist!")
 
         # holds the last revision id which is stored in pickle file. 0 for new article
         rvcontinue = self.rvcontinue_in_pickle
@@ -96,7 +96,7 @@ class WPHandler(object):
             logging.debug('doing partial download')
             logging.debug(rvcontinue)
 
-            if rvcontinue != '0':
+            if rvcontinue != '0' and rvcontinue != '1':
                 params['rvcontinue'] = rvcontinue
             try:
                 # TODO ? get revisions until revision_ids[-1], check line: elif not pages.get('revision')
@@ -133,18 +133,25 @@ class WPHandler(object):
                     logging.exception(e)
                     raise WPHandlerException("Some problems with the JSON returned by Wikipedia!")
             if 'continue' not in result:
-                # hackish: ?
-                # create a rvcontinue with last revision id of this article
-                timestamp = datetime.strptime(self.wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + \
-                            timedelta(seconds=1)
-                self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') + "|" + \
-                                          str(self.wikiwho.revision_curr.wikipedia_id + 1)
+                # hackish: create a rvcontinue with last revision id of this article
+                if self.wikiwho.revision_curr.time == 0:
+                    # if # revisions < 500 and all revisions were detected as spam
+                    # wikiwho object holds no information (it is in initial status, rvcontinue=0)
+                    self.wikiwho.rvcontinue = '1'  # assign 1 to be able to save this article without any revisions
+                else:
+                    timestamp = datetime.strptime(self.wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') \
+                                + timedelta(seconds=1)
+                    self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
+                                              + "|" \
+                                              + str(self.wikiwho.revision_curr.wikipedia_id + 1)
                 # print wikiwho.rvcontinue
                 break
             rvcontinue = result['continue']['rvcontinue']
             self.wikiwho.rvcontinue = rvcontinue  # used at end to decide if a new pickle file should be saved or not
             # print rvcontinue
 
+        # print(self.article_name, self.wikiwho.revision_curr.time, self.wikiwho.revision_curr.wikipedia_id,
+        #       len(self.wikiwho.revisions), len(self.wikiwho.spam))
         logging.debug('final rvcontinue ' + str(self.wikiwho.rvcontinue))
         # print len(wikiwho.revisions)
 
@@ -182,6 +189,7 @@ class WPHandler(object):
             # if there is a new revision or first pickle of the article
             # save new pickle file
             pickle_(self.wikiwho, self.pickle_path)
+            # print(self.article_name, 'pickle saved')
         # return True
         # time2 = time()
         # print("Execution time exit: {}".format(time2-time1))
