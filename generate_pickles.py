@@ -90,21 +90,13 @@ def main():
             # logger.removeHandler(logging.StreamHandler)
             # logger.addHandler(handler)
             logger.handlers = [handler]
-            success_list_file = '{}/logs/success_{}_at_{}.txt'.format(path, article_list_files[article_list_file],
-                                                                      strftime("%H:%M:%S %d-%m-%Y"))
-            fail_list_file = '{}/logs/failed_{}_at_{}.txt'.format(path, article_list_files[article_list_file],
-                                                                strftime("%H:%M:%S %d-%m-%Y"))
             with open(article_list_file, 'r') as csv_file:
                 input_articles = csv.reader(csv_file, delimiter=";")
                 # for article in input_articles:
                 #     try:
                 #         generate_pickle(article[0], already_list_file, pickle_folder, pickle_folder_2)
-                #         with open(success_list_file, 'a') as f:
-                #             f.write('{}\n'.format(article[0]))
                 #     except Exception as exc:
                 #         logger.exception(article[0])
-                #         with open(fail_list_file, 'a') as f:
-                #             f.write('{}\n'.format(article[0]))
 
                 # We can use a with statement to ensure threads are cleaned up promptly
                 if is_ppe:
