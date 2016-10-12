@@ -41,6 +41,7 @@ class Wikiwho:
         self.revisions = {}  # {rev_id : rev_obj, ...}
         self.rvcontinue = '0'
         self.article = article
+        self.page_id = None
         # Revisions to compare.
         self.revision_curr = Revision()
         # self.revision_prev = Revision()

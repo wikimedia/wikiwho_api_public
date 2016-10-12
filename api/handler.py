@@ -121,11 +121,12 @@ class WPHandler(object):
                 # elif not pages.get('revision'):
                 #     raise WPHandlerException(message="End revision ID does not exist!")
                 try:
-                    # page_id, page = result['query']['pages'].popitem()
-                    # wikiwho.analyse_article(page.get('revisions', []))
                     # pass first item in pages dict
-                    self.wikiwho.analyse_article(six.next(six.itervalues(result['query']['pages'])).
-                                                 get('revisions', []))
+                    _, page = result['query']['pages'].popitem()
+                    self.wikiwho.page_id = page['pageid']
+                    self.wikiwho.analyse_article(page.get('revisions', []))
+                    # self.wikiwho.analyse_article(six.next(six.itervalues(result['query']['pages'])).
+                    #                              get('revisions', []))
                 except Exception as e:
                     # if there is a problem, save pickle file until last given unproblematic rev_id
                     self.wikiwho._clean()
