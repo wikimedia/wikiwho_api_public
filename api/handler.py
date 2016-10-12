@@ -42,6 +42,7 @@ class WPHandler(object):
         logging.debug("trying to load pickle")
 
         article_name = self.article_name.replace(" ", "_")
+        article_name = article_name[:1].upper() + article_name[1:]  # save as first letter in uppercase
         pickle_folder = self.pickle_folder or settings.PICKLE_FOLDER
         self.pickle_path = "{}/{}.p".format(pickle_folder, article_name.replace("/", "0x2f"))  # 0x2f is UTF-8 hex of /
         if os.path.exists(self.pickle_path):
