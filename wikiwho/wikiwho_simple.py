@@ -54,7 +54,6 @@ class Wikiwho:
         # empty attributes
         # self.revision_prev = None
         self.text_curr = ''
-        self.token_id = 0
         self.temp = []
 
     def analyse_article(self, revisions):
