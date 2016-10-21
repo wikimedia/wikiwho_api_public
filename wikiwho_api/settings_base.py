@@ -165,6 +165,8 @@ SWAGGER_SETTINGS = {
     'DOC_EXPANSION': 'list',
     # 'JSON_EDITOR': True,
     # 'SHOW_REQUEST_HEADERS': True,
+    # 'SUPPORTED_SUBMIT_METHODS': ['get', 'post', 'put', 'delete', 'patch'],
+    # 'VALIDATOR_URL': 'https://online.swagger.io/validator/',
 }
 
 REST_FRAMEWORK_EXTENSIONS = {
