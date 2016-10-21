@@ -114,9 +114,30 @@ class TestWikiwho:
     def test_json_output(self, temp_folder, article_name, revision_ids):
         with WPHandler(article_name, temp_folder) as wp:
             wp.handle(revision_ids, 'json', is_api=False)
+        test_json_folder = 'test_jsons'
+
+        # create json without token ids
+        revision_json_without_tokenid = wp.wikiwho.get_revision_json(wp.revision_ids, {'revid', 'author'})
+        json_file_path_without_tokenid = '{}/{}_without_tokenid.json'.format(temp_folder, article_name)
+        with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
+                               sort_keys=True, ensure_ascii=False))
+
+        # compare jsons without token ids
+        test_json_file_path = '{}/{}_without_tokenid.json'.format(test_json_folder, article_name)
+        is_content_same = filecmp.cmp(json_file_path_without_tokenid, test_json_file_path)
+        assert is_content_same, "{}: 'json without token ids' doesn't match".format(article_name)
+
+        # check if all token ids are unique
         revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'revid', 'author', 'tokenid'})
+        for _, rev in revision_json['revisions'][0].items():
+            token_ids = [x['tokenid'] for x in rev['tokens']]
+            assert len(token_ids) == len(set(token_ids)), "{}: there are duplicated token ids".format(article_name)
+            break
+
+        # compare jsons with token ids
         json_file_path = '{}/{}.json'.format(temp_folder, article_name)
-        test_json_file_path = 'test_jsons/{}.json'.format(article_name)
+        test_json_file_path = '{}/{}.json'.format(test_json_folder, article_name)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         is_content_same = filecmp.cmp(json_file_path, test_json_file_path)
