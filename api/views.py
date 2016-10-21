@@ -4,7 +4,7 @@ from rest_framework.renderers import StaticHTMLRenderer, JSONRenderer
 from rest_framework import permissions, status, authentication, throttling
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
-from rest_framework.schemas import SchemaGenerator, as_query_fields
+from rest_framework.schemas import SchemaGenerator  # , as_query_fields
 from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
 from rest_framework_extensions.cache.decorators import cache_response
 # from rest_framework.compat import coreapi, urlparse
@@ -88,25 +88,28 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
     """
     Custom OpenAPIRenderer to update field types and descriptions.
     """
-    def add_customizations(self, data, renderer_context):
+    def get_customizations(self):
         """
         Adds settings, overrides, etc. to the specification.
         """
-        super(MyOpenAPIRenderer, self).add_customizations(data, renderer_context)
+        data = super(MyOpenAPIRenderer, self).get_customizations()
         # print(type(data), data)
         # TODO update
-        data['paths'].update(custom_data['paths'])
+        data['paths'] = custom_data['paths']
         version = '1.0.0-beta'
-        data['info']['version'] = version
-        data['info']['description'] = 'A short description of the application. ' \
-                                      'GFM syntax can be used for rich text representation. \n\n' \
-                                      'Specification: http://swagger.io/specification \n\n' \
-                                      'Example api: http://petstore.swagger.io/'
-        data['info']['contact'] = {'name': 'GESIS - Leibniz Institute for the Social Sciences',
-                                   # 'email': 'kenan.erdogan@gesis.org',
-                                   'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/computational-social-science/'}
+        data['info'] = {
+            'version': version,
+            'description': 'A short description of the application. GFM syntax can be used for rich text '
+                           'representation. \n\nSpecification: http://swagger.io/specification \n\n'
+                           'Example api: http://petstore.swagger.io/',
+            'contact': {
+                'name': 'GESIS - Leibniz Institute for the Social Sciences',
+                # 'email': 'kenan.erdogan@gesis.org',
+                'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/computational-social-science/'},
+        }
         data['basePath'] = '/api/v{}'.format(version)
         # print(type(data), data)
+        return data
 
 
 @api_view()
