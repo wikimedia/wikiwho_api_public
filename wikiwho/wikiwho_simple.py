@@ -229,38 +229,22 @@ class Wikiwho:
             # update the authorship information and mark both paragraphs as matched (also in HT).
             for paragraph_prev in revision_prev.paragraphs.get(hash_curr, []):
                 if not paragraph_prev.matched:
-                    matched_curr = True
-                    paragraph_prev.matched = True
-                    matched_paragraphs_prev.append(paragraph_prev)
+                    matched_one = False
+                    matched_all = True
+                    for h in paragraph_prev.sentences:
+                        for s_prev in paragraph_prev.sentences[h]:
+                            for w_prev in s_prev.words:
+                                if w_prev.matched:
+                                    matched_one = True
+                                else:
+                                    matched_all = False
 
-                    # TODO: added this (CHECK).
-                    # Set all sentences and words of this paragraph as matched
-                    for hash_sentence_prev in paragraph_prev.sentences:
-                        for sentence_prev in paragraph_prev.sentences[hash_sentence_prev]:
-                            sentence_prev.matched = True
-                            for word_prev in sentence_prev.words:
-                                # word_prev.freq = word_prev.freq + 1
-                                # word_prev.freq.append(self.revision_curr.wikipedia_id)
-                                word_prev.matched = True
-
-                    # Add paragraph to current revision.
-                    if hash_curr in self.revision_curr.paragraphs:
-                        self.revision_curr.paragraphs[hash_curr].append(paragraph_prev)
-                    else:
-                        self.revision_curr.paragraphs.update({paragraph_prev.hash_value: [paragraph_prev]})
-                    self.revision_curr.ordered_paragraphs.append(paragraph_prev.hash_value)
-                    break
-
-            # If the paragraph is not in the previous revision, but it is in an older revision
-            # update the authorship information and mark both paragraphs as matched.
-            if not matched_curr:
-                for paragraph_prev in self.paragraphs_ht.get(hash_curr, []):
-                    if not paragraph_prev.matched:
+                    if not matched_one:
+                        # if there is not any already matched prev word, so set them all as matched
                         matched_curr = True
                         paragraph_prev.matched = True
                         matched_paragraphs_prev.append(paragraph_prev)
 
-                        # TODO: added this (CHECK).
                         # Set all sentences and words of this paragraph as matched
                         for hash_sentence_prev in paragraph_prev.sentences:
                             for sentence_prev in paragraph_prev.sentences[hash_sentence_prev]:
@@ -277,6 +261,52 @@ class Wikiwho:
                             self.revision_curr.paragraphs.update({paragraph_prev.hash_value: [paragraph_prev]})
                         self.revision_curr.ordered_paragraphs.append(paragraph_prev.hash_value)
                         break
+                    elif matched_all:
+                        # if all prev words in this paragraph are already matched
+                        paragraph_prev.matched = True
+                        matched_paragraphs_prev.append(paragraph_prev)
+
+            # If the paragraph is not in the previous revision, but it is in an older revision
+            # update the authorship information and mark both paragraphs as matched.
+            if not matched_curr:
+                for paragraph_prev in self.paragraphs_ht.get(hash_curr, []):
+                    if not paragraph_prev.matched:
+                        matched_one = False
+                        matched_all = True
+                        for h in paragraph_prev.sentences:
+                            for s_prev in paragraph_prev.sentences[h]:
+                                for w_prev in s_prev.words:
+                                    if w_prev.matched:
+                                        matched_one = True
+                                    else:
+                                        matched_all = False
+
+                        if not matched_one:
+                            # if there is not any already matched prev word, so set them all as matched
+                            matched_curr = True
+                            paragraph_prev.matched = True
+                            matched_paragraphs_prev.append(paragraph_prev)
+
+                            # Set all sentences and words of this paragraph as matched
+                            for hash_sentence_prev in paragraph_prev.sentences:
+                                for sentence_prev in paragraph_prev.sentences[hash_sentence_prev]:
+                                    sentence_prev.matched = True
+                                    for word_prev in sentence_prev.words:
+                                        # word_prev.freq = word_prev.freq + 1
+                                        # word_prev.freq.append(self.revision_curr.wikipedia_id)
+                                        word_prev.matched = True
+
+                            # Add paragraph to current revision.
+                            if hash_curr in self.revision_curr.paragraphs:
+                                self.revision_curr.paragraphs[hash_curr].append(paragraph_prev)
+                            else:
+                                self.revision_curr.paragraphs.update({paragraph_prev.hash_value: [paragraph_prev]})
+                            self.revision_curr.ordered_paragraphs.append(paragraph_prev.hash_value)
+                            break
+                        elif matched_all:
+                            # if all prev words in this paragraph are already matched
+                            paragraph_prev.matched = True
+                            matched_paragraphs_prev.append(paragraph_prev)
 
             # If the paragraph did not match with previous revisions,
             # add to container of unmatched paragraphs for further analysis.
@@ -346,7 +376,6 @@ class Wikiwho:
                                 matched_curr = True
                                 matched_sentences_prev.append(sentence_prev)
 
-                                # TODO: CHECK this
                                 for word_prev in sentence_prev.words:
                                     # word_prev.freq = word_prev.freq + 1
                                     # word_prev.freq.append(self.revision_curr.wikipedia_id)
@@ -384,7 +413,6 @@ class Wikiwho:
                                 matched_curr = True
                                 matched_sentences_prev.append(sentence_prev)
 
-                                # TODO: CHECK this
                                 for word_prev in sentence_prev.words:
                                     # word_prev.freq.append(self.revision_curr.wikipedia_id)
                                     # word_prev.freq = word_prev.freq + 1
@@ -583,7 +611,7 @@ class Wikiwho:
         # test_json_file_path = 'test_jsons/{}.json'.format(self.article)
         # with open(test_json_file_path, 'w') as f:
         # import json
-        # with open('wikiwho/local/test.json', 'w') as f:
+        # with open('tmp_pickles/{}_{}.json'.format(self.article, revision_ids[0]), 'w') as f:
         #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return response
 
