@@ -22,7 +22,6 @@ from django.views.generic import TemplateView
 from base.views import clear_cache, clear_sessions
 
 urlpatterns = [
-    url(r'^grappelli/', include('grappelli.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^admin/clear_cache', clear_cache, name='clear_cache'),
     url(r'^admin/clear_sessions', clear_sessions, name='clear_sessions'),

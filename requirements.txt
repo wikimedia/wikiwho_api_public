@@ -21,6 +21,4 @@ django-rest-swagger
 python-memcached
 drf-extensions
 
-django-grappelli
-feedparser
 #django-admin-tools

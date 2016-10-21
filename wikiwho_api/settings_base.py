@@ -7,8 +7,6 @@ from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS as TCP
 # Application definition
 
 INSTALLED_APPS = [
-    'grappelli.dashboard',
-    'grappelli',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -181,8 +179,3 @@ PICKLE_FOLDER_2 = '../disk2/pickle_api_2'
 
 WP_HEADERS_USER_AGENT = 'Wikiwho API'
 WP_HEADERS_FROM = 'philipp.singer@gesis.org, fabian.floeck@gesis.org and kenan.erdogan@gesis.org'
-
-# Grappelli
-GRAPPELLI_ADMIN_TITLE = 'WikiWho'
-# GRAPPELLI_SWITCH_USER = True
-GRAPPELLI_INDEX_DASHBOARD = 'wikiwho_api.dashboard.CustomIndexDashboard'
