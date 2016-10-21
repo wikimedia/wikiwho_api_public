@@ -1,9 +1,10 @@
-Django<1.10
+Django
 future
 six
 requests
 #pytest
 pytest-django
+pytest-xdist
 #coverage
 openpyxl
 lxml
@@ -22,3 +23,6 @@ python-memcached
 drf-extensions
 
 #django-admin-tools
+#django-admin-tools-stats
+
+django-extensions

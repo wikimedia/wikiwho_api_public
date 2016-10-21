@@ -1,0 +1,8 @@
+django-debug-toolbar
+ipython
+jupyter
+
+# these 3 are for graph_models of django-extensions
+pygraphviz
+pyparsing
+pydotplus
