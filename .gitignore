@@ -6,8 +6,8 @@
 wikiwho_api/settings.py
 
 wikiwho/local/
-wikiwho/tmp_test/
-wikiwho/tmp_test_3/
+wikiwho/tests/tmp_test/
+wikiwho/tests/tmp_test_3/
 master_old_test/
 test_jsons
 test_jsons_without_fixed_deepcopy

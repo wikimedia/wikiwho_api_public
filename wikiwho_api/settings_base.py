@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     'rest_framework_swagger',
     'api',
     'base',
+    'django_extensions',
 ]
 
 MIDDLEWARE_CLASSES = [
