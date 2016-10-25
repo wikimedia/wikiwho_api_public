@@ -153,7 +153,8 @@ class Wikiwho:
         # Analysis of the sentences in the unmatched paragraphs of the current revision.
         if unmatched_paragraphs_curr:
             unmatched_sentences_curr, unmatched_sentences_prev, matched_sentences_prev, total_sentences = \
-                self.analyse_sentences_in_paragraphs(unmatched_paragraphs_curr, unmatched_paragraphs_prev)
+                self.analyse_sentences_in_paragraphs(unmatched_paragraphs_curr, unmatched_paragraphs_prev,
+                                                     revision_prev)
 
             # TODO: spam detection
             if len(unmatched_paragraphs_curr) / len(self.revision_curr.ordered_paragraphs) > UNMATCHED_PARAGRAPH:
@@ -167,10 +168,19 @@ class Wikiwho:
                                                                                 possible_vandalism)
 
         # Add the information of 'deletion' to words
-        # for unmatched_sentence in unmatched_sentences_prev:
-        #            for word in unmatched_sentence.words:
-        #                if not(word.matched):
-        #                    word.deleted.append(self.revision_curr.wikipedia_id)
+        for unmatched_sentence in unmatched_sentences_prev:
+            for word in unmatched_sentence.words:
+                if not word.matched:
+                    word.outbound.append(self.revision_curr.wikipedia_id)
+                    # print('outbound:', word.value, self.revision_curr.wikipedia_id)
+        if not unmatched_sentences_prev:
+            # if all current paragraphs are matched
+            for unmatched_paragraph in unmatched_paragraphs_prev:
+                for sentence_hash in unmatched_paragraph.sentences:
+                    for sentence in unmatched_paragraph.sentences[sentence_hash]:
+                        for word in sentence.words:
+                            if not word.matched:
+                                word.outbound.append(self.revision_curr.wikipedia_id)
 
         # Reset matched structures from old revisions.
         for matched_paragraph in matched_paragraphs_prev:
@@ -250,9 +260,8 @@ class Wikiwho:
                             for sentence_prev in paragraph_prev.sentences[hash_sentence_prev]:
                                 sentence_prev.matched = True
                                 for word_prev in sentence_prev.words:
-                                    # word_prev.freq = word_prev.freq + 1
-                                    # word_prev.freq.append(self.revision_curr.wikipedia_id)
                                     word_prev.matched = True
+                                    word_prev.used.append(self.revision_curr.wikipedia_id)
 
                         # Add paragraph to current revision.
                         if hash_curr in self.revision_curr.paragraphs:
@@ -292,9 +301,11 @@ class Wikiwho:
                                 for sentence_prev in paragraph_prev.sentences[hash_sentence_prev]:
                                     sentence_prev.matched = True
                                     for word_prev in sentence_prev.words:
-                                        # word_prev.freq = word_prev.freq + 1
-                                        # word_prev.freq.append(self.revision_curr.wikipedia_id)
                                         word_prev.matched = True
+                                        word_prev.used.append(self.revision_curr.wikipedia_id)
+                                        if revision_prev.wikipedia_id not in word_prev.used:
+                                            word_prev.inbound.append(self.revision_curr.wikipedia_id)
+                                            # print('inbound:', word_prev.value, self.revision_curr.wikipedia_id)
 
                             # Add paragraph to current revision.
                             if hash_curr in self.revision_curr.paragraphs:
@@ -335,7 +346,7 @@ class Wikiwho:
 
         return unmatched_paragraphs_curr, unmatched_paragraphs_prev, matched_paragraphs_prev
 
-    def analyse_sentences_in_paragraphs(self, unmatched_paragraphs_curr, unmatched_paragraphs_prev):
+    def analyse_sentences_in_paragraphs(self, unmatched_paragraphs_curr, unmatched_paragraphs_prev, revision_prev):
         # Containers for unmatched and matched sentences.
         unmatched_sentences_curr = []
         unmatched_sentences_prev = []
@@ -377,9 +388,8 @@ class Wikiwho:
                                 matched_sentences_prev.append(sentence_prev)
 
                                 for word_prev in sentence_prev.words:
-                                    # word_prev.freq = word_prev.freq + 1
-                                    # word_prev.freq.append(self.revision_curr.wikipedia_id)
                                     word_prev.matched = True
+                                    word_prev.used.append(self.revision_curr.wikipedia_id)
 
                                 # Add the sentence information to the paragraph.
                                 if hash_curr in paragraph_curr.sentences:
@@ -414,9 +424,11 @@ class Wikiwho:
                                 matched_sentences_prev.append(sentence_prev)
 
                                 for word_prev in sentence_prev.words:
-                                    # word_prev.freq.append(self.revision_curr.wikipedia_id)
-                                    # word_prev.freq = word_prev.freq + 1
                                     word_prev.matched = True
+                                    word_prev.used.append(self.revision_curr.wikipedia_id)
+                                    if revision_prev.wikipedia_id not in word_prev.used:
+                                        word_prev.inbound.append(self.revision_curr.wikipedia_id)
+                                        # print('inbound:', word_prev.value, self.revision_curr.wikipedia_id)
 
                                 # Add the sentence information to the paragraph.
                                 if hash_curr in paragraph_curr.sentences:
@@ -496,12 +508,12 @@ class Wikiwho:
             for sentence_curr in unmatched_sentences_curr:
                 for word in sentence_curr.splitted:
                     word_curr = Word()
+                    word_curr.value = word
+                    word_curr.internal_id = self.token_id
                     word_curr.author_id = self.revision_curr.contributor_id
                     word_curr.author_name = self.revision_curr.contributor_name
                     word_curr.revision = self.revision_curr.wikipedia_id
-                    word_curr.value = word
-                    # word_curr.freq.append(self.revision_curr.wikipedia_id)
-                    word_curr.internal_id = self.token_id
+                    word_curr.used.append(self.revision_curr.wikipedia_id)
                     sentence_curr.words.append(word_curr)
                     self.token_id += 1
             return matched_words_prev, possible_vandalism
@@ -520,10 +532,9 @@ class Wikiwho:
                             # match
                             for word_prev in unmatched_words_prev:
                                 if not word_prev.matched and word_prev.value == word:
-                                    # word_prev.freq = word_prev.freq + 1
-                                    # word_prev.freq.append(self.revision_curr.wikipedia_id)
                                     word_prev.matched = True
                                     curr_matched = True
+                                    word_prev.used.append(self.revision_curr.wikipedia_id)
                                     sentence_curr.words.append(word_prev)
                                     matched_words_prev.append(word_prev)
                                     diff[pos] = ''
@@ -534,7 +545,8 @@ class Wikiwho:
                             for word_prev in unmatched_words_prev:
                                 if not word_prev.matched and word_prev.value == word:
                                     word_prev.matched = True
-                                    # word_prev.deleted.append(self.revision_curr.wikipedia_id)
+                                    word_prev.outbound.append(self.revision_curr.wikipedia_id)
+                                    # print('outbound:', word_prev.value, self.revision_curr.wikipedia_id)
                                     matched_words_prev.append(word_prev)
                                     diff[pos] = ''
                                     break
@@ -543,11 +555,11 @@ class Wikiwho:
                             curr_matched = True
                             word_curr = Word()
                             word_curr.value = word
+                            word_curr.internal_id = self.token_id
                             word_curr.author_id = self.revision_curr.contributor_id
                             word_curr.author_name = self.revision_curr.contributor_name
                             word_curr.revision = self.revision_curr.wikipedia_id
-                            word_curr.internal_id = self.token_id
-                            # word_curr.freq.append(self.revision_curr.wikipedia_id)
+                            word_curr.used.append(self.revision_curr.wikipedia_id)
                             sentence_curr.words.append(word_curr)
                             self.token_id += 1
                             diff[pos] = ''
@@ -558,12 +570,12 @@ class Wikiwho:
                     # if diff returns a word as '? ...'
                     word_curr = Word()
                     word_curr.value = word
+                    word_curr.internal_id = self.token_id
                     word_curr.author_id = self.revision_curr.contributor_id
                     word_curr.author_name = self.revision_curr.contributor_name
                     word_curr.revision = self.revision_curr.wikipedia_id
-                    # word_curr.freq.append(self.revision_curr.wikipedia_id)
+                    word_curr.used.append(self.revision_curr.wikipedia_id)
                     sentence_curr.words.append(word_curr)
-                    word_curr.internal_id = self.token_id
                     self.token_id += 1
 
         return matched_words_prev, possible_vandalism
