@@ -261,7 +261,7 @@ class Wikiwho:
                                 sentence_prev.matched = True
                                 for word_prev in sentence_prev.words:
                                     word_prev.matched = True
-                                    # word_prev.used.append(self.revision_curr.wikipedia_id)
+                                    word_prev.last_used = self.revision_curr.wikipedia_id
 
                         # Add paragraph to current revision.
                         if hash_curr in self.revision_curr.paragraphs:
@@ -302,12 +302,10 @@ class Wikiwho:
                                     sentence_prev.matched = True
                                     for word_prev in sentence_prev.words:
                                         word_prev.matched = True
-                                        # word_prev.used.append(self.revision_curr.wikipedia_id)
-                                        # if revision_prev.wikipedia_id not in word_prev.used:
-                                        if len(word_prev.outbound) > len(word_prev.inbound):
-                                            # every outbound must have an inbound
+                                        if revision_prev.wikipedia_id != word_prev.last_used:
                                             word_prev.inbound.append(self.revision_curr.wikipedia_id)
                                             # print('inbound:', word_prev.value, self.revision_curr.wikipedia_id)
+                                        word_prev.last_used = self.revision_curr.wikipedia_id
 
                             # Add paragraph to current revision.
                             if hash_curr in self.revision_curr.paragraphs:
@@ -391,7 +389,7 @@ class Wikiwho:
 
                                 for word_prev in sentence_prev.words:
                                     word_prev.matched = True
-                                    # word_prev.used.append(self.revision_curr.wikipedia_id)
+                                    word_prev.last_used = self.revision_curr.wikipedia_id
 
                                 # Add the sentence information to the paragraph.
                                 if hash_curr in paragraph_curr.sentences:
@@ -427,12 +425,10 @@ class Wikiwho:
 
                                 for word_prev in sentence_prev.words:
                                     word_prev.matched = True
-                                    # word_prev.used.append(self.revision_curr.wikipedia_id)
-                                    # if revision_prev.wikipedia_id not in word_prev.used:
-                                    if len(word_prev.outbound) > len(word_prev.inbound):
-                                        # every outbound must have an inbound
+                                    if revision_prev.wikipedia_id != word_prev.last_used:
                                         word_prev.inbound.append(self.revision_curr.wikipedia_id)
                                         # print('inbound:', word_prev.value, self.revision_curr.wikipedia_id)
+                                    word_prev.last_used = self.revision_curr.wikipedia_id
 
                                 # Add the sentence information to the paragraph.
                                 if hash_curr in paragraph_curr.sentences:
@@ -517,7 +513,7 @@ class Wikiwho:
                     word_curr.author_id = self.revision_curr.contributor_id
                     word_curr.author_name = self.revision_curr.contributor_name
                     word_curr.revision = self.revision_curr.wikipedia_id
-                    # word_curr.used.append(self.revision_curr.wikipedia_id)
+                    word_curr.last_used = self.revision_curr.wikipedia_id
                     sentence_curr.words.append(word_curr)
                     self.token_id += 1
             return matched_words_prev, possible_vandalism
@@ -538,7 +534,7 @@ class Wikiwho:
                                 if not word_prev.matched and word_prev.value == word:
                                     word_prev.matched = True
                                     curr_matched = True
-                                    # word_prev.used.append(self.revision_curr.wikipedia_id)
+                                    word_prev.last_used = self.revision_curr.wikipedia_id
                                     sentence_curr.words.append(word_prev)
                                     matched_words_prev.append(word_prev)
                                     diff[pos] = ''
@@ -563,7 +559,7 @@ class Wikiwho:
                             word_curr.author_id = self.revision_curr.contributor_id
                             word_curr.author_name = self.revision_curr.contributor_name
                             word_curr.revision = self.revision_curr.wikipedia_id
-                            # word_curr.used.append(self.revision_curr.wikipedia_id)
+                            word_curr.last_used = self.revision_curr.wikipedia_id
                             sentence_curr.words.append(word_curr)
                             self.token_id += 1
                             diff[pos] = ''
@@ -578,7 +574,7 @@ class Wikiwho:
                     word_curr.author_id = self.revision_curr.contributor_id
                     word_curr.author_name = self.revision_curr.contributor_name
                     word_curr.revision = self.revision_curr.wikipedia_id
-                    # word_curr.used.append(self.revision_curr.wikipedia_id)
+                    word_curr.last_used = self.revision_curr.wikipedia_id
                     sentence_curr.words.append(word_curr)
                     self.token_id += 1
 
