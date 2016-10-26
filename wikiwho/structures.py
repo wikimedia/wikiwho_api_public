@@ -19,7 +19,7 @@ class Word(object):
         self.matched = False
         # self.length = 0
         self.internal_id = 0
-        self.used = []
+        # self.used = []
         self.inbound = []
         self.outbound = []
 
@@ -29,7 +29,7 @@ class Word(object):
     def to_dict(self):
         word = {}
         # word.update({'author' : {'id': self.author_id, 'username': self.author_name}})
-        word.update({str(self.revision) : self.value})
+        word.update({str(self.revision): self.value})
         return word
 
 
