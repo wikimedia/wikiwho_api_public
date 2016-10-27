@@ -19,7 +19,9 @@ from .handler import WPHandler, WPHandlerException
 query_params = [
     {'description': 'Add some description', 'in': 'query', 'name': 'revid', 'required': True, 'type': 'boolean'},  # 'default': 'false',
     {'description': 'Add some description', 'in': 'query', 'name': 'author', 'required': True, 'type': 'boolean'},
-    {'description': 'Add some description', 'in': 'query', 'name': 'tokenid', 'required': True, 'type': 'boolean'}
+    {'description': 'Add some description', 'in': 'query', 'name': 'tokenid', 'required': True, 'type': 'boolean'},
+    {'description': 'Add some description', 'in': 'query', 'name': 'inbound', 'required': True, 'type': 'boolean'},
+    {'description': 'Add some description', 'in': 'query', 'name': 'outbound', 'required': True, 'type': 'boolean'}
 ]
 
 custom_data = {
@@ -134,7 +136,7 @@ class WikiwhoApiView(ViewSet):
     throttle_classes = (throttling.UserRateThrottle, throttling.AnonRateThrottle, BurstRateThrottle)
     # serializer_class = WikiWhoSerializer
     # filter_fields = ('query_option_1', 'query_option_2',)
-    query_fields = ('revid', 'author', 'tokenid', )
+    # query_fields = ('revision_id', 'author_id', 'token_id', )
     renderer_classes = [JSONRenderer]  # to disable browsable api
 
     def get_parameters(self):
@@ -145,6 +147,10 @@ class WikiwhoApiView(ViewSet):
             parameters.append('author')
         if self.request.GET.get('tokenid') == 'true':
             parameters.append('tokenid')
+        if self.request.GET.get('inbound') == 'true':
+            parameters.append('inbound')
+        if self.request.GET.get('outbound') == 'true':
+            parameters.append('outbound')
         return parameters
 
     def get_response(self, article_name, parameters, revision_ids=list()):

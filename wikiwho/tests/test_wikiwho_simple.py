@@ -94,7 +94,7 @@ class TestWikiwho:
         sub_text = splitIntoWords(context)
         with WPHandler(article_name, temp_folder) as wp:
             wp.handle(revision_ids, 'json', is_api=False)
-        text, authors = wp.wikiwho.get_revision_text(revision_ids[0])
+        text, label_rev_ids = wp.wikiwho.get_revision_text(revision_ids[0])
         n = len(sub_text)
         found = 0
         # print(wp.wikiwho.spam)
@@ -103,7 +103,7 @@ class TestWikiwho:
         for i in range(len(text) - n + 1):
             if sub_text == text[i:i + n]:
                 token_i = i + sub_text.index(token)
-                ww_rev_id = authors[token_i]
+                ww_rev_id = label_rev_ids[token_i]
                 found = 1
                 assert ww_rev_id == correct_rev_id, "{}: {}: rev id was {}, should be {}".format(article_name,
                                                                                                  token,
@@ -143,6 +143,19 @@ class TestWikiwho:
             f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         is_content_same = filecmp.cmp(json_file_path, test_json_file_path)
         assert is_content_same, "{}: json doesn't match".format(article_name)
+
+        # create json with in/outbounds
+        revision_json_with_io = wp.wikiwho.get_revision_json(wp.revision_ids, {'revid', 'author', 'tokenid',
+                                                                                       'inbound', 'outbound'})
+        json_file_path_with_io = '{}/{}_io.json'.format(temp_folder, article_name)
+        with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
+                               sort_keys=True, ensure_ascii=False))
+
+        # # compare jsons with in/outbounds
+        # test_json_file_path = '{}/{}_io.json'.format(test_json_folder, article_name)
+        # is_content_same = filecmp.cmp(json_file_path_with_io, test_json_file_path)
+        # assert is_content_same, "{}: 'json with in/outbounds' doesn't match".format(article_name)
 
     def test_finger_lakes(self, temp_folder):
         data = {

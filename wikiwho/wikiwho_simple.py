@@ -607,13 +607,17 @@ class Wikiwho:
                     for word in sentence.words:
                         if format_ == 'json':
                             dict_json = dict()
-                            dict_json['str'] = word.value  # .encode('utf-8')
+                            dict_json['str'] = word.value
                             if 'revid' in parameters:
                                 dict_json['revid'] = str(word.revision)
                             if 'author' in parameters:
-                                dict_json['author'] = str(word.author_id)  # .encode("utf-8"))
+                                dict_json['author'] = str(word.author_id)
                             if 'tokenid' in parameters:
                                 dict_json['tokenid'] = str(word.internal_id)
+                            if 'inbound' in parameters:
+                                dict_json['inbound'] = word.inbound
+                            if 'outbound' in parameters:
+                                dict_json['outbound'] = word.outbound
                             dict_list.append(dict_json)
             if format_ == 'json':
                 revisions[-1][rev_id]["tokens"] = dict_list
@@ -639,7 +643,7 @@ class Wikiwho:
 
             print("Printing authorship for revision: {}".format(revision.wikipedia_id))
             text = []
-            authors = []
+            label_rev_ids = []
             ps_copy = deepcopy(revision.paragraphs)
             for hash_paragraph in revision.ordered_paragraphs:
                 logging.debug(hash_paragraph)
@@ -657,14 +661,14 @@ class Wikiwho:
                         logging.debug(word)
                         # text = text + ' ' + unicode(word.value,'utf-8') + "@@" + str(word.revision)
                         text.append(word.value)
-                        authors.append(word.revision)
+                        label_rev_ids.append(word.revision)
             print(text)
-            print(authors)
+            print(label_rev_ids)
 
     def get_revision_text(self, revision_id):
         revision = self.revisions[revision_id]
         text = []
-        authors = []
+        label_rev_ids = []
         ps_copy = deepcopy(revision.paragraphs)
         for hash_paragraph in revision.ordered_paragraphs:
             paragraph = ps_copy[hash_paragraph].pop(0)
@@ -672,8 +676,8 @@ class Wikiwho:
                 sentence = paragraph.sentences[hash_sentence].pop(0)
                 for word in sentence.words:
                     text.append(word.value)
-                    authors.append(word.revision)
-        return text, authors
+                    label_rev_ids.append(word.revision)
+        return text, label_rev_ids
 
 
 def get_args():
