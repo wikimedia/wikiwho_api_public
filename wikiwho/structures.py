@@ -20,7 +20,7 @@ class Word(object):
         # self.length = 0
         self.internal_id = 0
         # self.used = []
-        self.last_used = []
+        self.last_used = 0
         self.inbound = []
         self.outbound = []
 
