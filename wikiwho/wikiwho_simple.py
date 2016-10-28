@@ -636,7 +636,7 @@ class Wikiwho:
         response["success"] = "true"
         response["article"] = self.article
 
-        threshold = 5
+        threshold = parameters[-1]
         deleted_tokens = []
         deleted_token_keys = []
         from datetime import datetime

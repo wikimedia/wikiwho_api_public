@@ -89,6 +89,11 @@ custom_data = {
                                       'name': 'article_name',
                                       'required': True,
                                       'type': 'string'},
+                                     {'description': 'Default is 5',
+                                      'in': 'query',
+                                      'name': 'threshold',
+                                      'required': False,
+                                      'type': 'integer'},
                                      ] + query_params,
                       'responses': {'200': {'description': ''}},
                       'tags': ['Deleted content'],
@@ -177,6 +182,7 @@ class WikiwhoApiView(ViewSet):
             parameters.append('inbound')
         if self.request.GET.get('outbound') == 'true':
             parameters.append('outbound')
+        parameters.append(int(self.request.GET.get('threshold', 5)))
         return parameters
 
     def get_response(self, article_name, parameters, revision_ids=list(), deleted=False, ids=False):
