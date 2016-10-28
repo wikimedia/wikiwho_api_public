@@ -201,7 +201,10 @@ class WikiwhoApiView(ViewSet):
                     status_ = status.HTTP_200_OK
                 else:
                     response = wp.wikiwho.get_revision_json(wp.revision_ids, parameters)
-                    status_ = status.HTTP_200_OK
+                    if 'Error' in response:
+                        status_ = status.HTTP_400_BAD_REQUEST
+                    else:
+                        status_ = status.HTTP_200_OK
         # handler_time = time.time() - handler_start
         # return HttpResponse(json.dumps(response), content_type='application/json; charset=utf-8')
         return Response(response, status=status_)

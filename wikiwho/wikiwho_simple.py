@@ -584,6 +584,10 @@ class Wikiwho:
         revisions = []
         response["article"] = self.article
 
+        for rev_id in revision_ids:
+            if rev_id not in self.revisions:
+                return {'Error': 'Revision ID ({}) does not exist or is spam or deleted!'.format(rev_id)}
+
         for rev_id, revision in self.revisions.items():
             if len(revision_ids) == 2:
                 if rev_id < revision_ids[0] or rev_id > revision_ids[1]:
