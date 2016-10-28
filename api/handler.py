@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 import io
-import logging
+# import logging
 from datetime import datetime, timedelta
 import six
 from django.conf import settings
@@ -37,9 +37,9 @@ class WPHandler(object):
 
     def __enter__(self):
         # time1 = time()
-        logging.debug("--------")
-        logging.debug(self.article_name)
-        logging.debug("trying to load pickle")
+        # logging.debug("--------")
+        # logging.debug(self.article_name)
+        # logging.debug("trying to load pickle")
 
         article_name = self.article_name.replace(" ", "_")
         article_name = article_name[:1].upper() + article_name[1:]  # save as first letter in uppercase
@@ -80,7 +80,7 @@ class WPHandler(object):
 
         if self.revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
             # if given rev_id is bigger than last one in pickle
-            logging.debug("STARTING NOW")
+            # logging.debug("STARTING NOW")
             headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
                        'From': settings.WP_HEADERS_FROM}
             # Login request
@@ -94,8 +94,8 @@ class WPHandler(object):
             # continue downloading as long as we reach to the given rev_id limit
             # if rvcontinue > self.revision_ids[-1], it means this rev_id is already in pickle file,
             # so no calculation is needed
-            logging.debug('doing partial download')
-            logging.debug(rvcontinue)
+            # logging.debug('doing partial download')
+            # logging.debug(rvcontinue)
 
             if rvcontinue != '0' and rvcontinue != '1':
                 params['rvcontinue'] = rvcontinue
@@ -132,7 +132,7 @@ class WPHandler(object):
                     self.wikiwho._clean()
                     pickle_(self.wikiwho, self.pickle_path)
                     # TODO raise exception if it comes from wikiwho code
-                    logging.exception(self.article_name)
+                    # logging.exception(self.article_name)
                     raise WPHandlerException("Some problems with the JSON returned by Wikipedia!")
             if 'continue' not in result:
                 # hackish: create a rvcontinue with last revision id of this article
@@ -154,7 +154,7 @@ class WPHandler(object):
 
         # print(self.article_name, self.wikiwho.revision_curr.time, self.wikiwho.revision_curr.wikipedia_id,
         #       len(self.wikiwho.revisions), len(self.wikiwho.spam))
-        logging.debug('final rvcontinue ' + str(self.wikiwho.rvcontinue))
+        # logging.debug('final rvcontinue ' + str(self.wikiwho.rvcontinue))
         # print len(wikiwho.revisions)
 
         for r in self.revision_ids:
@@ -185,7 +185,7 @@ class WPHandler(object):
         """
         # time1 = time()
         # print(exc_type, exc_val, exc_tb)
-        logging.debug(self.wikiwho.rvcontinue)
+        # logging.debug(self.wikiwho.rvcontinue)
         # logging.debug(wikiwho.lastrev_date)
         if self.wikiwho.rvcontinue != self.rvcontinue_in_pickle:
             # if there is a new revision or first pickle of the article

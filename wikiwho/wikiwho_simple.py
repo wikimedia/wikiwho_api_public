@@ -13,11 +13,9 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 from difflib import Differ
-import argparse
-import logging
 
-from wikiwho.structures import Word, Sentence, Paragraph, Revision
-from wikiwho.utils import calculateHash, splitIntoParagraphs, splitIntoSentences, splitIntoWords, computeAvgWordFreq
+from .structures import Word, Sentence, Paragraph, Revision
+from .utils import calculateHash, splitIntoParagraphs, splitIntoSentences, splitIntoWords, computeAvgWordFreq
 
 
 # spam detection variables.
@@ -608,12 +606,12 @@ class Wikiwho:
                         if format_ == 'json':
                             dict_json = dict()
                             dict_json['str'] = word.value
-                            if 'revid' in parameters:
-                                dict_json['revid'] = str(word.revision)
-                            if 'author' in parameters:
-                                dict_json['author'] = str(word.author_id)
-                            if 'tokenid' in parameters:
-                                dict_json['tokenid'] = str(word.internal_id)
+                            if 'rev_id' in parameters:
+                                dict_json['rev_id'] = word.revision
+                            if 'author_id' in parameters:
+                                dict_json['author_id'] = word.author_id
+                            if 'token_id' in parameters:
+                                dict_json['token_id'] = word.internal_id
                             if 'inbound' in parameters:
                                 dict_json['inbound'] = word.inbound
                             if 'outbound' in parameters:
@@ -624,46 +622,65 @@ class Wikiwho:
         response["revisions"] = sorted(revisions, key=lambda x: sorted(x.keys())) \
             if len(revision_ids) > 1 else revisions
         response["message"] = None
-        # test_json_file_path = 'test_jsons/{}.json'.format(self.article)
-        # with open(test_json_file_path, 'w') as f:
         # import json
         # with open('tmp_pickles/{}_{}.json'.format(self.article, revision_ids[0]), 'w') as f:
         #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return response
 
-    def print_revision(self, revision_ids, parameters):
-        for rev_id in self.revisions:
-            if len(revision_ids) == 2:
-                if rev_id < revision_ids[0] or rev_id > revision_ids[1]:
-                    continue
-            else:
-                if rev_id != revision_ids[0]:
-                    continue
-            revision = self.revisions[rev_id]
+    def get_deleted_tokens(self, parameters):
+        response = dict()
+        response["success"] = "true"
+        response["article"] = self.article
 
-            print("Printing authorship for revision: {}".format(revision.wikipedia_id))
-            text = []
-            label_rev_ids = []
+        threshold = 5
+        deleted_tokens = []
+        deleted_token_keys = []
+        from datetime import datetime
+        revisions = [(datetime.strptime(rev.time, '%Y-%m-%dT%H:%M:%SZ'), rev) for rev in self.revisions.values()]
+        revisions = [rev_id for time, rev_id in sorted(revisions, key=lambda x: x[0])]
+        last_rev_id = revisions[-1].wikipedia_id
+        for revision in revisions[:-1]:
             ps_copy = deepcopy(revision.paragraphs)
             for hash_paragraph in revision.ordered_paragraphs:
-                logging.debug(hash_paragraph)
-                # text = ''
                 paragraph = ps_copy[hash_paragraph].pop(0)
-                logging.debug(paragraph.value)
-                logging.debug(len(paragraph.sentences))
-
                 for hash_sentence in paragraph.ordered_sentences:
-                    logging.debug(hash_sentence)
                     sentence = paragraph.sentences[hash_sentence].pop(0)
-                    logging.debug(sentence.words)
-
                     for word in sentence.words:
-                        logging.debug(word)
-                        # text = text + ' ' + unicode(word.value,'utf-8') + "@@" + str(word.revision)
-                        text.append(word.value)
-                        label_rev_ids.append(word.revision)
-            print(text)
-            print(label_rev_ids)
+                        if len(word.outbound) > threshold and word.last_used != last_rev_id:
+                            token = dict()
+                            token['str'] = word.value
+                            if 'rev_id' in parameters:
+                                token['rev_id'] = word.revision
+                            if 'author_id' in parameters:
+                                token['author_id'] = word.author_id
+                            if 'token_id' in parameters:
+                                token['token_id'] = word.internal_id
+                            if 'inbound' in parameters:
+                                token['inbound'] = word.inbound
+                            if 'outbound' in parameters:
+                                token['outbound'] = word.outbound
+                            key = '{}-{}'.format(word.revision, word.internal_id)
+                            if key not in deleted_token_keys:
+                                deleted_token_keys.append(key)
+                                deleted_tokens.append(token)
+        response["deleted_tokens"] = deleted_tokens
+
+        response["threshold"] = threshold
+        response["revision_id"] = last_rev_id
+        response["message"] = None
+        return response
+
+    def get_revision_ids(self):
+        response = dict()
+        response["success"] = "true"
+        revisions = []
+        response["article"] = self.article
+        from datetime import datetime
+        for rev_id, rev in self.revisions.items():
+            revisions.append((datetime.strptime(rev.time, '%Y-%m-%dT%H:%M:%SZ'), rev_id))
+        response["revisions"] = [rev_id for time, rev_id in sorted(revisions, key=lambda x: x[0])]
+        response["message"] = None
+        return response
 
     def get_revision_text(self, revision_id):
         revision = self.revisions[revision_id]
@@ -678,85 +695,3 @@ class Wikiwho:
                     text.append(word.value)
                     label_rev_ids.append(word.revision)
         return text, label_rev_ids
-
-
-def get_args():
-    parser = argparse.ArgumentParser(description='WikiWho: An algorithm for detecting attribution of authorship in '
-                                                 'revisioned content.')
-    # parser.add_argument('input_file', help='File to analyze')
-    parser.add_argument('-i', '--ifile', help='File to analyze')
-    parser.add_argument('-a', '--article', help='Article name to analyze')
-    parser.add_argument('-rev', '--revision',  # type=int,
-                        help='Revision to analyse. If not specified, all revisions are printed.')
-    parser.add_argument('-d', '--debug', help='Run in debug mode', action='store_true')
-
-    args = parser.parse_args()
-
-    if not args.ifile and not args.article:
-        parser.error("argument -i/--ifile or -a/--article is required")
-    elif args.ifile and args.article:
-        parser.error("only one of -i/--ifile or -a/--article is required")
-    # check # given rev_ids
-    revision_ids = args.revision
-    if revision_ids:
-        revision_ids = [int(x) for x in str(revision_ids).split('|')]
-        if len(revision_ids) > 2:
-            parser.error("Too many revision ids provided!")
-
-    return args
-
-
-def main():
-    args = get_args()
-    input_file = args.ifile
-    article_name = args.article
-    revision_ids = args.revision
-    if args.debug:
-        # logging.basicConfig(level=logging.DEBUG,  format='%(asctime)s - %(levelname)s - %(message)s')
-        # BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
-        logging.basicConfig(level=logging.DEBUG)
-
-    if article_name:
-        # from time import time
-        # time1 = time()
-        # TODO get results from ww_api, otherwise user must have a bot always.
-        if revision_ids:
-            revision_ids = [int(x) for x in str(revision_ids).split('|')]
-            if len(revision_ids) == 2 and revision_ids[1] <= revision_ids[0]:
-                revision_ids.reverse()
-        from api.handler import WPHandler
-        # TODO get output folder from cmd line
-        pickle_folder = '' or 'local/test_pickles'
-        with WPHandler(article_name, pickle_folder) as wp:
-            wp.handle(revision_ids, 'json')
-            wp.wikiwho.print_revision(wp.revision_ids, {'author'})
-        # time2 = time()
-        # print("Execution time: {}".format(time2-time1))
-    elif input_file:
-        print('Not implemented yet.')
-        """
-        from time import time
-        print("Calculating authorship for: {}".format(input_file))
-
-        time1 = time()
-        wikiwho = Wikiwho()
-        revisions, ordered_revisions = analyse_article(input_file)
-        time2 = time()
-
-        # pos = input_file.rfind("/")
-        # print input_file[pos+1: len(input_file)-len(".xml")], time2-time1
-
-        if revision_ids:
-            print_revision(revisions[revision_ids])
-        else:
-            for (rev, vandalism) in ordered_revisions:
-                if not vandalism:
-                    print_revision(revisions[rev])
-                else:
-                    print("Revision {} was detected as vandalism.".format(rev))
-
-        print("Execution time: {}".format(time2-time1))
-        """
-
-if __name__ == '__main__':
-    main()

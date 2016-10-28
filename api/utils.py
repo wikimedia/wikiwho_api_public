@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from lxml import etree
 import io
-import logging
+# import logging
 import requests
 import six
 from six.moves import cPickle as pickle, urllib
@@ -13,7 +13,7 @@ from django.conf import settings
 
 
 def pickle_(obj, pickle_path):
-    logging.debug("pickling")
+    # logging.debug("pickling")
     # Protocol version 4 was added in Python 3.4. It adds support for very large objects,
     # pickling more kinds of objects, and some data format optimizations. Refer to PEP 3154 for
     # information about improvements brought by protocol 4.

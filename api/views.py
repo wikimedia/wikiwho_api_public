@@ -17,9 +17,9 @@ from .handler import WPHandler, WPHandlerException
 
 # TODO add descriptions
 query_params = [
-    {'description': 'Add some description', 'in': 'query', 'name': 'revid', 'required': True, 'type': 'boolean'},  # 'default': 'false',
-    {'description': 'Add some description', 'in': 'query', 'name': 'author', 'required': True, 'type': 'boolean'},
-    {'description': 'Add some description', 'in': 'query', 'name': 'tokenid', 'required': True, 'type': 'boolean'},
+    {'description': 'Add some description', 'in': 'query', 'name': 'rev_id', 'required': True, 'type': 'boolean'},  # 'default': 'false',
+    {'description': 'Add some description', 'in': 'query', 'name': 'author_id', 'required': True, 'type': 'boolean'},
+    {'description': 'Add some description', 'in': 'query', 'name': 'token_id', 'required': True, 'type': 'boolean'},
     {'description': 'Add some description', 'in': 'query', 'name': 'inbound', 'required': True, 'type': 'boolean'},
     {'description': 'Add some description', 'in': 'query', 'name': 'outbound', 'required': True, 'type': 'boolean'}
 ]
@@ -27,7 +27,7 @@ query_params = [
 custom_data = {
     # 'info': {'title': 'WikiWho API', 'version': ''},
     'paths':
-        {'/authorship/{article_name}/':
+        {'/content/{article_name}/':
              {'get': {'description': '# Some description \n **with** *markdown* \n\n '
                                      '[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)',
                       'parameters': [{'description': 'Add some description',
@@ -37,11 +37,11 @@ custom_data = {
                                       'type': 'string'},
                                      ] + query_params,
                       'responses': {'200': {'description': ''}},
-                      'tags': ['authorship'],
-                      'summary': 'Get authorship of last revision of article'
+                      'tags': ['Revision content'],
+                      'summary': 'Get content of last revision of article'
                       }
               },
-         '/authorship/{article_name}/{revision_id}/':
+         '/content/{article_name}/{revision_id}/':
              {'get': {'description': '',
                       'parameters': [{'description': '',
                                       'in': 'path',
@@ -55,11 +55,11 @@ custom_data = {
                                       'type': 'string'},
                                      ] + query_params,
                       'responses': {'200': {'description': ''}},
-                      'tags': ['authorship'],
-                      'summary': 'Get authorship of given revision of article'
+                      'tags': ['Revision content'],
+                      'summary': 'Get content of given revision of article'
                       }
               },
-         '/authorship/{article_name}/{start_revision_id}/{end_revision_id}/':
+         '/content/{article_name}/{start_revision_id}/{end_revision_id}/':
              {'get': {'description': '',
                       'parameters': [{'description': '',
                                       'in': 'path',
@@ -78,8 +78,34 @@ custom_data = {
                                       'type': 'string'},
                                      ] + query_params,
                       'responses': {'200': {'description': ''}},
-                      'tags': ['authorship'],
-                      'summary': 'Get authorship of given revisions of article'
+                      'tags': ['Revision content'],
+                      'summary': 'Get content of given revisions of article'
+                      }
+              },
+         '/deleted/{article_name}/':
+             {'get': {'description': '',
+                      'parameters': [{'description': 'Add some description',
+                                      'in': 'path',
+                                      'name': 'article_name',
+                                      'required': True,
+                                      'type': 'string'},
+                                     ] + query_params,
+                      'responses': {'200': {'description': ''}},
+                      'tags': ['Deleted content'],
+                      'summary': 'Get deleted content of last revision of article'
+                      }
+              },
+         '/revision_ids/{article_name}/':
+             {'get': {'description': '',
+                      'parameters': [{'description': 'Add some description',
+                                      'in': 'path',
+                                      'name': 'article_name',
+                                      'required': True,
+                                      'type': 'string'},
+                                     ],
+                      'responses': {'200': {'description': ''}},
+                      'tags': ['Revision ids'],
+                      'summary': 'Get all revision ids of article'
                       }
               },
          },
@@ -141,22 +167,23 @@ class WikiwhoApiView(ViewSet):
 
     def get_parameters(self):
         parameters = []
-        if self.request.GET.get('revid') == 'true':
-            parameters.append('revid')
-        if self.request.GET.get('author') == 'true':
-            parameters.append('author')
-        if self.request.GET.get('tokenid') == 'true':
-            parameters.append('tokenid')
+        if self.request.GET.get('rev_id') == 'true':
+            parameters.append('rev_id')
+        if self.request.GET.get('author_id') == 'true':
+            parameters.append('author_id')
+        if self.request.GET.get('token_id') == 'true':
+            parameters.append('token_id')
         if self.request.GET.get('inbound') == 'true':
             parameters.append('inbound')
         if self.request.GET.get('outbound') == 'true':
             parameters.append('outbound')
         return parameters
 
-    def get_response(self, article_name, parameters, revision_ids=list()):
-        if not parameters:
-            return Response({'Error': 'At least one query parameter should be selected.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+    def get_response(self, article_name, parameters, revision_ids=list(), deleted=False, ids=False):
+        # if not parameters:
+        #     return Response({'Error': 'At least one query parameter should be selected.'},
+        #                     status=status.HTTP_400_BAD_REQUEST)
+
         # global handler_time
         # handler_start = time.time()
         with WPHandler(article_name) as wp:
@@ -166,8 +193,15 @@ class WikiwhoApiView(ViewSet):
                 response = {'Error': e.message}
                 status_ = status.HTTP_400_BAD_REQUEST
             else:
-                response = wp.wikiwho.get_revision_json(wp.revision_ids, parameters)
-                status_ = status.HTTP_200_OK
+                if deleted:
+                    response = wp.wikiwho.get_deleted_tokens(parameters)
+                    status_ = status.HTTP_200_OK
+                elif ids:
+                    response = wp.wikiwho.get_revision_ids()
+                    status_ = status.HTTP_200_OK
+                else:
+                    response = wp.wikiwho.get_revision_json(wp.revision_ids, parameters)
+                    status_ = status.HTTP_200_OK
         # handler_time = time.time() - handler_start
         # return HttpResponse(json.dumps(response), content_type='application/json; charset=utf-8')
         return Response(response, status=status_)
@@ -204,6 +238,16 @@ class WikiwhoApiView(ViewSet):
         l.append(get_language())
         key = hashlib.sha256(json.dumps(l, sort_keys=True).encode('utf-8')).hexdigest()
         return key
+
+    @detail_route(renderer_classes=(StaticHTMLRenderer,))
+    def get_deleted_content_by_name(self, request, version, article_name):
+        parameters = self.get_parameters()
+        return self.get_response(article_name, parameters, deleted=True)
+
+    @detail_route(renderer_classes=(StaticHTMLRenderer,))
+    def get_revision_ids_by_name(self, request, version, article_name):
+        parameters = self.get_parameters()
+        return self.get_response(article_name, parameters, ids=True)
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     # def get_article_by_revision(self, request, revision_id):
