@@ -182,7 +182,9 @@ class WikiwhoApiView(ViewSet):
             parameters.append('inbound')
         if self.request.GET.get('outbound') == 'true':
             parameters.append('outbound')
-        parameters.append(int(self.request.GET.get('threshold', 5)))
+        threshold = int(self.request.GET.get('threshold', 5))
+        threshold = 0 if threshold < 0 else threshold
+        parameters.append(threshold)
         return parameters
 
     def get_response(self, article_name, parameters, revision_ids=list(), deleted=False, ids=False):
