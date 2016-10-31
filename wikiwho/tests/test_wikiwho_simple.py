@@ -119,34 +119,33 @@ class TestWikiwho:
 
         # create json without token ids
         revision_json_without_tokenid = wp.wikiwho.get_revision_json(wp.revision_ids, {'rev_id', 'author_id'})
-        json_file_path_without_tokenid = '{}/{}_without_tokenid.json'.format(temp_folder, article_name)
+        json_file_path_without_tokenid = '{}/{}_ri_ai.json'.format(temp_folder, article_name)
         with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
                                sort_keys=True, ensure_ascii=False))
 
         # compare jsons without token ids
-        test_json_file_path = '{}/{}_without_tokenid.json'.format(test_json_folder, article_name)
+        test_json_file_path = '{}/{}_ri_ai.json'.format(test_json_folder, article_name)
         is_content_same = filecmp.cmp(json_file_path_without_tokenid, test_json_file_path)
         assert is_content_same, "{}: 'json without token ids' doesn't match".format(article_name)
 
         # check if all token ids are unique
-        revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'rev_id', 'author_id', 'token_id'})
+        revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'token_id'})
         for _, rev in revision_json['revisions'][0].items():
             token_ids = [x['token_id'] for x in rev['tokens']]
             assert len(token_ids) == len(set(token_ids)), "{}: there are duplicated token ids".format(article_name)
             break
 
         # compare jsons with token ids
-        json_file_path = '{}/{}.json'.format(temp_folder, article_name)
-        test_json_file_path = '{}/{}.json'.format(test_json_folder, article_name)
+        json_file_path = '{}/{}_ti.json'.format(temp_folder, article_name)
+        test_json_file_path = '{}/{}_ti.json'.format(test_json_folder, article_name)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         is_content_same = filecmp.cmp(json_file_path, test_json_file_path)
         assert is_content_same, "{}: json doesn't match".format(article_name)
 
         # create json with in/outbounds
-        revision_json_with_io = wp.wikiwho.get_revision_json(wp.revision_ids, {'rev_id', 'author_id', 'token_id',
-                                                                               'inbound', 'outbound'})
+        revision_json_with_io = wp.wikiwho.get_revision_json(wp.revision_ids, {'inbound', 'outbound'})
         json_file_path_with_io = '{}/{}_io.json'.format(temp_folder, article_name)
         with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
