@@ -384,7 +384,7 @@ def xml_to_pickle(output_path):
                     wikiwho = Wikiwho(article_name)
                     wikiwho.page_id = 111
                     wikiwho.analyse_article(revisions)
-                    wikiwho._clean()
+                    wikiwho.clean_attributes()
     if pickle_name:
         pickle_path = '{}/{}.p'.format(output_path, pickle_name)
         pickle_(wikiwho, pickle_path)

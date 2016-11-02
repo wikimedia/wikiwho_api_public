@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework.schemas import SchemaGenerator  # , as_query_fields
 from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
-from rest_framework_extensions.cache.decorators import cache_response
+from rest_framework_extensions.cache.decorators import cache_response, CacheResponse
 # from rest_framework.compat import coreapi, urlparse
 # import time, json
 # from django.core.signals import request_started, request_finished
@@ -163,12 +163,15 @@ class BurstRateThrottle(throttling.UserRateThrottle):
 
 class WikiwhoApiView(ViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    # TODO http://www.django-rest-framework.org/topics/third-party-resources/#authentication to account activation,
+    # password reset ...
     authentication_classes = (authentication.SessionAuthentication, authentication.BasicAuthentication)
     throttle_classes = (throttling.UserRateThrottle, throttling.AnonRateThrottle, BurstRateThrottle)
     # serializer_class = WikiWhoSerializer
     # filter_fields = ('query_option_1', 'query_option_2',)
-    # query_fields = ('revision_id', 'author_id', 'token_id', )
+    # query_fields = ('rev_id', 'author_id', 'token_id', )
     renderer_classes = [JSONRenderer]  # to disable browsable api
+    article = None
 
     def get_parameters(self):
         parameters = []
@@ -187,6 +190,63 @@ class WikiwhoApiView(ViewSet):
         parameters.append(threshold)
         return parameters
 
+    def get_revision_json(self, revision_ids, parameters):
+        response = dict()
+        response["article"] = self.article.title
+        response["success"] = "true"
+        response["message"] = None
+
+        revisions = []
+        db_revision_ids = []
+        if len(revision_ids) > 1:
+            filter_ = {'id__range': revision_ids}
+        else:
+            filter_ = {'id': revision_ids[0]}
+        for revision in self.article.revisions.filter(**filter_).select_related('editor').order_by('timestamp'):
+            revisions.append({revision.id: revision.to_json(parameters, content=True)})
+            db_revision_ids.append(revision.id)
+
+        for rev_id in revision_ids:
+            if rev_id not in db_revision_ids:
+                return {'Error': 'Revision ID ({}) does not exist or is spam or deleted!'.format(rev_id)}
+
+        response["revisions"] = sorted(revisions, key=lambda x: sorted(x.keys())) \
+            if len(revision_ids) > 1 else revisions
+
+        # import json
+        # with open('tmp_pickles/{}_db.json'.format(self.article.title), 'w') as f:
+        #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        return response
+
+    def get_deleted_tokens(self, parameters):
+        response = dict()
+        response["article"] = self.article.title
+        response["success"] = "true"
+        response["message"] = None
+        threshold = 5
+        response["threshold"] = threshold
+
+        # TODO use latest_revision_id from handler?
+        data = self.article.to_json(parameters, deleted=True, threshold=threshold, last_rev_id=None)
+        response.update(data)
+        # OR TODO which way is faster?
+        # revision = self.article.revisions.select_related('article').order_by('timestamp').last()
+        # response["deleted_tokens"] = revision.to_json(parameters, deleted=True, threshold=threshold)
+        # response["revision_id"] = revision.id
+
+        import json
+        with open('tmp_pickles/{}_deleted_tokens_db.json'.format(self.article.title), 'w') as f:
+            f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        return response
+
+    def get_revision_ids(self):
+        response = dict()
+        response["article"] = self.article.title
+        response["success"] = "true"
+        response["message"] = None
+        response["revisions"] = self.article.revisions.order_by('timestamp').values_list('id', flat=True)
+        return response
+
     def get_response(self, article_name, parameters, revision_ids=list(), deleted=False, ids=False):
         # if not parameters:
         #     return Response({'Error': 'At least one query parameter should be selected.'},
@@ -194,25 +254,32 @@ class WikiwhoApiView(ViewSet):
 
         # global handler_time
         # handler_start = time.time()
-        with WPHandler(article_name) as wp:
-            try:
+        try:
+            with WPHandler(article_name) as wp:
                 wp.handle(revision_ids, 'json')
-            except WPHandlerException as e:
-                response = {'Error': e.message}
-                status_ = status.HTTP_400_BAD_REQUEST
+        except WPHandlerException as e:
+            response = {'Error': e.message}
+            status_ = status.HTTP_400_BAD_REQUEST
+        else:
+            self.article = wp.article_obj
+            if deleted:
+                response = self.get_deleted_tokens(parameters)
+                response_ = wp.wikiwho.get_deleted_tokens(parameters)
+                assert response == response_
+                status_ = status.HTTP_200_OK
+            elif ids:
+                response = self.get_revision_ids()
+                response_ = wp.wikiwho.get_revision_ids()
+                assert list(response["revisions"]) == response_["revisions"]
+                status_ = status.HTTP_200_OK
             else:
-                if deleted:
-                    response = wp.wikiwho.get_deleted_tokens(parameters)
-                    status_ = status.HTTP_200_OK
-                elif ids:
-                    response = wp.wikiwho.get_revision_ids()
-                    status_ = status.HTTP_200_OK
+                response = self.get_revision_json(wp.revision_ids, parameters)
+                response_ = wp.wikiwho.get_revision_json(wp.revision_ids, parameters)
+                assert response == response_
+                if 'Error' in response:
+                    status_ = status.HTTP_400_BAD_REQUEST
                 else:
-                    response = wp.wikiwho.get_revision_json(wp.revision_ids, parameters)
-                    if 'Error' in response:
-                        status_ = status.HTTP_400_BAD_REQUEST
-                    else:
-                        status_ = status.HTTP_200_OK
+                    status_ = status.HTTP_200_OK
         # handler_time = time.time() - handler_start
         # return HttpResponse(json.dumps(response), content_type='application/json; charset=utf-8')
         return Response(response, status=status_)
@@ -220,6 +287,7 @@ class WikiwhoApiView(ViewSet):
     # TODO http://www.django-rest-framework.org/api-guide/renderers/
     @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_slice(self, request, version, article_name, start_revision_id, end_revision_id):
+        # TODO do we need pagination with page=5?
         start_revision_id = int(start_revision_id)
         end_revision_id = int(end_revision_id)
         if start_revision_id >= end_revision_id:
@@ -234,7 +302,8 @@ class WikiwhoApiView(ViewSet):
         parameters = self.get_parameters()
         return self.get_response(article_name, parameters, [int(revision_id)])
 
-    @cache_response(key_func='calculate_cache_key')
+    # TODO update to cache only specific articles from rest_framework_extensions.cache.decorators import CacheResponse
+    # @cache_response(key_func='calculate_cache_key')
     @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_article_by_name(self, request, version, article_name):
         # TODO when models are created, delete cache.delete(this_key) if last_rev_id is changed or obj is deleted!

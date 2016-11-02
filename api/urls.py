@@ -14,7 +14,7 @@ urlpatterns = [
     # url(r'^content/page_id/(?P<revision_id>[0-9]+)/$',
     #     WikiwhoApiView.as_view(actions={'get': 'get_article_by_page_id'}), name='page_id'),
     # url(r'^content/revision_id/(?P<revision_id>[0-9]+)/$',
-    #     WikiwhoApiView.as_view(actions={'get': 'get_article_by_revision'}), name='rev_id'),
+    #     WikiwhoApiView.as_view(actions={'get': 'get_revision'}), name='rev_id'),
     url(r'^deleted/(?P<article_name>.+)/$',
         WikiwhoApiView.as_view(actions={'get': 'get_deleted_content_by_name'}), name='deleted_article_name'),
     # url(r'^deleted/(?P<page_id>.+)/$',

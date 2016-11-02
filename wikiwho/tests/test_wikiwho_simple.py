@@ -22,6 +22,7 @@ import io
 
 from api.handler import WPHandler
 from wikiwho.utils import splitIntoWords
+from api.views import WikiwhoApiView
 # TODO tests for structures: splitIntoWords ...
 
 
@@ -64,8 +65,13 @@ def pytest_generate_tests(metafunc):
                 }
                 metafunc.addcall(funcargs=funcargs)
 
+pytestmark = pytest.mark.django_db
 
+
+@pytest.mark.django_db
 class TestWikiwho:
+    pytestmark = pytest.mark.django_db
+
     @classmethod
     def setup_class(cls):
         """ setup any state specific to the execution of the given class (which
@@ -86,14 +92,37 @@ class TestWikiwho:
             tmp = 'tmp_test'
         if not os.path.exists(tmp):
             os.mkdir(tmp)
+        tmp1 = '{}/test_authorship'.format(tmp)
+        if not os.path.exists(tmp1):
+            os.mkdir(tmp1)
+        tmp2 = '{}/test_json_output'.format(tmp)
+        if not os.path.exists(tmp2):
+            os.mkdir(tmp2)
         return tmp
         # in os' tmp dir
         # return tmpdir_factory.getbasetemp()
 
     def test_authorship(self, temp_folder, article_name, revision_ids, token, context, correct_rev_id):
         sub_text = splitIntoWords(context)
-        with WPHandler(article_name, temp_folder) as wp:
+        with WPHandler(article_name, '{}/test_authorship'.format(temp_folder)) as wp:
             wp.handle(revision_ids, 'json', is_api=False)
+
+        # revision = wp.article_obj.revisions.get(id=revision_ids[0])
+        # text_ = []
+        # rev_ids_ = []
+        # for data in revision.tokens.values('token', 'label_revision__id'):
+        #     text_.append(data['token'])
+        #     rev_ids_.append(data['label_revision__id'])
+        # n = len(sub_text)
+        # found = 0
+        ww_db_rev_id = 0
+        # for i in range(len(text_) - n + 1):
+        #     if sub_text == text_[i:i + n]:
+        #         token_i = i + sub_text.index(token)
+        #         ww_db_rev_id = rev_ids_[token_i]
+        #         found = 1
+        #         break
+
         text, label_rev_ids = wp.wikiwho.get_revision_text(revision_ids[0])
         n = len(sub_text)
         found = 0
@@ -105,21 +134,33 @@ class TestWikiwho:
                 token_i = i + sub_text.index(token)
                 ww_rev_id = label_rev_ids[token_i]
                 found = 1
-                assert ww_rev_id == correct_rev_id, "{}: {}: rev id was {}, should be {}".format(article_name,
+                assert ww_rev_id == correct_rev_id, "1){}: {}: rev id was {} - {}, should be {}".format(article_name,
                                                                                                  token,
                                                                                                  ww_rev_id,
+                                                                                                 ww_db_rev_id,
                                                                                                  correct_rev_id)
+                # assert ww_db_rev_id == correct_rev_id, "2){}: {}: rev id was {} - {}, should be {}".format(article_name,
+                #                                                                                  token,
+                #                                                                                  ww_rev_id,
+                #                                                                                  ww_db_rev_id,
+                #                                                                                  correct_rev_id)
                 break
         assert found, "{}: {} -> token not found".format(article_name, token)
 
     def test_json_output(self, temp_folder, article_name, revision_ids):
-        with WPHandler(article_name, temp_folder) as wp:
-            wp.handle(revision_ids, 'json', is_api=False)
+        temp_folder = '{}/test_json_output'.format(temp_folder)
         test_json_folder = 'test_jsons'
 
+        with WPHandler(article_name, temp_folder) as wp:
+            wp.handle(revision_ids, 'json', is_api=False)
+        # pickle_revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'rev_id', 'author_id', 'token_id'})
+
+        v = WikiwhoApiView()
+        v.article = wp.article_obj
+
         # create json without token ids
-        revision_json_without_tokenid = wp.wikiwho.get_revision_json(wp.revision_ids, {'rev_id', 'author_id'})
-        json_file_path_without_tokenid = '{}/{}_ri_ai.json'.format(temp_folder, article_name)
+        revision_json_without_tokenid = v.get_revision_json(wp.revision_ids, {'rev_id', 'author_id'})
+        json_file_path_without_tokenid = '{}/{}_db_ri_ai.json'.format(temp_folder, article_name)
         with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
                                sort_keys=True, ensure_ascii=False))
@@ -130,14 +171,14 @@ class TestWikiwho:
         assert is_content_same, "{}: 'json without token ids' doesn't match".format(article_name)
 
         # check if all token ids are unique
-        revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'token_id'})
+        revision_json = v.get_revision_json(wp.revision_ids, {'token_id'})
         for _, rev in revision_json['revisions'][0].items():
-            token_ids = [x['token_id'] for x in rev['tokens']]
+            token_ids = [t['token_id'] for t in rev['tokens']]
             assert len(token_ids) == len(set(token_ids)), "{}: there are duplicated token ids".format(article_name)
             break
 
         # compare jsons with token ids
-        json_file_path = '{}/{}_ti.json'.format(temp_folder, article_name)
+        json_file_path = '{}/{}_db_ti.json'.format(temp_folder, article_name)
         test_json_file_path = '{}/{}_ti.json'.format(test_json_folder, article_name)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
@@ -145,8 +186,8 @@ class TestWikiwho:
         assert is_content_same, "{}: json doesn't match".format(article_name)
 
         # create json with in/outbounds
-        revision_json_with_io = wp.wikiwho.get_revision_json(wp.revision_ids, {'inbound', 'outbound'})
-        json_file_path_with_io = '{}/{}_io.json'.format(temp_folder, article_name)
+        revision_json_with_io = v.get_revision_json(wp.revision_ids, {'inbound', 'outbound'})
+        json_file_path_with_io = '{}/{}_db_io.json'.format(temp_folder, article_name)
         with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
                                sort_keys=True, ensure_ascii=False))
@@ -222,6 +263,23 @@ class TestWikiwho:
                             # assert used == data[rev_id]['used'][i], 'used does not match, rev id: {} - {}'.format(rev_id, i)
                             assert inbound == data[rev_id]['inbound'][i], 'inbound does not match, rev id: {} - {}'.format(rev_id, i)
                             assert outbound == data[rev_id]['outbound'][i], 'outbound does not match, rev id: {} - {}'.format(rev_id, i)
+                            i += 1
+
+            wp._save_article_into_db()
+            for rev in wp.article_obj.revisions.all().order_by('id'):
+                rev_id = rev.id
+                if rev_id not in data.keys():
+                    continue
+                i = 0
+                for p in rev.paragraphs.order_by('position'):
+                    for s in p.paragraph.sentences.order_by('position'):
+                        for t in s.sentence.tokens.order_by('position'):
+                            used = [x for x in t.token.used if x <= rev_id]
+                            inbound = [x for x in t.token.inbound if x <= rev_id]
+                            outbound = [x for x in t.token.outbound if x <= rev_id]
+                            assert used == data[rev_id]['used'][i], 'used does not match, rev id: {} - {} - db'.format(rev_id, i)
+                            assert inbound == data[rev_id]['inbound'][i], 'inbound does not match, rev id: {} - {} - db'.format(rev_id, i)
+                            assert outbound == data[rev_id]['outbound'][i], 'outbound does not match, rev id: {} - {} - db'.format(rev_id, i)
                             i += 1
 
     @classmethod

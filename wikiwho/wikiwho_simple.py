@@ -2,8 +2,8 @@
 """
 Created on Feb 20, 2013
 
-@author: Maribel Acosta 
-@author: Fabian Floeck 
+@author: Maribel Acosta
+@author: Fabian Floeck
 @author: Andriy Rodchenko
 """
 from __future__ import absolute_import
@@ -13,7 +13,11 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 from difflib import Differ
+import uuid
 
+from django.utils.dateparse import parse_datetime
+from wikiwho.models import Editor, Revision as Revision_, Paragraph as Paragraph_, RevisionParagraph, \
+    Sentence as Sentence_, ParagraphSentence, SentenceToken, Token
 from .structures import Word, Sentence, Paragraph, Revision
 from .utils import calculateHash, splitIntoParagraphs, splitIntoSentences, splitIntoWords, computeAvgWordFreq
 
@@ -30,7 +34,7 @@ WORD_LEN = 100
 
 
 class Wikiwho:
-    def __init__(self, article):
+    def __init__(self, article_title):
         # Hash tables.
         self.paragraphs_ht = {}
         self.sentences_ht = {}
@@ -38,19 +42,47 @@ class Wikiwho:
         self.spam = []
         self.revisions = {}  # {rev_id : rev_obj, ...}
         self.rvcontinue = '0'
-        self.article = article
-        self.page_id = None
+        self.article_title = article_title
+        self.page_id = None  # article id
+        self.token_id = 0  # sequential id for words in article. unique per article
         # Revisions to compare.
         self.revision_curr = Revision()
         # self.revision_prev = Revision()
 
+        self.revisions_to_save = []
+        self.revisionparagraphs_to_save = []
+        self.revisionparagraphs_curr_to_save = []
+        self.paragraphs_to_save = []
+        self.paragraphs_curr_to_save = []
+        self.paragraphsentences_to_save = []
+        self.paragraphsentences_curr_to_save = []
+        self.sentences_to_save = []
+        self.sentences_curr_to_save = []
+        self.sentencetokens_to_save = []
+        self.sentencetokens_curr_to_save = []
+        self.tokens_to_save = {}  # {token_id: token_obj, ...}
+        self.tokens_curr_to_save = []
+
         self.text_curr = ''
-        self.token_id = 0
         self.temp = []
 
-    def _clean(self):
+    def clean_attributes(self):
         # empty attributes
         # self.revision_prev = None
+        self.revisions_to_save = []
+        self.revisionparagraphs_to_save = []
+        self.revisionparagraphs_curr_to_save = []
+        self.paragraphs_to_save = []
+        self.paragraphs_curr_to_save = []
+        self.paragraphsentences_to_save = []
+        self.paragraphsentences_curr_to_save = []
+        self.sentences_to_save = []
+        self.sentences_curr_to_save = []
+        self.sentencetokens_to_save = []
+        self.sentencetokens_curr_to_save = []
+        self.tokens_to_save = {}  # {token_id: token_obj, ...}
+        self.tokens_curr_to_save = []
+
         self.text_curr = ''
         self.temp = []
 
@@ -96,7 +128,7 @@ class Wikiwho:
                 # print(revision.id)
                 # print(self.text_curr)
                 self.revision_curr = revision_prev
-                self.spam.append(rev_id)  # skip revision with vandalism in history
+                self.spam.append(rev_id)  # skip current revision with vandalism
             else:
                 # Information about the current revision.
                 self.revision_curr = Revision()
@@ -126,14 +158,42 @@ class Wikiwho:
                     # print
                     self.revision_curr = revision_prev  # skip revision with vandalism in history
                     self.spam.append(rev_id)
+                    self.revisionparagraphs_curr_to_save = []
+                    self.paragraphs_curr_to_save = []
+                    self.paragraphsentences_curr_to_save = []
+                    self.sentences_curr_to_save = []
+                    self.sentencetokens_curr_to_save = []
+                    self.tokens_curr_to_save = []
                 else:
                     # Add the current revision with all the information.
                     self.revisions.update({self.revision_curr.wikipedia_id: self.revision_curr})
+                    editor_id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}'.format(self.revision_curr.contributor_id or 0,
+                                                                              self.revision_curr.contributor_name))
+                    editor, _ = Editor.objects.get_or_create(id=editor_id,
+                                                             defaults=
+                                                             {'wikipedia_id': self.revision_curr.contributor_id or 0,
+                                                              'name': self.revision_curr.contributor_name})
+                    r = Revision_(id=self.revision_curr.wikipedia_id,
+                                  article_id=self.page_id,
+                                  editor_id=editor_id,
+                                  timestamp=parse_datetime(self.revision_curr.time),
+                                  length=self.revision_curr.length)
+                    self.revisions_to_save.append(r)
+                    self.revisionparagraphs_to_save.extend(self.revisionparagraphs_curr_to_save)
+                    self.paragraphs_to_save.extend(self.paragraphs_curr_to_save)
+                    self.paragraphsentences_to_save.extend(self.paragraphsentences_curr_to_save)
+                    self.sentences_to_save.extend(self.sentences_curr_to_save)
+                    self.sentencetokens_to_save.extend(self.sentencetokens_curr_to_save)
+                    self.tokens_to_save.update({t.token_id: t for t in self.tokens_curr_to_save})
+                    self.revisionparagraphs_curr_to_save = []
+                    self.paragraphs_curr_to_save = []
+                    self.paragraphsentences_curr_to_save = []
+                    self.sentences_curr_to_save = []
+                    self.sentencetokens_curr_to_save = []
+                    self.tokens_curr_to_save = []
                     # Update the fake revision id.
                     i += 1
             self.temp = []
-
-        self._clean()
 
     def determine_authorship(self, revision_prev):
         # Containers for unmatched paragraphs and sentences in both revisions.
@@ -197,7 +257,7 @@ class Wikiwho:
         for matched_word in matched_words_prev:
             matched_word.matched = False
 
-        if not vandalism:
+        if not vandalism:  # TODO test this condition
             # Add the new paragraphs to hash table of paragraphs.
             for unmatched_paragraph in unmatched_paragraphs_curr:
                 if unmatched_paragraph.hash_value in self.paragraphs_ht:
@@ -224,6 +284,7 @@ class Wikiwho:
         paragraphs = splitIntoParagraphs(self.text_curr)
 
         # Iterate over the paragraphs of the current version.
+        c = 0
         for paragraph in paragraphs:
             # Build Paragraph structure and calculate hash value.
             paragraph = paragraph.strip()
@@ -260,6 +321,12 @@ class Wikiwho:
                                 for word_prev in sentence_prev.words:
                                     word_prev.matched = True
                                     word_prev.last_used = self.revision_curr.wikipedia_id
+                                    self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+
+                        rp = RevisionParagraph(revision_id=self.revision_curr.wikipedia_id,
+                                               paragraph_id=paragraph_prev.id,
+                                               position=c)
+                        self.revisionparagraphs_curr_to_save.append(rp)
 
                         # Add paragraph to current revision.
                         if hash_curr in self.revision_curr.paragraphs:
@@ -304,6 +371,12 @@ class Wikiwho:
                                             word_prev.inbound.append(self.revision_curr.wikipedia_id)
                                             # print('inbound:', word_prev.value, self.revision_curr.wikipedia_id)
                                         word_prev.last_used = self.revision_curr.wikipedia_id
+                                        self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+
+                            rp = RevisionParagraph(revision_id=self.revision_curr.wikipedia_id,
+                                                   paragraph_id=paragraph_prev.id,
+                                                   position=c)
+                            self.revisionparagraphs_curr_to_save.append(rp)
 
                             # Add paragraph to current revision.
                             if hash_curr in self.revision_curr.paragraphs:
@@ -323,12 +396,23 @@ class Wikiwho:
                 paragraph_curr = Paragraph()
                 paragraph_curr.hash_value = hash_curr
                 paragraph_curr.value = paragraph
+                paragraph_curr.id = uuid.uuid3(uuid.NAMESPACE_X500,
+                                               '{}{}{}'.format(self.revision_curr.wikipedia_id, c, hash_curr))
+
+                p = Paragraph_(id=paragraph_curr.id, hash_value=paragraph_curr.hash_value)
+                self.paragraphs_curr_to_save.append(p)
+                rp = RevisionParagraph(revision_id=self.revision_curr.wikipedia_id,
+                                       paragraph_id=paragraph_curr.id,
+                                       position=c)
+                self.revisionparagraphs_curr_to_save.append(rp)
+
                 if hash_curr in self.revision_curr.paragraphs:
                     self.revision_curr.paragraphs[hash_curr].append(paragraph_curr)
                 else:
                     self.revision_curr.paragraphs.update({paragraph_curr.hash_value: [paragraph_curr]})
                 self.revision_curr.ordered_paragraphs.append(paragraph_curr.hash_value)
                 unmatched_paragraphs_curr.append(paragraph_curr)
+            c += 1
 
         # Identify unmatched paragraphs in previous revision for further analysis.
         for paragraph_prev_hash in revision_prev.ordered_paragraphs:
@@ -356,6 +440,7 @@ class Wikiwho:
             # Split the current paragraph into sentences.
             sentences = splitIntoSentences(paragraph_curr.value)
             # Iterate over the sentences of the current paragraph
+            c = 0
             for sentence in sentences:
                 # Create the Sentence structure.
                 sentence = sentence.strip()
@@ -388,6 +473,12 @@ class Wikiwho:
                                 for word_prev in sentence_prev.words:
                                     word_prev.matched = True
                                     word_prev.last_used = self.revision_curr.wikipedia_id
+                                    self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+
+                                ps = ParagraphSentence(paragraph_id=paragraph_curr.id,
+                                                       sentence_id=sentence_prev.id,
+                                                       position=c)
+                                self.paragraphsentences_curr_to_save.append(ps)
 
                                 # Add the sentence information to the paragraph.
                                 if hash_curr in paragraph_curr.sentences:
@@ -427,6 +518,12 @@ class Wikiwho:
                                         word_prev.inbound.append(self.revision_curr.wikipedia_id)
                                         # print('inbound:', word_prev.value, self.revision_curr.wikipedia_id)
                                     word_prev.last_used = self.revision_curr.wikipedia_id
+                                    self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+
+                                ps = ParagraphSentence(paragraph_id=paragraph_curr.id,
+                                                       sentence_id=sentence_prev.id,
+                                                       position=c)
+                                self.paragraphsentences_curr_to_save.append(ps)
 
                                 # Add the sentence information to the paragraph.
                                 if hash_curr in paragraph_curr.sentences:
@@ -446,6 +543,14 @@ class Wikiwho:
                     sentence_curr = Sentence()
                     sentence_curr.value = sentence
                     sentence_curr.hash_value = hash_curr
+                    sentence_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}{}'.format(paragraph_curr.id, c, hash_curr))
+
+                    s = Sentence_(id=sentence_curr.id, hash_value=sentence_curr.hash_value)
+                    self.sentences_curr_to_save.append(s)
+                    ps = ParagraphSentence(paragraph_id=paragraph_curr.id,
+                                           sentence_id=sentence_curr.id,
+                                           position=c)
+                    self.paragraphsentences_curr_to_save.append(ps)
 
                     if hash_curr in paragraph_curr.sentences:
                         paragraph_curr.sentences[hash_curr].append(sentence_curr)
@@ -453,6 +558,7 @@ class Wikiwho:
                         paragraph_curr.sentences.update({sentence_curr.hash_value: [sentence_curr]})
                     paragraph_curr.ordered_sentences.append(sentence_curr.hash_value)
                     unmatched_sentences_curr.append(sentence_curr)
+                c += 1
 
         # Identify the unmatched sentences in the previous paragraph revision.
         for paragraph_prev in unmatched_paragraphs_prev:
@@ -501,28 +607,45 @@ class Wikiwho:
             else:
                 possible_vandalism = False
 
-        # Edit consists of adding new content, not changing content ?
+        # Edit consists of adding new content, not changing/removing content
         if not text_prev:
             for sentence_curr in unmatched_sentences_curr:
+                c = 0
                 for word in sentence_curr.splitted:
                     word_curr = Word()
+                    word_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}'.format(self.page_id, self.token_id))
                     word_curr.value = word
-                    word_curr.internal_id = self.token_id
+                    word_curr.token_id = self.token_id
                     word_curr.author_id = self.revision_curr.contributor_id
                     word_curr.author_name = self.revision_curr.contributor_name
                     word_curr.revision = self.revision_curr.wikipedia_id
                     word_curr.last_used = self.revision_curr.wikipedia_id
+
+                    t = Token(id=word_curr.id,
+                              value=word,
+                              label_revision_id=word_curr.revision,
+                              token_id=word_curr.token_id,
+                              last_used=word_curr.last_used,
+                              inbound=word_curr.inbound,
+                              outbound=word_curr.outbound)
+                    self.tokens_curr_to_save.append(t)
+                    st = SentenceToken(sentence_id=sentence_curr.id,
+                                       token_id=word_curr.id,
+                                       position=c)
+                    self.sentencetokens_curr_to_save.append(st)
+
                     sentence_curr.words.append(word_curr)
                     self.token_id += 1
+                    c += 1
             return matched_words_prev, possible_vandalism
 
         d = Differ()
         diff = list(d.compare(text_prev, text_curr))
         for sentence_curr in unmatched_sentences_curr:
+            c = 0
             for word in sentence_curr.splitted:
                 curr_matched = False
                 pos = 0
-                # next_word = False
                 while pos < len(diff):
                     word_diff = diff[pos]
                     if word == word_diff[2:]:
@@ -530,16 +653,23 @@ class Wikiwho:
                             # match
                             for word_prev in unmatched_words_prev:
                                 if not word_prev.matched and word_prev.value == word:
+
+                                    st = SentenceToken(sentence_id=sentence_curr.id,
+                                                       token_id=word_prev.id,
+                                                       position=c)
+                                    self.sentencetokens_curr_to_save.append(st)
+
                                     word_prev.matched = True
                                     curr_matched = True
                                     word_prev.last_used = self.revision_curr.wikipedia_id
+                                    self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
                                     sentence_curr.words.append(word_prev)
                                     matched_words_prev.append(word_prev)
                                     diff[pos] = ''
                                     pos = len(diff) + 1
                                     break
                         elif word_diff[0] == '-':
-                            # deleted / reintroduced ??
+                            # deleted
                             for word_prev in unmatched_words_prev:
                                 if not word_prev.matched and word_prev.value == word:
                                     word_prev.matched = True
@@ -552,12 +682,27 @@ class Wikiwho:
                             # a new added word
                             curr_matched = True
                             word_curr = Word()
+                            word_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}'.format(self.page_id, self.token_id))
                             word_curr.value = word
-                            word_curr.internal_id = self.token_id
+                            word_curr.token_id = self.token_id
                             word_curr.author_id = self.revision_curr.contributor_id
                             word_curr.author_name = self.revision_curr.contributor_name
                             word_curr.revision = self.revision_curr.wikipedia_id
                             word_curr.last_used = self.revision_curr.wikipedia_id
+
+                            t = Token(id=word_curr.id,
+                                      value=word,
+                                      label_revision_id=word_curr.revision,
+                                      token_id=word_curr.token_id,
+                                      last_used=word_curr.last_used,
+                                      inbound=word_curr.inbound,
+                                      outbound=word_curr.outbound)
+                            self.tokens_curr_to_save.append(t)
+                            st = SentenceToken(sentence_id=sentence_curr.id,
+                                               token_id=word_curr.id,
+                                               position=c)
+                            self.sentencetokens_curr_to_save.append(st)
+
                             sentence_curr.words.append(word_curr)
                             self.token_id += 1
                             diff[pos] = ''
@@ -567,22 +712,43 @@ class Wikiwho:
                 if not curr_matched:
                     # if diff returns a word as '? ...'
                     word_curr = Word()
+                    word_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}'.format(self.page_id, self.token_id))
                     word_curr.value = word
-                    word_curr.internal_id = self.token_id
+                    word_curr.token_id = self.token_id
                     word_curr.author_id = self.revision_curr.contributor_id
                     word_curr.author_name = self.revision_curr.contributor_name
                     word_curr.revision = self.revision_curr.wikipedia_id
                     word_curr.last_used = self.revision_curr.wikipedia_id
                     sentence_curr.words.append(word_curr)
+
+                    t = Token(id=word_curr.id,
+                              value=word,
+                              label_revision_id=word_curr.revision,
+                              token_id=word_curr.token_id,
+                              last_used=word_curr.last_used,
+                              inbound=word_curr.inbound,
+                              outbound=word_curr.outbound)
+                    self.tokens_curr_to_save.append(t)
+                    st = SentenceToken(sentence_id=sentence_curr.id,
+                                       token_id=word_curr.id,
+                                       position=c)
+                    self.sentencetokens_curr_to_save.append(st)
+
                     self.token_id += 1
+                c += 1
 
         return matched_words_prev, possible_vandalism
 
     def get_revision_json(self, revision_ids, parameters, format_="json"):
         response = dict()
+        response["article"] = self.article_title
         response["success"] = "true"
+        response["message"] = None
         revisions = []
-        response["article"] = self.article
+
+        for rev_id in revision_ids:
+            if rev_id not in self.revisions:
+                return {'Error': 'Revision ID ({}) does not exist or is spam or deleted!'.format(rev_id)}
 
         for rev_id in revision_ids:
             if rev_id not in self.revisions:
@@ -615,7 +781,7 @@ class Wikiwho:
                             if 'author_id' in parameters:
                                 dict_json['author_id'] = word.author_id
                             if 'token_id' in parameters:
-                                dict_json['token_id'] = word.internal_id
+                                dict_json['token_id'] = word.token_id
                             if 'inbound' in parameters:
                                 dict_json['inbound'] = word.inbound
                             if 'outbound' in parameters:
@@ -623,18 +789,20 @@ class Wikiwho:
                             dict_list.append(dict_json)
             if format_ == 'json':
                 revisions[-1][rev_id]["tokens"] = dict_list
+
         response["revisions"] = sorted(revisions, key=lambda x: sorted(x.keys())) \
             if len(revision_ids) > 1 else revisions
-        response["message"] = None
+
         # import json
-        # with open('tmp_pickles/{}_{}.json'.format(self.article, revision_ids[0]), 'w') as f:
+        # with open('tmp_pickles/{}.json'.format(self.article_title), 'w') as f:
         #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+
         return response
 
     def get_deleted_tokens(self, parameters):
         response = dict()
         response["success"] = "true"
-        response["article"] = self.article
+        response["article"] = self.article_title
 
         threshold = parameters[-1]
         deleted_tokens = []
@@ -658,12 +826,12 @@ class Wikiwho:
                             if 'author_id' in parameters:
                                 token['author_id'] = word.author_id
                             if 'token_id' in parameters:
-                                token['token_id'] = word.internal_id
+                                token['token_id'] = word.token_id
                             if 'inbound' in parameters:
                                 token['inbound'] = word.inbound
                             if 'outbound' in parameters:
                                 token['outbound'] = word.outbound
-                            key = '{}-{}'.format(word.revision, word.internal_id)
+                            key = '{}-{}'.format(word.revision, word.token_id)
                             if key not in deleted_token_keys:
                                 deleted_token_keys.append(key)
                                 deleted_tokens.append(token)
@@ -672,13 +840,16 @@ class Wikiwho:
         response["threshold"] = threshold
         response["revision_id"] = last_rev_id
         response["message"] = None
+        # import json
+        # with open('tmp_pickles/{}_deleted_tokens.json'.format(self.article_title), 'w') as f:
+        #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return response
 
     def get_revision_ids(self):
         response = dict()
         response["success"] = "true"
         revisions = []
-        response["article"] = self.article
+        response["article"] = self.article_title
         from datetime import datetime
         for rev_id, rev in self.revisions.items():
             revisions.append((datetime.strptime(rev.time, '%Y-%m-%dT%H:%M:%SZ'), rev_id))

@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     'api',
     'base',
     'django_extensions',
+    'wikiwho',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -28,6 +29,7 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'wikiwho_api.urls'
@@ -50,17 +52,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'wikiwho_api.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-# TODO
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
 
 
 # Password validation

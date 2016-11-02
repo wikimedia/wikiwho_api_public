@@ -26,3 +26,4 @@ drf-extensions
 #django-admin-tools-stats
 
 django-extensions
+psycopg2

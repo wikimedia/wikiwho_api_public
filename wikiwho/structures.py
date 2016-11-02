@@ -12,13 +12,14 @@ class Word(object):
     Implementation of the structure "Word", which includes the authorship information.
     """
     def __init__(self):
+        self.id = ''  # uuid.uuid3(uuid.NAMESPACE_X500, '{}{}{}'.format(article_id, token_id))
         self.author_id = 0  # Identificator of the author of the word.
         self.author_name = ''  # Username of the author of the word.
         self.revision = 0  # Revision where the word was included.
         self.value = ''  # The word (simple text).
         self.matched = False
         # self.length = 0
-        self.internal_id = 0
+        self.token_id = 0  # sequential id in article. unique per article
         # self.used = []
         self.last_used = 0
         self.inbound = []
@@ -40,6 +41,7 @@ class Sentence(object):
     """
     def __init__(self):
         self.hash_value = ''  # The hash value of the sentence.
+        self.id = ''  # uuid.uuid3(uuid.NAMESPACE_X500, '{}{}{}'.format(paragraph_id, c, hash_value))
         self.value = ''  # The sentence (simple text).
         self.splitted = []  # List of strings composing the sentence.
         self.words = []  # List of words in the sentence. It is an array of Word.
@@ -66,6 +68,7 @@ class Paragraph(object):
     """
     def __init__(self):
         self.hash_value = ''  # The hash value of the paragraph.
+        self.id = ''  # uuid.uuid3(uuid.NAMESPACE_X500, '{}{}{}'.format(rev_wp_id, c, hash_value))
         self.value = ''  # The text of the paragraph.
         self.sentences = {}  # Dictionary of sentences in the paragraph. It is a dictionary of the form {sentence_hash : [Sentence, ..]}
         self.ordered_sentences = []  # List with the hash of the sentences, ordered by hash appeareances.
@@ -103,7 +106,7 @@ class Revision(object):
         self.wikipedia_id = 0  # Wikipedia revision id.
         self.contributor_id = 0  # Id of the contributor who performed the revision.
         self.contributor_name = ''  # Name of the contributor who performed the revision.
-        self.contributor_ip = ''  # Name of the contributor who performed the revision.
+        # self.contributor_ip = ''  # IP of the contributor who performed the revision.
         self.paragraphs = {}  # Dictionary of paragraphs. It is of the form {paragraph_hash : [Paragraph, ..]}.
         self.ordered_paragraphs = []  # Ordered list of paragraph hashes.
         self.length = 0  # Content length (bytes).

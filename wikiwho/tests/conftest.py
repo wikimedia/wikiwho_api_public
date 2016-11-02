@@ -23,3 +23,15 @@ def lines(request):
     :return:
     """
     return request.config.getoption("--lines")
+
+
+# @pytest.fixture(scope='session')
+# def django_db_modify_db_settings():
+#     """
+#     By default, each xdist process gets its own database to run tests on. This is needed to have transactional
+#     tests that does not interfere with eachother.
+#     If you instead want your tests to use the same database, override the django_db_modify_db_settings to not do
+#     anything
+#     :return:
+#     """
+#     pass
