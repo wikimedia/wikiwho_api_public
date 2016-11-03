@@ -49,6 +49,8 @@ class Wikiwho:
         self.revision_curr = Revision()
         # self.revision_prev = Revision()
 
+        self.continue_rev_id = None  # to check if this is continue
+
         self.revisions_to_save = []
         self.revisionparagraphs_to_save = []
         self.revisionparagraphs_curr_to_save = []
@@ -61,6 +63,7 @@ class Wikiwho:
         self.sentencetokens_to_save = []
         self.sentencetokens_curr_to_save = []
         self.tokens_to_save = {}  # {token_id: token_obj, ...}
+        self.tokens_to_update = {}  # {token_id: token_obj, ...}
         self.tokens_curr_to_save = []
 
         self.text_curr = ''
@@ -227,18 +230,22 @@ class Wikiwho:
 
         # Add the information of 'deletion' to words
         for unmatched_sentence in unmatched_sentences_prev:
-            for word in unmatched_sentence.words:
-                if not word.matched:
-                    word.outbound.append(self.revision_curr.wikipedia_id)
+            for word_prev in unmatched_sentence.words:
+                if not word_prev.matched:
+                    word_prev.outbound.append(self.revision_curr.wikipedia_id)
                     # print('outbound:', word.value, self.revision_curr.wikipedia_id)
+                    if self.continue_rev_id and self.continue_rev_id >= word_prev.revision:
+                        self.tokens_to_update[word_prev.id] = word_prev
         if not unmatched_sentences_prev:
             # if all current paragraphs are matched
             for unmatched_paragraph in unmatched_paragraphs_prev:
                 for sentence_hash in unmatched_paragraph.sentences:
                     for sentence in unmatched_paragraph.sentences[sentence_hash]:
-                        for word in sentence.words:
-                            if not word.matched:
-                                word.outbound.append(self.revision_curr.wikipedia_id)
+                        for word_prev in sentence.words:
+                            if not word_prev.matched:
+                                word_prev.outbound.append(self.revision_curr.wikipedia_id)
+                                if self.continue_rev_id and self.continue_rev_id >= word_prev.revision:
+                                    self.tokens_to_update[word_prev.id] = word_prev
 
         # Reset matched structures from old revisions.
         for matched_paragraph in matched_paragraphs_prev:
@@ -321,7 +328,10 @@ class Wikiwho:
                                 for word_prev in sentence_prev.words:
                                     word_prev.matched = True
                                     word_prev.last_used = self.revision_curr.wikipedia_id
-                                    self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+                                    if self.continue_rev_id is None or self.continue_rev_id < word_prev.revision:
+                                        self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+                                    else:
+                                        self.tokens_to_update[word_prev.id] = word_prev
 
                         rp = RevisionParagraph(revision_id=self.revision_curr.wikipedia_id,
                                                paragraph_id=paragraph_prev.id,
@@ -371,7 +381,10 @@ class Wikiwho:
                                             word_prev.inbound.append(self.revision_curr.wikipedia_id)
                                             # print('inbound:', word_prev.value, self.revision_curr.wikipedia_id)
                                         word_prev.last_used = self.revision_curr.wikipedia_id
-                                        self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+                                        if self.continue_rev_id is None or self.continue_rev_id < word_prev.revision:
+                                            self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+                                        else:
+                                            self.tokens_to_update[word_prev.id] = word_prev
 
                             rp = RevisionParagraph(revision_id=self.revision_curr.wikipedia_id,
                                                    paragraph_id=paragraph_prev.id,
@@ -473,7 +486,10 @@ class Wikiwho:
                                 for word_prev in sentence_prev.words:
                                     word_prev.matched = True
                                     word_prev.last_used = self.revision_curr.wikipedia_id
-                                    self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+                                    if self.continue_rev_id is None or self.continue_rev_id < word_prev.revision:
+                                        self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+                                    else:
+                                        self.tokens_to_update[word_prev.id] = word_prev
 
                                 ps = ParagraphSentence(paragraph_id=paragraph_curr.id,
                                                        sentence_id=sentence_prev.id,
@@ -518,7 +534,10 @@ class Wikiwho:
                                         word_prev.inbound.append(self.revision_curr.wikipedia_id)
                                         # print('inbound:', word_prev.value, self.revision_curr.wikipedia_id)
                                     word_prev.last_used = self.revision_curr.wikipedia_id
-                                    self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+                                    if self.continue_rev_id is None or self.continue_rev_id < word_prev.revision:
+                                        self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+                                    else:
+                                        self.tokens_to_update[word_prev.id] = word_prev
 
                                 ps = ParagraphSentence(paragraph_id=paragraph_curr.id,
                                                        sentence_id=sentence_prev.id,
@@ -662,7 +681,10 @@ class Wikiwho:
                                     word_prev.matched = True
                                     curr_matched = True
                                     word_prev.last_used = self.revision_curr.wikipedia_id
-                                    self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+                                    if self.continue_rev_id is None or self.continue_rev_id < word_prev.revision:
+                                        self.tokens_to_save[word_prev.token_id].last_used = self.revision_curr.wikipedia_id
+                                    else:
+                                        self.tokens_to_update[word_prev.id] = word_prev
                                     sentence_curr.words.append(word_prev)
                                     matched_words_prev.append(word_prev)
                                     diff[pos] = ''
@@ -675,6 +697,8 @@ class Wikiwho:
                                     word_prev.matched = True
                                     word_prev.outbound.append(self.revision_curr.wikipedia_id)
                                     # print('outbound:', word_prev.value, self.revision_curr.wikipedia_id)
+                                    if self.continue_rev_id and self.continue_rev_id >= word_prev.revision:
+                                        self.tokens_to_update[word_prev.id] = word_prev
                                     matched_words_prev.append(word_prev)
                                     diff[pos] = ''
                                     break

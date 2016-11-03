@@ -234,9 +234,9 @@ class WikiwhoApiView(ViewSet):
         # response["deleted_tokens"] = revision.to_json(parameters, deleted=True, threshold=threshold)
         # response["revision_id"] = revision.id
 
-        import json
-        with open('tmp_pickles/{}_deleted_tokens_db.json'.format(self.article.title), 'w') as f:
-            f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        # import json
+        # with open('tmp_pickles/{}_deleted_tokens_db.json'.format(self.article.title), 'w') as f:
+        #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return response
 
     def get_revision_ids(self):
@@ -264,18 +264,18 @@ class WikiwhoApiView(ViewSet):
             self.article = wp.article_obj
             if deleted:
                 response = self.get_deleted_tokens(parameters)
-                response_ = wp.wikiwho.get_deleted_tokens(parameters)
-                assert response == response_
+                # response_ = wp.wikiwho.get_deleted_tokens(parameters)
+                # assert response == response_
                 status_ = status.HTTP_200_OK
             elif ids:
                 response = self.get_revision_ids()
-                response_ = wp.wikiwho.get_revision_ids()
-                assert list(response["revisions"]) == response_["revisions"]
+                # response_ = wp.wikiwho.get_revision_ids()
+                # assert list(response["revisions"]) == response_["revisions"]
                 status_ = status.HTTP_200_OK
             else:
                 response = self.get_revision_json(wp.revision_ids, parameters)
-                response_ = wp.wikiwho.get_revision_json(wp.revision_ids, parameters)
-                assert response == response_
+                # response_ = wp.wikiwho.get_revision_json(wp.revision_ids, parameters)
+                # assert response == response_
                 if 'Error' in response:
                     status_ = status.HTTP_400_BAD_REQUEST
                 else:
