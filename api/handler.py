@@ -27,7 +27,7 @@ class WPHandlerException(Exception):
 
 
 class WPHandler(object):
-    def __init__(self, article_title, pickle_folder='', save_pickle=False, *args, **kwargs):
+    def __init__(self, article_title, pickle_folder='', save_pickle=False, check_exists=True, *args, **kwargs):
         # super(WPHandler, self).__init__(article_title, pickle_folder=pickle_folder, *args, **kwargs)
         self.article_title = article_title
         self.article_db_title = ''
@@ -40,6 +40,7 @@ class WPHandler(object):
         self.latest_revision_id = None
         self.page_id = None
         self.save_pickle = save_pickle
+        self.check_exists = check_exists
 
     def __enter__(self):
         # time1 = time()
@@ -48,7 +49,8 @@ class WPHandler(object):
 
         # save as first letter in uppercase and ' 's are replaced by '_'
         self.article_db_title = (self.article_title[:1].upper() + self.article_title[1:]).replace(" ", "_")
-        self.article_obj = Article.objects.filter(title=self.article_db_title).first()
+        if self.check_exists:
+            self.article_obj = Article.objects.filter(title=self.article_db_title).first()
         # TODO get all article with this title and check with page_id (even there is one article in db),
         # then update titles of other articles with other page ids by using wp api (celery task)
         # articles = [a for a in Article.objects.filter(title=self.article_db_title)]
