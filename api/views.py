@@ -223,7 +223,7 @@ class WikiwhoApiView(ViewSet):
         response["article"] = self.article.title
         response["success"] = "true"
         response["message"] = None
-        threshold = 5
+        threshold = parameters[-1]
         response["threshold"] = threshold
 
         # TODO use latest_revision_id from handler?
