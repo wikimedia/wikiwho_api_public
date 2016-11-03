@@ -45,7 +45,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='revision',
             name='editor_id',
-            field=models.UUIDField(blank=False, null=False),
+            field=models.UUIDField(blank=False, null=False, editable=False),
         ),
 
         migrations.AlterField(
@@ -79,7 +79,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='revisionparagraph',
             name='paragraph_id',
-            field=models.UUIDField(blank=False, null=False),
+            field=models.UUIDField(blank=False, null=False, editable=False),
         ),
 
         migrations.AlterField(
@@ -96,7 +96,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='paragraphsentence',
             name='paragraph_id',
-            field=models.UUIDField(blank=False, null=False),
+            field=models.UUIDField(blank=False, null=False, editable=False),
         ),
 
         migrations.AlterField(
@@ -113,7 +113,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='paragraphsentence',
             name='sentence_id',
-            field=models.UUIDField(blank=False, null=False),
+            field=models.UUIDField(blank=False, null=False, editable=False),
         ),
 
         migrations.AlterField(
@@ -130,7 +130,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='sentencetoken',
             name='sentence_id',
-            field=models.UUIDField(blank=False, null=False),
+            field=models.UUIDField(blank=False, null=False, editable=False),
         ),
 
         migrations.AlterField(
@@ -147,7 +147,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='sentencetoken',
             name='token_id',
-            field=models.UUIDField(blank=False, null=False),
+            field=models.UUIDField(blank=False, null=False, editable=False),
         ),
 
         migrations.AlterField(
