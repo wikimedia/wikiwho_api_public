@@ -4,6 +4,8 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 INSTALLED_APPS += ['debug_toolbar']
+MIDDLEWARE_CLASSES += ['debug_toolbar.middleware.DebugToolbarMiddleware']
+
 SWAGGER_SETTINGS['VALIDATOR_URL'] = 'https://online.swagger.io/validator'
 
 ALLOWED_HOSTS = ['193.175.238.88',

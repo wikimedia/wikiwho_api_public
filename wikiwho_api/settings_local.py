@@ -10,7 +10,10 @@ INTERNAL_IPS = ['127.0.0.1']
 PICKLE_FOLDER = 'tmp_pickles'  # ''pickle_api'
 PICKLE_FOLDER_2 = 'tmp_pickles'  # ''../disk2/pickle_api_2'
 
-INSTALLED_APPS += ['debug_toolbar']
+INSTALLED_APPS += ['debug_toolbar',
+                   'debug_panel']
+
+MIDDLEWARE_CLASSES += ['debug_panel.middleware.DebugPanelMiddleware']
 
 SWAGGER_SETTINGS['VALIDATOR_URL'] = 'https://online.swagger.io/validator'
 
