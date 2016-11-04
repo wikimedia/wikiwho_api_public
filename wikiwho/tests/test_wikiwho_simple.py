@@ -23,7 +23,6 @@ import io
 from api.handler import WPHandler
 from wikiwho.utils import splitIntoWords
 from api.views import WikiwhoApiView
-# TODO tests for structures: splitIntoWords ...
 
 
 def pytest_generate_tests(metafunc):
@@ -37,7 +36,6 @@ def pytest_generate_tests(metafunc):
     articles = set()
     lines = metafunc.config.option.lines
     lines = [] if lines == 'all' else [int(l) for l in lines.split(',')]
-    # file_or_dir = metafunc.config.option.file_or_dir  # TODO
     if "article_name" in metafunc.fixturenames:
         input_file = '{}/{}'.format(os.path.dirname(os.path.realpath(__file__)), 'test_wikiwho_simple.xlsx')
         wb = load_workbook(filename=input_file, data_only=True, read_only=True)
@@ -55,6 +53,14 @@ def pytest_generate_tests(metafunc):
                     'token': '{}'.format(row[3].value).lower(),
                     'context': '{}'.format(row[4].value).lower(),
                     'correct_rev_id': int(row[5].value),
+                }
+                metafunc.addcall(funcargs=funcargs)
+            elif article_name not in articles and 'revision_id_start' in metafunc.fixturenames:
+                articles.add(article_name)
+                funcargs = {
+                    'article_name': article_name,
+                    'revision_id_start': int(row[5].value),
+                    'revision_id_end': int(row[2].value),
                 }
                 metafunc.addcall(funcargs=funcargs)
             elif article_name not in articles:
@@ -98,6 +104,9 @@ class TestWikiwho:
         tmp2 = '{}/test_json_output'.format(tmp)
         if not os.path.exists(tmp2):
             os.mkdir(tmp2)
+        tmp3 = '{}/test_continue_logic'.format(tmp)
+        if not os.path.exists(tmp3):
+            os.mkdir(tmp3)
         return tmp
         # in os' tmp dir
         # return tmpdir_factory.getbasetemp()
@@ -197,6 +206,52 @@ class TestWikiwho:
         is_content_same = filecmp.cmp(json_file_path_with_io, test_json_file_path)
         assert is_content_same, "{}: 'json with in/outbounds' doesn't match".format(article_name)
 
+    def test_continue_logic(self, temp_folder, article_name, revision_id_start, revision_id_end):
+        temp_folder = '{}/test_continue_logic'.format(temp_folder)
+        test_json_folder = 'test_jsons'
+
+        # first create article and revisions until revision_id_start
+        with WPHandler(article_name, temp_folder) as wp:
+            wp.handle([revision_id_start], 'json', is_api=False)
+
+        assert wp.article_obj is not None
+
+        # continue creating revisions of this article until revision_id_end
+        with WPHandler(article_name, temp_folder) as wp:
+            wp.handle([revision_id_end], 'json', is_api=False)
+
+        v = WikiwhoApiView()
+        v.article = wp.article_obj
+
+        # compare jsons without token ids
+        revision_json_without_tokenid = v.get_revision_json(wp.revision_ids, {'rev_id', 'author_id'})
+        json_file_path_without_tokenid = '{}/{}_db_ri_ai.json'.format(temp_folder, article_name)
+        with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
+                               sort_keys=True, ensure_ascii=False))
+        test_json_file_path = '{}/{}_ri_ai.json'.format(test_json_folder, article_name)
+        is_content_same = filecmp.cmp(json_file_path_without_tokenid, test_json_file_path)
+        assert is_content_same, "{}: 'json without token ids' doesn't match".format(article_name)
+
+        # compare jsons with token ids
+        revision_json = v.get_revision_json(wp.revision_ids, {'token_id'})
+        json_file_path = '{}/{}_db_ti.json'.format(temp_folder, article_name)
+        with io.open(json_file_path, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        test_json_file_path = '{}/{}_ti.json'.format(test_json_folder, article_name)
+        is_content_same = filecmp.cmp(json_file_path, test_json_file_path)
+        assert is_content_same, "{}: json doesn't match".format(article_name)
+
+        # compare jsons with in/outbounds
+        revision_json_with_io = v.get_revision_json(wp.revision_ids, {'inbound', 'outbound'})
+        json_file_path_with_io = '{}/{}_db_io.json'.format(temp_folder, article_name)
+        with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
+                               sort_keys=True, ensure_ascii=False))
+        test_json_file_path = '{}/{}_io.json'.format(test_json_folder, article_name)
+        is_content_same = filecmp.cmp(json_file_path_with_io, test_json_file_path)
+        assert is_content_same, "{}: 'json with in/outbounds' doesn't match".format(article_name)
+
     def test_finger_lakes(self, temp_folder):
         data = {
             0: {
@@ -246,7 +301,7 @@ class TestWikiwho:
         from django.core import management
         management.call_command('xml_to_pickle', *['--output', tests])
 
-        with WPHandler(article_name, tests) as wp:
+        with WPHandler(article_name, tests, save_pickle=True) as wp:
             for rev_id, rev in wp.wikiwho.revisions.items():
                 if rev_id not in data.keys():
                     continue
