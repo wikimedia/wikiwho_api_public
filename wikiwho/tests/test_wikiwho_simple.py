@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+These are integration tests to test behaviour of wikiwho algorithm.
+
 To run only test_authorship test calls:
 py.test test_wikiwho_simple.py::TestWikiwho::test_authorship
 To run only test_json_output test calls:
@@ -23,6 +25,8 @@ import io
 from api.handler import WPHandler
 from wikiwho.utils import splitIntoWords
 from api.views import WikiwhoApiView
+
+# TODO use django's default test tool: https://docs.djangoproject.com/en/1.10/topics/testing/
 
 
 def pytest_generate_tests(metafunc):
@@ -111,52 +115,12 @@ class TestWikiwho:
         # in os' tmp dir
         # return tmpdir_factory.getbasetemp()
 
-    def test_authorship(self, temp_folder, article_name, revision_ids, token, context, correct_rev_id):
-        sub_text = splitIntoWords(context)
-        with WPHandler(article_name, '{}/test_authorship'.format(temp_folder)) as wp:
-            wp.handle(revision_ids, 'json', is_api=False)
-
-        # revision = wp.article_obj.revisions.get(id=revision_ids[0])
-        # text_ = []
-        # rev_ids_ = []
-        # for data in revision.tokens.values('token', 'label_revision__id'):
-        #     text_.append(data['token'])
-        #     rev_ids_.append(data['label_revision__id'])
-        # n = len(sub_text)
-        # found = 0
-        ww_db_rev_id = 0
-        # for i in range(len(text_) - n + 1):
-        #     if sub_text == text_[i:i + n]:
-        #         token_i = i + sub_text.index(token)
-        #         ww_db_rev_id = rev_ids_[token_i]
-        #         found = 1
-        #         break
-
-        text, label_rev_ids = wp.wikiwho.get_revision_text(revision_ids[0])
-        n = len(sub_text)
-        found = 0
-        # print(wp.wikiwho.spam)
-        print(token, context)
-        print(sub_text)
-        for i in range(len(text) - n + 1):
-            if sub_text == text[i:i + n]:
-                token_i = i + sub_text.index(token)
-                ww_rev_id = label_rev_ids[token_i]
-                found = 1
-                assert ww_rev_id == correct_rev_id, "1){}: {}: rev id was {} - {}, should be {}".format(article_name,
-                                                                                                 token,
-                                                                                                 ww_rev_id,
-                                                                                                 ww_db_rev_id,
-                                                                                                 correct_rev_id)
-                # assert ww_db_rev_id == correct_rev_id, "2){}: {}: rev id was {} - {}, should be {}".format(article_name,
-                #                                                                                  token,
-                #                                                                                  ww_rev_id,
-                #                                                                                  ww_db_rev_id,
-                #                                                                                  correct_rev_id)
-                break
-        assert found, "{}: {} -> token not found".format(article_name, token)
-
     def test_json_output(self, temp_folder, article_name, revision_ids):
+        """
+        Tests json outputs of articles in given revisions in gold standard. If there are expected differences in
+        jsons, authorship of each token in gold standard should be checked manually.
+        :param revision_ids: Revision id where authorship of token in gold standard is tested.
+        """
         temp_folder = '{}/test_json_output'.format(temp_folder)
         test_json_folder = 'test_jsons'
 
@@ -207,6 +171,10 @@ class TestWikiwho:
         assert is_content_same, "{}: 'json with in/outbounds' doesn't match".format(article_name)
 
     def test_continue_logic(self, temp_folder, article_name, revision_id_start, revision_id_end):
+        """
+        :param revision_id_start: Correct revision id of first token of article in gold standard.
+        :param revision_id_end: Revision id where authorship of token in gold standard is tested.
+        """
         temp_folder = '{}/test_continue_logic'.format(temp_folder)
         test_json_folder = 'test_jsons'
 
@@ -253,6 +221,9 @@ class TestWikiwho:
         assert is_content_same, "{}: 'json with in/outbounds' doesn't match".format(article_name)
 
     def test_finger_lakes(self, temp_folder):
+        """
+        Tests in/outbounds through finger lake dummy article.
+        """
         data = {
             0: {
                 'used': [[0], [0], [0], [0], [0], [0], [0], [0]],
@@ -336,6 +307,54 @@ class TestWikiwho:
                             assert inbound == data[rev_id]['inbound'][i], 'inbound does not match, rev id: {} - {} - db'.format(rev_id, i)
                             assert outbound == data[rev_id]['outbound'][i], 'outbound does not match, rev id: {} - {} - db'.format(rev_id, i)
                             i += 1
+
+    def test_authorship(self, temp_folder, article_name, revision_ids, token, context, correct_rev_id):
+        """
+        This is not needed anymore. Covered by 'test_json_output' case.
+        """
+        sub_text = splitIntoWords(context)
+        with WPHandler(article_name, '{}/test_authorship'.format(temp_folder)) as wp:
+            wp.handle(revision_ids, 'json', is_api=False)
+
+        # revision = wp.article_obj.revisions.get(id=revision_ids[0])
+        # text_ = []
+        # rev_ids_ = []
+        # for data in revision.tokens.values('token', 'label_revision__id'):
+        #     text_.append(data['token'])
+        #     rev_ids_.append(data['label_revision__id'])
+        # n = len(sub_text)
+        # found = 0
+        ww_db_rev_id = 0
+        # for i in range(len(text_) - n + 1):
+        #     if sub_text == text_[i:i + n]:
+        #         token_i = i + sub_text.index(token)
+        #         ww_db_rev_id = rev_ids_[token_i]
+        #         found = 1
+        #         break
+
+        text, label_rev_ids = wp.wikiwho.get_revision_text(revision_ids[0])
+        n = len(sub_text)
+        found = 0
+        # print(wp.wikiwho.spam)
+        print(token, context)
+        print(sub_text)
+        for i in range(len(text) - n + 1):
+            if sub_text == text[i:i + n]:
+                token_i = i + sub_text.index(token)
+                ww_rev_id = label_rev_ids[token_i]
+                found = 1
+                assert ww_rev_id == correct_rev_id, "1){}: {}: rev id was {} - {}, should be {}".format(article_name,
+                                                                                                 token,
+                                                                                                 ww_rev_id,
+                                                                                                 ww_db_rev_id,
+                                                                                                 correct_rev_id)
+                # assert ww_db_rev_id == correct_rev_id, "2){}: {}: rev id was {} - {}, should be {}".format(article_name,
+                #                                                                                  token,
+                #                                                                                  ww_rev_id,
+                #                                                                                  ww_db_rev_id,
+                #                                                                                  correct_rev_id)
+                break
+        assert found, "{}: {} -> token not found".format(article_name, token)
 
     @classmethod
     def teardown_class(cls):
