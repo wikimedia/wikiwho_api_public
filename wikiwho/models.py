@@ -3,6 +3,8 @@ import uuid
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import F
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 from base.models import BaseModel
 
@@ -107,6 +109,12 @@ class Article(BaseModel):
             json_data["revision_id"] = revision_id
             return json_data
         return False
+
+
+@receiver(post_delete, sender=Article)
+def article_post_delete(sender, instance, *args, **kwargs):
+    print(Paragraph.objects.filter(revisions=None).delete())
+    print(Sentence.objects.filter(tokens=None).delete())
 
 
 class Revision(BaseModel):
