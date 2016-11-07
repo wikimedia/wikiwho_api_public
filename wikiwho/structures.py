@@ -110,8 +110,6 @@ class Revision(object):
         self.paragraphs = {}  # Dictionary of paragraphs. It is of the form {paragraph_hash : [Paragraph, ..]}.
         self.ordered_paragraphs = []  # Ordered list of paragraph hashes.
         self.length = 0  # Content length (bytes).
-        # self.content = ''  # TODO: this should be removed. Just for debugging process.
-        # self.ordered_content = []  # TODO: this should be removed. Just for debugging process.
         # self.total_tokens = 0  # Number of tokens in the revision.
         self.time = 0  # timestamp
 

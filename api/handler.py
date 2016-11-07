@@ -251,10 +251,9 @@ class WPHandler(object):
                     if self.save_pickle:
                         self.wikiwho.clean_attributes()
                         pickle_(self.wikiwho, self.pickle_path)
-                    # TODO raise exception if it comes from wikiwho code
                     # logging.exception(self.article_title)
                     # traceback.print_exc()
-                    raise WPHandlerException("Some problems with the JSON returned by Wikipedia!")
+                    raise e
             if 'continue' not in result:
                 # hackish: create a rvcontinue with last revision id of this article
                 if self.wikiwho.revision_curr.time == 0:
