@@ -127,7 +127,7 @@ class Revision(BaseModel):
     timestamp = models.DateTimeField(blank=True, null=True)
     length = models.PositiveIntegerField(default=0)
     # size
-    # created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
     # creation_duration = models.TimeField(blank=True, null=True)
     # relations = JSON
 

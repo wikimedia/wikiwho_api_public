@@ -67,6 +67,7 @@ class Migration(migrations.Migration):
                 ('length', models.PositiveIntegerField(default=0)),
                 ('article', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='revisions', to='wikiwho.Article')),
                 ('editor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='revisions', to='wikiwho.Editor')),
+                ('created', models.DateTimeField(auto_now_add=True)),
             ],
             options={
                 'abstract': False,
