@@ -36,6 +36,7 @@ def get_latest_revision_data(article_name):
     # make get request
     resp_ = requests.get(wp_api_url, params, headers=headers)
     # convert response into dict
+    # print(resp_)
     response = resp_.json()
     _, page = response["query"]["pages"].popitem()
     if 'missing' in page or _ == '-1':

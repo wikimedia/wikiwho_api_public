@@ -222,7 +222,7 @@ class WPHandler(object):
                 result = session.get(url=url, headers=headers, params=params).json()
             except Exception as e:
                 if is_api:
-                    raise WPHandlerException('HTTP Response error! Try again later!')
+                    raise WPHandlerException('HTTP Response error from Wikipedia! Please try again later.')
                 else:
                     # if not api query, raise the original exception
                     raise e

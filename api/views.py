@@ -12,6 +12,7 @@ from rest_framework_extensions.cache.decorators import cache_response, CacheResp
 # from django.core.signals import request_started, request_finished
 # from django.http import HttpResponse
 import hashlib, json
+from simplejson import JSONDecodeError
 
 from .handler import WPHandler, WPHandlerException
 
@@ -259,6 +260,9 @@ class WikiwhoApiView(ViewSet):
                 wp.handle(revision_ids, 'json')
         except WPHandlerException as e:
             response = {'Error': e.message}
+            status_ = status.HTTP_400_BAD_REQUEST
+        except JSONDecodeError as e:
+            response = {'Error': 'HTTP Response error from Wikipedia! Please try again later.'}
             status_ = status.HTTP_400_BAD_REQUEST
         else:
             self.article = wp.article_obj
