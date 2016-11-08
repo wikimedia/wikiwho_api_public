@@ -12,7 +12,7 @@ import os
 from wikiwho.models import Article, Revision, RevisionParagraph, Paragraph, ParagraphSentence, Sentence, \
     SentenceToken, Token
 from wikiwho.wikiwho_simple import Wikiwho
-from .utils import pickle_, get_latest_revision_and_page_id, create_wp_session
+from .utils import pickle_, get_latest_revision_data, create_wp_session
 from wikiwho import structures
 
 # session = create_wp_session()
@@ -47,8 +47,8 @@ class WPHandler(object):
         # logging.debug("--------")
         # logging.debug(self.article_title)
 
-        # save as first letter in uppercase and ' 's are replaced by '_'
-        self.article_db_title = (self.article_title[:1].upper() + self.article_title[1:]).replace(" ", "_")
+        # get db title from wp
+        self.latest_revision_id, self.page_id, self.article_db_title = get_latest_revision_data(self.article_title)
         if self.check_exists:
             self.article_obj = Article.objects.filter(title=self.article_db_title).first()
         # TODO get all article with this title and check with page_id (even there is one article in db),
@@ -61,7 +61,6 @@ class WPHandler(object):
         #         break
         # if articles:
         #     update_titles_task(articles)
-        self.latest_revision_id, self.page_id = get_latest_revision_and_page_id(self.article_title)
         self.saved_rvcontinue = self.article_obj.rvcontinue if self.article_obj else '0'
 
         if self.save_pickle:
@@ -76,12 +75,12 @@ class WPHandler(object):
                 create_new = not os.path.exists(self.pickle_path)
             if create_new:
                 # a new pickle in secondary disk will be created
-                self.wikiwho = Wikiwho(self.article_title)
+                self.wikiwho = Wikiwho(self.article_db_title)
                 self.wikiwho.page_id = self.page_id
             else:
                 with io.open(self.pickle_path, 'rb') as f:
                     self.wikiwho = pickle.load(f)
-                    # print(self.article_title, '-> saved_rvcontinue:', self.wikiwho.rvcontinue)
+                    # print(self.article_db_title, '-> saved_rvcontinue:', self.wikiwho.rvcontinue)
             self.saved_rvcontinue = self.wikiwho.rvcontinue
 
         # time2 = time()
@@ -107,12 +106,12 @@ class WPHandler(object):
             # Login request
             url = 'https://en.wikipedia.org/w/api.php'
             # revisions: Returns revisions for a given page
-            params = {'titles': self.article_title, 'action': 'query', 'prop': 'revisions',
+            params = {'titles': self.article_db_title, 'action': 'query', 'prop': 'revisions',
                       'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
                       'rvlimit': 'max', 'format': format_, 'continue': '', 'rvdir': 'newer'}
 
             if not self.article_obj:
-                self.wikiwho = Wikiwho(self.article_title)
+                self.wikiwho = Wikiwho(self.article_db_title)
                 self.wikiwho.page_id = self.page_id
             else:
                 # continue analyzing the article
@@ -223,7 +222,7 @@ class WPHandler(object):
                 result = session.get(url=url, headers=headers, params=params).json()
             except Exception as e:
                 if is_api:
-                    raise WPHandlerException('HTTP Response error! Try again later!'.format(self.article_title))
+                    raise WPHandlerException('HTTP Response error! Try again later!')
                 else:
                     # if not api query, raise the original exception
                     raise e

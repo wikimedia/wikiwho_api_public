@@ -21,7 +21,7 @@ def pickle_(obj, pickle_path):
         pickle.dump(obj, file_, protocol=-1)  # -1 to select HIGHEST_PROTOCOL available
 
 
-def get_latest_revision_and_page_id(article_name):
+def get_latest_revision_data(article_name):
     if not article_name:
         return ''
     # set up request for Wikipedia API.
@@ -38,13 +38,13 @@ def get_latest_revision_and_page_id(article_name):
     # convert response into dict
     response = resp_.json()
     _, page = response["query"]["pages"].popitem()
-    # if _ == '-1':
-    if 'missing' in page:
-        # article title does not exist
-        return None, None
+    if 'missing' in page or _ == '-1':
+        # article title does not exist or contains invalid character
+        return None, None, None
     page_id = page['pageid']
+    title = page['title']
     latest_revision_id = page["revisions"][0]["revid"]
-    return latest_revision_id, page_id
+    return latest_revision_id, page_id, title
 
 
 def create_wp_session():
