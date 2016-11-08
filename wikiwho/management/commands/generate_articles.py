@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-python manage.py generate_articles -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/local/all_articles_list' -s 4040 -e 4040 -m 40
+python manage.py generate_articles -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/local/all_articles_list' -s 4040 -e 4041 -m 120
 """
 from django.core.management.base import BaseCommand, CommandError
 from collections import OrderedDict
 from os import listdir
-from os.path import isfile, join, exists, basename
+from os.path import isfile, join
 import csv
-import concurrent.futures
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import logging
 import re
 from time import strftime
@@ -31,8 +31,8 @@ class Command(BaseCommand):
         parser.add_argument('-p', '--path', help='Path where list of articles are saved', required=True)
         parser.add_argument('-m', '--max_workers', type=int, help='Number of threads/processors to run parallel.',
                             required=True)
-        parser.add_argument('-ppe', '--processor_pool_executor', action='store_true',
-                            help='Use ProcessPoolExecutor, default is ThreadPoolExecutor', default=False,
+        parser.add_argument('-tpe', '--thread_pool_executor', action='store_true',
+                            help='Use ThreadPoolExecutor, default is ProcessPoolExecutor', default=False,
                             required=False)
         parser.add_argument('-s', '--start', type=int, help='From range', required=False)
         parser.add_argument('-e', '--end', type=int, help='To range', required=False)
@@ -45,7 +45,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         path = options['path']
         max_workers = options['max_workers']
-        is_ppe = options['processor_pool_executor']
+        is_ppe = not options['thread_pool_executor']
         start = options['start']
         end = options['end']
         check_exists = options['check_exists']
@@ -65,59 +65,52 @@ class Command(BaseCommand):
             article_list_files[join(path, f)] = i
             counter += 1
 
-        logging.basicConfig(level=logging.ERROR,
-                            format='%(levelname)s:%(name)s:%(asctime)s:%(message)s')
-        logger = logging.getLogger('')
-        # already_list_file = '{}/logs/already_at_{}.txt'.format(path, strftime("%H:%M:%S %d-%m-%Y"))
+        input_articles = []
         for article_list_file in article_list_files:
             if start <= article_list_files[article_list_file] <= end:
-                print('Start: {} at {}'.format(article_list_file, strftime("%H:%M:%S %d-%m-%Y")))
-                handler = logging.FileHandler('{}/logs/{}_at_{}.log'.format(path,
-                                                                            basename(article_list_file).split('.')[0],
-                                                                            strftime("%Y-%m-%d-%H:%M:%S")))
-                # print(logger.handlers)
-                # logger.removeHandler(logging.StreamHandler)
-                # logger.addHandler(handler)
-                logger.handlers = [handler]
                 with open(article_list_file, 'r') as csv_file:
-                    input_articles = csv.reader(csv_file, delimiter=";")
+                    input_articles += csv.reader(csv_file, delimiter=";")
                     # for article in input_articles:
                     #     try:
-                    #         generate_pickle(article[0], already_list_file, pickle_folder, pickle_folder_2)
+                    #         generate_article(generate_article, article[0], check_exists)
                     #     except Exception as exc:
                     #         logger.exception(article[0])
 
-                    # We can use a with statement to ensure threads are cleaned up promptly
-                    if is_ppe:
-                        # use ProcessPoolExecutor
-                        print('Not implemented')  # FIXME requests.session throws sslerror
-                        # with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-                        #     # Start the load operations and mark each future with its article
-                        #     future_to_article = {executor.submit(generate_pickle, article[0], already_list_file,  pickle_folder, pickle_folder_2):
-                        #                          article[0]
-                        #                          for article in input_articles}
-                        #     for future in concurrent.futures.as_completed(future_to_article):
-                        #         article_name = future_to_article[future]
-                        #         try:
-                        #             data = future.result(timeout=None)
-                        #         except Exception as exc:
-                        #             # TODO use queue or lock for logging with multiPROCESSING
-                        #             # https://docs.python.org/3/howto/logging-cookbook.html#logging-to-a-single-file-from-multiple-processes
-                        #             logger.exception(article_name)
-                        #         # else:
-                        #         #     print('Success: {}'.format(article_name))
-                    else:
-                        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                            # Start the load operations and mark each future with its article
-                            future_to_article = {executor.submit(generate_article, article[0], check_exists): article[0]
-                                                 for article in input_articles}
-                            for future in concurrent.futures.as_completed(future_to_article):
-                                article_name = future_to_article[future]
-                                try:
-                                    data = future.result(timeout=None)
-                                except Exception as exc:
-                                    # no need for lock, logger is thread safe
-                                    logger.exception(article_name)
-                                    # else:
-                                    #     print('Success: {}'.format(article_name))
-                print('Done: {} at {}'.format(article_list_file, strftime("%H:%M:%S %d-%m-%Y")))
+        parsing_pattern = '/*-+/*-++-*/+-*//*-++-*//*-+'
+        range_ = [str(start), str(end)]
+        if is_ppe:
+            Executor = ProcessPoolExecutor
+            format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'
+        else:
+            Executor = ThreadPoolExecutor
+            format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
+
+        logger = logging.getLogger('')
+        logger.setLevel(logging.ERROR)
+        file_handler = logging.FileHandler('{}/logs/{}_at_{}.log'.format(path,
+                                                                         '_'.join(range_),
+                                                                         strftime("%Y-%m-%d-%H:%M:%S")))
+        file_handler.setLevel(logging.ERROR)
+        formatter = logging.Formatter(format_)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+        print('Start: {} at {}'.format(range_, strftime("%H:%M:%S %d-%m-%Y")))
+        # We can use a with statement to ensure threads are cleaned up promptly
+        with Executor(max_workers=max_workers) as executor:
+            # Start the load operations and mark each future with its article
+            future_to_article = {executor.submit(generate_article, article[0], check_exists):
+                                 article[0]
+                                 for article in input_articles}
+
+            del input_articles  # release memory
+
+            for future in as_completed(future_to_article):
+                article_name = future_to_article[future]
+                try:
+                    data = future.result(timeout=None)
+                except Exception as exc:
+                    logger.exception('{}--------{}'.format(article_name, parsing_pattern))
+                # else:
+                #     print('Success: {}'.format(article_name))
+        print('Done: {} at {}'.format(range_, strftime("%H:%M:%S %d-%m-%Y")))

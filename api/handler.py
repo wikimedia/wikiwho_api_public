@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from six.moves import cPickle as pickle
 import os
-from time import time
+# from time import time
 # from builtins import open
 from wikiwho.models import Article, Revision, RevisionParagraph, Paragraph, ParagraphSentence, Sentence, \
     SentenceToken, Token
@@ -15,7 +15,7 @@ from wikiwho.wikiwho_simple import Wikiwho
 from .utils import pickle_, get_latest_revision_and_page_id, create_wp_session
 from wikiwho import structures
 
-session = create_wp_session()
+# session = create_wp_session()
 
 
 class WPHandlerException(Exception):
@@ -101,6 +101,7 @@ class WPHandler(object):
         if self.revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
             # if given rev_id is bigger than saved one
             # logging.debug("STARTING NOW")
+            session = create_wp_session()
             headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
                        'From': settings.WP_HEADERS_FROM}
             # Login request
