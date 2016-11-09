@@ -43,7 +43,7 @@ def get_latest_revision_data(article_name):
         # article title does not exist or contains invalid character
         return None, None, None
     page_id = page['pageid']
-    title = page['title']
+    title = page['title'].replace(' ', '_')
     latest_revision_id = page["revisions"][0]["revid"]
     return latest_revision_id, page_id, title
 
