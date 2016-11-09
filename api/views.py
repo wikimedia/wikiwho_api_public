@@ -19,7 +19,7 @@ from .handler import WPHandler, WPHandlerException
 # TODO add descriptions
 query_params = [
     {'description': 'Add some description', 'in': 'query', 'name': 'rev_id', 'required': True, 'type': 'boolean'},  # 'default': 'false',
-    {'description': 'Add some description', 'in': 'query', 'name': 'author_id', 'required': True, 'type': 'boolean'},
+    {'description': 'Add some description', 'in': 'query', 'name': 'author', 'required': True, 'type': 'boolean'},
     {'description': 'Add some description', 'in': 'query', 'name': 'token_id', 'required': True, 'type': 'boolean'},
     {'description': 'Add some description', 'in': 'query', 'name': 'inbound', 'required': True, 'type': 'boolean'},
     {'description': 'Add some description', 'in': 'query', 'name': 'outbound', 'required': True, 'type': 'boolean'}
@@ -170,7 +170,7 @@ class WikiwhoApiView(ViewSet):
     throttle_classes = (throttling.UserRateThrottle, throttling.AnonRateThrottle, BurstRateThrottle)
     # serializer_class = WikiWhoSerializer
     # filter_fields = ('query_option_1', 'query_option_2',)
-    # query_fields = ('rev_id', 'author_id', 'token_id', )
+    # query_fields = ('rev_id', 'author', 'token_id', )
     renderer_classes = [JSONRenderer]  # to disable browsable api
     article = None
 
@@ -178,8 +178,8 @@ class WikiwhoApiView(ViewSet):
         parameters = []
         if self.request.GET.get('rev_id') == 'true':
             parameters.append('rev_id')
-        if self.request.GET.get('author_id') == 'true':
-            parameters.append('author_id')
+        if self.request.GET.get('author') == 'true':
+            parameters.append('author')
         if self.request.GET.get('token_id') == 'true':
             parameters.append('token_id')
         if self.request.GET.get('inbound') == 'true':
@@ -194,7 +194,7 @@ class WikiwhoApiView(ViewSet):
     def get_revision_json(self, revision_ids, parameters):
         response = dict()
         response["article"] = self.article.title
-        response["success"] = "true"
+        response["success"] = True
         response["message"] = None
 
         revisions = []
@@ -203,7 +203,7 @@ class WikiwhoApiView(ViewSet):
             filter_ = {'id__range': revision_ids}
         else:
             filter_ = {'id': revision_ids[0]}
-        for revision in self.article.revisions.filter(**filter_).select_related('editor').order_by('timestamp'):
+        for revision in self.article.revisions.filter(**filter_).order_by('timestamp'):
             revisions.append({revision.id: revision.to_json(parameters, content=True)})
             db_revision_ids.append(revision.id)
 
@@ -222,7 +222,7 @@ class WikiwhoApiView(ViewSet):
     def get_deleted_tokens(self, parameters):
         response = dict()
         response["article"] = self.article.title
-        response["success"] = "true"
+        response["success"] = True
         response["message"] = None
         threshold = parameters[-1]
         response["threshold"] = threshold
@@ -243,7 +243,7 @@ class WikiwhoApiView(ViewSet):
     def get_revision_ids(self):
         response = dict()
         response["article"] = self.article.title
-        response["success"] = "true"
+        response["success"] = True
         response["message"] = None
         response["revisions"] = self.article.revisions.order_by('timestamp').values_list('id', flat=True)
         return response

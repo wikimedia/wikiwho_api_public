@@ -31,22 +31,22 @@ class Migration(migrations.Migration):
         ),
 
 
-        migrations.AlterField(
-            model_name='revision',
-            name='editor',
-            field=models.ForeignKey(blank=False, null=False, on_delete=django.db.models.deletion.CASCADE,
-                                    related_name='revisions', to='wikiwho.Editor', db_column='editor'),
-        ),
-        migrations.RenameField(
-            model_name='revision',
-            old_name='editor',
-            new_name='editor_id',
-        ),
-        migrations.AlterField(
-            model_name='revision',
-            name='editor_id',
-            field=models.UUIDField(blank=False, null=False, editable=False),
-        ),
+        # migrations.AlterField(
+        #     model_name='revision',
+        #     name='editor',
+        #     field=models.ForeignKey(blank=False, null=False, on_delete=django.db.models.deletion.CASCADE,
+        #                             related_name='revisions', to='wikiwho.Editor', db_column='editor'),
+        # ),
+        # migrations.RenameField(
+        #     model_name='revision',
+        #     old_name='editor',
+        #     new_name='editor_id',
+        # ),
+        # migrations.AlterField(
+        #     model_name='revision',
+        #     name='editor_id',
+        #     field=models.UUIDField(blank=False, null=False, editable=False),
+        # ),
 
         migrations.AlterField(
             model_name='revisionparagraph',

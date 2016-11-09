@@ -125,8 +125,7 @@ class WPHandler(object):
                 paragraphs = {}
                 sentences = {}
                 words = {}
-                # for revision in self.article_obj.revisions.select_related('editor').values():
-                # for rev in self.article_obj.revisions.select_related('editor').order_by('timestamp'):
+                # for revision in self.article_obj.revisions.values():
                 for rev in self.article_obj.revisions.order_by('timestamp'):
                     revision = structures.Revision()
                     for rp in rev.paragraphs.select_related('paragraph').order_by('position'):
@@ -141,15 +140,12 @@ class WPHandler(object):
                                     sentence.hash_value = ps.sentence.hash_value
 
                                     # for st in ps.sentence.tokens.\
-                                    #         select_related('token', 'token__label_revision',
-                                    #                        'token__label_revision__editor').\
+                                    #         select_related('token', 'token__label_revision').\
                                     #         order_by('position'):
                                     for st in ps.sentence.tokens.select_related('token').order_by('position'):
                                         if not st.token.id in words:
                                             word = structures.Word()
                                             word.id = st.token.id
-                                            # word.author_id = st.token.label_revision.editor.wikipedia_id
-                                            # word.author_name = st.token.label_revision.editor.name
                                             # word.revision = st.token.label_revision.id
                                             word.value = st.token.value
                                             word.token_id = st.token.token_id
@@ -194,8 +190,6 @@ class WPHandler(object):
                         revision.ordered_paragraphs.append(paragraph.hash_value)
 
                     revision.wikipedia_id = rev.id
-                    # revision.contributor_id = rev.editor.wikipedia_id
-                    # revision.contributor_name = rev.editor.name
                     # revision.time = rev.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
                     # revision.length = rev.length
                     # only ids are enough to continue analyzing

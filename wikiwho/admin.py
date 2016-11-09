@@ -1,16 +1,10 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Editor, Article, Revision, RevisionParagraph, Paragraph, ParagraphSentence, Sentence, \
+from .models import Article, Revision, RevisionParagraph, Paragraph, ParagraphSentence, Sentence, \
     SentenceToken, Token
 from base.admin import BaseAdmin
 
 # TODO make everything read only + base admin class + check list_filters, show_change_link + test searching
-
-
-class EditorAdmin(BaseAdmin):
-    search_fields = ('wikipedia_id', )
-    list_display = ('id', 'wikipedia_id', 'name', )
-    readonly_fields = ('id', 'wikipedia_id', 'name', )
 
 
 class ArticleAdmin(BaseAdmin):
@@ -23,9 +17,9 @@ class ArticleAdmin(BaseAdmin):
         table += '<thead><tr><th>REVISION</th><th>EDITOR</th><th>TIMESTAMP</th></thead>'
         table += '<tbody>'
         i = 1
-        for r in obj.revisions.select_related('editor').all():
-            table += '<tr class="row{}"><td><a href="{}">{}</a></td><td><a href="{}">{}</a></td><td>{}</td></tr>'.\
-                format(i, r.get_admin_url(), r.id, r.editor.get_admin_url(), r.editor, r.timestamp)
+        for r in obj.revisions.all():
+            table += '<tr class="row{}"><td><a href="{}">{}</a></td><td>{}</td><td>{}</td></tr>'.\
+                format(i, r.get_admin_url(), r.id, r.editor, r.timestamp)
             i = 1 if i == 2 else 2
         table += '</tbody>'
         table += '</table>'
@@ -40,7 +34,7 @@ class ArticleAdmin(BaseAdmin):
 class RevisionAdmin(BaseAdmin):
     # inlines = [RevisionParagraphInline]
     search_fields = ('id', )
-    list_select_related = ('article', 'editor', )
+    list_select_related = ('article', )
     list_display = ('id', 'article', 'editor', 'timestamp', )
     # list_filter = ('article', )
     readonly_fields = ('id', 'article', 'editor', 'timestamp', 'length', 'revision_paragraphs', )
@@ -130,7 +124,6 @@ class TokenAdmin(BaseAdmin):
         return len(obj.outbound)
     len_outbound.short_description = 'len outbound'
 
-admin.site.register(Editor, EditorAdmin)
 admin.site.register(Article, ArticleAdmin)
 admin.site.register(Revision, RevisionAdmin)
 admin.site.register(RevisionParagraph, RevisionParagraphAdmin)
@@ -141,19 +134,14 @@ admin.site.register(SentenceToken, SentenceTokenAdmin)
 admin.site.register(Token, TokenAdmin)
 
 
-# class EditorAdmin(BaseAdmin):
-#     list_display = ('id', 'wikipedia_id', 'name', )
-#     readonly_fields = ('id', 'wikipedia_id', 'name', )
-#
-#
 # class ArticleAdmin(BaseAdmin):
 #     list_display = ('id', 'title', 'rvcontinue', 'spam', )
 #     readonly_fields = ('id', 'title', 'rvcontinue', 'spam', )
 #
 #
 # class RevisionAdmin(BaseAdmin):
-#     list_display = ('id', 'article_id', 'editor_id', 'timestamp', )
-#     readonly_fields = ('id', 'article_id', 'editor_id', 'timestamp', 'length', )
+#     list_display = ('id', 'article_id', 'editor', 'timestamp', )
+#     readonly_fields = ('id', 'article_id', 'editor', 'timestamp', 'length', )
 #
 #
 # class RevisionParagraphAdmin(BaseAdmin):
@@ -193,7 +181,6 @@ admin.site.register(Token, TokenAdmin)
 #         return len(obj.outbound)
 #     len_outbound.short_description = 'len outbound'
 #
-# admin.site.register(Editor, EditorAdmin)
 # admin.site.register(Article, ArticleAdmin)
 # admin.site.register(Revision, RevisionAdmin)
 # admin.site.register(RevisionParagraph, RevisionParagraphAdmin)

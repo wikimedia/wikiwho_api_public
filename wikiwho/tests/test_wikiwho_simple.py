@@ -126,13 +126,13 @@ class TestWikiwho:
 
         with WPHandler(article_name, temp_folder) as wp:
             wp.handle(revision_ids, 'json', is_api=False)
-        # pickle_revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'rev_id', 'author_id', 'token_id'})
+        # pickle_revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'rev_id', 'author', 'token_id'})
 
         v = WikiwhoApiView()
         v.article = wp.article_obj
 
         # create json without token ids
-        revision_json_without_tokenid = v.get_revision_json(wp.revision_ids, {'rev_id', 'author_id'})
+        revision_json_without_tokenid = v.get_revision_json(wp.revision_ids, {'rev_id', 'author'})
         json_file_path_without_tokenid = '{}/{}_db_ri_ai.json'.format(temp_folder, article_name)
         with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
@@ -192,7 +192,7 @@ class TestWikiwho:
         v.article = wp.article_obj
 
         # compare jsons without token ids
-        revision_json_without_tokenid = v.get_revision_json(wp.revision_ids, {'rev_id', 'author_id'})
+        revision_json_without_tokenid = v.get_revision_json(wp.revision_ids, {'rev_id', 'author'})
         json_file_path_without_tokenid = '{}/{}_db_ri_ai.json'.format(temp_folder, article_name)
         with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),

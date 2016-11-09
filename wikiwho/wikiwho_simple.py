@@ -16,7 +16,7 @@ from difflib import Differ
 import uuid
 
 from django.utils.dateparse import parse_datetime
-from wikiwho.models import Editor, Revision as Revision_, Paragraph as Paragraph_, RevisionParagraph, \
+from wikiwho.models import Revision as Revision_, Paragraph as Paragraph_, RevisionParagraph, \
     Sentence as Sentence_, ParagraphSentence, SentenceToken, Token
 from .structures import Word, Sentence, Paragraph, Revision
 from .utils import calculateHash, splitIntoParagraphs, splitIntoSentences, splitIntoWords, computeAvgWordFreq
@@ -170,15 +170,11 @@ class Wikiwho:
                 else:
                     # Add the current revision with all the information.
                     self.revisions.update({self.revision_curr.wikipedia_id: self.revision_curr})
-                    editor_id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}'.format(self.revision_curr.contributor_id or 0,
-                                                                              self.revision_curr.contributor_name))
-                    editor, _ = Editor.objects.get_or_create(id=editor_id,
-                                                             defaults=
-                                                             {'wikipedia_id': self.revision_curr.contributor_id or 0,
-                                                              'name': self.revision_curr.contributor_name})
+                    editor = self.revision_curr.contributor_id
+                    editor = str(editor) if editor != 0 else '0|{}'.format(self.revision_curr.contributor_name)
                     r = Revision_(id=self.revision_curr.wikipedia_id,
                                   article_id=self.page_id,
-                                  editor_id=editor_id,
+                                  editor=editor,
                                   timestamp=parse_datetime(self.revision_curr.time),
                                   length=self.revision_curr.length)
                     self.revisions_to_save.append(r)
@@ -802,8 +798,8 @@ class Wikiwho:
                             dict_json['str'] = word.value
                             if 'rev_id' in parameters:
                                 dict_json['rev_id'] = word.revision
-                            if 'author_id' in parameters:
-                                dict_json['author_id'] = word.author_id
+                            if 'author' in parameters:
+                                dict_json['author'] = str(word.author_id) if word.author_id != 0 else '0|{}'.format(word.author_name)
                             if 'token_id' in parameters:
                                 dict_json['token_id'] = word.token_id
                             if 'inbound' in parameters:
@@ -847,8 +843,8 @@ class Wikiwho:
                             token['str'] = word.value
                             if 'rev_id' in parameters:
                                 token['rev_id'] = word.revision
-                            if 'author_id' in parameters:
-                                token['author_id'] = word.author_id
+                            if 'author' in parameters:
+                                token['author'] = str(word.author_id) if word.author_id != 0 else '0|{}'.format(word.author_name)
                             if 'token_id' in parameters:
                                 token['token_id'] = word.token_id
                             if 'inbound' in parameters:

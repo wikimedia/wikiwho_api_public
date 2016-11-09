@@ -1,5 +1,3 @@
-import uuid
-
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import F
@@ -9,36 +7,11 @@ from django.dispatch import receiver
 from base.models import BaseModel
 
 
-class Editor(BaseModel):
-    id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
-    # wikipedia_id = models.PositiveIntegerField(default=0, db_index=True)  # they are not unique in wp
-    wikipedia_id = models.PositiveIntegerField(default=0)
-    name = models.CharField(max_length=256, blank=True, null=False, default='')
-
-    # class Meta:
-    #     unique_together = (('wikipedia_id', 'name'),)
-
-    def __str__(self):
-        editor = 'Editor {}'.format(self.wikipedia_id)
-        if self.name:
-            editor = '{} - {}'.format(editor, self.name)
-        return editor
-
-    def save(self, *args, **kwargs):
-        if not self.id:
-            self.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}'.format(self.wikipedia_id, self.name))
-        super(Editor, self).save(*args, **kwargs)
-
-    @property
-    def wikipedia_url(self):
-        return 'https://en.wikipedia.org/wiki/User:{}'.format(self.name)
-
-
 class Article(BaseModel):
     id = models.PositiveIntegerField(primary_key=True, blank=False, null=False,
                                      editable=False, help_text='Wikipedia page id')
-    # title = models.CharField(max_length=1024, blank=False, db_index=True)
-    title = models.CharField(max_length=1024, blank=False)
+    # title = models.CharField(max_length=256, blank=False, db_index=True)
+    title = models.CharField(max_length=256, blank=False)
     rvcontinue = models.CharField(max_length=32, blank=True, null=False, default='0')
     spam = ArrayField(models.IntegerField(), blank=True, null=True)  # array of spam revision ids
     # langauge = models.CharField(choices=(('en', 'English'), ('de', 'German')), max_length=2, default='en')
@@ -60,7 +33,7 @@ class Article(BaseModel):
             filter(label_revision__article__id=self.id,
                    outbound__len__gt=threshold).\
             exclude(last_used=last_rev_id).\
-            select_related('label_revision', 'label_revision__editor').\
+            select_related('label_revision').\
             order_by('label_revision__timestamp',
                      'token_id').\
             distinct()
@@ -72,9 +45,9 @@ class Article(BaseModel):
         if 'rev_id' in parameters:
             annotate_dict['rev_id'] = F('label_revision__id')
             values_list.append('rev_id')
-        if 'author_id' in parameters:
-            annotate_dict['author_id'] = F('label_revision__editor__wikipedia_id')
-            values_list.append('author_id')
+        if 'author' in parameters:
+            annotate_dict['author'] = F('label_revision__editor')
+            values_list.append('author')
         if 'token_id' in parameters:
             values_list.append('token_id')
         if 'inbound' in parameters:
@@ -93,17 +66,16 @@ class Article(BaseModel):
             #                 "wikiwho_token"."outbound",
             #                 "wikiwho_token"."label_revision_id" AS "rev_id",
             #                 "wikiwho_token"."value" AS "str",
-            #                 "wikiwho_editor"."wikipedia_id" AS "author_id",
+            #                 "wikiwho_revision"."editor" AS "author",
             #                 "wikiwho_revision"."timestamp"
             # FROM "wikiwho_token"
             # INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
-            # INNER JOIN "wikiwho_editor" ON ("wikiwho_revision"."editor_id" = "wikiwho_editor"."id")
-            # WHERE ("wikiwho_revision"."article_id" = 2161298
-            #        AND CASE
-            #                WHEN "wikiwho_token"."outbound" IS NULL THEN NULL
-            #                ELSE coalesce(array_length("wikiwho_token"."outbound", 1), 0)
-            #            END > 5
-            #        AND NOT ("wikiwho_token"."last_used" = 743570973))
+            # WHERE (CASE
+            #            WHEN "wikiwho_token"."outbound" IS NULL THEN NULL
+            #            ELSE coalesce(array_length("wikiwho_token"."outbound", 1), 0)
+            #        END > 5
+            #        AND "wikiwho_revision"."article_id" = 2197
+            #        AND NOT ("wikiwho_token"."last_used" = 747409474))
             # ORDER BY "wikiwho_revision"."timestamp" ASC,
             #          "wikiwho_token"."token_id" ASC
             json_data["revision_id"] = revision_id
@@ -122,8 +94,7 @@ class Revision(BaseModel):
                                      editable=False, help_text='Wikipedia revision id')
     article = models.ForeignKey(Article, blank=False, null=False, related_name='revisions')
     # article_id = models.PositiveIntegerField(blank=False, null=False)
-    editor = models.ForeignKey(Editor, blank=False, related_name='revisions')
-    # editor_id = models.UUIDField(blank=False, null=False, editable=False)
+    editor = models.CharField(max_length=87, blank=False, null=False)  # max_length='0|' + 85
     timestamp = models.DateTimeField(blank=True, null=True)
     length = models.PositiveIntegerField(default=0)
     # size
@@ -145,7 +116,7 @@ class Revision(BaseModel):
         #     filter(sentences__sentence__paragraphs__paragraph__revisions__revision__id=self.id)
         tokens = Token.objects.\
             filter(sentences__sentence__paragraphs__paragraph__revisions__revision__id=self.id).\
-            select_related('label_revision', 'label_revision__editor').\
+            select_related('label_revision').\
             order_by('sentences__sentence__paragraphs__paragraph__revisions__position',
                      'sentences__sentence__paragraphs__position',
                      'sentences__position')
@@ -175,9 +146,9 @@ class Revision(BaseModel):
         if 'rev_id' in parameters:
             annotate_dict['rev_id'] = F('label_revision__id')
             values_list.append('rev_id')
-        if 'author_id' in parameters:
-            annotate_dict['author_id'] = F('label_revision__editor__wikipedia_id')
-            values_list.append('author_id')
+        if 'author' in parameters:
+            annotate_dict['author'] = F('label_revision__editor')
+            values_list.append('author')
         if 'token_id' in parameters:
             values_list.append('token_id')
         if 'inbound' in parameters:
@@ -189,16 +160,17 @@ class Revision(BaseModel):
             tokens = self.tokens.annotate(**annotate_dict).values(*values_list)
             #          "wikiwho_sentencetoken"."position" ASC
             # print(len(tokens))
-            json_data = {"author": self.editor.name,
+            json_data = {"author": self.editor,
                          # "time": str(self.timestamp),
                          "time": self.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'),
                          "tokens": list(tokens)}
+            # SQL query:
             # SELECT "wikiwho_token"."token_id",
             #        "wikiwho_token"."inbound",
             #        "wikiwho_token"."outbound",
             #        "wikiwho_token"."label_revision_id" AS "rev_id",
             #        "wikiwho_token"."value" AS "str",
-            #        "wikiwho_editor"."wikipedia_id" AS "author_id"
+            #        T8."editor" AS "author"
             # FROM "wikiwho_token"
             # INNER JOIN "wikiwho_sentencetoken" ON ("wikiwho_token"."id" = "wikiwho_sentencetoken"."token_id")
             # INNER JOIN "wikiwho_sentence" ON ("wikiwho_sentencetoken"."sentence_id" = "wikiwho_sentence"."id")
@@ -206,10 +178,10 @@ class Revision(BaseModel):
             # INNER JOIN "wikiwho_paragraph" ON ("wikiwho_paragraphsentence"."paragraph_id" = "wikiwho_paragraph"."id")
             # INNER JOIN "wikiwho_revisionparagraph" ON ("wikiwho_paragraph"."id" = "wikiwho_revisionparagraph"."paragraph_id")
             # INNER JOIN "wikiwho_revision" T8 ON ("wikiwho_token"."label_revision_id" = T8."id")
-            # INNER JOIN "wikiwho_editor" ON (T8."editor_id" = "wikiwho_editor"."id")
-            # WHERE "wikiwho_revisionparagraph"."revision_id" = 743570973
+            # WHERE "wikiwho_revisionparagraph"."revision_id" = 9100
             # ORDER BY "wikiwho_revisionparagraph"."position" ASC,
             #          "wikiwho_paragraphsentence"."position" ASC,
+            #          "wikiwho_sentencetoken"."position" ASC
             return json_data
         elif deleted:
             deleted_tokens = self.deleted_tokens(threshold).annotate(**annotate_dict).values(*values_list)
@@ -341,3 +313,29 @@ class Token(BaseModel):
     @property
     def article_id(self):
         return self.label_revision.article.id
+
+"""
+class Editor(BaseModel):
+    id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
+    # wikipedia_id = models.PositiveIntegerField(default=0, db_index=True)  # they are not unique in wp
+    wikipedia_id = models.PositiveIntegerField(default=0)
+    name = models.CharField(max_length=87, blank=True, null=False, default='')
+
+    # class Meta:
+    #     unique_together = (('wikipedia_id', 'name'),)
+
+    def __str__(self):
+        editor = 'Editor {}'.format(self.wikipedia_id)
+        if self.name:
+            editor = '{} - {}'.format(editor, self.name)
+        return editor
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}'.format(self.wikipedia_id, self.name))
+        super(Editor, self).save(*args, **kwargs)
+
+    @property
+    def wikipedia_url(self):
+        return 'https://en.wikipedia.org/wiki/User:{}'.format(self.name)
+"""
