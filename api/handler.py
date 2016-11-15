@@ -87,6 +87,110 @@ class WPHandler(object):
         # print("Execution time enter: {}".format(time2-time1))
         return self
 
+    def load_article_from_db(self):
+        # t = time()
+        self.wikiwho = Wikiwho(self.article_obj.title)
+        self.wikiwho.page_id = self.article_obj.id
+        self.wikiwho.rvcontinue = self.article_obj.rvcontinue
+        self.wikiwho.spam = self.article_obj.spam
+        revision = structures.Revision()
+        last_token_id = 0
+        paragraphs = {}
+        sentences = {}
+        words = {}
+        # revision_ids = list(self.article_obj.revisions.order_by('timestamp').values_list('id', flat=True))
+        # paragraph_values = RevisionParagraph.objects.filter(revision__id__in=revision_ids).select_related('paragraph').\
+        #     order_by('position').values('paragraph_id', 'paragraph__hash_value')
+        # sentence_values = ParagraphSentence.objects.filter(paragraph__revisions__revision__id__in=revision_ids).\
+        #     select_related('sentence').order_by('position').values('sentence_id', 'sentence__hash_value')
+        # token_values = SentenceToken.objects.\
+        #     filter(sentence__paragraphs__paragraph__revisions__revision__id__in=revision_ids).select_related('token').\
+        #     order_by('position').values('token_id', 'token__value', 'token__token_id',
+        #                                 'token__last_used', 'token__inbound', 'token__outbound')
+
+        for revision_id in Revision.objects.filter(article__id=self.article_obj.id).\
+                order_by('timestamp').\
+                values_list('id', flat=True):
+            revision = structures.Revision()
+            for rp in RevisionParagraph.objects.filter(revision_id=revision_id).\
+                    select_related('paragraph').\
+                    order_by('position').\
+                    values('paragraph_id', 'paragraph__hash_value'):
+                if rp['paragraph_id'] not in paragraphs:
+                    paragraph = structures.Paragraph()
+                    paragraph.id = rp['paragraph_id']
+                    paragraph.hash_value = rp['paragraph__hash_value']
+                    for ps in ParagraphSentence.objects.filter(paragraph_id=rp['paragraph_id']).\
+                            select_related('sentence').\
+                            order_by('position').\
+                            values('sentence_id', 'sentence__hash_value'):
+                        if ps['sentence_id'] not in sentences:
+                            sentence = structures.Sentence()
+                            sentence.id = ps['sentence_id']
+                            sentence.hash_value = ps['sentence__hash_value']
+
+                            for st in SentenceToken.objects.filter(sentence_id=ps['sentence_id']).\
+                                    select_related('token').\
+                                    order_by('position').\
+                                    values('token_id', 'token__value', 'token__token_id',
+                                           'token__last_used', 'token__inbound', 'token__outbound'):
+                                if st['token_id'] not in words:
+                                    word = structures.Word()
+                                    word.id = st['token_id']
+                                    word.value = st['token__value']
+                                    word.token_id = st['token__token_id']
+                                    word.last_used = st['token__last_used']
+                                    word.inbound = st['token__inbound']
+                                    word.outbound = st['token__outbound']
+                                    if word.token_id > last_token_id:
+                                        last_token_id = word.token_id
+                                    words[st['token_id']] = word
+                                else:
+                                    word = words[st['token_id']]
+
+                                sentence.words.append(word)
+                                # sentence.splitted.append(word)
+
+                            sentences[sentence.id] = sentence
+                        else:
+                            sentence = sentences[ps['sentence_id']]
+
+                        if sentence.hash_value in self.wikiwho.sentences_ht:
+                            self.wikiwho.sentences_ht[sentence.hash_value].append(sentence)
+                        else:
+                            self.wikiwho.sentences_ht.update({sentence.hash_value: [sentence]})
+                        if sentence.hash_value in paragraph.sentences:
+                            paragraph.sentences[sentence.hash_value].append(sentence)
+                        else:
+                            paragraph.sentences.update({sentence.hash_value: [sentence]})
+                        paragraph.ordered_sentences.append(sentence.hash_value)
+
+                    paragraphs[paragraph.id] = paragraph
+                else:
+                    paragraph = paragraphs[rp['paragraph_id']]
+
+                if paragraph.hash_value in self.wikiwho.paragraphs_ht:
+                    self.wikiwho.paragraphs_ht[paragraph.hash_value].append(paragraph)
+                else:
+                    self.wikiwho.paragraphs_ht.update({paragraph.hash_value: [paragraph]})
+                if paragraph.hash_value in revision.paragraphs:
+                    revision.paragraphs[paragraph.hash_value].append(paragraph)
+                else:
+                    revision.paragraphs.update({paragraph.hash_value: [paragraph]})
+                revision.ordered_paragraphs.append(paragraph.hash_value)
+
+            revision.wikipedia_id = revision_id
+            # revision.time = rev.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
+            # revision.length = rev.length
+            # only ids are enough to continue analyzing
+            self.wikiwho.revisions[revision_id] = revision
+
+        self.wikiwho.revision_curr = revision
+        self.wikiwho.continue_rev_id = revision.wikipedia_id
+        # get last token id for new added tokens in new revisions
+        self.wikiwho.token_id = last_token_id + 1
+        # print('loading ww obj from db: ', time() - t)
+
     def handle(self, revision_ids, format_='json', is_api=True):
         # time1 = time()
         # check if article exists
@@ -115,91 +219,7 @@ class WPHandler(object):
                 self.wikiwho.page_id = self.page_id
             else:
                 # continue analyzing the article
-                # t = time()
-                self.wikiwho = Wikiwho(self.article_obj.title)
-                self.wikiwho.page_id = self.article_obj.id
-                self.wikiwho.rvcontinue = self.article_obj.rvcontinue
-                self.wikiwho.spam = self.article_obj.spam
-                revision = structures.Revision()
-                last_token_id = 0
-                paragraphs = {}
-                sentences = {}
-                words = {}
-                # for revision in self.article_obj.revisions.values():
-                for rev in self.article_obj.revisions.order_by('timestamp'):
-                    revision = structures.Revision()
-                    for rp in rev.paragraphs.select_related('paragraph').order_by('position'):
-                        if rp.paragraph.id not in paragraphs:
-                            paragraph = structures.Paragraph()
-                            paragraph.id = rp.paragraph.id
-                            paragraph.hash_value = rp.paragraph.hash_value
-                            for ps in rp.paragraph.sentences.select_related('sentence').order_by('position'):
-                                if ps.sentence.id not in sentences:
-                                    sentence = structures.Sentence()
-                                    sentence.id = ps.sentence.id
-                                    sentence.hash_value = ps.sentence.hash_value
-
-                                    # for st in ps.sentence.tokens.\
-                                    #         select_related('token', 'token__label_revision').\
-                                    #         order_by('position'):
-                                    for st in ps.sentence.tokens.select_related('token').order_by('position'):
-                                        if not st.token.id in words:
-                                            word = structures.Word()
-                                            word.id = st.token.id
-                                            # word.revision = st.token.label_revision.id
-                                            word.value = st.token.value
-                                            word.token_id = st.token.token_id
-                                            word.last_used = st.token.last_used
-                                            word.inbound = st.token.inbound
-                                            word.outbound = st.token.outbound
-                                            if word.token_id > last_token_id:
-                                                last_token_id = word.token_id
-                                            words[st.token.id] = word
-                                        else:
-                                            word = words[st.token.id]
-
-                                        sentence.words.append(word)
-                                        # sentence.splitted.append(word)
-
-                                    sentences[sentence.id] = sentence
-                                else:
-                                    sentence = sentences[ps.sentence.id]
-
-                                if sentence.hash_value in self.wikiwho.sentences_ht:
-                                    self.wikiwho.sentences_ht[sentence.hash_value].append(sentence)
-                                else:
-                                    self.wikiwho.sentences_ht.update({sentence.hash_value: [sentence]})
-                                if sentence.hash_value in paragraph.sentences:
-                                    paragraph.sentences[sentence.hash_value].append(sentence)
-                                else:
-                                    paragraph.sentences.update({sentence.hash_value: [sentence]})
-                                paragraph.ordered_sentences.append(sentence.hash_value)
-
-                            paragraphs[paragraph.id] = paragraph
-                        else:
-                            paragraph = paragraphs[rp.paragraph.id]
-
-                        if paragraph.hash_value in self.wikiwho.paragraphs_ht:
-                            self.wikiwho.paragraphs_ht[paragraph.hash_value].append(paragraph)
-                        else:
-                            self.wikiwho.paragraphs_ht.update({paragraph.hash_value: [paragraph]})
-                        if paragraph.hash_value in revision.paragraphs:
-                            revision.paragraphs[paragraph.hash_value].append(paragraph)
-                        else:
-                            revision.paragraphs.update({paragraph.hash_value: [paragraph]})
-                        revision.ordered_paragraphs.append(paragraph.hash_value)
-
-                    revision.wikipedia_id = rev.id
-                    # revision.time = rev.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
-                    # revision.length = rev.length
-                    # only ids are enough to continue analyzing
-                    self.wikiwho.revisions[rev.id] = revision
-
-                self.wikiwho.revision_curr = revision
-                self.wikiwho.continue_rev_id = revision.wikipedia_id
-                # get last token id for new added tokens in new revisions
-                self.wikiwho.token_id = last_token_id + 1
-                # print('loading ww obj from db: ', time() - t)
+                self.load_article_from_db()
 
         while self.revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
             # continue downloading as long as we reach to the given rev_id limit
