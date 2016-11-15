@@ -27,26 +27,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='revision',
             name='article_id',
-            field=models.PositiveIntegerField(blank=False, null=False),
+            field=models.IntegerField(blank=False, null=False),
         ),
-
-
-        # migrations.AlterField(
-        #     model_name='revision',
-        #     name='editor',
-        #     field=models.ForeignKey(blank=False, null=False, on_delete=django.db.models.deletion.CASCADE,
-        #                             related_name='revisions', to='wikiwho.Editor', db_column='editor'),
-        # ),
-        # migrations.RenameField(
-        #     model_name='revision',
-        #     old_name='editor',
-        #     new_name='editor_id',
-        # ),
-        # migrations.AlterField(
-        #     model_name='revision',
-        #     name='editor_id',
-        #     field=models.UUIDField(blank=False, null=False, editable=False),
-        # ),
 
         migrations.AlterField(
             model_name='revisionparagraph',
@@ -62,7 +44,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='revisionparagraph',
             name='revision_id',
-            field=models.PositiveIntegerField(blank=False, null=False),
+            field=models.IntegerField(blank=False, null=False),
         ),
 
         migrations.AlterField(
@@ -164,6 +146,48 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='token',
             name='label_revision_id',
-            field=models.PositiveIntegerField(blank=False, null=False),
+            field=models.IntegerField(blank=False, null=False),
         ),
+
+        # https://docs.djangoproject.com/en/1.10/ref/migration-operations/#django.db.migrations.operations.RunSQL
+        migrations.RunSQL(
+            sql='ALTER TABLE public.wikiwho_article DROP CONSTRAINT wikiwho_article_pkey;',
+            reverse_sql='ALTER TABLE public.wikiwho_article ADD CONSTRAINT wikiwho_article_pkey PRIMARY KEY(id);'
+        ),
+
+        migrations.RunSQL(
+            sql='ALTER TABLE public.wikiwho_revision DROP CONSTRAINT wikiwho_revision_pkey;',
+            reverse_sql='ALTER TABLE public.wikiwho_revision ADD CONSTRAINT wikiwho_revision_pkey PRIMARY KEY(id);'
+        ),
+
+        migrations.RunSQL(
+            sql='ALTER TABLE public.wikiwho_paragraph DROP CONSTRAINT wikiwho_paragraph_pkey;',
+            reverse_sql='ALTER TABLE public.wikiwho_paragraph ADD CONSTRAINT wikiwho_paragraph_pkey PRIMARY KEY(id);'
+        ),
+
+        migrations.RunSQL(
+            sql='ALTER TABLE public.wikiwho_token DROP CONSTRAINT wikiwho_token_pkey;',
+            reverse_sql='ALTER TABLE public.wikiwho_token ADD CONSTRAINT wikiwho_token_pkey PRIMARY KEY(id);'
+        ),
+
+        migrations.RunSQL(
+            sql='ALTER TABLE public.wikiwho_sentence DROP CONSTRAINT wikiwho_sentence_pkey;',
+            reverse_sql='ALTER TABLE public.wikiwho_sentence ADD CONSTRAINT wikiwho_sentence_pkey PRIMARY KEY(id);'
+        ),
+
+        # TODO remove below and afterwards remove pkeys of RP, PS, ST manually forever
+        migrations.RunSQL(
+            sql='ALTER TABLE public.wikiwho_revisionparagraph DROP CONSTRAINT wikiwho_revisionparagraph_pkey;',
+            reverse_sql='ALTER TABLE public.wikiwho_revisionparagraph ADD CONSTRAINT wikiwho_revisionparagraph_pkey PRIMARY KEY(id);'
+        ),
+
+        migrations.RunSQL(
+            sql='ALTER TABLE public.wikiwho_paragraphsentence DROP CONSTRAINT wikiwho_paragraphsentence_pkey;',
+            reverse_sql='ALTER TABLE public.wikiwho_paragraphsentence ADD CONSTRAINT wikiwho_paragraphsentence_pkey PRIMARY KEY(id);'
+        ),
+
+        migrations.RunSQL(
+            sql='ALTER TABLE public.wikiwho_sentencetoken DROP CONSTRAINT wikiwho_sentencetoken_pkey;',
+            reverse_sql='ALTER TABLE public.wikiwho_sentencetoken ADD CONSTRAINT wikiwho_sentencetoken_pkey PRIMARY KEY(id);'
+        )
     ]

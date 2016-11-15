@@ -1,6 +1,9 @@
+# from functools import lru_cache
+
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import F
+# from django.utils.functional import cached_property
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
@@ -8,10 +11,9 @@ from base.models import BaseModel
 
 
 class Article(BaseModel):
-    id = models.PositiveIntegerField(primary_key=True, blank=False, null=False,
-                                     editable=False, help_text='Wikipedia page id')
-    # title = models.CharField(max_length=256, blank=False, db_index=True)
+    id = models.IntegerField(primary_key=True, blank=False, null=False, editable=False, help_text='Wikipedia page id')
     title = models.CharField(max_length=256, blank=False)
+    # title = models.CharField(max_length=256, blank=False, db_index=True)
     rvcontinue = models.CharField(max_length=32, blank=True, null=False, default='0')
     spam = ArrayField(models.IntegerField(), blank=True, null=True)  # array of spam revision ids
     # langauge = models.CharField(choices=(('en', 'English'), ('de', 'German')), max_length=2, default='en')
@@ -90,16 +92,13 @@ def article_post_delete(sender, instance, *args, **kwargs):
 
 
 class Revision(BaseModel):
-    id = models.PositiveIntegerField(primary_key=True, blank=False, null=False,
-                                     editable=False, help_text='Wikipedia revision id')
+    id = models.IntegerField(primary_key=True, blank=False, null=False, editable=False, help_text='Wikipedia revision id')
     article = models.ForeignKey(Article, blank=False, null=False, related_name='revisions')
-    # article_id = models.PositiveIntegerField(blank=False, null=False)
+    # article_id = models.IntegerField(blank=False, null=False)
     editor = models.CharField(max_length=87, blank=False, null=False)  # max_length='0|' + 85
     timestamp = models.DateTimeField(blank=True, null=True)
-    length = models.PositiveIntegerField(default=0)
-    # size
+    length = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
-    # creation_duration = models.TimeField(blank=True, null=True)
     # relations = JSON
 
     # class Meta:
@@ -109,6 +108,7 @@ class Revision(BaseModel):
         # return 'Revision #{}: {}'.format(self.id, self.article.title)
         return str(self.id)
 
+    # @cached_property
     @property
     def tokens(self):
         # TODO compare timing with this
@@ -140,6 +140,8 @@ class Revision(BaseModel):
             distinct()
         return deleted_tokens
 
+    # @lru_cache(maxsize=None, typed=False)
+    # TODO use this cache only for last rev ids. but how?
     def to_json(self, parameters, content=False, deleted=False, threshold=5):
         annotate_dict = {'str': F('value')}
         values_list = ['str']
@@ -190,12 +192,13 @@ class Revision(BaseModel):
 
 
 class RevisionParagraph(BaseModel):
+    # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
+    id = models.BigAutoField(primary_key=True)
     revision = models.ForeignKey(Revision, blank=False, related_name='paragraphs')
-    # revision_id = models.PositiveIntegerField(blank=False, null=False)
+    # revision_id = models.IntegerField(blank=False, null=False)
     paragraph = models.ForeignKey('Paragraph', blank=False, related_name='revisions')
     # paragraph_id = models.UUIDField(blank=False, null=False, editable=False)
-    position = models.PositiveIntegerField(blank=False)
-    # action
+    position = models.IntegerField(blank=False)
 
     # class Meta:
     #     ordering = ['revision__timestamp',
@@ -209,7 +212,6 @@ class RevisionParagraph(BaseModel):
 class Paragraph(BaseModel):
     id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
     hash_value = models.CharField(max_length=32, blank=False, default='')
-    # value = models.TextField(default='')
 
     def __str__(self):
         return 'Paragraph #{}'.format(self.id)
@@ -226,12 +228,13 @@ class Paragraph(BaseModel):
 
 
 class ParagraphSentence(BaseModel):
+    # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
+    id = models.BigAutoField(primary_key=True)
     paragraph = models.ForeignKey(Paragraph, blank=False, related_name='sentences')
     # paragraph_id = models.UUIDField(blank=False, null=False, editable=False)
     sentence = models.ForeignKey('Sentence', blank=False, related_name='paragraphs')
     # sentence_id = models.UUIDField(blank=False, null=False, editable=False)
-    position = models.PositiveIntegerField(blank=False)
-    # action
+    position = models.IntegerField(blank=False)
 
     # class Meta:
     #     ordering = ['paragraph__revisions__revision__timestamp',
@@ -246,7 +249,6 @@ class ParagraphSentence(BaseModel):
 class Sentence(BaseModel):
     id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
     hash_value = models.CharField(max_length=32, blank=False, default='')
-    # value = models.TextField(default='')
 
     def __str__(self):
         return 'Sentence #{}'.format(self.id)
@@ -261,11 +263,13 @@ class Sentence(BaseModel):
 
 
 class SentenceToken(BaseModel):
+    # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
+    id = models.BigAutoField(primary_key=True)
     sentence = models.ForeignKey(Sentence, blank=False, related_name='tokens')
     # sentence_id = models.UUIDField(blank=False, null=False, editable=False)
     token = models.ForeignKey('Token', blank=False, related_name='sentences')
     # token_id = models.UUIDField(blank=False, null=False, editable=False)
-    position = models.PositiveIntegerField(blank=False)
+    position = models.IntegerField(blank=False)
 
     # class Meta:
     #     unique_together = (('token_id', 'label_revision_id'),)  # TODO this must be satisfied!
@@ -281,17 +285,14 @@ class SentenceToken(BaseModel):
 
 
 class Token(BaseModel):
-    # unique per article
-    id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
+    id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)  # unique per article
     value = models.TextField(blank=False, null=False)
-    last_used = models.PositiveIntegerField(blank=False, null=False, default=0)  # last used revision ids
+    last_used = models.IntegerField(blank=False, null=False, default=0)  # last used revision ids
     inbound = ArrayField(models.IntegerField(), blank=True, null=True)  # inbound/reintroduced in revision ids
     outbound = ArrayField(models.IntegerField(), blank=True, null=True)  # outbound/deleted in revision ids
     label_revision = models.ForeignKey(Revision, blank=False, related_name='introduced_tokens')
-    # label_revision_id = models.PositiveIntegerField(blank=False, null=False)
-    token_id = models.PositiveIntegerField(blank=False)  # sequential id in article, unique per article
-    # article_id = models.PositiveIntegerField(blank=False, null=False, unique=True)
-    # article = models.ForeignKey(Article, blank=False, related_name='tokens')
+    # label_revision_id = models.IntegerField(blank=False, null=False)
+    token_id = models.IntegerField(blank=False)  # sequential id in article, unique per article
 
     # class Meta:
     #     ordering = ['sentences__sentence__paragraphs__paragraph__revisions__revision__timestamp',
@@ -317,8 +318,8 @@ class Token(BaseModel):
 """
 class Editor(BaseModel):
     id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
-    # wikipedia_id = models.PositiveIntegerField(default=0, db_index=True)  # they are not unique in wp
-    wikipedia_id = models.PositiveIntegerField(default=0)
+    # wikipedia_id = models.IntegerField(default=0, db_index=True)  # they are not unique in wp
+    wikipedia_id = models.IntegerField(default=0)
     name = models.CharField(max_length=87, blank=True, null=False, default='')
 
     # class Meta:

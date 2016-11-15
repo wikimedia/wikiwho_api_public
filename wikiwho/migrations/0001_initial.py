@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Article',
             fields=[
-                ('id', models.PositiveIntegerField(editable=False, help_text='Wikipedia page id', primary_key=True, serialize=False)),
+                ('id', models.IntegerField(editable=False, help_text='Wikipedia page id', primary_key=True, serialize=False)),
                 ('title', models.CharField(max_length=256)),
                 ('rvcontinue', models.CharField(blank=True, default='0', max_length=32)),
                 ('spam', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), blank=True, null=True, size=None)),
@@ -40,8 +40,9 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ParagraphSentence',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('position', models.PositiveIntegerField()),
+                ('id', models.BigAutoField(primary_key=True, serialize=False, verbose_name='ID')),
+                # ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
+                ('position', models.IntegerField()),
                 ('paragraph', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sentences', to='wikiwho.Paragraph')),
             ],
             options={
@@ -51,9 +52,9 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Revision',
             fields=[
-                ('id', models.PositiveIntegerField(editable=False, help_text='Wikipedia revision id', primary_key=True, serialize=False)),
+                ('id', models.IntegerField(editable=False, help_text='Wikipedia revision id', primary_key=True, serialize=False)),
                 ('timestamp', models.DateTimeField(blank=True, null=True)),
-                ('length', models.PositiveIntegerField(default=0)),
+                ('length', models.IntegerField(default=0)),
                 ('article', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='revisions', to='wikiwho.Article')),
                 ('editor', models.CharField(max_length=87)),
                 ('created', models.DateTimeField(auto_now_add=True)),
@@ -65,8 +66,9 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='RevisionParagraph',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('position', models.PositiveIntegerField()),
+                ('id', models.BigAutoField(primary_key=True, serialize=False, verbose_name='ID')),
+                # ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
+                ('position', models.IntegerField()),
                 ('paragraph', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='revisions', to='wikiwho.Paragraph')),
                 ('revision', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='paragraphs', to='wikiwho.Revision')),
             ],
@@ -87,8 +89,9 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='SentenceToken',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('position', models.PositiveIntegerField()),
+                ('id', models.BigAutoField(primary_key=True, serialize=False, verbose_name='ID')),
+                # ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
+                ('position', models.IntegerField()),
                 ('sentence', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tokens', to='wikiwho.Sentence')),
             ],
             options={
@@ -100,10 +103,10 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
                 ('value', models.TextField()),
-                ('last_used', models.PositiveIntegerField(default=0)),
+                ('last_used', models.IntegerField(default=0)),
                 ('inbound', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), blank=True, null=True, size=None)),
                 ('outbound', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), blank=True, null=True, size=None)),
-                ('token_id', models.PositiveIntegerField()),
+                ('token_id', models.IntegerField()),
                 ('label_revision', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='introduced_tokens', to='wikiwho.Revision')),
             ],
             options={

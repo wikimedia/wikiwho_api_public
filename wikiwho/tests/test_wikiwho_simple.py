@@ -139,7 +139,7 @@ class TestWikiwho:
                                sort_keys=True, ensure_ascii=False))
 
         # compare jsons without token ids
-        test_json_file_path = '{}/{}_ri_ai.json'.format(test_json_folder, article_name)
+        test_json_file_path = '{}/{}_db_ri_ai.json'.format(test_json_folder, article_name)
         is_content_same = filecmp.cmp(json_file_path_without_tokenid, test_json_file_path)
         assert is_content_same, "{}: 'json without token ids' doesn't match".format(article_name)
 
@@ -152,7 +152,7 @@ class TestWikiwho:
 
         # compare jsons with token ids
         json_file_path = '{}/{}_db_ti.json'.format(temp_folder, article_name)
-        test_json_file_path = '{}/{}_ti.json'.format(test_json_folder, article_name)
+        test_json_file_path = '{}/{}_db_ti.json'.format(test_json_folder, article_name)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         is_content_same = filecmp.cmp(json_file_path, test_json_file_path)
@@ -166,7 +166,7 @@ class TestWikiwho:
                                sort_keys=True, ensure_ascii=False))
 
         # compare jsons with in/outbounds
-        test_json_file_path = '{}/{}_io.json'.format(test_json_folder, article_name)
+        test_json_file_path = '{}/{}_db_io.json'.format(test_json_folder, article_name)
         is_content_same = filecmp.cmp(json_file_path_with_io, test_json_file_path)
         assert is_content_same, "{}: 'json with in/outbounds' doesn't match".format(article_name)
 
@@ -197,7 +197,7 @@ class TestWikiwho:
         with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
                                sort_keys=True, ensure_ascii=False))
-        test_json_file_path = '{}/{}_ri_ai.json'.format(test_json_folder, article_name)
+        test_json_file_path = '{}/{}_db_ri_ai.json'.format(test_json_folder, article_name)
         is_content_same = filecmp.cmp(json_file_path_without_tokenid, test_json_file_path)
         assert is_content_same, "{}: 'json without token ids' doesn't match".format(article_name)
 
@@ -206,7 +206,7 @@ class TestWikiwho:
         json_file_path = '{}/{}_db_ti.json'.format(temp_folder, article_name)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
-        test_json_file_path = '{}/{}_ti.json'.format(test_json_folder, article_name)
+        test_json_file_path = '{}/{}_db_ti.json'.format(test_json_folder, article_name)
         is_content_same = filecmp.cmp(json_file_path, test_json_file_path)
         assert is_content_same, "{}: json doesn't match".format(article_name)
 
@@ -216,7 +216,7 @@ class TestWikiwho:
         with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
                                sort_keys=True, ensure_ascii=False))
-        test_json_file_path = '{}/{}_io.json'.format(test_json_folder, article_name)
+        test_json_file_path = '{}/{}_db_io.json'.format(test_json_folder, article_name)
         is_content_same = filecmp.cmp(json_file_path_with_io, test_json_file_path)
         assert is_content_same, "{}: 'json with in/outbounds' doesn't match".format(article_name)
 

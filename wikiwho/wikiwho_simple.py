@@ -405,8 +405,7 @@ class Wikiwho:
                 paragraph_curr = Paragraph()
                 paragraph_curr.hash_value = hash_curr
                 paragraph_curr.value = paragraph
-                paragraph_curr.id = uuid.uuid3(uuid.NAMESPACE_X500,
-                                               '{}{}{}'.format(self.revision_curr.wikipedia_id, c, hash_curr))
+                paragraph_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}-{}'.format(self.revision_curr.wikipedia_id, c))
 
                 p = Paragraph_(id=paragraph_curr.id, hash_value=paragraph_curr.hash_value)
                 self.paragraphs_curr_to_save.append(p)
@@ -558,7 +557,7 @@ class Wikiwho:
                     sentence_curr = Sentence()
                     sentence_curr.value = sentence
                     sentence_curr.hash_value = hash_curr
-                    sentence_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}{}'.format(paragraph_curr.id, c, hash_curr))
+                    sentence_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}-{}'.format(paragraph_curr.id, c))
 
                     s = Sentence_(id=sentence_curr.id, hash_value=sentence_curr.hash_value)
                     self.sentences_curr_to_save.append(s)
@@ -628,7 +627,8 @@ class Wikiwho:
                 c = 0
                 for word in sentence_curr.splitted:
                     word_curr = Word()
-                    word_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}'.format(self.page_id, self.token_id))
+                    word_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}-{}'.format(self.page_id, self.token_id))
+                    # word_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}-{}'.format(sentence_curr.id, c))
                     word_curr.value = word
                     word_curr.token_id = self.token_id
                     word_curr.author_id = self.revision_curr.contributor_id
@@ -702,7 +702,7 @@ class Wikiwho:
                             # a new added word
                             curr_matched = True
                             word_curr = Word()
-                            word_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}'.format(self.page_id, self.token_id))
+                            word_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}-{}'.format(self.page_id, self.token_id))
                             word_curr.value = word
                             word_curr.token_id = self.token_id
                             word_curr.author_id = self.revision_curr.contributor_id
@@ -732,7 +732,7 @@ class Wikiwho:
                 if not curr_matched:
                     # if diff returns a word as '? ...'
                     word_curr = Word()
-                    word_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}'.format(self.page_id, self.token_id))
+                    word_curr.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}-{}'.format(self.page_id, self.token_id))
                     word_curr.value = word
                     word_curr.token_id = self.token_id
                     word_curr.author_id = self.revision_curr.contributor_id
