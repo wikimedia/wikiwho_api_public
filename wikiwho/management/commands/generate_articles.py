@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-python manage.py generate_articles -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/local/all_articles_list' -s 4040 -e 4041 -m 120
+python manage.py generate_articles -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/local/all_articles_list' -s 4040 -e 4041 -m 90 -t 300
 """
 from django.core.management.base import BaseCommand, CommandError
 from collections import OrderedDict
 from os import listdir
 from os.path import isfile, join
 import csv
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed  # , TimeoutError, CancelledError
 import logging
 import re
 from time import strftime
@@ -31,6 +31,8 @@ class Command(BaseCommand):
         parser.add_argument('-p', '--path', help='Path where list of articles are saved', required=True)
         parser.add_argument('-m', '--max_workers', type=int, help='Number of threads/processors to run parallel.',
                             required=True)
+        parser.add_argument('-t', '--timeout', type=float, required=False,
+                            help='This feature does not work for now. Timeout value for each worker [minutes]')
         parser.add_argument('-tpe', '--thread_pool_executor', action='store_true',
                             help='Use ThreadPoolExecutor, default is ProcessPoolExecutor', default=False,
                             required=False)
@@ -49,6 +51,7 @@ class Command(BaseCommand):
         start = options['start']
         end = options['end']
         check_exists = options['check_exists']
+        timeout = options['timeout'] * 60 if options['timeout'] else None  # convert into seconds
         # if start > end:
         #     raise CommandError('start ({}) must be >= end ({})'.format(start, end))
 
@@ -65,19 +68,7 @@ class Command(BaseCommand):
             article_list_files[join(path, f)] = i
             counter += 1
 
-        input_articles = []
-        for article_list_file in article_list_files:
-            if start <= article_list_files[article_list_file] <= end:
-                with open(article_list_file, 'r') as csv_file:
-                    input_articles += csv.reader(csv_file, delimiter=";")
-                    # for article in input_articles:
-                    #     try:
-                    #         generate_article(generate_article, article[0], check_exists)
-                    #     except Exception as exc:
-                    #         logger.exception(article[0])
-
-        parsing_pattern = '/*-+/*-++-*/+-*//*-++-*//*-+'
-        range_ = [str(start), str(end)]
+        parsing_pattern = '#######*******#######'
         if is_ppe:
             Executor = ProcessPoolExecutor
             format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'
@@ -85,32 +76,54 @@ class Command(BaseCommand):
             Executor = ThreadPoolExecutor
             format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
 
+        # logger_timeout = logging.getLogger('timeout')
+        # file_handler = logging.FileHandler('{}/logs/timeouts_{}_at_{}.log'.format(path,
+        #                                                                           '_'.join([str(start), str(end)]),
+        #                                                                           strftime("%Y-%m-%d-%H:%M:%S")))
+        # file_handler.setLevel(logging.ERROR)
+        # formatter = logging.Formatter('%(message)s')
+        # file_handler.setFormatter(formatter)
+        # logger_timeout.addHandler(file_handler)
         logger = logging.getLogger('')
-        logger.setLevel(logging.ERROR)
-        file_handler = logging.FileHandler('{}/logs/{}_at_{}.log'.format(path,
-                                                                         '_'.join(range_),
-                                                                         strftime("%Y-%m-%d-%H:%M:%S")))
-        file_handler.setLevel(logging.ERROR)
-        formatter = logging.Formatter(format_)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+        # logger = logging.getLogger('error')
+        timeout = None
+        for article_list_file in article_list_files:
+            csv_number = article_list_files[article_list_file]
+            if start <= csv_number <= end:
+                with open(article_list_file, 'r') as csv_file:
+                    input_articles = csv.reader(csv_file, delimiter=";")
+                    # for article in input_articles:
+                    #     try:
+                    #         generate_article(generate_article, article[0], check_exists)
+                    #     except Exception as exc:
+                    #         logger.exception(article[0])
 
-        print('Start: {} at {}'.format(range_, strftime("%H:%M:%S %d-%m-%Y")))
-        # We can use a with statement to ensure threads are cleaned up promptly
-        with Executor(max_workers=max_workers) as executor:
-            # Start the load operations and mark each future with its article
-            future_to_article = {executor.submit(generate_article, article[0], check_exists):
-                                 article[0]
-                                 for article in input_articles}
+                    file_handler = logging.FileHandler('{}/logs/{}_at_{}.log'.format(path, csv_number,
+                                                                                     strftime("%Y-%m-%d-%H:%M:%S")))
+                    file_handler.setLevel(logging.ERROR)
+                    formatter = logging.Formatter(format_)
+                    file_handler.setFormatter(formatter)
+                    logger.handlers = [file_handler]
+                    # logger.addHandler(file_handler)
 
-            del input_articles  # release memory
+                    print('Start: {} at {}'.format(csv_number, strftime("%H:%M:%S %d-%m-%Y")))
+                    # We can use a with statement to ensure threads are cleaned up promptly
+                    with Executor(max_workers=max_workers) as executor:
+                        # Start the load operations and mark each future with its article
+                        future_to_article = {executor.submit(generate_article, article[0], check_exists): article[0]
+                                             for article in input_articles}
 
-            for future in as_completed(future_to_article):
-                article_name = future_to_article[future]
-                try:
-                    data = future.result(timeout=None)
-                except Exception as exc:
-                    logger.exception('{}--------{}'.format(article_name, parsing_pattern))
-                # else:
-                #     print('Success: {}'.format(article_name))
-        print('Done: {} at {}'.format(range_, strftime("%H:%M:%S %d-%m-%Y")))
+                        del input_articles  # release memory
+
+                        for future in as_completed(future_to_article):
+                            article_name = future_to_article[future]
+                        # for future, article_name in future_to_article.items():
+                            try:
+                                data = future.result(timeout=timeout)
+                            # except (TimeoutError, CancelledError) as e:
+                            #     logger_timeout.error(article_name)
+                            except Exception as exc:
+                                logger.exception('{}--------{}'.format(article_name, parsing_pattern))
+                                # else:
+                                #     print('Success: {}'.format(article_name))
+                    print('Done: {} at {}'.format(csv_number, strftime("%H:%M:%S %d-%m-%Y")))
