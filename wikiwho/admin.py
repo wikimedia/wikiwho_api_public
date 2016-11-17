@@ -14,15 +14,18 @@ class ArticleAdmin(BaseAdmin):
 
     def article_revisions(self, obj):
         table = '<table style="width:100%">'
-        table += '<thead><tr><th>REVISION</th><th>EDITOR</th><th>TIMESTAMP</th></thead>'
+        table += '<thead><tr><th>REVISION</th><th>EDITOR</th><th>TIMESTAMP</th><th>CREATED</th></thead>'
         table += '<tbody>'
         i = 1
-        for r in obj.revisions.all():
-            table += '<tr class="row{}"><td><a href="{}">{}</a></td><td>{}</td><td>{}</td></tr>'.\
-                format(i, r.get_admin_url(), r.id, r.editor, r.timestamp)
+        c = 0
+        for r in obj.revisions.order_by('-timestamp').all():
+            table += '<tr class="row{}"><td><a href="{}">{}</a></td><td>{}</td><td>{}</td><td>{}</td></tr>'.\
+                format(i, r.get_admin_url(), r.id, r.editor, r.timestamp, r.created)
             i = 1 if i == 2 else 2
+            c += 1
         table += '</tbody>'
         table += '</table>'
+        table = '<br><div># revisions: {}</div>'.format(c) + table
         return format_html(table)
     article_revisions.short_description = 'Article revisions'
 
@@ -35,21 +38,24 @@ class RevisionAdmin(BaseAdmin):
     # inlines = [RevisionParagraphInline]
     search_fields = ('id', )
     list_select_related = ('article', )
-    list_display = ('id', 'article', 'editor', 'timestamp', )
+    list_display = ('id', 'article', 'editor', 'timestamp', 'created', )
     # list_filter = ('article', )
-    readonly_fields = ('id', 'article', 'editor', 'timestamp', 'length', 'revision_paragraphs', )
+    readonly_fields = ('id', 'article', 'editor', 'timestamp', 'length', 'created', 'revision_paragraphs', )
 
     def revision_paragraphs(self, obj):
         table = '<table style="width:100%">'
         table += '<thead><tr><th>Paragraph</th><th>POSITION</th></thead>'
         table += '<tbody>'
         i = 1
+        c = 0
         for rp in obj.paragraphs.select_related('paragraph').all():
             table += '<tr class="row{}"><td><a href="{}">{}</a></td><td>{}</td></tr>'.\
                 format(i, rp.paragraph.get_admin_url(), rp.paragraph, rp.position)
             i = 1 if i == 2 else 2
+            c += 1
         table += '</tbody>'
         table += '</table>'
+        table = '<br><div># paragraphs: {}</div>'.format(c) + table
         return format_html(table)
     revision_paragraphs.short_description = 'Revision paragraphs'
 
@@ -70,12 +76,15 @@ class ParagraphAdmin(BaseAdmin):
         table += '<thead><tr><th>SENTENCE</th><th>POSITION</th></thead>'
         table += '<tbody>'
         i = 1
+        c = 0
         for ps in obj.sentences.select_related('sentence').all():
             table += '<tr class="row{}"><td><a href="{}">{}</a></td><td>{}</td></tr>'.\
                 format(i, ps.sentence.get_admin_url(), ps.sentence, ps.position)
             i = 1 if i == 2 else 2
+            c += 1
         table += '</tbody>'
         table += '</table>'
+        table = '<br><div># sentences: {}</div>'.format(c) + table
         return format_html(table)
     paragraph_sentences.short_description = 'Paragraph sentences'
 
@@ -95,12 +104,15 @@ class SentenceAdmin(BaseAdmin):
         table += '<thead><tr><th>TOKEN</th><th>POSITION</th></thead>'
         table += '<tbody>'
         i = 1
+        c = 0
         for st in obj.tokens.select_related('token').all():
             table += '<tr class="row{}"><td><a href="{}">{}</a></td><td>{}</td></tr>'.\
                 format(i, st.token.get_admin_url(), st.token, st.position)
             i = 1 if i == 2 else 2
+            c += 1
         table += '</tbody>'
         table += '</table>'
+        table = '<br><div># tokens: {}</div>'.format(c) + table
         return format_html(table)
     sentence_tokens.short_description = 'Sentence tokens'
 
@@ -140,8 +152,8 @@ admin.site.register(Token, TokenAdmin)
 #
 #
 # class RevisionAdmin(BaseAdmin):
-#     list_display = ('id', 'article_id', 'editor', 'timestamp', )
-#     readonly_fields = ('id', 'article_id', 'editor', 'timestamp', 'length', )
+#     list_display = ('id', 'article_id', 'editor', 'timestamp', 'created', )
+#     readonly_fields = ('id', 'article_id', 'editor', 'timestamp', 'length', 'created', )
 #
 #
 # class RevisionParagraphAdmin(BaseAdmin):
