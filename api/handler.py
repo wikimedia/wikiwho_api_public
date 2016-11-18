@@ -27,7 +27,7 @@ class WPHandlerException(Exception):
 
 
 class WPHandler(object):
-    def __init__(self, article_title, pickle_folder='', save_pickle=False, check_exists=True, *args, **kwargs):
+    def __init__(self, article_title, pickle_folder='', save_into_pickle=False, check_exists_in_db=True, is_xml=False, *args, **kwargs):
         # super(WPHandler, self).__init__(article_title, pickle_folder=pickle_folder, *args, **kwargs)
         self.article_title = article_title
         self.article_db_title = ''
@@ -39,31 +39,34 @@ class WPHandler(object):
         self.article_obj = None
         self.latest_revision_id = None
         self.page_id = None
-        self.save_pickle = save_pickle
-        self.check_exists = check_exists
+        self.save_into_pickle = save_into_pickle
+        self.check_exists_in_db = check_exists_in_db
+        self.is_xml = is_xml
 
     def __enter__(self):
         # time1 = time()
         # logging.debug("--------")
         # logging.debug(self.article_title)
 
-        # get db title from wp
-        self.latest_revision_id, self.page_id, self.article_db_title = get_latest_revision_data(self.article_title)
-        if self.check_exists:
-            self.article_obj = Article.objects.filter(title=self.article_db_title).first()
-        # TODO get all article with this title and check with page_id (even there is one article in db),
-        # then update titles of other articles with other page ids by using wp api (celery task)
-        # articles = [a for a in Article.objects.filter(title=self.article_db_title)]
-        # for article in articles:
-        #     if article.id == page_id:
-        #         self.article_obj = article
-        #         articles.remove(article)
-        #         break
-        # if articles:
-        #     update_titles_task(articles)
-        self.saved_rvcontinue = self.article_obj.rvcontinue if self.article_obj else '0'
+        if not self.is_xml:
+            # get db title from wp api
+            self.latest_revision_id, self.page_id, self.article_db_title = get_latest_revision_data(self.article_title)
 
-        if self.save_pickle:
+        if not self.save_into_pickle:
+            if self.check_exists_in_db:
+                self.article_obj = Article.objects.filter(title=self.article_db_title).first()
+            # TODO get all article with this title and check with page_id (even there is one article in db),
+            # then update titles of other articles with other page ids by using wp api (celery task)
+            # articles = [a for a in Article.objects.filter(title=self.article_db_title)]
+            # for article in articles:
+            #     if article.id == page_id:
+            #         self.article_obj = article
+            #         articles.remove(article)
+            #         break
+            # if articles:
+            #     update_titles_task(articles)
+            self.saved_rvcontinue = self.article_obj.rvcontinue if self.article_obj else '0'
+        else:
             # logging.debug("trying to load pickle")
             pickle_folder = self.pickle_folder or settings.PICKLE_FOLDER
             self.pickle_path = "{}/{}.p".format(pickle_folder, self.article_db_title.replace("/", "0x2f"))  # 0x2f is UTF-8 hex of /
@@ -191,6 +194,35 @@ class WPHandler(object):
         self.wikiwho.token_id = last_token_id + 1
         # print('loading ww obj from db: ', time() - t)
 
+    def handle_from_xml(self, revisions, page_id):
+        # holds the last revision id which is saved. 0 for new article
+        self.wikiwho = Wikiwho(self.article_title.replace(' ', '_'))
+        self.wikiwho.page_id = page_id
+
+        try:
+            # pass first item in pages dict
+            self.wikiwho.analyse_article_xml(revisions)
+        except Exception as e:
+            # if there is a problem, save article until last given unproblematic rev_id
+            # import traceback
+            # traceback.print_exc()
+            timestamp = datetime.strptime(self.wikiwho.revision_prev.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
+            self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
+                                      + "|" \
+                                      + str(self.wikiwho.revision_prev.wikipedia_id + 1)
+            self._save_article_into_db()
+            if self.save_into_pickle:
+                self.wikiwho.clean_attributes()
+                pickle_(self.wikiwho, self.pickle_path)
+            # logging.exception(self.article_title)
+            # traceback.print_exc()
+            raise e
+
+        timestamp = datetime.strptime(self.wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
+        self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
+                                  + "|" \
+                                  + str(self.wikiwho.revision_curr.wikipedia_id + 1)
+
     def handle(self, revision_ids, format_='json', is_api=True):
         # time1 = time()
         # check if article exists
@@ -262,7 +294,7 @@ class WPHandler(object):
                     # import traceback
                     # traceback.print_exc()
                     self._save_article_into_db()
-                    if self.save_pickle:
+                    if self.save_into_pickle:
                         self.wikiwho.clean_attributes()
                         pickle_(self.wikiwho, self.pickle_path)
                     # logging.exception(self.article_title)
@@ -291,10 +323,13 @@ class WPHandler(object):
         # time2 = time()
         # print("Execution time handle: {}".format(time2-time1))
 
+    def _save_into_csv(self):
+        return NotImplemented
+
     def _save_article_into_db(self):
         if not self.article_obj:
             self.article_obj = Article.objects.create(id=self.wikiwho.page_id,
-                                                      title=self.article_db_title,
+                                                      title=self.wikiwho.article_title,
                                                       spam=self.wikiwho.spam,
                                                       rvcontinue=self.wikiwho.rvcontinue)
         elif self.article_obj.rvcontinue != self.wikiwho.rvcontinue and self.article_obj.spam != self.wikiwho.spam:
@@ -357,7 +392,7 @@ class WPHandler(object):
         if self.wikiwho and self.wikiwho.rvcontinue != self.saved_rvcontinue:
             # if there is a new revision or first revision of the article
             self._save_article_into_db()
-            if self.save_pickle:
+            if self.save_into_pickle:
                 self.wikiwho.clean_attributes()
                 pickle_(self.wikiwho, self.pickle_path)
         # return True

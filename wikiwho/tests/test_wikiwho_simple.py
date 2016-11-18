@@ -272,7 +272,7 @@ class TestWikiwho:
         from django.core import management
         management.call_command('xml_to_pickle', *['--output', tests])
 
-        with WPHandler(article_name, tests, save_pickle=True) as wp:
+        with WPHandler(article_name, tests, save_into_pickle=True) as wp:
             for rev_id, rev in wp.wikiwho.revisions.items():
                 if rev_id not in data.keys():
                     continue

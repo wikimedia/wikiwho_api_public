@@ -47,7 +47,7 @@ class Wikiwho:
         self.token_id = 0  # sequential id for words in article. unique per article
         # Revisions to compare.
         self.revision_curr = Revision()
-        # self.revision_prev = Revision()
+        self.revision_prev = Revision()
 
         self.continue_rev_id = None  # to check if this is continue
 
@@ -71,7 +71,7 @@ class Wikiwho:
 
     def clean_attributes(self):
         # empty attributes
-        # self.revision_prev = None
+        self.revision_prev = None
         self.revisions_to_save = []
         self.revisionparagraphs_to_save = []
         self.revisionparagraphs_curr_to_save = []
@@ -89,38 +89,34 @@ class Wikiwho:
         self.text_curr = ''
         self.temp = []
 
-    def analyse_article(self, revisions):
+    def analyse_article_xml(self, revisions):
         i = 1
         # Iterate over revisions of the article.
         for revision in revisions:
-            if 'texthidden' in revision:
-                continue
-            if 'textmissing' in revision:
+            text = str(revision.text)
+            if not text and (revision.sha1 == '' or revision.sha1 == 'None'):
+                # texthidden / textmissing
                 continue
 
             vandalism = False
             # Update the information about the previous revision.
-            revision_prev = self.revision_curr
+            self.revision_prev = self.revision_curr
 
-            text = revision['*']
-            if revision['sha1'] == "":
-                revision['sha1'] = calculateHash(text)  # .encode("utf-8"))
-            rev_id = int(revision['revid'])
+            rev_id = revision.id
             if rev_id in self.spam:
                 vandalism = True
 
             # TODO: spam detection: DELETION
             text_len = len(text)
             try:
-                if revision['comment'] != '' and 'minor' in revision:
-                # if revision['comment'] != '' and FLAG in revision:
+                if str(revision.commment) != '' and revision.minor:
                     pass
                 else:
                     # if content is not moved (flag) to different article in good faith, check for vandalism
                     # if revisions have reached a certain size
-                    if revision_prev.length > PREVIOUS_LENGTH and \
+                    if self.revision_prev.length > PREVIOUS_LENGTH and \
                        text_len < CURR_LENGTH and \
-                       ((text_len-revision_prev.length) / revision_prev.length) <= CHANGE_PERCENTAGE:
+                       ((text_len-self.revision_prev.length) / self.revision_prev.length) <= CHANGE_PERCENTAGE:
                         # VANDALISM: CHANGE PERCENTAGE
                         vandalism = True
             except:
@@ -130,7 +126,7 @@ class Wikiwho:
                 # print("---------------------------- FLAG 1")
                 # print(revision.id)
                 # print(self.text_curr)
-                self.revision_curr = revision_prev
+                self.revision_curr = self.revision_prev
                 self.spam.append(rev_id)  # skip current revision with vandalism
             else:
                 # Information about the current revision.
@@ -138,11 +134,14 @@ class Wikiwho:
                 self.revision_curr.id = i
                 self.revision_curr.wikipedia_id = rev_id
                 self.revision_curr.length = text_len
-                self.revision_curr.time = revision['timestamp']
+                self.revision_curr.time = revision.timestamp.long_format()
 
                 # Some revisions don't have contributor.
-                self.revision_curr.contributor_id = revision.get('userid', '')  # Not Available
-                self.revision_curr.contributor_name = revision.get('user', '')
+                self.revision_curr.contributor_name = revision.contributor.user_text or ''  # Not Available
+                if revision.contributor.id is None and self.revision_curr.contributor_name:
+                    self.revision_curr.contributor_id = 0
+                else:
+                    self.revision_curr.contributor_id = revision.contributor.id or ''
 
                 # Content within the revision.
                 # Software should only work with Unicode strings internally, converting to a particular encoding on
@@ -152,14 +151,11 @@ class Wikiwho:
                 self.text_curr = text.lower()  # .encode("utf-8")
 
                 # Perform comparison.
-                vandalism = self.determine_authorship(revision_prev)
+                vandalism = self.determine_authorship()
 
                 if vandalism:
                     # print "---------------------------- FLAG 2"
-                    # print revision.getId()
-                    # print revision.getText()
-                    # print
-                    self.revision_curr = revision_prev  # skip revision with vandalism in history
+                    self.revision_curr = self.revision_prev  # skip revision with vandalism in history
                     self.spam.append(rev_id)
                     self.revisionparagraphs_curr_to_save = []
                     self.paragraphs_curr_to_save = []
@@ -194,7 +190,108 @@ class Wikiwho:
                     i += 1
             self.temp = []
 
-    def determine_authorship(self, revision_prev):
+    def analyse_article(self, revisions):
+        i = 1
+        # Iterate over revisions of the article.
+        for revision in revisions:
+            if 'texthidden' in revision or 'textmissing' in revision:
+                continue
+
+            vandalism = False
+            # Update the information about the previous revision.
+            self.revision_prev = self.revision_curr
+
+            text = revision['*']
+            rev_id = int(revision['revid'])
+            if rev_id in self.spam:
+                vandalism = True
+
+            # TODO: spam detection: DELETION
+            text_len = len(text)
+            try:
+                if revision['comment'] != '' and 'minor' in revision:
+                # if revision['comment'] != '' and FLAG in revision:
+                    pass
+                else:
+                    # if content is not moved (flag) to different article in good faith, check for vandalism
+                    # if revisions have reached a certain size
+                    if self.revision_prev.length > PREVIOUS_LENGTH and \
+                       text_len < CURR_LENGTH and \
+                       ((text_len-self.revision_prev.length) / self.revision_prev.length) <= CHANGE_PERCENTAGE:
+                        # VANDALISM: CHANGE PERCENTAGE
+                        vandalism = True
+            except:
+                pass
+
+            if vandalism:
+                # print("---------------------------- FLAG 1")
+                # print(revision.id)
+                # print(self.text_curr)
+                self.revision_curr = self.revision_prev
+                self.spam.append(rev_id)  # skip current revision with vandalism
+            else:
+                # Information about the current revision.
+                self.revision_curr = Revision()
+                self.revision_curr.id = i
+                self.revision_curr.wikipedia_id = rev_id
+                self.revision_curr.length = text_len
+                self.revision_curr.time = revision['timestamp']
+
+                # Some revisions don't have contributor.
+                self.revision_curr.contributor_id = revision.get('userid', '')  # Not Available
+                self.revision_curr.contributor_name = revision.get('user', '')
+
+                # Content within the revision.
+                # Software should only work with Unicode strings internally, converting to a particular encoding on
+                # output.
+                # https://docs.python.org/2/howto/unicode.html#tips-for-writing-unicode-aware-programs
+                # https://pythonhosted.org/kitchen/unicode-frustrations.html
+                self.text_curr = text.lower()  # .encode("utf-8")
+
+                # Perform comparison.
+                vandalism = self.determine_authorship()
+
+                if vandalism:
+                    # print "---------------------------- FLAG 2"
+                    # print revision.getId()
+                    # print revision.getText()
+                    # print
+                    self.revision_curr = self.revision_prev  # skip revision with vandalism in history
+                    self.spam.append(rev_id)
+                    self.revisionparagraphs_curr_to_save = []
+                    self.paragraphs_curr_to_save = []
+                    self.paragraphsentences_curr_to_save = []
+                    self.sentences_curr_to_save = []
+                    self.sentencetokens_curr_to_save = []
+                    self.tokens_curr_to_save = []
+                else:
+                    # Add the current revision with all the information.
+                    self.revisions.update({self.revision_curr.wikipedia_id: self.revision_curr})
+                    editor = self.revision_curr.contributor_id
+                    editor = str(editor) if editor != 0 else '0|{}'.format(self.revision_curr.contributor_name)
+                    r = Revision_(id=self.revision_curr.wikipedia_id,
+                                  article_id=self.page_id,
+                                  editor=editor,
+                                  timestamp=parse_datetime(self.revision_curr.time),
+                                  length=self.revision_curr.length)
+                    self.revisions_to_save.append(r)
+                    self.revisionparagraphs_to_save.extend(self.revisionparagraphs_curr_to_save)
+                    self.paragraphs_to_save.extend(self.paragraphs_curr_to_save)
+                    self.paragraphsentences_to_save.extend(self.paragraphsentences_curr_to_save)
+                    self.sentences_to_save.extend(self.sentences_curr_to_save)
+                    self.sentencetokens_to_save.extend(self.sentencetokens_curr_to_save)
+                    self.tokens_to_save.update({t.token_id: t for t in self.tokens_curr_to_save})
+                    self.revisionparagraphs_curr_to_save = []
+                    self.paragraphs_curr_to_save = []
+                    self.paragraphsentences_curr_to_save = []
+                    self.sentences_curr_to_save = []
+                    self.sentencetokens_curr_to_save = []
+                    self.tokens_curr_to_save = []
+                    # Update the fake revision id.
+                    i += 1
+            self.temp = []
+
+    def determine_authorship(self):
         # Containers for unmatched paragraphs and sentences in both revisions.
         unmatched_sentences_curr = []
         unmatched_sentences_prev = []
@@ -205,13 +302,12 @@ class Wikiwho:
 
         # Analysis of the paragraphs in the current revision.
         unmatched_paragraphs_curr, unmatched_paragraphs_prev, matched_paragraphs_prev = \
-            self.analyse_paragraphs_in_revision(revision_prev)
+            self.analyse_paragraphs_in_revision()
 
         # Analysis of the sentences in the unmatched paragraphs of the current revision.
         if unmatched_paragraphs_curr:
             unmatched_sentences_curr, unmatched_sentences_prev, matched_sentences_prev, total_sentences = \
-                self.analyse_sentences_in_paragraphs(unmatched_paragraphs_curr, unmatched_paragraphs_prev,
-                                                     revision_prev)
+                self.analyse_sentences_in_paragraphs(unmatched_paragraphs_curr, unmatched_paragraphs_prev)
 
             # TODO: spam detection
             if len(unmatched_paragraphs_curr) / len(self.revision_curr.ordered_paragraphs) > UNMATCHED_PARAGRAPH:
@@ -277,7 +373,7 @@ class Wikiwho:
 
         return vandalism
 
-    def analyse_paragraphs_in_revision(self, revision_prev):
+    def analyse_paragraphs_in_revision(self):
         # Containers for unmatched and matched paragraphs.
         unmatched_paragraphs_curr = []
         unmatched_paragraphs_prev = []
@@ -299,7 +395,7 @@ class Wikiwho:
 
             # If the paragraph is in the previous revision,
             # update the authorship information and mark both paragraphs as matched (also in HT).
-            for paragraph_prev in revision_prev.paragraphs.get(hash_curr, []):
+            for paragraph_prev in self.revision_prev.paragraphs.get(hash_curr, []):
                 if not paragraph_prev.matched:
                     matched_one = False
                     matched_all = True
@@ -373,7 +469,7 @@ class Wikiwho:
                                     sentence_prev.matched = True
                                     for word_prev in sentence_prev.words:
                                         word_prev.matched = True
-                                        if revision_prev.wikipedia_id != word_prev.last_used:
+                                        if self.revision_prev.wikipedia_id != word_prev.last_used:
                                             word_prev.inbound.append(self.revision_curr.wikipedia_id)
                                             # print('inbound:', word_prev.value, self.revision_curr.wikipedia_id)
                                         word_prev.last_used = self.revision_curr.wikipedia_id
@@ -423,20 +519,20 @@ class Wikiwho:
             c += 1
 
         # Identify unmatched paragraphs in previous revision for further analysis.
-        for paragraph_prev_hash in revision_prev.ordered_paragraphs:
-            if len(revision_prev.paragraphs[paragraph_prev_hash]) > 1:
-                s = 'p-{}-{}'.format(revision_prev, paragraph_prev_hash)
+        for paragraph_prev_hash in self.revision_prev.ordered_paragraphs:
+            if len(self.revision_prev.paragraphs[paragraph_prev_hash]) > 1:
+                s = 'p-{}-{}'.format(self.revision_prev, paragraph_prev_hash)
                 self.temp.append(s)
                 count = self.temp.count(s)
-                paragraph_prev = revision_prev.paragraphs[paragraph_prev_hash][count - 1]
+                paragraph_prev = self.revision_prev.paragraphs[paragraph_prev_hash][count - 1]
             else:
-                paragraph_prev = revision_prev.paragraphs[paragraph_prev_hash][0]
+                paragraph_prev = self.revision_prev.paragraphs[paragraph_prev_hash][0]
             if not paragraph_prev.matched:
                 unmatched_paragraphs_prev.append(paragraph_prev)
 
         return unmatched_paragraphs_curr, unmatched_paragraphs_prev, matched_paragraphs_prev
 
-    def analyse_sentences_in_paragraphs(self, unmatched_paragraphs_curr, unmatched_paragraphs_prev, revision_prev):
+    def analyse_sentences_in_paragraphs(self, unmatched_paragraphs_curr, unmatched_paragraphs_prev):
         # Containers for unmatched and matched sentences.
         unmatched_sentences_curr = []
         unmatched_sentences_prev = []
@@ -525,7 +621,7 @@ class Wikiwho:
 
                                 for word_prev in sentence_prev.words:
                                     word_prev.matched = True
-                                    if revision_prev.wikipedia_id != word_prev.last_used:
+                                    if self.revision_prev.wikipedia_id != word_prev.last_used:
                                         word_prev.inbound.append(self.revision_curr.wikipedia_id)
                                         # print('inbound:', word_prev.value, self.revision_curr.wikipedia_id)
                                     word_prev.last_used = self.revision_curr.wikipedia_id

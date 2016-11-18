@@ -22,13 +22,14 @@ def pickle_(obj, pickle_path):
         pickle.dump(obj, file_, protocol=-1)  # -1 to select HIGHEST_PROTOCOL available
 
 
-def get_latest_revision_data(article_name):
-    if not article_name:
+def get_latest_revision_data(article_title=None, page_id=None):
+    # TODO use page_id or article_title and return article_title.replace(' ', '_') or page_id
+    if not article_title:
         return ''
     # set up request for Wikipedia API.
     server = "en.wikipedia.org"
     wp_api_url = 'https://{}/w/api.php'.format(server)
-    params = {'action': "query", 'prop': 'revisions', 'titles': article_name, 'format': 'json', 'rvlimit': '1'}
+    params = {'action': "query", 'prop': 'revisions', 'titles': article_title, 'format': 'json', 'rvlimit': '1'}
     # params = {'action': "query", 'titles': article_name, 'format': 'json'}
     # headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
     headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,

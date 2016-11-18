@@ -16,16 +16,15 @@ from time import strftime
 from api.handler import WPHandler
 
 
-def generate_article(article_title, check_exists=False):
-    # TODO do this with page_id in the future?
-    with WPHandler(article_title, check_exists=check_exists) as wp:
+def generate_article(article_title, check_exists_in_db=False):
+    with WPHandler(article_title, check_exists_in_db=check_exists_in_db) as wp:
         wp.handle(revision_ids=[], format_='json', is_api=False)
     # print(article_title)
     return True
 
 
 class Command(BaseCommand):
-    help = 'Generates articles in given path.'
+    help = 'Generates articles in csv files in given path from wp api.'
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--path', help='Path where list of articles are saved', required=True)
@@ -39,7 +38,7 @@ class Command(BaseCommand):
         parser.add_argument('-s', '--start', type=int, help='From range', required=False)
         parser.add_argument('-e', '--end', type=int, help='To range', required=False)
         parser.add_argument('-c', '--check_exists', action='store_true',
-                            help='Check if an article exists before creating it. If yes, go to the next article. '
+                            help='Check if an article exists in db before creating it. If yes, go to the next article. '
                                  'If not, process article. '
                                  'Be careful that if yes, this costs 1 extra db query for each article!',
                             default=False, required=False)
@@ -50,7 +49,7 @@ class Command(BaseCommand):
         is_ppe = not options['thread_pool_executor']
         start = options['start']
         end = options['end']
-        check_exists = options['check_exists']
+        check_exists_in_db = options['check_exists']
         timeout = options['timeout'] * 60 if options['timeout'] else None  # convert into seconds
         # if start > end:
         #     raise CommandError('start ({}) must be >= end ({})'.format(start, end))
@@ -94,7 +93,7 @@ class Command(BaseCommand):
                     input_articles = csv.reader(csv_file, delimiter=";")
                     # for article in input_articles:
                     #     try:
-                    #         generate_article(generate_article, article[0], check_exists)
+                    #         generate_article(generate_article, article[0], check_exists_in_db)
                     #     except Exception as exc:
                     #         logger.exception(article[0])
 
@@ -110,7 +109,9 @@ class Command(BaseCommand):
                     # We can use a with statement to ensure threads are cleaned up promptly
                     with Executor(max_workers=max_workers) as executor:
                         # Start the load operations and mark each future with its article
-                        future_to_article = {executor.submit(generate_article, article[0], check_exists): article[0]
+                        # TODO there are also page_ids in csv: article[1]. in future pass them to WPHandnler
+                        future_to_article = {executor.submit(generate_article, article[0], check_exists_in_db):
+                                             article[0]
                                              for article in input_articles}
 
                         del input_articles  # release memory

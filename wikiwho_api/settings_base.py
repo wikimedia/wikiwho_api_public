@@ -168,5 +168,6 @@ REST_FRAMEWORK_EXTENSIONS = {
 PICKLE_FOLDER = 'pickle_api'
 PICKLE_FOLDER_2 = '../disk2/pickle_api_2'
 
+# Wikipedia
 WP_HEADERS_USER_AGENT = 'Wikiwho API'
 WP_HEADERS_FROM = 'philipp.singer@gesis.org, fabian.floeck@gesis.org and kenan.erdogan@gesis.org'

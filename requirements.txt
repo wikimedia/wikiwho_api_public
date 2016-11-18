@@ -27,3 +27,6 @@ drf-extensions
 
 django-extensions
 psycopg2
+
+mediawiki-utilities
+# pathos
