@@ -194,14 +194,14 @@ class WPHandler(object):
         self.wikiwho.token_id = last_token_id + 1
         # print('loading ww obj from db: ', time() - t)
 
-    def handle_from_xml(self, revisions, page_id):
+    def handle_from_xml(self, page):
         # holds the last revision id which is saved. 0 for new article
         self.wikiwho = Wikiwho(self.article_title.replace(' ', '_'))
-        self.wikiwho.page_id = page_id
+        self.wikiwho.page_id = page.id
 
         try:
             # pass first item in pages dict
-            self.wikiwho.analyse_article_xml(revisions)
+            self.wikiwho.analyse_article_xml(page)
         except Exception as e:
             # if there is a problem, save article until last given unproblematic rev_id
             # import traceback

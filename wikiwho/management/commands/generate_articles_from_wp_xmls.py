@@ -15,11 +15,16 @@ from django.core.management.base import BaseCommand, CommandError
 from api.handler import WPHandler
 
 
-def generate_article(revisions, article_title, page_id, check_exists_in_db=False):
-    # print(article_title)
+def generate_article(xml_file_path, page_id, check_exists_in_db=False):
+    dump = Iterator.from_file(open(xml_file_path))
+    for page in dump:
+        if page_id == page.id:
+            article_title = page.title
+            break
+    del dump
     with WPHandler(article_title, check_exists_in_db=check_exists_in_db, is_xml=True) as wp:
-        wp.handle_from_xml(revisions, page_id)
-        del revisions
+        wp.handle_from_xml(page)
+        # del revisions
     return True
 
 
@@ -121,7 +126,7 @@ class Command(BaseCommand):
         # dump = itertools.islice(dump, 3)
         # for page in dump:
         #     try:
-        #         generate_article(page, check_exists_in_db)
+        #         generate_article(xml_file_path, page.id, check_exists_in_db)
         #     except Exception as exc:
         #         logger.exception('{}--------{}'.format(page.title, parsing_pattern))
 
@@ -130,7 +135,7 @@ class Command(BaseCommand):
         # We can use a with statement to ensure threads are cleaned up promptly
         with Executor(max_workers=max_workers) as executor:
             # Start the load operations and mark each future with its article
-            future_to_article = {executor.submit(generate_article, tuple(page), page.title, page.id, check_exists_in_db):
+            future_to_article = {executor.submit(generate_article, xml_file_path, page.id, check_exists_in_db):
                                  page.title
                                  for page in dump if not page.redirect}
             # for page in dump:

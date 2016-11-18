@@ -89,10 +89,10 @@ class Wikiwho:
         self.text_curr = ''
         self.temp = []
 
-    def analyse_article_xml(self, revisions):
+    def analyse_article_xml(self, page):
         i = 1
         # Iterate over revisions of the article.
-        for revision in revisions:
+        for revision in page:
             text = str(revision.text)
             if not text and (revision.sha1 == '' or revision.sha1 == 'None'):
                 # texthidden / textmissing
