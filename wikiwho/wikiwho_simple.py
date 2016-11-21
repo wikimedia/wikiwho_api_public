@@ -140,6 +140,8 @@ class Wikiwho:
                 self.revision_curr.contributor_name = revision.contributor.user_text or ''  # Not Available
                 if revision.contributor.id is None and self.revision_curr.contributor_name:
                     self.revision_curr.contributor_id = 0
+                elif revision.contributor.id == 0:
+                    self.revision_curr.contributor_id = 0
                 else:
                     self.revision_curr.contributor_id = revision.contributor.id or ''
 
