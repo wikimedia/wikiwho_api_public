@@ -272,7 +272,7 @@ class TestWikiwho:
         from django.core import management
         management.call_command('xml_to_pickle', *['--output', tests])
 
-        with WPHandler(article_name, tests, save_into_pickle=True) as wp:
+        with WPHandler(article_name, tests, save_into_pickle=True, save_into_db=False) as wp:
             for rev_id, rev in wp.wikiwho.revisions.items():
                 if rev_id not in data.keys():
                     continue
@@ -313,7 +313,7 @@ class TestWikiwho:
         This is not needed anymore. Covered by 'test_json_output' case.
         """
         sub_text = splitIntoWords(context)
-        with WPHandler(article_name, '{}/test_authorship'.format(temp_folder)) as wp:
+        with WPHandler(article_name, '{}/test_authorship'.format(temp_folder), save_into_pickle=True, save_into_db=False) as wp:
             wp.handle(revision_ids, 'json', is_api=False)
 
         # revision = wp.article_obj.revisions.get(id=revision_ids[0])

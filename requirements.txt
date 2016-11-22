@@ -29,4 +29,8 @@ django-extensions
 psycopg2
 
 mediawiki-utilities
+# mwxml
+
 # pathos
+
+# django-postgres-copy

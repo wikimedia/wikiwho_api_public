@@ -27,7 +27,7 @@ class WPHandlerException(Exception):
 
 
 class WPHandler(object):
-    def __init__(self, article_title, pickle_folder='', save_into_pickle=False, check_exists_in_db=True, is_xml=False, *args, **kwargs):
+    def __init__(self, article_title, pickle_folder='', save_into_pickle=False, save_into_db=True, check_exists_in_db=True, is_xml=False, *args, **kwargs):
         # super(WPHandler, self).__init__(article_title, pickle_folder=pickle_folder, *args, **kwargs)
         self.article_title = article_title
         self.article_db_title = ''
@@ -40,6 +40,7 @@ class WPHandler(object):
         self.latest_revision_id = None
         self.page_id = None
         self.save_into_pickle = save_into_pickle
+        self.save_into_db = save_into_db
         self.check_exists_in_db = check_exists_in_db
         self.is_xml = is_xml
 
@@ -47,12 +48,17 @@ class WPHandler(object):
         # time1 = time()
         # logging.debug("--------")
         # logging.debug(self.article_title)
+        if not self.save_into_db:
+            # if there is no write into postgres, there is no need to do created db model objects etc
+            from wikiwho.wikiwho_simple_pickle import Wikiwho
+            global Wikiwho
 
         if not self.is_xml:
             # get db title from wp api
             self.latest_revision_id, self.page_id, self.article_db_title = get_latest_revision_data(self.article_title)
 
-        if not self.save_into_pickle:
+        # TODO save_into_db=True and save_into_pickle=True is not tested, may not work!
+        if self.save_into_db:
             if self.check_exists_in_db:
                 self.article_obj = Article.objects.filter(title=self.article_db_title).first()
             # TODO get all article with this title and check with page_id (even there is one article in db),
@@ -66,7 +72,7 @@ class WPHandler(object):
             # if articles:
             #     update_titles_task(articles)
             self.saved_rvcontinue = self.article_obj.rvcontinue if self.article_obj else '0'
-        else:
+        if self.save_into_pickle:
             # logging.debug("trying to load pickle")
             pickle_folder = self.pickle_folder or settings.PICKLE_FOLDER
             self.pickle_path = "{}/{}.p".format(pickle_folder, self.article_db_title.replace("/", "0x2f"))  # 0x2f is UTF-8 hex of /
@@ -210,7 +216,8 @@ class WPHandler(object):
             self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
                                       + "|" \
                                       + str(self.wikiwho.revision_prev.wikipedia_id + 1)
-            self._save_article_into_db()
+            if self.save_into_db:
+                self._save_article_into_db()
             if self.save_into_pickle:
                 self.wikiwho.clean_attributes()
                 pickle_(self.wikiwho, self.pickle_path)
@@ -293,7 +300,8 @@ class WPHandler(object):
                     # if there is a problem, save article until last given unproblematic rev_id
                     # import traceback
                     # traceback.print_exc()
-                    self._save_article_into_db()
+                    if self.save_into_db:
+                        self._save_article_into_db()
                     if self.save_into_pickle:
                         self.wikiwho.clean_attributes()
                         pickle_(self.wikiwho, self.pickle_path)
@@ -322,9 +330,6 @@ class WPHandler(object):
 
         # time2 = time()
         # print("Execution time handle: {}".format(time2-time1))
-
-    def _save_into_csv(self):
-        return NotImplemented
 
     def _save_article_into_db(self):
         if not self.article_obj:
@@ -391,7 +396,8 @@ class WPHandler(object):
         # logging.debug(wikiwho.lastrev_date)
         if self.wikiwho and self.wikiwho.rvcontinue != self.saved_rvcontinue:
             # if there is a new revision or first revision of the article
-            self._save_article_into_db()
+            if self.save_into_db:
+                self._save_article_into_db()
             if self.save_into_pickle:
                 self.wikiwho.clean_attributes()
                 pickle_(self.wikiwho, self.pickle_path)
