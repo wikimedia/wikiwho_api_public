@@ -223,8 +223,8 @@ class WPHandler(object):
                                           + str(self.wikiwho.revision_prev.wikipedia_id + 1)
             if self.save_into_db:
                 self._save_article_into_db()
+            self.wikiwho.clean_attributes()
             if self.save_into_pickle:
-                self.wikiwho.clean_attributes()
                 pickle_(self.wikiwho, self.pickle_path)
             # logging.exception(self.article_title)
             # traceback.print_exc()
@@ -312,8 +312,8 @@ class WPHandler(object):
                     # traceback.print_exc()
                     if self.save_into_db:
                         self._save_article_into_db()
+                    self.wikiwho.clean_attributes()
                     if self.save_into_pickle:
-                        self.wikiwho.clean_attributes()
                         pickle_(self.wikiwho, self.pickle_path)
                     # logging.exception(self.article_title)
                     # traceback.print_exc()
@@ -408,8 +408,8 @@ class WPHandler(object):
             # if there is a new revision or first revision of the article
             if self.save_into_db:
                 self._save_article_into_db()
+            self.wikiwho.clean_attributes()
             if self.save_into_pickle:
-                self.wikiwho.clean_attributes()
                 pickle_(self.wikiwho, self.pickle_path)
         # return True
         # time2 = time()

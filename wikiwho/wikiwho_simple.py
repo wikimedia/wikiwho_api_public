@@ -84,6 +84,7 @@ class Wikiwho:
         self.sentencetokens_to_save = []
         self.sentencetokens_curr_to_save = []
         self.tokens_to_save = {}  # {token_id: token_obj, ...}
+        self.tokens_to_update = {}  # {token_id: token_obj, ...}
         self.tokens_curr_to_save = []
 
         self.text_curr = ''
