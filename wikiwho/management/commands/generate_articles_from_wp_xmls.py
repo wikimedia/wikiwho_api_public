@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/local/xmls/' --postgres -t 300
+python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/local/xmls/'
 """
 from os import mkdir, listdir
 from os.path import basename, exists
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor  # , as_completed, TimeoutError, CancelledError
 import logging
 from time import strftime
-from mw.xml_dump import functions, iteration
+from mwxml import Dump
+from mwtypes.files import reader
 import csv
 
 from django.core.management.base import BaseCommand, CommandError
@@ -33,14 +34,13 @@ def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_
 
     print('Start: {} at {}'.format(xml_file_name, strftime("%H:%M:%S %d-%m-%Y")))
     try:
-        f = functions.open_file(xml_file_path)  # read from 7z file
-        dump = iteration.Iterator.from_file(f)
+        dump = Dump.from_file(reader(xml_file_path))
         # dump = iteration.Iterator.from_file(open('uncompressed file path'))
+        # import itertools
+        # dump = itertools.islice(dump, 2)
     except Exception as e:
         logger.exception('{}--------{}'.format(xml_file_name, parsing_pattern))
     else:
-        # import itertools
-        # dump = itertools.islice(dump, 2)
         for page in dump:
             if not page.redirect:
                 try:
@@ -48,7 +48,7 @@ def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_
                         # print(wp.article_title)
                         wp.handle_from_xml(page)
                 except Exception as e:
-                    logger.exception('{}--------{}'.format(page.title, parsing_pattern))
+                    logger.exception('{}-({})--------{}'.format(page.title, page.id, parsing_pattern))
     print('Done: {} at {}'.format(xml_file_name, strftime("%H:%M:%S %d-%m-%Y")))
     return True
 
@@ -69,7 +69,7 @@ def generate_articles_csv(xml_file_path, csv_folder, log_folder, format_, check_
 
     print('Start: {} at {}'.format(xml_file_name, strftime("%H:%M:%S %d-%m-%Y")))
     try:
-        dump = iteration.Iterator.from_file(open(xml_file_path))
+        dump = Dump.from_file(reader(xml_file_path))
     except Exception as e:
         logger.exception('{}--------{}'.format(xml_file_name, parsing_pattern))
     else:
@@ -300,7 +300,7 @@ class Command(BaseCommand):
                             required=False)
         parser.add_argument('-f', '--csv_folder', help='Folder where to write csvs. Default is folder of xml folder',
                             required=False)
-        parser.add_argument('-m', '--max_workers', type=int, help='Number of threads/processors to run parallel. '
+        parser.add_argument('-m', '--max_workers', type=int, help='Number of processors/threads to run parallel. '
                                                                   'Default is # compressed files in given folder path.',
                             required=False)
         parser.add_argument('-tpe', '--thread_pool_executor', action='store_true',
@@ -350,13 +350,11 @@ class Command(BaseCommand):
             # Executor = ThreadPoolExecutor
             # format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
 
-        # for page in dump:
-        #     try:
-        #         generate_article(xml_file_path, page.id, check_exists_in_db)
-        #     except Exception as exc:
-        #         logger.exception('{}--------{}'.format(page.title, parsing_pattern))
+        # for xml_file_path in xml_files:
+        #     generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_in_db)
 
-        # print(max_workers, xml_files)
+        print(max_workers)
+        # print(xml_files)
         # print('Start: {} with --use_copy={} at {}'.format(xml_folder, use_copy, strftime("%H:%M:%S %d-%m-%Y")))
         with Executor(max_workers=max_workers) as executor:
             for xml_file_path in xml_files:

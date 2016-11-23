@@ -212,10 +212,15 @@ class WPHandler(object):
             # if there is a problem, save article until last given unproblematic rev_id
             # import traceback
             # traceback.print_exc()
-            timestamp = datetime.strptime(self.wikiwho.revision_prev.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
-            self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
-                                      + "|" \
-                                      + str(self.wikiwho.revision_prev.wikipedia_id + 1)
+            if self.wikiwho.revision_curr.time == 0:
+                # if all revisions were detected as spam
+                # wikiwho object holds no information (it is in initial status, rvcontinue=0)
+                self.wikiwho.rvcontinue = '1'  # assign 1 to be able to save this article without any revisions
+            else:
+                timestamp = datetime.strptime(self.wikiwho.revision_prev.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
+                self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
+                                          + "|" \
+                                          + str(self.wikiwho.revision_prev.wikipedia_id + 1)
             if self.save_into_db:
                 self._save_article_into_db()
             if self.save_into_pickle:
@@ -225,10 +230,15 @@ class WPHandler(object):
             # traceback.print_exc()
             raise e
 
-        timestamp = datetime.strptime(self.wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
-        self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
-                                  + "|" \
-                                  + str(self.wikiwho.revision_curr.wikipedia_id + 1)
+        if self.wikiwho.revision_curr.time == 0:
+            # if all revisions were detected as spam
+            # wikiwho object holds no information (it is in initial status, rvcontinue=0)
+            self.wikiwho.rvcontinue = '1'  # assign 1 to be able to save this article without any revisions
+        else:
+            timestamp = datetime.strptime(self.wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
+            self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
+                                      + "|" \
+                                      + str(self.wikiwho.revision_curr.wikipedia_id + 1)
 
     def handle(self, revision_ids, format_='json', is_api=True):
         # time1 = time()

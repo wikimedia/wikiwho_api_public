@@ -93,8 +93,18 @@ class Wikiwho:
         i = 1
         # Iterate over revisions of the article.
         for revision in page:
-            text = str(revision.text)
-            if not text and (revision.sha1 == '' or revision.sha1 == 'None'):
+            text = revision.text or ''
+            # if revision.id == 331654733 or revision.id == 118422447:
+            #     print(self.article_title)
+            #     if revision.user:
+            #         print(type(revision.user.text), revision.user.text, type(revision.user.id), revision.user.id)
+            #     print(revision.id, type(revision.text), type(revision.comment),
+            #           revision.minor, type(revision.sha1), revision.sha1)
+            if not text and (not revision.sha1 or revision.sha1 == 'None'):
+                # print('---', revision.id, type(revision.text), type(revision.comment),
+                #       revision.minor, type(revision.sha1), revision.sha1)
+                # if revision.user:
+                #     print('--', type(revision.user.text), revision.user.text, type(revision.user.id), revision.user.id)
                 # texthidden / textmissing
                 continue
 
@@ -109,7 +119,7 @@ class Wikiwho:
             # TODO: spam detection: DELETION
             text_len = len(text)
             try:
-                if str(revision.commment) != '' and revision.minor:
+                if revision.commment and revision.minor:
                     pass
                 else:
                     # if content is not moved (flag) to different article in good faith, check for vandalism
@@ -137,13 +147,17 @@ class Wikiwho:
                 self.revision_curr.time = revision.timestamp.long_format()
 
                 # Some revisions don't have contributor.
-                self.revision_curr.contributor_name = revision.contributor.user_text or ''  # Not Available
-                if revision.contributor.id is None and self.revision_curr.contributor_name:
-                    self.revision_curr.contributor_id = 0
-                elif revision.contributor.id == 0:
-                    self.revision_curr.contributor_id = 0
+                if revision.user:
+                    self.revision_curr.contributor_name = revision.user.text or ''  # Not Available
+                    if revision.user.id is None and self.revision_curr.contributor_name:
+                        self.revision_curr.contributor_id = 0
+                    elif revision.user.id == 0:
+                        self.revision_curr.contributor_id = 0
+                    else:
+                        self.revision_curr.contributor_id = revision.user.id or ''
                 else:
-                    self.revision_curr.contributor_id = revision.contributor.id or ''
+                    self.revision_curr.contributor_name = ''
+                    self.revision_curr.contributor_id = ''
 
                 # Content within the revision.
                 # Software should only work with Unicode strings internally, converting to a particular encoding on
@@ -203,7 +217,7 @@ class Wikiwho:
             # Update the information about the previous revision.
             self.revision_prev = self.revision_curr
 
-            text = revision['*']
+            text = revision['*'] or ''
             rev_id = int(revision['revid'])
             if rev_id in self.spam:
                 vandalism = True
@@ -211,8 +225,8 @@ class Wikiwho:
             # TODO: spam detection: DELETION
             text_len = len(text)
             try:
-                if revision['comment'] != '' and 'minor' in revision:
-                # if revision['comment'] != '' and FLAG in revision:
+                if revision['comment'] and 'minor' in revision:
+                # if revision['comment'] and FLAG in revision:
                     pass
                 else:
                     # if content is not moved (flag) to different article in good faith, check for vandalism

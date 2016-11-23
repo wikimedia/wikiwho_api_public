@@ -28,8 +28,8 @@ drf-extensions
 django-extensions
 psycopg2
 
-mediawiki-utilities
-# mwxml
+#mediawiki-utilities
+mwxml
 
 # pathos
 
