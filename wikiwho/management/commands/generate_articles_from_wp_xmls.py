@@ -42,13 +42,13 @@ def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_
         logger.exception('{}--------{}'.format(xml_file_name, parsing_pattern))
     else:
         for page in dump:
-            if not page.redirect:
-                try:
+            try:
+                if not page.redirect:
                     with WPHandler(page.title, save_into_db=True, check_exists_in_db=check_exists_in_db, is_xml=True) as wp:
                         # print(wp.article_title)
                         wp.handle_from_xml(page)
-                except Exception as e:
-                    logger.exception('{}-({})--------{}'.format(page.title, page.id, parsing_pattern))
+            except Exception as e:
+                logger.exception('{}-({})--------{}'.format(page.title, page.id, parsing_pattern))
     print('Done: {} at {}'.format(xml_file_name, strftime("%H:%M:%S %d-%m-%Y")))
     return True
 

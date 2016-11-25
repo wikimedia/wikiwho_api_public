@@ -101,7 +101,9 @@ class Wikiwho:
             #         print(type(revision.user.text), revision.user.text, type(revision.user.id), revision.user.id)
             #     print(revision.id, type(revision.text), type(revision.comment),
             #           revision.minor, type(revision.sha1), revision.sha1)
-            if not text and (not revision.sha1 or revision.sha1 == 'None'):
+            # if not text and (not revision.sha1 or revision.sha1 == 'None'):
+            if not text or revision.deleted.text or revision.deleted.restricted:
+                # or revision.deleted.comment or revision.deleted.user
                 # print('---', revision.id, type(revision.text), type(revision.comment),
                 #       revision.minor, type(revision.sha1), revision.sha1)
                 # if revision.user:
@@ -119,19 +121,14 @@ class Wikiwho:
 
             # TODO: spam detection: DELETION
             text_len = len(text)
-            try:
-                if revision.commment and revision.minor:
-                    pass
-                else:
-                    # if content is not moved (flag) to different article in good faith, check for vandalism
-                    # if revisions have reached a certain size
-                    if self.revision_prev.length > PREVIOUS_LENGTH and \
-                       text_len < CURR_LENGTH and \
-                       ((text_len-self.revision_prev.length) / self.revision_prev.length) <= CHANGE_PERCENTAGE:
-                        # VANDALISM: CHANGE PERCENTAGE
-                        vandalism = True
-            except:
-                pass
+            if not(revision.comment and revision.minor):
+                # if content is not moved (flag) to different article in good faith, check for vandalism
+                # if revisions have reached a certain size
+                if self.revision_prev.length > PREVIOUS_LENGTH and \
+                   text_len < CURR_LENGTH and \
+                   ((text_len-self.revision_prev.length) / self.revision_prev.length) <= CHANGE_PERCENTAGE:
+                    # VANDALISM: CHANGE PERCENTAGE
+                    vandalism = True
 
             if vandalism:
                 # print("---------------------------- FLAG 1")
@@ -225,20 +222,15 @@ class Wikiwho:
 
             # TODO: spam detection: DELETION
             text_len = len(text)
-            try:
-                if revision['comment'] and 'minor' in revision:
-                # if revision['comment'] and FLAG in revision:
-                    pass
-                else:
-                    # if content is not moved (flag) to different article in good faith, check for vandalism
-                    # if revisions have reached a certain size
-                    if self.revision_prev.length > PREVIOUS_LENGTH and \
-                       text_len < CURR_LENGTH and \
-                       ((text_len-self.revision_prev.length) / self.revision_prev.length) <= CHANGE_PERCENTAGE:
-                        # VANDALISM: CHANGE PERCENTAGE
-                        vandalism = True
-            except:
-                pass
+            if not(revision.get('comment') and 'minor' in revision):
+            # if not(revision.get('comment') and FLAG in revision):
+                # if content is not moved (flag) to different article in good faith, check for vandalism
+                # if revisions have reached a certain size
+                if self.revision_prev.length > PREVIOUS_LENGTH and \
+                   text_len < CURR_LENGTH and \
+                   ((text_len-self.revision_prev.length) / self.revision_prev.length) <= CHANGE_PERCENTAGE:
+                    # VANDALISM: CHANGE PERCENTAGE
+                    vandalism = True
 
             if vandalism:
                 # print("---------------------------- FLAG 1")
