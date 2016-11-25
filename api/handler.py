@@ -57,6 +57,8 @@ class WPHandler(object):
         if not self.is_xml:
             # get db title from wp api
             self.latest_revision_id, self.page_id, self.article_db_title = get_latest_revision_data(self.article_title)
+        else:
+            self.article_db_title = self.article_title.replace(' ', '_')
 
         # TODO save_into_db=True and save_into_pickle=True is not tested, may not work!
         if self.save_into_db:
@@ -202,8 +204,11 @@ class WPHandler(object):
         # print('loading ww obj from db: ', time() - t)
 
     def handle_from_xml(self, page, timeout=None):
-        # holds the last revision id which is saved. 0 for new article
-        self.wikiwho = Wikiwho(self.article_title.replace(' ', '_'))
+        # this handle is used only to fill the db so if already exists, skip this article
+        # here we don't have rvcontinue check to analyse article as we have in handle method
+        if self.check_exists_in_db and self.save_into_db and self.article_obj:
+            return
+        self.wikiwho = Wikiwho(self.article_db_title)
         self.wikiwho.page_id = page.id
 
         try:
