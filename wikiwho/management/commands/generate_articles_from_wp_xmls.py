@@ -18,7 +18,7 @@ from django.utils import timezone
 from api.handler import WPHandler
 
 
-def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_in_db=False):
+def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_in_db=False, timeout=None):
     logger = logging.getLogger('generate_article')
     xml_file_name = basename(xml_file_path)
     file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
@@ -46,7 +46,7 @@ def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_
                 if not page.redirect:
                     with WPHandler(page.title, save_into_db=True, check_exists_in_db=check_exists_in_db, is_xml=True) as wp:
                         # print(wp.article_title)
-                        wp.handle_from_xml(page)
+                        wp.handle_from_xml(page, timeout)
             except Exception as e:
                 logger.exception('{}-({})--------{}'.format(page.title, page.id, parsing_pattern))
     print('Done: {} at {}'.format(xml_file_name, strftime("%H:%M:%S %d-%m-%Y")))
@@ -303,6 +303,8 @@ class Command(BaseCommand):
         parser.add_argument('-m', '--max_workers', type=int, help='Number of processors/threads to run parallel. '
                                                                   'Default is # compressed files in given folder path.',
                             required=False)
+        parser.add_argument('-t', '--timeout', type=float, required=False,
+                            help='Timeout value for each processor for analyzing articles [minutes]')
         parser.add_argument('-tpe', '--thread_pool_executor', action='store_true',
                             help='Use ThreadPoolExecutor, default is ProcessPoolExecutor', default=False,
                             required=False)
@@ -340,7 +342,7 @@ class Command(BaseCommand):
         max_workers = options['max_workers'] or len(xml_files)
         is_ppe = not options['thread_pool_executor']
         check_exists_in_db = options['check_exists']
-        # timeout = options['timeout'] * 60 if options['timeout'] else None  # convert into seconds
+        timeout = int(options['timeout'] * 60) if options['timeout'] else None  # convert into seconds
 
         if is_ppe:
             Executor = ProcessPoolExecutor
@@ -351,7 +353,7 @@ class Command(BaseCommand):
             # format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
 
         # for xml_file_path in xml_files:
-        #     generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_in_db)
+        #     generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_in_db, timeout)
 
         print(max_workers)
         # print(xml_files)
@@ -359,7 +361,8 @@ class Command(BaseCommand):
         with Executor(max_workers=max_workers) as executor:
             for xml_file_path in xml_files:
                 if not use_copy:
-                    executor.submit(generate_articles_postgres, xml_file_path, log_folder, format_, check_exists_in_db)
+                    executor.submit(generate_articles_postgres, xml_file_path, log_folder, format_,
+                                    check_exists_in_db, timeout)
                 else:
                     raise NotImplementedError
                     # FIXME known error: PS and ST token creation. maybe there are more errors.

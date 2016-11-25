@@ -9,10 +9,11 @@ from six.moves import cPickle as pickle
 import os
 # from time import time
 # from builtins import open
+
 from wikiwho.models import Article, Revision, RevisionParagraph, Paragraph, ParagraphSentence, Sentence, \
     SentenceToken, Token
 from wikiwho.wikiwho_simple import Wikiwho
-from .utils import pickle_, get_latest_revision_data, create_wp_session
+from .utils import pickle_, get_latest_revision_data, create_wp_session, Timeout
 from wikiwho import structures
 
 # session = create_wp_session()
@@ -200,14 +201,19 @@ class WPHandler(object):
         self.wikiwho.token_id = last_token_id + 1
         # print('loading ww obj from db: ', time() - t)
 
-    def handle_from_xml(self, page):
+    def handle_from_xml(self, page, timeout=None):
         # holds the last revision id which is saved. 0 for new article
         self.wikiwho = Wikiwho(self.article_title.replace(' ', '_'))
         self.wikiwho.page_id = page.id
 
         try:
-            # pass first item in pages dict
-            self.wikiwho.analyse_article_xml(page)
+            if timeout:
+                with Timeout(seconds=timeout, error_message='Timeout in analyse_article_xml ({} seconds)'.format(timeout)):
+                    self.wikiwho.analyse_article_xml(page)
+            else:
+                self.wikiwho.analyse_article_xml(page)
+        except TimeoutError:
+            raise
         except Exception as e:
             # if there is a problem, save article until last given unproblematic rev_id
             # import traceback
