@@ -14,13 +14,11 @@ def calculateHash(text):
 
 
 def splitIntoParagraphs(text):
-    paragraphs = text.split("\n\n")
+    paragraphs = text.replace('\r\n', '\n').replace('\r', '\n').split("\n\n")
     return paragraphs
 
 
-def splitIntoSentences(text):
-    p = text
-
+def splitIntoSentences(p):
     p = p.replace('. ', '.@@@@')
     p = p.replace('\n', '\n@@@@')
     p = p.replace('; ', ';@@@@')
@@ -45,8 +43,7 @@ def splitIntoSentences(text):
     return sentences
 
 
-def splitIntoWords(text):
-    p = text
+def splitIntoWords(p):
     p = p.replace('|', '||@||')
 
     p = p.replace('<', '||<').replace('>', '>||')
