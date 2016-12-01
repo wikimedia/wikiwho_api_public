@@ -101,14 +101,13 @@ class Wikiwho:
             #         print(type(revision.user.text), revision.user.text, type(revision.user.id), revision.user.id)
             #     print(revision.id, type(revision.text), type(revision.comment),
             #           revision.minor, type(revision.sha1), revision.sha1)
-            # if not text and (not revision.sha1 or revision.sha1 == 'None'):
-            if not text or revision.deleted.text or revision.deleted.restricted:
-                # or revision.deleted.comment or revision.deleted.user
+            # if not text and (revision.deleted.text or revision.deleted.restricted):
+            if not text or revision.deleted.text or revision.deleted.restricted:  # or revision.deleted.comment or revision.deleted.user
+                # equivalent of "'texthidden' in revision or 'textmissing' in revision" in analyse_article
                 # print('---', revision.id, type(revision.text), type(revision.comment),
                 #       revision.minor, type(revision.sha1), revision.sha1)
                 # if revision.user:
                 #     print('--', type(revision.user.text), revision.user.text, type(revision.user.id), revision.user.id)
-                # texthidden / textmissing
                 continue
 
             vandalism = False
@@ -215,7 +214,7 @@ class Wikiwho:
             # Update the information about the previous revision.
             self.revision_prev = self.revision_curr
 
-            text = revision['*'] or ''
+            text = revision.get('*', '')
             rev_id = int(revision['revid'])
             if rev_id in self.spam:
                 vandalism = True
