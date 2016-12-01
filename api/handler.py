@@ -120,9 +120,10 @@ class WPHandler(object):
         #     order_by('position').values('token_id', 'token__value', 'token__token_id',
         #                                 'token__last_used', 'token__inbound', 'token__outbound')
 
-        for revision_id in Revision.objects.filter(article__id=self.article_obj.id).\
+        for rev in Revision.objects.filter(article__id=self.article_obj.id).\
                 order_by('timestamp').\
-                values_list('id', flat=True):
+                values('id', 'timestamp'):
+            revision_id = rev['id']
             revision = structures.Revision()
             for rp in RevisionParagraph.objects.filter(revision_id=revision_id).\
                     select_related('paragraph').\
@@ -192,7 +193,8 @@ class WPHandler(object):
                 revision.ordered_paragraphs.append(paragraph.hash_value)
 
             revision.wikipedia_id = revision_id
-            # revision.time = rev.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
+            # timestamp is needed to calculate rvcontinue when there is error during analyse_article
+            revision.time = rev['timestamp'].strftime('%Y-%m-%dT%H:%M:%SZ')
             # revision.length = rev.length
             # only ids are enough to continue analyzing
             self.wikiwho.revisions[revision_id] = revision
@@ -219,33 +221,23 @@ class WPHandler(object):
                 self.wikiwho.analyse_article_xml(page)
         except TimeoutError:
             raise
-        except Exception as e:
-            # if there is a problem, save article until last given unproblematic rev_id
-            # import traceback
-            # traceback.print_exc()
+        except Exception:
             if self.wikiwho.revision_curr.time == 0:
                 # if all revisions were detected as spam
                 # wikiwho object holds no information (it is in initial status, rvcontinue=0)
                 self.wikiwho.rvcontinue = '1'  # assign 1 to be able to save this article without any revisions
-            else:
+            else:  # NOTE: revision_prev is used to determine rvcontinue
                 timestamp = datetime.strptime(self.wikiwho.revision_prev.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
                 self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
                                           + "|" \
                                           + str(self.wikiwho.revision_prev.wikipedia_id + 1)
-            if self.save_into_db:
-                self._save_article_into_db()
-            self.wikiwho.clean_attributes()
-            if self.save_into_pickle:
-                pickle_(self.wikiwho, self.pickle_path)
-            # logging.exception(self.article_title)
-            # traceback.print_exc()
-            raise e
+            raise
 
         if self.wikiwho.revision_curr.time == 0:
             # if all revisions were detected as spam
             # wikiwho object holds no information (it is in initial status, rvcontinue=0)
             self.wikiwho.rvcontinue = '1'  # assign 1 to be able to save this article without any revisions
-        else:
+        else:  # NOTE: revision_curr is used to determine rvcontinue
             timestamp = datetime.strptime(self.wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
             self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
                                       + "|" \
@@ -317,25 +309,25 @@ class WPHandler(object):
                     self.wikiwho.analyse_article(page.get('revisions', []))
                     # self.wikiwho.analyse_article(six.next(six.itervalues(result['query']['pages'])).
                     #                              get('revisions', []))
-                except Exception as e:
-                    # if there is a problem, save article until last given unproblematic rev_id
-                    # import traceback
-                    # traceback.print_exc()
-                    if self.save_into_db:
-                        self._save_article_into_db()
-                    self.wikiwho.clean_attributes()
-                    if self.save_into_pickle:
-                        pickle_(self.wikiwho, self.pickle_path)
-                    # logging.exception(self.article_title)
-                    # traceback.print_exc()
-                    raise e
+                except Exception:
+                    if self.wikiwho.revision_curr.time == 0:
+                        # if all revisions were detected as spam
+                        # wikiwho object holds no information (it is in initial status, rvcontinue=0)
+                        self.wikiwho.rvcontinue = '1'  # assign 1 to be able to save this article without any revisions
+                    else:  # NOTE: revision_prev is used to determine rvcontinue
+                        timestamp = datetime.strptime(self.wikiwho.revision_prev.time,
+                                                      '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
+                        self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
+                                                  + "|" \
+                                                  + str(self.wikiwho.revision_prev.wikipedia_id + 1)
+                        raise
             if 'continue' not in result:
                 # hackish: create a rvcontinue with last revision id of this article
                 if self.wikiwho.revision_curr.time == 0:
                     # if # revisions < 500 and all revisions were detected as spam
                     # wikiwho object holds no information (it is in initial status, rvcontinue=0)
                     self.wikiwho.rvcontinue = '1'  # assign 1 to be able to save this article without any revisions
-                else:
+                else:  # NOTE: revision_curr is used to determine rvcontinue
                     timestamp = datetime.strptime(self.wikiwho.revision_curr.time, '%Y-%m-%dT%H:%M:%SZ') \
                                 + timedelta(seconds=1)
                     self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
