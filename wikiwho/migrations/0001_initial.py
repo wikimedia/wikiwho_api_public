@@ -28,28 +28,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='Paragraph',
-            fields=[
-                ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
-                ('hash_value', models.CharField(default='', max_length=32)),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
-            name='ParagraphSentence',
-            fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False, verbose_name='ID')),
-                # ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
-                ('position', models.IntegerField()),
-                ('paragraph', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sentences', to='wikiwho.Paragraph')),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
             name='Revision',
             fields=[
                 ('id', models.IntegerField(editable=False, help_text='Wikipedia revision id', primary_key=True, serialize=False)),
@@ -64,13 +42,10 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='RevisionParagraph',
+            name='Paragraph',
             fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False, verbose_name='ID')),
-                # ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
-                ('position', models.IntegerField()),
-                ('paragraph', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='revisions', to='wikiwho.Paragraph')),
-                ('revision', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='paragraphs', to='wikiwho.Revision')),
+                ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
+                ('hash_value', models.CharField(default='', max_length=32)),
             ],
             options={
                 'abstract': False,
@@ -81,18 +56,6 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
                 ('hash_value', models.CharField(default='', max_length=32)),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
-            name='SentenceToken',
-            fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False, verbose_name='ID')),
-                # ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
-                ('position', models.IntegerField()),
-                ('sentence', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tokens', to='wikiwho.Sentence')),
             ],
             options={
                 'abstract': False,
@@ -113,14 +76,43 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
         ),
-        migrations.AddField(
-            model_name='sentencetoken',
-            name='token',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sentences', to='wikiwho.Token'),
+        migrations.CreateModel(
+            name='RevisionParagraph',
+            fields=[
+                ('id', models.BigAutoField(primary_key=True, serialize=False, verbose_name='ID')),
+                # ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
+                ('position', models.IntegerField()),
+                ('paragraph', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='revisions', to='wikiwho.Paragraph')),
+                ('revision', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='paragraphs', to='wikiwho.Revision')),
+            ],
+            options={
+                'abstract': False,
+            },
         ),
-        migrations.AddField(
-            model_name='paragraphsentence',
-            name='sentence',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='paragraphs', to='wikiwho.Sentence'),
+        migrations.CreateModel(
+            name='ParagraphSentence',
+            fields=[
+                ('id', models.BigAutoField(primary_key=True, serialize=False, verbose_name='ID')),
+                # ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
+                ('position', models.IntegerField()),
+                ('paragraph', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sentences', to='wikiwho.Paragraph')),
+                ('sentence', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='paragraphs', to='wikiwho.Sentence')),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='SentenceToken',
+            fields=[
+                ('id', models.BigAutoField(primary_key=True, serialize=False, verbose_name='ID')),
+                # ('id', models.UUIDField(editable=False, primary_key=True, serialize=False)),
+                ('position', models.IntegerField()),
+                ('sentence', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tokens', to='wikiwho.Sentence')),
+                ('token', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sentences', to='wikiwho.Token')),
+            ],
+            options={
+                'abstract': False,
+            },
         ),
     ]
