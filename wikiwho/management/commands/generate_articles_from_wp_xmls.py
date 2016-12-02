@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/local/xmls/ -t 120'
+python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/' -t 30
 """
 from os import mkdir, listdir
 from os.path import basename, exists
@@ -11,11 +11,14 @@ from time import strftime
 from mwxml import Dump
 from mwtypes.files import reader
 import csv
+import time
 
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
+from django.db.utils import OperationalError, DatabaseError
 
 from api.handler import WPHandler
+from base.utils import is_db_running
 
 
 def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_in_db=False, timeout=None):
@@ -47,6 +50,10 @@ def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_
                     with WPHandler(page.title, save_into_db=True, check_exists_in_db=check_exists_in_db, is_xml=True) as wp:
                         # print(wp.article_title)
                         wp.handle_from_xml(page, timeout)
+            except (OperationalError, DatabaseError):
+                while not is_db_running():
+                    time.sleep(60*5)
+                logger.exception('{}-({})--------{}-DBError'.format(page.title, page.id, parsing_pattern))
             except Exception as e:
                 logger.exception('{}-({})--------{}'.format(page.title, page.id, parsing_pattern))
     print('Done: {} at {}'.format(xml_file_name, strftime("%H:%M:%S %d-%m-%Y")))
