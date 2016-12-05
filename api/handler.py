@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
+from datetime import datetime, timedelta
+import os
 import io
 # import logging
-from datetime import datetime, timedelta
-from django.conf import settings
-from six.moves import cPickle as pickle
-import os
 # from time import time
 # from builtins import open
+
+from six.moves import cPickle as pickle
+
+from django.conf import settings
 
 from wikiwho.models import Article, Revision, RevisionParagraph, Paragraph, ParagraphSentence, Sentence, \
     SentenceToken, Token

@@ -2,6 +2,7 @@
 .cache
 *.pyc
 *.sqlite3
+*.ipynb
 
 wikiwho_api/settings.py
 

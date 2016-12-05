@@ -20,7 +20,7 @@ class Command(BaseCommand):
         recursions = []
         operationals = []
         others = []
-        entry = []
+        entry = []  # entry in logs
         parsing_pattern = '#######*******#######'
         for log_file in listdir(log_folder):
             if log_file.endswith('.log'):
@@ -28,17 +28,17 @@ class Command(BaseCommand):
                 with open('{}/{}'.format(log_folder, log_file)) as f:
                     for line in f.readlines():
                         if parsing_pattern in line and entry:
-                            text = ''.join(entry)
-                            title = entry[0].split('ERROR')[-1].split('-(')[0].strip()
+                            log_text = ''.join(entry)
+                            article_title = entry[0].split('ERROR')[-1].split('-(')[0].strip()
                             page_id = entry[0].split('ERROR')[-1].split('-(')[1].split(')')[0].strip()
-                            if 'OperationalError' in text:  # TODO and 'DBError' in entry[0]:
-                                operationals.append([title, page_id])
-                            elif 'TimeoutError' in text:
-                                timeouts.append([title, page_id])
-                            elif 'RecursionError' in text:
-                                recursions.append([title, page_id])
+                            if 'OperationalError' in log_text:  # TODO and 'DBError' in entry[0]:
+                                operationals.append([article_title, page_id])
+                            elif 'TimeoutError' in log_text:
+                                timeouts.append([article_title, page_id])
+                            elif 'RecursionError' in log_text:
+                                recursions.append([article_title, page_id])
                             else:
-                                others.append([title, page_id])
+                                others.append([article_title, page_id])
                             entry = [line]
                         else:
                             entry.append(line)

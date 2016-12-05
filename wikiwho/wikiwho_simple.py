@@ -16,6 +16,7 @@ from difflib import Differ
 import uuid
 
 from django.utils.dateparse import parse_datetime
+
 from wikiwho.models import Revision as Revision_, Paragraph as Paragraph_, RevisionParagraph, \
     Sentence as Sentence_, ParagraphSentence, SentenceToken, Token
 from .structures import Word, Sentence, Paragraph, Revision

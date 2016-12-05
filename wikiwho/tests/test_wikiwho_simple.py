@@ -12,17 +12,21 @@ py.test test_wikiwho_simple.py::TestWikiwho::test_authorship --lines=3,9
 """
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from builtins import range
 
-from openpyxl import load_workbook
 import os
 import sys
 import pytest
 import json
 import filecmp
 import io
+from builtins import range
+
+from openpyxl import load_workbook
+from mwxml import Dump
+from mwtypes.files import reader
 
 from api.handler import WPHandler
+from wikiwho.tests.utils import article_zips
 from wikiwho.utils import splitIntoWords
 from api.views import WikiwhoApiView
 
@@ -51,15 +55,17 @@ def pytest_generate_tests(metafunc):
                 break
             article_name = row[0].value.replace(' ', '_')
             if 'token' in metafunc.fixturenames:
+                # test_authorship
                 funcargs = {
                     'article_name': article_name,
-                    'revision_ids': [int(row[2].value)],
+                    'revision_id': int(row[2].value),
                     'token': '{}'.format(row[3].value).lower(),
                     'context': '{}'.format(row[4].value).lower(),
                     'correct_rev_id': int(row[5].value),
                 }
                 metafunc.addcall(funcargs=funcargs)
             elif article_name not in articles and 'revision_id_start' in metafunc.fixturenames:
+                # test_continue_logic
                 articles.add(article_name)
                 funcargs = {
                     'article_name': article_name,
@@ -68,10 +74,11 @@ def pytest_generate_tests(metafunc):
                 }
                 metafunc.addcall(funcargs=funcargs)
             elif article_name not in articles:
+                # test_json_output(_xml)
                 articles.add(article_name)
                 funcargs = {
                     'article_name': article_name,
-                    'revision_ids': [int(row[2].value)],
+                    'revision_id': int(row[2].value),
                 }
                 metafunc.addcall(funcargs=funcargs)
 
@@ -102,30 +109,33 @@ class TestWikiwho:
             tmp = 'tmp_test'
         if not os.path.exists(tmp):
             os.mkdir(tmp)
-        tmp1 = '{}/test_authorship'.format(tmp)
-        if not os.path.exists(tmp1):
-            os.mkdir(tmp1)
-        tmp2 = '{}/test_json_output'.format(tmp)
-        if not os.path.exists(tmp2):
-            os.mkdir(tmp2)
-        tmp3 = '{}/test_continue_logic'.format(tmp)
-        if not os.path.exists(tmp3):
-            os.mkdir(tmp3)
+        tmp_test_authorship = '{}/test_authorship'.format(tmp)
+        if not os.path.exists(tmp_test_authorship):
+            os.mkdir(tmp_test_authorship)
+        tmp_test_json_output = '{}/test_json_output'.format(tmp)
+        if not os.path.exists(tmp_test_json_output):
+            os.mkdir(tmp_test_json_output)
+        test_json_output_xml = '{}/test_json_output_xml'.format(tmp)
+        if not os.path.exists(test_json_output_xml):
+            os.mkdir(test_json_output_xml)
+        tmp_test_continue_logic = '{}/test_continue_logic'.format(tmp)
+        if not os.path.exists(tmp_test_continue_logic):
+            os.mkdir(tmp_test_continue_logic)
         return tmp
         # in os' tmp dir
         # return tmpdir_factory.getbasetemp()
 
-    def test_json_output(self, temp_folder, article_name, revision_ids):
+    def test_json_output(self, temp_folder, article_name, revision_id):
         """
         Tests json outputs of articles in given revisions in gold standard. If there are expected differences in
         jsons, authorship of each token in gold standard should be checked manually.
-        :param revision_ids: Revision id where authorship of token in gold standard is tested.
+        :param revision_id: Revision id where authorship of token in gold standard is tested.
         """
         temp_folder = '{}/test_json_output'.format(temp_folder)
         test_json_folder = 'test_jsons'
 
         with WPHandler(article_name, temp_folder) as wp:
-            wp.handle(revision_ids, 'json', is_api=False)
+            wp.handle([revision_id], 'json', is_api=False)
         # pickle_revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'rev_id', 'author', 'token_id'})
 
         v = WikiwhoApiView()
@@ -169,19 +179,17 @@ class TestWikiwho:
         assert is_content_same_2, "{}: json with ti doesn't match".format(article_name)
         assert is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_name)
 
-    def test_json_output_xml(self, temp_folder, article_name, revision_ids):
+    def test_json_output_xml(self, temp_folder, article_name, revision_id):
         """
         Tests json outputs of articles in given revisions in gold standard from xml dump.
         If there are expected differences in jsons, authorship of each token in gold standard should be
         checked manually.
         The xml file dumps taken from here: https://dumps.wikimedia.org/enwiki/20161101/
-        :param revision_ids: Revision id where authorship of token in gold standard is tested.
+        :param revision_id: Revision id where authorship of token in gold standard is tested.
         """
         temp_folder = '{}/test_json_output_xml'.format(temp_folder)
         test_json_folder = 'test_jsons'
 
-        from mwxml import Dump
-        from mwtypes.files import reader
         # faster: read from gold standard articles xml
         # xml_file_path = 'test_jsons/gold_standard_articles_20161101.xml'
         # slower: read from xml dumps (7z)
@@ -202,7 +210,7 @@ class TestWikiwho:
         v.article = wp.article_obj
 
         # create json with rev and author ids
-        revision_json_without_tokenid = v.get_revision_json(revision_ids, {'rev_id', 'author'})
+        revision_json_without_tokenid = v.get_revision_json([revision_id], {'rev_id', 'author'})
         json_file_path_without_tokenid = '{}/{}_db_ri_ai.json'.format(temp_folder, article_name)
         with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
@@ -212,7 +220,7 @@ class TestWikiwho:
         is_content_same_1 = filecmp.cmp(json_file_path_without_tokenid, test_json_file_path)
 
         # create json with token ids
-        revision_json = v.get_revision_json(revision_ids, {'token_id'})
+        revision_json = v.get_revision_json([revision_id], {'token_id'})
         # check if all token ids are unique
         for _, rev in revision_json['revisions'][0].items():
             token_ids = [t['token_id'] for t in rev['tokens']]
@@ -226,12 +234,14 @@ class TestWikiwho:
         is_content_same_2 = filecmp.cmp(json_file_path, test_json_file_path)
 
         # create json with in/outbounds
-        revision_json_with_io = v.get_revision_json(revision_ids, {'inbound', 'outbound'})
+        revision_json_with_io = v.get_revision_json([revision_id], {'inbound', 'outbound'})
         json_file_path_with_io = '{}/{}_db_io.json'.format(temp_folder, article_name)
         with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
                                sort_keys=True, ensure_ascii=False))
         # compare jsons with in/outbounds
+        # FIXME cant compare in/outputs, because this test analyses the article until last revision.
+        # But in test_json_output, it is analysed until one point.
         # test_json_file_path = '{}/{}_db_io.json'.format(test_json_folder, article_name)
         # is_content_same_3 = filecmp.cmp(json_file_path_with_io, test_json_file_path)
 
@@ -377,15 +387,15 @@ class TestWikiwho:
                             assert outbound == data[rev_id]['outbound'][i], 'outbound does not match, rev id: {} - {} - db'.format(rev_id, i)
                             i += 1
 
-    def test_authorship(self, temp_folder, article_name, revision_ids, token, context, correct_rev_id):
+    def test_authorship(self, temp_folder, article_name, revision_id, token, context, correct_rev_id):
         """
         This is not needed anymore. Covered by 'test_json_output' case.
         """
         sub_text = splitIntoWords(context)
         with WPHandler(article_name, '{}/test_authorship'.format(temp_folder), save_into_pickle=True, save_into_db=False) as wp:
-            wp.handle(revision_ids, 'json', is_api=False)
+            wp.handle([revision_id], 'json', is_api=False)
 
-        # revision = wp.article_obj.revisions.get(id=revision_ids[0])
+        # revision = wp.article_obj.revisions.get(id=revision_id)
         # text_ = []
         # rev_ids_ = []
         # for data in revision.tokens.values('token', 'label_revision__id'):
@@ -401,7 +411,7 @@ class TestWikiwho:
         #         found = 1
         #         break
 
-        text, label_rev_ids = wp.wikiwho.get_revision_text(revision_ids[0])
+        text, label_rev_ids = wp.wikiwho.get_revision_text(revision_id)
         n = len(sub_text)
         found = 0
         # print(wp.wikiwho.spam)
@@ -436,98 +446,3 @@ class TestWikiwho:
         #     tmp = 'tmp_test'
         # if os.path.exists(tmp):
         #     os.removedirs(tmp)
-
-
-article_zips = {
-    'Amstrad_CPC': 'enwiki-20161101-pages-meta-history1.xml-p000000010p000002289.7z',
-    'Antarctica': 'enwiki-20161101-pages-meta-history20.xml-p018754736p018984527.7z',
-    'Apollo_11': 'enwiki-20161101-pages-meta-history1.xml-p000000010p000002289.7z',
-    'Armenian_Genocide': 'enwiki-20161101-pages-meta-history3.xml-p000118475p000143283.7z',
-    'Barack_Obama': 'enwiki-20161101-pages-meta-history5.xml-p000518010p000549136.7z',
-    'Bioglass': 'enwiki-20161101-pages-meta-history9.xml-p002071291p002171781.7z',
-    'Bothrops_jararaca': 'enwiki-20161101-pages-meta-history15.xml-p007991091p008292517.7z',
-    'Chlorine': 'enwiki-20161101-pages-meta-history1.xml-p000004536p000006546.7z',
-    'Circumcision': 'enwiki-20161101-pages-meta-history15.xml-p008592059p008821460.7z',
-    'Communist_Party_of_China': 'enwiki-20161101-pages-meta-history1.xml-p000006547p000008653.7z',
-    'Democritus': 'enwiki-20161101-pages-meta-history1.xml-p000006547p000008653.7z',
-    'Diana,_Princess_of_Wales': 'enwiki-20161101-pages-meta-history1.xml-p000022917p000025445.7z',
-    'Encryption': 'enwiki-20161101-pages-meta-history1.xml-p000008654p000010882.7z',
-    'Eritrean_Defence_Forces': 'enwiki-20161101-pages-meta-history1.xml-p000008654p000010882.7z',
-    'European_Free_Trade_Association': 'enwiki-20161101-pages-meta-history1.xml-p000008654p000010882.7z',
-    'Evolution': 'enwiki-20161101-pages-meta-history1.xml-p000008654p000010882.7z',
-    'Geography_of_El_Salvador': 'enwiki-20161101-pages-meta-history1.xml-p000008654p000010882.7z',
-    'Germany': 'enwiki-20161101-pages-meta-history1.xml-p000010883p000013026.7z',
-    'Home_and_Away': 'enwiki-20161101-pages-meta-history3.xml-p000161222p000169747.7z',
-    'Homeopathy': 'enwiki-20161101-pages-meta-history1.xml-p000013027p000015513.7z',
-    'Iraq_War': 'enwiki-20161101-pages-meta-history13.xml-p005040438p005137507.7z',
-    'Islamophobia': 'enwiki-20161101-pages-meta-history3.xml-p000161222p000169747.7z',
-    'Jack_the_Ripper': 'enwiki-20161101-pages-meta-history14.xml-p006733138p006933850.7z',
-    'Jesus': 'enwiki-20161101-pages-meta-history7.xml-p001063241p001127973.7z',
-    'KLM_destinations': 'enwiki-20161101-pages-meta-history9.xml-p002071291p002171781.7z',
-    'Lemur': 'enwiki-20161101-pages-meta-history5.xml-p000466359p000489651.7z',
-    'Macedonians_(ethnic_group)': 'enwiki-20161101-pages-meta-history5.xml-p000420318p000440017.7z',
-    'Muhammad': 'enwiki-20161101-pages-meta-history1.xml-p000017892p000020545.7z',
-    'Newberg,_Oregon': 'enwiki-20161101-pages-meta-history3.xml-p000118475p000143283.7z',
-    'Race_and_intelligence': 'enwiki-20161101-pages-meta-history1.xml-p000025446p000028258.7z',
-    'Rhapsody_on_a_Theme_of_Paganini': 'enwiki-20161101-pages-meta-history4.xml-p000215173p000232405.7z',
-    'Robert_Hues': 'enwiki-20161101-pages-meta-history20.xml-p019630121p020023800.7z',
-    "Saturn's_moons_in_fiction": 'enwiki-20161101-pages-meta-history14.xml-p006733138p006933850.7z',
-    'Sergei_Korolev': 'enwiki-20161101-pages-meta-history2.xml-p000078261p000088444.7z',
-    'South_Western_Main_Line': 'enwiki-20161101-pages-meta-history8.xml-p001348476p001442630.7z',
-    'Special_Air_Service': 'enwiki-20161101-pages-meta-history2.xml-p000050799p000057690.7z',
-    'The_Holocaust': 'enwiki-20161101-pages-meta-history16.xml-p010182412p010463377.7z',
-    'Toshitsugu_Takamatsu': 'enwiki-20161101-pages-meta-history9.xml-p002071291p002171781.7z',
-    'Vladimir_Putin': 'enwiki-20161101-pages-meta-history2.xml-p000032259p000034487.7z',
-    'Wernher_von_Braun': 'enwiki-20161101-pages-meta-history2.xml-p000032259p000034487.7z'
-}
-
-
-def create_gold_xml():
-    from collections import defaultdict
-    files = defaultdict(list)
-    for title, file_ in article_zips.items():
-        file_ = 'wikiwho/tests/test_jsons/{}'.format(file_)
-        files[file_].append(title)
-    header = """
-    <mediawiki xmlns="http://www.mediawiki.org/xml/export-0.5/"
-               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.5/
-                 http://www.mediawiki.org/xml/export-0.5.xsd" version="0.5"
-               xml:lang="en">
-    <siteinfo>
-    </siteinfo>
-    """
-    footer = "</mediawiki>"
-    p = list(header)
-
-    import os
-    for xml_file, titles in files.items():
-        # print(os.path.dirname(xml_file))
-        os.system('7z x {} -o{}'.format(xml_file, os.path.dirname(xml_file)))
-        xml_file = xml_file[:-3]
-        p.append('<page>\n')
-        add = False
-        with open(xml_file, 'r') as f:
-            for line in f:
-                if not add:
-                    for title in titles:
-                        if '<title>{}</title>'.format(title) in line or '<title>{}</title>'.format(title.replace(' ', '_')) in line:
-                            add = True
-                            titles.remove(title)
-                if add:
-                    p.append(line)
-                if add and '</page>' in line:
-                    add = False
-                    if not titles:
-                        break
-                    else:
-                        p.append('<page>\n')
-        os.remove(xml_file)
-
-    p.append(footer)
-    with open('gold_standard_articles_20161101.xml', 'a') as f:
-        for line in p:
-            f.write(line)
-
-    print('done')
-    return p

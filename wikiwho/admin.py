@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+
 from .models import Article, Revision, RevisionParagraph, Paragraph, ParagraphSentence, Sentence, \
     SentenceToken, Token
 from base.admin import BaseAdmin

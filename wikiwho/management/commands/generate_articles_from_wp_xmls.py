@@ -5,13 +5,13 @@ python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/
 """
 from os import mkdir, listdir
 from os.path import basename, exists
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor  # , as_completed, TimeoutError, CancelledError
 import logging
-from time import strftime
+from time import strftime, sleep
+import csv
+
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor  # , as_completed, TimeoutError, CancelledError
 from mwxml import Dump
 from mwtypes.files import reader
-import csv
-import time
 
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
@@ -52,7 +52,7 @@ def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_
                         wp.handle_from_xml(page, timeout)
             except (OperationalError, DatabaseError):
                 while not is_db_running():
-                    time.sleep(60*5)
+                    sleep(60*5)
                 logger.exception('{}-({})--------{}-DBError'.format(page.title, page.id, parsing_pattern))
             except Exception as e:
                 logger.exception('{}-({})--------{}'.format(page.title, page.id, parsing_pattern))

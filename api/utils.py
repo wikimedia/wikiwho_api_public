@@ -2,14 +2,16 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
-from lxml import etree
+
 import io
-# import logging
-import requests
 import hashlib
-# import six
-from six.moves import cPickle as pickle, urllib
 import signal
+# import six
+# import logging
+
+from six.moves import cPickle as pickle, urllib
+from lxml import etree
+import requests
 
 from django.conf import settings
 
