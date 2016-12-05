@@ -13,6 +13,8 @@ import logging
 import re
 from time import strftime
 
+from django.conf import settings
+
 from api.handler import WPHandler
 
 
@@ -67,7 +69,7 @@ class Command(BaseCommand):
             article_list_files[join(path, f)] = i
             counter += 1
 
-        parsing_pattern = '#######*******#######'
+        parsing_pattern = settings.LOG_PARSING_PATTERN
         if is_ppe:
             Executor = ProcessPoolExecutor
             format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'

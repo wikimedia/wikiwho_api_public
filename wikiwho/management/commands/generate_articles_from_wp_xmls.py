@@ -16,6 +16,7 @@ from mwtypes.files import reader
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from django.db.utils import OperationalError, DatabaseError
+from django.conf import settings
 
 from api.handler import WPHandler
 from base.utils import is_db_running
@@ -33,7 +34,7 @@ def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_
     logger.handlers = [file_handler]
     logger.addHandler(file_handler)
 
-    parsing_pattern = '#######*******#######'
+    parsing_pattern = settings.LOG_PARSING_PATTERN
 
     print('Start: {} at {}'.format(xml_file_name, strftime("%H:%M:%S %d-%m-%Y")))
     try:
@@ -72,7 +73,7 @@ def generate_articles_csv(xml_file_path, csv_folder, log_folder, format_, check_
     logger.handlers = [file_handler]
     logger.addHandler(file_handler)
 
-    parsing_pattern = '#######*******#######'
+    parsing_pattern = settings.LOG_PARSING_PATTERN
 
     print('Start: {} at {}'.format(xml_file_name, strftime("%H:%M:%S %d-%m-%Y")))
     try:

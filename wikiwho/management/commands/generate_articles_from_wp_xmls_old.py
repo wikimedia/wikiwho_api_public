@@ -11,6 +11,7 @@ from time import strftime
 from mw.xml_dump import Iterator
 
 from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
 
 from api.handler import WPHandler
 
@@ -96,7 +97,7 @@ class Command(BaseCommand):
         # if start > end:
         #     raise CommandError('start ({}) must be >= end ({})'.format(start, end))
 
-        parsing_pattern = '#######*******#######'
+        parsing_pattern = settings.LOG_PARSING_PATTERN
         if is_ppe:
             Executor = ProcessPoolExecutor
             format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'

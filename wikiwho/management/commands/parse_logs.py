@@ -2,6 +2,7 @@ from os import listdir
 import csv
 
 from django.core.management.base import BaseCommand
+from django.conf import settings
 
 
 class Command(BaseCommand):
@@ -21,13 +22,12 @@ class Command(BaseCommand):
         operationals = []
         others = []
         entry = []  # entry in logs
-        parsing_pattern = '#######*******#######'
         for log_file in listdir(log_folder):
             if log_file.endswith('.log'):
                 # print(log_file)
                 with open('{}/{}'.format(log_folder, log_file)) as f:
                     for line in f.readlines():
-                        if parsing_pattern in line and entry:
+                        if settings.LOG_PARSING_PATTERN in line and entry:
                             log_text = ''.join(entry)
                             article_title = entry[0].split('ERROR')[-1].split('-(')[0].strip()
                             page_id = entry[0].split('ERROR')[-1].split('-(')[1].split(')')[0].strip()
