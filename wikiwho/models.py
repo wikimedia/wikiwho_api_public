@@ -1,4 +1,4 @@
-# from functools import lru_cache
+from functools import lru_cache
 
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
@@ -340,3 +340,43 @@ class Editor(BaseModel):
     def wikipedia_url(self):
         return 'https://en.wikipedia.org/wiki/User:{}'.format(self.name)
 """
+
+
+def get_paragraphs_data(revision_id):
+    return RevisionParagraph.objects.filter(revision_id=revision_id).\
+                    select_related('paragraph').\
+                    order_by('position').\
+                    values('paragraph_id', 'paragraph__hash_value')
+
+
+def get_sentences_data(paragraph_id):
+    return ParagraphSentence.objects.filter(paragraph_id=paragraph_id).\
+                            select_related('sentence').\
+                            order_by('position').\
+                            values('sentence_id', 'sentence__hash_value')
+
+
+def get_tokens_data(sentence_id):
+    return SentenceToken.objects.filter(sentence_id=sentence_id).\
+                                    select_related('token').\
+                                    order_by('position').\
+                                    values('token_id', 'token__value', 'token__token_id',
+                                           'token__last_used', 'token__inbound', 'token__outbound')
+
+
+# TODO check https://github.com/tvavrys/django-memoize + https://github.com/3Top/lru2cache
+# TODO or write your own decorator to do this by using memcached!
+# each server restart clears the local cache
+@lru_cache(maxsize=None, typed=False)  # The LRU feature performs best when maxsize is a power-of-two.
+def get_cached_paragraphs_data(revision_id):
+    return get_paragraphs_data(revision_id)
+
+
+@lru_cache(maxsize=None, typed=False)
+def get_cached_sentences_data(paragraph_id):
+    return get_sentences_data(paragraph_id)
+
+
+@lru_cache(maxsize=None, typed=False)
+def get_cached_tokens_data(sentence_id):
+    return get_tokens_data(sentence_id)

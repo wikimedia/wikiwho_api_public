@@ -14,7 +14,8 @@ from six.moves import cPickle as pickle
 from django.conf import settings
 
 from wikiwho.models import Article, Revision, RevisionParagraph, Paragraph, ParagraphSentence, Sentence, \
-    SentenceToken, Token
+    SentenceToken, Token, get_paragraphs_data, get_cached_paragraphs_data, get_sentences_data, \
+    get_cached_sentences_data, get_tokens_data, get_cached_tokens_data
 from wikiwho.wikiwho_simple import Wikiwho
 from .utils import pickle_, get_latest_revision_data, create_wp_session, Timeout
 from wikiwho import structures
@@ -113,43 +114,38 @@ class WPHandler(object):
         paragraphs = {}
         sentences = {}
         words = {}
-        # revision_ids = list(self.article_obj.revisions.order_by('timestamp').values_list('id', flat=True))
-        # paragraph_values = RevisionParagraph.objects.filter(revision__id__in=revision_ids).select_related('paragraph').\
-        #     order_by('position').values('paragraph_id', 'paragraph__hash_value')
-        # sentence_values = ParagraphSentence.objects.filter(paragraph__revisions__revision__id__in=revision_ids).\
-        #     select_related('sentence').order_by('position').values('sentence_id', 'sentence__hash_value')
-        # token_values = SentenceToken.objects.\
-        #     filter(sentence__paragraphs__paragraph__revisions__revision__id__in=revision_ids).select_related('token').\
-        #     order_by('position').values('token_id', 'token__value', 'token__token_id',
-        #                                 'token__last_used', 'token__inbound', 'token__outbound')
 
-        for rev in Revision.objects.filter(article__id=self.article_obj.id).\
-                order_by('timestamp').\
-                values('id', 'timestamp'):
+        revisions_data = list(Revision.objects.filter(article__id=self.article_obj.id).
+                              order_by('timestamp').
+                              values('id', 'timestamp'))
+        revision_count = len(revisions_data)
+        for rev in revisions_data:
             revision_id = rev['id']
             revision = structures.Revision()
-            for rp in RevisionParagraph.objects.filter(revision_id=revision_id).\
-                    select_related('paragraph').\
-                    order_by('position').\
-                    values('paragraph_id', 'paragraph__hash_value'):
+            if revision_count > settings.REVISION_COUNT_CACHE_LIMIT:
+                paragraphs_data = get_cached_paragraphs_data(revision_id)
+            else:
+                paragraphs_data = get_paragraphs_data(revision_id)
+            for rp in paragraphs_data:
                 if rp['paragraph_id'] not in paragraphs:
                     paragraph = structures.Paragraph()
                     paragraph.id = rp['paragraph_id']
                     paragraph.hash_value = rp['paragraph__hash_value']
-                    for ps in ParagraphSentence.objects.filter(paragraph_id=rp['paragraph_id']).\
-                            select_related('sentence').\
-                            order_by('position').\
-                            values('sentence_id', 'sentence__hash_value'):
+                    if revision_count > settings.REVISION_COUNT_CACHE_LIMIT:
+                        sentences_data = get_cached_sentences_data(rp['paragraph_id'])
+                    else:
+                        sentences_data = get_sentences_data(rp['paragraph_id'])
+                    for ps in sentences_data:
                         if ps['sentence_id'] not in sentences:
                             sentence = structures.Sentence()
                             sentence.id = ps['sentence_id']
                             sentence.hash_value = ps['sentence__hash_value']
 
-                            for st in SentenceToken.objects.filter(sentence_id=ps['sentence_id']).\
-                                    select_related('token').\
-                                    order_by('position').\
-                                    values('token_id', 'token__value', 'token__token_id',
-                                           'token__last_used', 'token__inbound', 'token__outbound'):
+                            if revision_count > settings.REVISION_COUNT_CACHE_LIMIT:
+                                tokens_data = get_cached_tokens_data(ps['sentence_id'])
+                            else:
+                                tokens_data = get_tokens_data(ps['sentence_id'])
+                            for st in tokens_data:
                                 if st['token_id'] not in words:
                                     word = structures.Word()
                                     word.id = st['token_id']
