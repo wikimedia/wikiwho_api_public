@@ -9,7 +9,7 @@ import logging
 from time import strftime, sleep
 import csv
 
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor  # , as_completed, TimeoutError, CancelledError
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed  # , TimeoutError, CancelledError
 from mwxml import Dump
 from mwtypes.files import reader
 
@@ -23,8 +23,8 @@ from base.utils import is_db_running
 
 
 def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_in_db=False, timeout=None):
-    logger = logging.getLogger('generate_article')
     xml_file_name = basename(xml_file_path)
+    logger = logging.getLogger(xml_file_name[:-3].split('-')[-1])
     file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
                                                                 xml_file_name,
                                                                 strftime("%Y-%m-%d-%H:%M:%S")))
@@ -32,7 +32,7 @@ def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_
     formatter = logging.Formatter(format_)
     file_handler.setFormatter(formatter)
     logger.handlers = [file_handler]
-    logger.addHandler(file_handler)
+    # logger.addHandler(file_handler)
 
     parsing_pattern = settings.LOG_PARSING_PATTERN
 
@@ -363,16 +363,32 @@ class Command(BaseCommand):
         # for xml_file_path in xml_files:
         #     generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_in_db, timeout)
 
+        logger = logging.getLogger('future_log')
+        file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
+                                                                    xml_folder.split('/')[-1],
+                                                                    strftime("%Y-%m-%d-%H:%M:%S")))
+        file_handler.setLevel(logging.ERROR)
+        formatter = logging.Formatter(format_)
+        file_handler.setFormatter(formatter)
+        logger.handlers = [file_handler]
+        # logger.addHandler(file_handler)
+
         print(max_workers)
         # print(xml_files)
         # print('Start: {} with --use_copy={} at {}'.format(xml_folder, use_copy, strftime("%H:%M:%S %d-%m-%Y")))
         with Executor(max_workers=max_workers) as executor:
-            for xml_file_path in xml_files:
-                if not use_copy:
-                    executor.submit(generate_articles_postgres, xml_file_path, log_folder, format_,
-                                    check_exists_in_db, timeout)
-                else:
-                    raise NotImplementedError
-                    # FIXME known error: PS and ST token creation. maybe there are more errors.
-                    # executor.submit(generate_articles_csv, xml_file_path, csv_folder, log_folder, format_, check_exists_in_db)
+            if not use_copy:
+                future_to_file = {executor.submit(generate_articles_postgres, xml_file_path, log_folder,
+                                                  format_, check_exists_in_db, timeout):
+                                  basename(xml_file_path) for xml_file_path in xml_files}
+                for future in as_completed(future_to_file):
+                    xml_file_name = future_to_file[future]
+                    try:
+                        data = future.result()
+                    except Exception as exc:
+                        logger.exception(xml_file_name)
+            else:
+                raise NotImplementedError
+                # FIXME known error: PS and ST token creation. maybe there are more errors.
+                # executor.submit(generate_articles_csv, xml_file_path, csv_folder, log_folder, format_, check_exists_in_db)
         print('Done: {} at {}'.format(xml_folder, strftime("%H:%M:%S %d-%m-%Y")))
