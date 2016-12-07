@@ -44,8 +44,8 @@ def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_
     else:
         for page in dump:
             try:
-                if not page.redirect:
-                    with WPHandler(page.title, save_into_db=True, check_exists_in_db=check_exists_in_db, is_xml=True) as wp:
+                if page.namespace == 0 and not page.redirect:
+                    with WPHandler(page.title, page_id=page.id, save_into_db=True, check_exists_in_db=check_exists_in_db, is_xml=True) as wp:
                         # print(wp.article_title)
                         wp.handle_from_xml(page, timeout)
             except (OperationalError, DatabaseError):

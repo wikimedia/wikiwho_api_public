@@ -32,7 +32,7 @@ class WPHandlerException(Exception):
 
 
 class WPHandler(object):
-    def __init__(self, article_title, pickle_folder='', save_into_pickle=False, save_into_db=True, check_exists_in_db=True, is_xml=False, *args, **kwargs):
+    def __init__(self, article_title, pickle_folder='', save_into_pickle=False, save_into_db=True, check_exists_in_db=True, is_xml=False, page_id=None, *args, **kwargs):
         # super(WPHandler, self).__init__(article_title, pickle_folder=pickle_folder, *args, **kwargs)
         self.article_title = article_title
         self.article_db_title = ''
@@ -43,11 +43,12 @@ class WPHandler(object):
         self.saved_rvcontinue = ''
         self.article_obj = None
         self.latest_revision_id = None
-        self.page_id = None
+        self.page_id = page_id
         self.save_into_pickle = save_into_pickle
         self.save_into_db = save_into_db
         self.check_exists_in_db = check_exists_in_db
         self.is_xml = is_xml
+        self.namespace = 0
 
     def __enter__(self):
         # time1 = time()
@@ -58,17 +59,27 @@ class WPHandler(object):
             from wikiwho.wikiwho_simple_pickle import Wikiwho
             global Wikiwho
 
-        if not self.is_xml:
-            # get db title from wp api
-            self.latest_revision_id, self.page_id, self.article_db_title = get_latest_revision_data(self.article_title)
-        else:
+        if self.is_xml:
             self.article_db_title = self.article_title.replace(' ', '_')
+            # self.page_id = self.page_id
+        else:
+            # get db title from wp api
+            d = get_latest_revision_data(self.article_title)
+            self.latest_revision_id = d['latest_revision_id']
+            self.page_id = d['page_id']
+            self.article_db_title = d['title']
+            self.namespace = d['namespace']
 
         # TODO save_into_db=True and save_into_pickle=True is not tested, may not work!
         if self.save_into_db:
             if self.check_exists_in_db:
-                self.article_obj = Article.objects.filter(title=self.article_db_title).first()
-            # TODO get all article with this title and check with page_id (even there is one article in db),
+                self.article_obj = Article.objects.filter(id=self.page_id).first()
+                # TODO Find a way to do this is _save_article_into_db()
+                if self.article_obj and self.article_obj.title != self.article_db_title:
+                    self.article_obj.title = self.article_db_title
+                    self.article_obj.save(update_fields=['title'])
+                # self.article_obj = Article.objects.filter(title=self.article_db_title).first()
+            # TODO ? get all article with this title and check with page_id (even there is one article in db),
             # then update titles of other articles with other page ids by using wp api (celery task)
             # articles = [a for a in Article.objects.filter(title=self.article_db_title)]
             # for article in articles:
@@ -247,6 +258,8 @@ class WPHandler(object):
         # check if article exists
         if self.latest_revision_id is None:
             raise WPHandlerException('The article ({}) you are trying to request does not exist'.format(self.article_title))
+        elif self.namespace != 0:
+            raise WPHandlerException('Only articles! Namespace {} is not accepted.'.format(self.namespace))
         self.revision_ids = revision_ids or [self.latest_revision_id]
 
         # holds the last revision id which is saved. 0 for new article

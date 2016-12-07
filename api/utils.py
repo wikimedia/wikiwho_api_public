@@ -47,10 +47,10 @@ def get_latest_revision_data(article_title=None, page_id=None):
     if 'missing' in page or _ == '-1':
         # article title does not exist or contains invalid character
         return None, None, None
-    page_id = page['pageid']
-    title = page['title'].replace(' ', '_')
-    latest_revision_id = page["revisions"][0]["revid"]
-    return latest_revision_id, page_id, title
+    return {'page_id': page['pageid'],
+            'title': page['title'].replace(' ', '_'),
+            'latest_revision_id': page["revisions"][0]["revid"],
+            'namespace': page["ns"]}
 
 
 def create_wp_session():

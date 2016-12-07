@@ -23,7 +23,7 @@ def generate_article(xml_file_path, page_id, check_exists_in_db=False):
             article_title = page.title
             break
     del dump
-    with WPHandler(article_title, check_exists_in_db=check_exists_in_db, is_xml=True) as wp:
+    with WPHandler(article_title, page_id=page_id, check_exists_in_db=check_exists_in_db, is_xml=True) as wp:
         wp.handle_from_xml(page)
         # del revisions
     return True
@@ -140,7 +140,7 @@ class Command(BaseCommand):
             # Start the load operations and mark each future with its article
             future_to_article = {executor.submit(generate_article, xml_file_path, page.id, check_exists_in_db):
                                  page.title
-                                 for page in dump if not page.redirect}
+                                 for page in dump if (page.namespace == 0 and not page.redirect)}
             # for page in dump:
             #     if not page.redirect:
             #         result = executor.submit(generate_article, convert_page_into_pickable(page), check_exists_in_db)
