@@ -234,6 +234,17 @@ def download_wp_dumps(folder, url='https://dumps.wikimedia.org/enwiki/20161101',
     print('Done')
 
 
+def check_files_hash(folder):
+    from os import listdir
+    for file in listdir(folder):
+        if file.endswith('.7z'):
+            file_path = '{}/{}'.format(folder, file)
+            h = get_file_hash(file_path)
+            if h != md5_hashes[file.split('/')[-1]]:
+                print('corrupted: ', file_path)
+    print('Done')
+
+
 md5_hashes = {
     'enwiki-20161101-pages-meta-history1.xml-p000000010p000002289.7z': '7b010cf0d76669945043dfd955f990a7',
     'enwiki-20161101-pages-meta-history1.xml-p000002290p000004531.7z': '5b79c7574d860b1111d689693e91997a',
