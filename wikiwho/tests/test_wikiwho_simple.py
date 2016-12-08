@@ -134,7 +134,7 @@ class TestWikiwho:
         temp_folder = '{}/test_json_output'.format(temp_folder)
         test_json_folder = 'test_jsons'
 
-        with WPHandler(article_name, temp_folder) as wp:
+        with WPHandler(article_name) as wp:
             wp.handle([revision_id], 'json', is_api=False)
         # pickle_revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'rev_id', 'author', 'token_id'})
 
@@ -200,7 +200,7 @@ class TestWikiwho:
         for page in dump:
             if page.title.replace(' ', '_') == article_name:
                 title_matched = True
-                with WPHandler(article_name, temp_folder) as wp:
+                with WPHandler(article_name) as wp:
                     wp.handle_from_xml(page)
                 break
 
@@ -258,13 +258,13 @@ class TestWikiwho:
         test_json_folder = 'test_jsons'
 
         # first create article and revisions until revision_id_start
-        with WPHandler(article_name, temp_folder) as wp:
+        with WPHandler(article_name) as wp:
             wp.handle([revision_id_start], 'json', is_api=False)
 
         assert wp.article_obj is not None
 
         # continue creating revisions of this article until revision_id_end
-        with WPHandler(article_name, temp_folder) as wp:
+        with WPHandler(article_name) as wp:
             wp.handle([revision_id_end], 'json', is_api=False)
 
         v = WikiwhoApiView()
@@ -351,7 +351,7 @@ class TestWikiwho:
         from django.core import management
         management.call_command('xml_to_pickle', *['--output', tests])
 
-        with WPHandler(article_name, tests, save_into_pickle=True, save_into_db=False) as wp:
+        with WPHandler(article_name, pickle_folder=tests, save_into_pickle=True, save_into_db=False) as wp:
             for rev_id, rev in wp.wikiwho.revisions.items():
                 if rev_id not in data.keys():
                     continue
@@ -392,7 +392,7 @@ class TestWikiwho:
         This is not needed anymore. Covered by 'test_json_output' case.
         """
         sub_text = splitIntoWords(context)
-        with WPHandler(article_name, '{}/test_authorship'.format(temp_folder), save_into_pickle=True, save_into_db=False) as wp:
+        with WPHandler(article_name, pickle_folder='{}/test_authorship'.format(temp_folder), save_into_pickle=True, save_into_db=False) as wp:
             wp.handle([revision_id], 'json', is_api=False)
 
         # revision = wp.article_obj.revisions.get(id=revision_id)

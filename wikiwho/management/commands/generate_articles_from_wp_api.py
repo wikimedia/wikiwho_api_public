@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-python manage.py generate_articles -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/local/all_articles_list' -s 4040 -e 4041 -m 90 -t 300
+python manage.py generate_articles_from_wp_api -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/local/all_articles_list' -s 4040 -e 4041 -m 90
 """
 from django.core.management.base import BaseCommand, CommandError
 from collections import OrderedDict
@@ -18,10 +18,11 @@ from django.conf import settings
 from api.handler import WPHandler
 
 
-def generate_article(article_title, check_exists_in_db=False):
-    with WPHandler(article_title, check_exists_in_db=check_exists_in_db) as wp:
+def generate_article(article_title, page_id, check_exists_in_db=False):
+    page_id = int(page_id)
+    with WPHandler(article_title, page_id=page_id, check_exists_in_db=check_exists_in_db) as wp:
         wp.handle(revision_ids=[], format_='json', is_api=False)
-    # print(article_title)
+    # print(article_title, page_id, type(page_id))
     return True
 
 
@@ -32,8 +33,8 @@ class Command(BaseCommand):
         parser.add_argument('-p', '--path', help='Path where list of articles are saved', required=True)
         parser.add_argument('-m', '--max_workers', type=int, help='Number of threads/processors to run parallel.',
                             required=True)
-        parser.add_argument('-t', '--timeout', type=float, required=False,
-                            help='This feature does not work for now. Timeout value for each worker [minutes]')
+        # parser.add_argument('-t', '--timeout', type=float, required=False,
+        #                     help='This feature does not work for now. Timeout value for each worker [minutes]')
         parser.add_argument('-tpe', '--thread_pool_executor', action='store_true',
                             help='Use ThreadPoolExecutor, default is ProcessPoolExecutor', default=False,
                             required=False)
@@ -52,7 +53,7 @@ class Command(BaseCommand):
         start = options['start']
         end = options['end']
         check_exists_in_db = options['check_exists']
-        timeout = options['timeout'] * 60 if options['timeout'] else None  # convert into seconds
+        # timeout = options['timeout'] * 60 if options['timeout'] else None  # convert into seconds
         # if start > end:
         #     raise CommandError('start ({}) must be >= end ({})'.format(start, end))
 
@@ -77,17 +78,7 @@ class Command(BaseCommand):
             Executor = ThreadPoolExecutor
             format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
 
-        # logger_timeout = logging.getLogger('timeout')
-        # file_handler = logging.FileHandler('{}/logs/timeouts_{}_at_{}.log'.format(path,
-        #                                                                           '_'.join([str(start), str(end)]),
-        #                                                                           strftime("%Y-%m-%d-%H:%M:%S")))
-        # file_handler.setLevel(logging.ERROR)
-        # formatter = logging.Formatter('%(message)s')
-        # file_handler.setFormatter(formatter)
-        # logger_timeout.addHandler(file_handler)
         logger = logging.getLogger('')
-        # logger = logging.getLogger('error')
-        timeout = None
         for article_list_file in article_list_files:
             csv_number = article_list_files[article_list_file]
             if start <= csv_number <= end:
@@ -105,28 +96,21 @@ class Command(BaseCommand):
                     formatter = logging.Formatter(format_)
                     file_handler.setFormatter(formatter)
                     logger.handlers = [file_handler]
-                    # logger.addHandler(file_handler)
 
                     print('Start: {} at {}'.format(csv_number, strftime("%H:%M:%S %d-%m-%Y")))
                     # We can use a with statement to ensure threads are cleaned up promptly
                     with Executor(max_workers=max_workers) as executor:
                         # Start the load operations and mark each future with its article
-                        # TODO there are also page_ids in csv: article[1]. in future pass them to WPHandnler
-                        future_to_article = {executor.submit(generate_article, article[0], check_exists_in_db):
-                                             article[0]
+                        future_to_article = {executor.submit(generate_article, article[0], article[1], check_exists_in_db):
+                                             (article[0], article[1])
                                              for article in input_articles}
 
                         del input_articles  # release memory
 
                         for future in as_completed(future_to_article):
-                            article_name = future_to_article[future]
-                        # for future, article_name in future_to_article.items():
+                            article_name, page_id = future_to_article[future]
                             try:
-                                data = future.result(timeout=timeout)
-                            # except (TimeoutError, CancelledError) as e:
-                            #     logger_timeout.error(article_name)
+                                data = future.result()
                             except Exception as exc:
-                                logger.exception('{}--------{}'.format(article_name, parsing_pattern))
-                                # else:
-                                #     print('Success: {}'.format(article_name))
+                                logger.exception('{}-({})--------{}'.format(article_name, page_id, parsing_pattern))
                     print('Done: {} at {}'.format(csv_number, strftime("%H:%M:%S %d-%m-%Y")))

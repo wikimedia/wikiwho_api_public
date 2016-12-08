@@ -25,14 +25,17 @@ def pickle_(obj, pickle_path):
         pickle.dump(obj, file_, protocol=-1)  # -1 to select HIGHEST_PROTOCOL available
 
 
-def get_latest_revision_data(article_title=None, page_id=None):
-    # TODO use page_id or article_title and return article_title.replace(' ', '_') or page_id
-    if not article_title:
+def get_latest_revision_data(page_id=None, article_title=None):
+    if page_id:
+        params = {'pageids': page_id}
+    elif article_title:
+        params = {'titles': article_title}
+    else:
         return ''
     # set up request for Wikipedia API.
     server = "en.wikipedia.org"
     wp_api_url = 'https://{}/w/api.php'.format(server)
-    params = {'action': "query", 'prop': 'revisions', 'titles': article_title, 'format': 'json', 'rvlimit': '1'}
+    params.update({'action': "query", 'prop': 'revisions', 'format': 'json', 'rvlimit': '1'})
     # params = {'action': "query", 'titles': article_name, 'format': 'json'}
     # headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
     headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
@@ -46,9 +49,12 @@ def get_latest_revision_data(article_title=None, page_id=None):
     _, page = response["query"]["pages"].popitem()
     if 'missing' in page or _ == '-1':
         # article title does not exist or contains invalid character
-        return None, None, None
+        return {'page_id': page_id,  # only return page id. because maybe article is deleted on wp but we still have it.
+                'article_db_title': None,
+                'latest_revision_id': None,
+                'namespace': None}
     return {'page_id': page['pageid'],
-            'title': page['title'].replace(' ', '_'),
+            'article_db_title': page['title'].replace(' ', '_'),
             'latest_revision_id': page["revisions"][0]["revid"],
             'namespace': page["ns"]}
 

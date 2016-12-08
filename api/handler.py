@@ -32,7 +32,7 @@ class WPHandlerException(Exception):
 
 
 class WPHandler(object):
-    def __init__(self, article_title, pickle_folder='', save_into_pickle=False, save_into_db=True, check_exists_in_db=True, is_xml=False, page_id=None, *args, **kwargs):
+    def __init__(self, article_title, page_id=None, pickle_folder='', save_into_pickle=False, save_into_db=True, check_exists_in_db=True, is_xml=False, *args, **kwargs):
         # super(WPHandler, self).__init__(article_title, pickle_folder=pickle_folder, *args, **kwargs)
         self.article_title = article_title
         self.article_db_title = ''
@@ -64,23 +64,25 @@ class WPHandler(object):
             # self.page_id = self.page_id
         else:
             # get db title from wp api
-            d = get_latest_revision_data(self.article_title)
+            d = get_latest_revision_data(self.page_id, self.article_title)
             self.latest_revision_id = d['latest_revision_id']
             self.page_id = d['page_id']
-            self.article_db_title = d['title']
+            self.article_db_title = d['article_db_title']
             self.namespace = d['namespace']
 
         # TODO save_into_db=True and save_into_pickle=True is not tested, may not work!
         if self.save_into_db:
-            if self.check_exists_in_db:
+            if self.check_exists_in_db and self.page_id:
                 self.article_obj = Article.objects.filter(id=self.page_id).first()
                 # TODO Find a way to do this is _save_article_into_db()
-                if self.article_obj and self.article_obj.title != self.article_db_title:
+                if self.article_obj and self.article_db_title and self.article_obj.title != self.article_db_title:
+                    # if title is changed on wp side and we still have the old title
+                    # must check if there is article_db_title, because maybe article is deleted on wp but we have it.
                     self.article_obj.title = self.article_db_title
                     self.article_obj.save(update_fields=['title'])
                 # self.article_obj = Article.objects.filter(title=self.article_db_title).first()
-            # TODO ? get all article with this title and check with page_id (even there is one article in db),
-            # then update titles of other articles with other page ids by using wp api (celery task)
+            # TODO do all below in a task
+            # update titles of other articles with other page ids by using wp api (celery task)
             # articles = [a for a in Article.objects.filter(title=self.article_db_title)]
             # for article in articles:
             #     if article.id == page_id:
@@ -219,6 +221,7 @@ class WPHandler(object):
         # this handle is used only to fill the db so if already exists, skip this article
         # here we don't have rvcontinue check to analyse article as we have in handle method
         if self.check_exists_in_db and self.save_into_db and self.article_obj:
+            # no continue logic for xml processing
             return
         self.wikiwho = Wikiwho(self.article_db_title)
         self.wikiwho.page_id = page.id
