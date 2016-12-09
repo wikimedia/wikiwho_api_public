@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/' -t 30
+python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/' -t 30 -m 24
+python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/' -j '' -m 24 --check_exists
 """
 from os import mkdir, listdir
 from os.path import basename, exists
@@ -20,7 +21,7 @@ from api.handler import WPHandler
 from base.utils import is_db_running
 
 
-def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_in_db=False, timeout=None):
+def generate_articles_postgres(xml_file_path, page_ids, log_folder, format_, check_exists_in_db=False, timeout=None):
     xml_file_name = basename(xml_file_path)
     logger = logging.getLogger(xml_file_name[:-3].split('-')[-1])
     file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
@@ -44,7 +45,7 @@ def generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_
     else:
         for page in dump:
             try:
-                if page.namespace == 0 and not page.redirect:
+                if page.namespace == 0 and not page.redirect and (not page_ids or int(page.id) in page_ids):
                     with WPHandler(page.title, page_id=page.id, save_into_db=True, check_exists_in_db=check_exists_in_db, is_xml=True) as wp:
                         # print(wp.article_title)
                         wp.handle_from_xml(page, timeout)
@@ -65,6 +66,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('-p', '--path', help='Path of xml folder where compressed dumps take place.',
                             required=True)
+        parser.add_argument('-j', '--json', help='Path of json folder.', required=False)
         parser.add_argument('-l', '--log_folder', help='Folder where to write logs. Default is folder of xml folder',
                             required=False)
         parser.add_argument('-m', '--max_workers', type=int, help='Number of processors/threads to run parallel. '
@@ -84,10 +86,28 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         xml_folder = options['path']
         xml_folder = xml_folder[:-1] if xml_folder.endswith('/') else xml_folder
-        xml_files = sorted(['{}/{}'.format(xml_folder, x)
-                            for x in listdir(xml_folder)
-                            if x.endswith('.7z')])
-                            # if '.xml-' in x and not x.endswith('.7z')])
+
+        check_exists_in_db = options['check_exists']
+        json_folder = options['json']
+        xml_files = []
+        if json_folder and check_exists_in_db:
+            import json
+            json_folder = json_folder[:-1] if json_folder.endswith('/') else json_folder
+            json_files = ['{}/{}'.format(json_folder, j) for j in listdir(json_folder) if j.endswith('.json')]
+            for json_file in json_files:
+                with open(json_file, 'r') as f:
+                    json_data = json.loads(f.read())
+                    for xml_file in json_data:
+                        title_ids = json_data[xml_file]['timeouts'] + \
+                                    json_data[xml_file]['recursions']
+                                    # json_data[xml_file]['operationals']  # TODO not sure about this
+                        # print(title_ids)
+                        page_ids = [int(ti[1]) for ti in title_ids]
+                        if page_ids:
+                            xml_files.append(['{}/{}'.format(xml_folder, xml_file), page_ids])
+        elif not json_folder:
+            xml_files = [['{}/{}'.format(xml_folder, x), []] for x in listdir(xml_folder) if x.endswith('.7z')]
+
         if not xml_files:
             raise CommandError('In given folder ({}), there are no 7z files.'.format(xml_folder))
         log_folder = options['log_folder']
@@ -98,7 +118,6 @@ class Command(BaseCommand):
 
         max_workers = options['max_workers'] or len(xml_files)
         is_ppe = not options['thread_pool_executor']
-        check_exists_in_db = options['check_exists']
         timeout = int(options['timeout'] * 60) if options['timeout'] else None  # convert into seconds
 
         if is_ppe:
@@ -130,8 +149,8 @@ class Command(BaseCommand):
             files_iter = iter(xml_files)
 
             while files_left:
-                for xml_file_path in files_iter:
-                    job = executor.submit(generate_articles_postgres, xml_file_path, log_folder,
+                for xml_file_path, page_ids in files_iter:
+                    job = executor.submit(generate_articles_postgres, xml_file_path, page_ids, log_folder,
                                           format_, check_exists_in_db, timeout)
                     jobs[job] = basename(xml_file_path)
                     if len(jobs) == max_workers:  # limit # jobs with max_workers

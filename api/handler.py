@@ -222,7 +222,8 @@ class WPHandler(object):
         # here we don't have rvcontinue check to analyse article as we have in handle method
         if self.check_exists_in_db and self.save_into_db and self.article_obj:
             # no continue logic for xml processing
-            return
+            # return
+            raise WPHandlerException('Article ({}) is already in database.'.format(self.page_id))
         self.wikiwho = Wikiwho(self.article_db_title)
         self.wikiwho.page_id = page.id
 
