@@ -60,8 +60,8 @@ def generate_articles_postgres(xml_file_path, page_ids, log_folder, format_, che
 
 
 class Command(BaseCommand):
-    help = 'Generates articles in xml file in given path from data in xml. Skips redirect articles. ' \
-           'This command processes files concurrently.'
+    help = 'Generates articles in xml file in given path from data in xml. Skips redirect articles and ' \
+           'pages which does not have namespace as 0. This command processes files concurrently.'
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--path', help='Path of xml folder where compressed dumps take place.',

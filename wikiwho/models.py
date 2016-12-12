@@ -30,7 +30,6 @@ class Article(BaseModel):
         return 'https://en.wikipedia.org/wiki/{}'.format(self.title)
 
     def deleted_tokens(self, threshold, last_rev_id=None):
-        last_rev_id = self.revisions.order_by('timestamp').last().id
         deleted_tokens = Token.objects.\
             filter(label_revision__article__id=self.id,
                    outbound__len__gt=threshold).\
@@ -42,23 +41,16 @@ class Article(BaseModel):
         return last_rev_id, deleted_tokens
 
     def to_json(self, parameters, content=False, deleted=False, threshold=5, last_rev_id=None):
-        annotate_dict = {'str': F('value')}
-        values_list = ['str']
-        if 'rev_id' in parameters:
-            annotate_dict['rev_id'] = F('label_revision__id')
-            values_list.append('rev_id')
-        if 'author' in parameters:
-            annotate_dict['author'] = F('label_revision__editor')
-            values_list.append('author')
-        if 'token_id' in parameters:
-            values_list.append('token_id')
-        if 'inbound' in parameters:
-            values_list.append('inbound')
-        if 'outbound' in parameters:
-            values_list.append('outbound')
+        if not last_rev_id:
+            last_rev = self.revisions.order_by('timestamp').last()
+            last_rev_id = last_rev.id
+        elif content:
+            last_rev = Revision.objects.get(id=last_rev_id)
+
         if content:
-            return NotImplemented
+            return {last_rev_id: last_rev.to_json(parameters, content=True)}
         elif deleted:
+            annotate_dict, values_list = Revision.get_annotate_and_values(parameters)
             revision_id, deleted_tokens = self.deleted_tokens(threshold, last_rev_id=last_rev_id)
             json_data = dict()
             json_data["deleted_tokens"] = list(deleted_tokens.annotate(**annotate_dict).values(*values_list))
@@ -87,8 +79,9 @@ class Article(BaseModel):
 
 @receiver(post_delete, sender=Article)
 def article_post_delete(sender, instance, *args, **kwargs):
-    print(Paragraph.objects.filter(revisions=None).delete())
-    print(Sentence.objects.filter(tokens=None).delete())
+    # Delete paragraphs, paragraph sentences and sentences
+    Paragraph.objects.filter(revisions=None).delete()
+    Sentence.objects.filter(tokens=None).delete()
 
 
 class Revision(BaseModel):
@@ -97,6 +90,7 @@ class Revision(BaseModel):
     # article_id = models.IntegerField(blank=False, null=False)
     editor = models.CharField(max_length=87, blank=False, null=False)  # max_length='0|' + 85
     timestamp = models.DateTimeField(blank=True, null=True)
+    # timestamp = models.DateTimeField(blank=True, null=True, db_index=True)
     length = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
     # relations = JSON
@@ -107,6 +101,24 @@ class Revision(BaseModel):
     def __str__(self):
         # return 'Revision #{}: {}'.format(self.id, self.article.title)
         return str(self.id)
+
+    @staticmethod
+    def get_annotate_and_values(parameters):
+        annotate_dict = {'str': F('value')}
+        values_list = ['str']
+        if 'rev_id' in parameters:
+            annotate_dict['rev_id'] = F('label_revision__id')
+            values_list.append('rev_id')
+        if 'author' in parameters:
+            annotate_dict['author'] = F('label_revision__editor')
+            values_list.append('author')
+        if 'token_id' in parameters:
+            values_list.append('token_id')
+        if 'inbound' in parameters:
+            values_list.append('inbound')
+        if 'outbound' in parameters:
+            values_list.append('outbound')
+        return annotate_dict, values_list
 
     # @cached_property
     @property
@@ -143,21 +155,7 @@ class Revision(BaseModel):
     # @lru_cache(maxsize=None, typed=False)
     # TODO use this cache only for last rev ids. but how?
     def to_json(self, parameters, content=False, deleted=False, threshold=5):
-        annotate_dict = {'str': F('value')}
-        values_list = ['str']
-        if 'rev_id' in parameters:
-            annotate_dict['rev_id'] = F('label_revision__id')
-            values_list.append('rev_id')
-        if 'author' in parameters:
-            annotate_dict['author'] = F('label_revision__editor')
-            values_list.append('author')
-        if 'token_id' in parameters:
-            values_list.append('token_id')
-        if 'inbound' in parameters:
-            values_list.append('inbound')
-        if 'outbound' in parameters:
-            values_list.append('outbound')
-
+        annotate_dict, values_list = self.get_annotate_and_values(parameters)
         if content:
             tokens = self.tokens.annotate(**annotate_dict).values(*values_list)
             #          "wikiwho_sentencetoken"."position" ASC

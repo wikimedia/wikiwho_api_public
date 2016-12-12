@@ -14,6 +14,7 @@ from rest_framework_extensions.cache.decorators import cache_response, CacheResp
 # from rest_framework.compat import coreapi, urlparse
 
 from django.utils.translation import get_language
+from django.conf import settings
 # from django.core.signals import request_started, request_finished
 # from django.http import HttpResponse
 
@@ -93,7 +94,7 @@ custom_data = {
                                       'name': 'article_name',
                                       'required': True,
                                       'type': 'string'},
-                                     {'description': 'Default is 5',
+                                     {'description': 'Default is {}'.format(settings.DELETED_CONTENT_THRESHOLD_LIMIT),
                                       'in': 'query',
                                       'name': 'threshold',
                                       'required': False,
@@ -165,7 +166,86 @@ class BurstRateThrottle(throttling.UserRateThrottle):
     scope = 'burst'
 
 
-class WikiwhoApiView(ViewSet):
+class WikiwhoView(object):
+
+    def __init__(self, article=None):
+        self.article = article
+
+    def get_parameters(self):
+        """
+        :return: Full parameters with default values.
+        """
+        parameters = []
+        for parameter in query_params:
+            parameters.append(parameter['name'])
+        parameters.append(settings.DELETED_CONTENT_THRESHOLD_LIMIT)
+        return parameters
+
+    def get_revision_json(self, revision_ids, parameters, only_last_valid_revision=False, minimal=False):
+        json_data = dict()
+        json_data["article"] = self.article.title
+        if not minimal:
+            json_data["success"] = True
+            json_data["message"] = None
+
+        if only_last_valid_revision:
+            json_data["revisions"] = [self.article.to_json(parameters, content=True)]
+        else:
+            revisions = []
+            db_revision_ids = []
+            if len(revision_ids) > 1:
+                filter_ = {'id__range': revision_ids}
+            else:
+                filter_ = {'id': revision_ids[0]}
+            for revision in self.article.revisions.filter(**filter_).order_by('timestamp'):
+                revisions.append({revision.id: revision.to_json(parameters, content=True)})
+                db_revision_ids.append(revision.id)
+
+            for rev_id in revision_ids:
+                if rev_id not in db_revision_ids:
+                    return {'Error': 'Revision ID ({}) does not exist or is spam or deleted!'.format(rev_id)}
+
+            json_data["revisions"] = sorted(revisions, key=lambda x: sorted(x.keys())) \
+                if len(revision_ids) > 1 else revisions
+
+        # import json
+        # with open('tmp_pickles/{}_db.json'.format(self.article.title), 'w') as f:
+        #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        return json_data
+
+    def get_deleted_tokens(self, parameters, minimal=False):
+        json_data = dict()
+        json_data["article"] = self.article.title
+        if not minimal:
+            json_data["success"] = True
+            json_data["message"] = None
+        threshold = parameters[-1]
+        json_data["threshold"] = threshold
+
+        # TODO use latest_revision_id from handler?
+        data = self.article.to_json(parameters, deleted=True, threshold=threshold, last_rev_id=None)
+        json_data.update(data)
+        # OR TODO which way is faster?
+        # revision = self.article.revisions.select_related('article').order_by('timestamp').last()
+        # json_data["deleted_tokens"] = revision.to_json(parameters, deleted=True, threshold=threshold)
+        # json_data["revision_id"] = revision.id
+
+        # import json
+        # with open('tmp_pickles/{}_deleted_tokens_db.json'.format(self.article.title), 'w') as f:
+        #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        return json_data
+
+    def get_revision_ids(self, minimal=False):
+        json_data = dict()
+        json_data["article"] = self.article.title
+        if not minimal:
+            json_data["success"] = True
+            json_data["message"] = None
+        json_data["revisions"] = list(self.article.revisions.order_by('timestamp').values_list('id', flat=True))
+        return json_data
+
+
+class WikiwhoApiView(WikiwhoView, ViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     # TODO http://www.django-rest-framework.org/topics/third-party-resources/#authentication to account activation,
     # password reset ...
@@ -179,77 +259,13 @@ class WikiwhoApiView(ViewSet):
 
     def get_parameters(self):
         parameters = []
-        if self.request.GET.get('rev_id') == 'true':
-            parameters.append('rev_id')
-        if self.request.GET.get('author') == 'true':
-            parameters.append('author')
-        if self.request.GET.get('token_id') == 'true':
-            parameters.append('token_id')
-        if self.request.GET.get('inbound') == 'true':
-            parameters.append('inbound')
-        if self.request.GET.get('outbound') == 'true':
-            parameters.append('outbound')
-        threshold = int(self.request.GET.get('threshold', 5))
+        for parameter in query_params:
+            if self.request.GET.get(parameter['name']) == 'true':
+                parameters.append(parameter['name'])
+        threshold = int(self.request.GET.get('threshold', settings.DELETED_CONTENT_THRESHOLD_LIMIT))
         threshold = 0 if threshold < 0 else threshold
         parameters.append(threshold)
         return parameters
-
-    def get_revision_json(self, revision_ids, parameters):
-        response = dict()
-        response["article"] = self.article.title
-        response["success"] = True
-        response["message"] = None
-
-        revisions = []
-        db_revision_ids = []
-        if len(revision_ids) > 1:
-            filter_ = {'id__range': revision_ids}
-        else:
-            filter_ = {'id': revision_ids[0]}
-        for revision in self.article.revisions.filter(**filter_).order_by('timestamp'):
-            revisions.append({revision.id: revision.to_json(parameters, content=True)})
-            db_revision_ids.append(revision.id)
-
-        for rev_id in revision_ids:
-            if rev_id not in db_revision_ids:
-                return {'Error': 'Revision ID ({}) does not exist or is spam or deleted!'.format(rev_id)}
-
-        response["revisions"] = sorted(revisions, key=lambda x: sorted(x.keys())) \
-            if len(revision_ids) > 1 else revisions
-
-        # import json
-        # with open('tmp_pickles/{}_db.json'.format(self.article.title), 'w') as f:
-        #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
-        return response
-
-    def get_deleted_tokens(self, parameters):
-        response = dict()
-        response["article"] = self.article.title
-        response["success"] = True
-        response["message"] = None
-        threshold = parameters[-1]
-        response["threshold"] = threshold
-
-        # TODO use latest_revision_id from handler?
-        data = self.article.to_json(parameters, deleted=True, threshold=threshold, last_rev_id=None)
-        response.update(data)
-        # OR TODO which way is faster?
-        # revision = self.article.revisions.select_related('article').order_by('timestamp').last()
-        # response["deleted_tokens"] = revision.to_json(parameters, deleted=True, threshold=threshold)
-        # response["revision_id"] = revision.id
-
-        # import json
-        # with open('tmp_pickles/{}_deleted_tokens_db.json'.format(self.article.title), 'w') as f:
-        #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
-        return response
-
-    def get_revision_ids(self):
-        response = dict()
-        response["article"] = self.article.title
-        response["success"] = True
-        response["message"] = None
-        response["revisions"] = self.article.revisions.order_by('timestamp').values_list('id', flat=True)
-        return response
 
     def get_response(self, article_name, parameters, revision_ids=list(), deleted=False, ids=False):
         # if not parameters:

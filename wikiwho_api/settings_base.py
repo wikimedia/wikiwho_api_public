@@ -170,6 +170,7 @@ PICKLE_FOLDER_2 = '../disk2/pickle_api_2'
 
 LOG_PARSING_PATTERN = '#######*******#######'
 REVISION_COUNT_CACHE_LIMIT = 100
+DELETED_CONTENT_THRESHOLD_LIMIT = 5
 
 # Wikipedia
 WP_HEADERS_USER_AGENT = 'Wikiwho API'
