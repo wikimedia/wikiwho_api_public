@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-python manage.py get_nonarticle_pages -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/server/batch_1/batch_11' -m 4
+python manage.py get_pages_list -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/server/batch_1/batch_11' -m 4
 """
 from os import mkdir, listdir
 from os.path import basename, exists
@@ -17,7 +17,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
 
-def write_nonarticle_pages(xml_file_path, log_folder, csv_folder, format_):
+def write_pages(xml_file_path, log_folder, csv_folder, format_, is_non_articles):
     xml_file_name = basename(xml_file_path)
     logger = logging.getLogger(xml_file_name[:-3].split('-')[-1])
     file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
@@ -41,7 +41,8 @@ def write_nonarticle_pages(xml_file_path, log_folder, csv_folder, format_):
     else:
         for page in dump:
             try:
-                if page.namespace != 0 and not page.redirect:
+                if (is_non_articles and page.namespace != 0 or not is_non_articles and page.namespace == 0) \
+                        and not page.redirect:
                     non_articles.append([page.id])
             except Exception as e:
                 logger.exception('{}-({})--------{}'.format(page.title, page.id, parsing_pattern))
@@ -55,7 +56,7 @@ def write_nonarticle_pages(xml_file_path, log_folder, csv_folder, format_):
 
 
 class Command(BaseCommand):
-    help = 'Write namespace != 0 pages into csv.'
+    help = 'Write non-article or article pages into csv.'
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--path', help='Path of xml folder where compressed dumps take place.',
@@ -65,6 +66,9 @@ class Command(BaseCommand):
                             required=False)
         parser.add_argument('-tpe', '--thread_pool_executor', action='store_true',
                             help='Use ThreadPoolExecutor, default is ProcessPoolExecutor', default=False,
+                            required=False)
+        parser.add_argument('-n', '--non_articles', action='store_true',
+                            help='Count non-articles pages. Default is article pages.', default=False,
                             required=False)
 
     def handle(self, *args, **options):
@@ -76,10 +80,11 @@ class Command(BaseCommand):
                             # if '.xml-' in x and not x.endswith('.7z')])
         if not xml_files:
             raise CommandError('In given folder ({}), there are no 7z files.'.format(xml_folder))
-        log_folder = '{}/{}'.format(xml_folder, 'nonarticle_logs')
+        is_non_articles = options['non_articles']
+        log_folder = '{}/{}'.format(xml_folder, '{}articles_logs'.format('non' if is_non_articles else ''))
         if not exists(log_folder):
             mkdir(log_folder)
-        csv_folder = '{}/{}'.format(xml_folder, 'nonarticle_csvs')
+        csv_folder = '{}/{}'.format(xml_folder, '{}articles_csvs'.format('non' if is_non_articles else ''))
         if not exists(csv_folder):
             mkdir(csv_folder)
 
@@ -111,7 +116,7 @@ class Command(BaseCommand):
 
             while files_left:
                 for xml_file_path in files_iter:
-                    job = executor.submit(write_nonarticle_pages, xml_file_path, log_folder, csv_folder, format_)
+                    job = executor.submit(write_pages, xml_file_path, log_folder, csv_folder, format_, is_non_articles)
                     jobs[job] = basename(xml_file_path)
                     if len(jobs) == max_workers:  # limit # jobs with max_workers
                         break
