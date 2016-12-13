@@ -10,6 +10,11 @@ from django.dispatch import receiver
 from base.models import BaseModel
 
 
+class ArticleManager(models.Manager):
+    def get_queryset(self):
+        return super(ArticleManager, self).get_queryset().filter(is_article=True)
+
+
 class Article(BaseModel):
     id = models.IntegerField(primary_key=True, blank=False, null=False, editable=False, help_text='Wikipedia page id')
     title = models.CharField(max_length=256, blank=False)
@@ -17,6 +22,9 @@ class Article(BaseModel):
     rvcontinue = models.CharField(max_length=32, blank=True, null=False, default='0')
     spam = ArrayField(models.IntegerField(), blank=True, null=True)  # array of spam revision ids
     # langauge = models.CharField(choices=(('en', 'English'), ('de', 'German')), max_length=2, default='en')
+    is_article = models.BooleanField(default=True)
+
+    objects = ArticleManager()
 
     def __str__(self):
         return self.title
@@ -83,9 +91,24 @@ class Article(BaseModel):
 
 @receiver(post_delete, sender=Article)
 def article_post_delete(sender, instance, *args, **kwargs):
+    # Delete all related elements
+    r_ids = list(Revision.objects.filter(article_id=instance.id).values_list('id', flat=True))
+    rp_ids = RevisionParagraph.objects.filter(revision_id__in=r_ids).values_list('id', flat=True)
+    p_ids = list(RevisionParagraph.objects.filter(revision_id__in=r_ids).values_list('paragraph_id', flat=True))
+    ps_ids = ParagraphSentence.objects.filter(paragraph_id__in=p_ids).values_list('id', flat=True)
+    s_ids = list(ParagraphSentence.objects.filter(paragraph_id__in=p_ids).values_list('sentence_id', flat=True))
+    st_ids = SentenceToken.objects.filter(sentence_id__in=s_ids).values_list('id', flat=True)
+    t_ids = SentenceToken.objects.filter(sentence_id__in=s_ids).values_list('token_id', flat=True)
+    Token.objects.filter(id__in=t_ids).delete()
+    Sentence.objects.filter(id__in=s_ids).delete()
+    SentenceToken.objects.filter(id__in=st_ids).delete()
+    Paragraph.objects.filter(id__in=p_ids).delete()
+    ParagraphSentence.objects.filter(id__in=ps_ids).delete()
+    Revision.objects.filter(id__in=r_ids).delete()
+    RevisionParagraph.objects.filter(id__in=rp_ids).delete()
     # Delete paragraphs, paragraph sentences and sentences
-    Paragraph.objects.filter(revisions=None).delete()
-    Sentence.objects.filter(tokens=None).delete()
+    # Paragraph.objects.filter(revisions=None).delete()
+    # Sentence.objects.filter(tokens=None).delete()
 
 
 class Revision(BaseModel):
@@ -195,7 +218,7 @@ class Revision(BaseModel):
 
 class RevisionParagraph(BaseModel):
     # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
-    id = models.BigAutoField(primary_key=True)
+    id = models.BigAutoField(primary_key=True, verbose_name='ID')
     # revision = models.ForeignKey(Revision, blank=False, related_name='paragraphs')
     revision_id = models.IntegerField(blank=False, null=False)
     # paragraph = models.ForeignKey('Paragraph', blank=False, related_name='revisions')
@@ -231,7 +254,7 @@ class Paragraph(BaseModel):
 
 class ParagraphSentence(BaseModel):
     # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
-    id = models.BigAutoField(primary_key=True)
+    id = models.BigAutoField(primary_key=True, verbose_name='ID')
     # paragraph = models.ForeignKey(Paragraph, blank=False, related_name='sentences')
     paragraph_id = models.UUIDField(blank=False, null=False, editable=False)
     # sentence = models.ForeignKey('Sentence', blank=False, related_name='paragraphs')
@@ -266,7 +289,7 @@ class Sentence(BaseModel):
 
 class SentenceToken(BaseModel):
     # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
-    id = models.BigAutoField(primary_key=True)
+    id = models.BigAutoField(primary_key=True, verbose_name='ID')
     # sentence = models.ForeignKey(Sentence, blank=False, related_name='tokens')
     sentence_id = models.UUIDField(blank=False, null=False, editable=False)
     # token = models.ForeignKey('Token', blank=False, related_name='sentences')

@@ -10,7 +10,7 @@ from base.admin import BaseAdmin
 
 # class ArticleAdmin(BaseAdmin):
 #     search_fields = ('id', 'title', )
-#     list_display = ('id', 'title', 'rvcontinue', 'spam', )
+#     list_display = ('id', 'title', 'rvcontinue', 'is_article', 'spam', )
 #     readonly_fields = ('id', 'title', 'rvcontinue', 'spam', 'article_revisions', )
 #
 #     def article_revisions(self, obj):
@@ -148,7 +148,7 @@ from base.admin import BaseAdmin
 
 
 class ArticleAdmin(BaseAdmin):
-    list_display = ('id', 'title', 'rvcontinue', 'spam', )
+    list_display = ('id', 'title', 'rvcontinue', 'is_article', 'spam', )
     readonly_fields = ('id', 'title', 'rvcontinue', 'spam', )
 
 
