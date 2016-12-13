@@ -189,7 +189,8 @@ class WikiwhoView(object):
             json_data["message"] = None
 
         if only_last_valid_revision:
-            json_data["revisions"] = [self.article.to_json(parameters, content=True)]
+            data = self.article.to_json(parameters, content=True, last_rev_id=None)
+            json_data["revisions"] = [data] if data else []
         else:
             revisions = []
             db_revision_ids = []
@@ -213,7 +214,7 @@ class WikiwhoView(object):
         #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
-    def get_deleted_tokens(self, parameters, minimal=False):
+    def get_deleted_tokens(self, parameters, minimal=False, last_rev_id=None):
         json_data = dict()
         json_data["article"] = self.article.title
         if not minimal:
@@ -223,7 +224,7 @@ class WikiwhoView(object):
         json_data["threshold"] = threshold
 
         # TODO use latest_revision_id from handler?
-        data = self.article.to_json(parameters, deleted=True, threshold=threshold, last_rev_id=None)
+        data = self.article.to_json(parameters, deleted=True, threshold=threshold, last_rev_id=last_rev_id)
         json_data.update(data)
         # OR TODO which way is faster?
         # revision = self.article.revisions.select_related('article').order_by('timestamp').last()

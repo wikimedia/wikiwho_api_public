@@ -42,7 +42,14 @@ def generate_jsons(f, t, output_folder, log_folder, format_, max_size):
             v = WikiwhoView(article)
             parameters = v.get_parameters()
             last_revision_json = v.get_revision_json([], parameters, only_last_valid_revision=True, minimal=True)
-            deleted_tokens_json = v.get_deleted_tokens(parameters, minimal=True)
+            # if not last_revision_json.get('no_revisions') and last_revision_json['revisions']:
+            if last_revision_json['revisions']:
+                last_rev_id = list(last_revision_json['revisions'][0].keys())[0]
+                test = last_revision_json['revisions'][0][last_rev_id]['tokens'][0]  # test for corrupted articles
+                last_rev_id = int(last_rev_id)
+            else:
+                last_rev_id = None
+            deleted_tokens_json = v.get_deleted_tokens(parameters, minimal=True, last_rev_id=last_rev_id)
             revision_ids_json = v.get_revision_ids(minimal=True)
             with ZipFile(zip_name, 'a', compression=ZIP_LZMA) as zip_:
                 zip_.writestr('{}_content.json'.format(title),

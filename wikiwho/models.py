@@ -38,11 +38,15 @@ class Article(BaseModel):
             order_by('label_revision__timestamp',
                      'token_id').\
             distinct()
-        return last_rev_id, deleted_tokens
+        return deleted_tokens
 
     def to_json(self, parameters, content=False, deleted=False, threshold=5, last_rev_id=None):
         if not last_rev_id:
             last_rev = self.revisions.order_by('timestamp').last()
+            if not last_rev and self.rvcontinue == '1':
+                # This article has no revision, because all is detected as spam by wikiwho
+                return {}
+                # return {'message': 'This article has no revision in Wikiwho system.'}
             last_rev_id = last_rev.id
         elif content:
             last_rev = Revision.objects.get(id=last_rev_id)
@@ -51,7 +55,7 @@ class Article(BaseModel):
             return {last_rev_id: last_rev.to_json(parameters, content=True)}
         elif deleted:
             annotate_dict, values_list = Revision.get_annotate_and_values(parameters)
-            revision_id, deleted_tokens = self.deleted_tokens(threshold, last_rev_id=last_rev_id)
+            deleted_tokens = self.deleted_tokens(threshold, last_rev_id=last_rev_id)
             json_data = dict()
             json_data["deleted_tokens"] = list(deleted_tokens.annotate(**annotate_dict).values(*values_list))
             # SQL query:
@@ -72,7 +76,7 @@ class Article(BaseModel):
             #        AND NOT ("wikiwho_token"."last_used" = 747409474))
             # ORDER BY "wikiwho_revision"."timestamp" ASC,
             #          "wikiwho_token"."token_id" ASC
-            json_data["revision_id"] = revision_id
+            json_data["revision_id"] = last_rev_id
             return json_data
         return False
 
