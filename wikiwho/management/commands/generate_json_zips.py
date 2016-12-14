@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-python manage.py generate_json_zips -o '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/jsons' -m 4 --thread_pool_executor
+python manage.py generate_json_zips -o '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/jsons' -m 4
 """
 import json
 from os import mkdir, rename
@@ -85,8 +85,8 @@ class Command(BaseCommand):
         parser.add_argument('-f', '--offset', type=int, help='Offset to start process. Default is 0.', required=False)
         parser.add_argument('-s', '--max_size', type=int, help='Max size of each zip file. Default is 900 MB. [MB]',
                             required=False)
-        parser.add_argument('-tpe', '--thread_pool_executor', action='store_true',
-                            help='Use ThreadPoolExecutor, default is ProcessPoolExecutor', default=False,
+        parser.add_argument('-ppe', '--process_pool_executor', action='store_true',
+                            help='Use ProcessPoolExecutor, default is ThreadPoolExecutor', default=False,
                             required=False)
         parser.add_argument('-m', '--max_workers', type=int, help='Number of threads/processors to run parallel.',
                             required=True)
@@ -99,7 +99,7 @@ class Command(BaseCommand):
         log_folder = '{}/{}'.format(output_folder, 'logs')
         if not exists(log_folder):
             mkdir(log_folder)
-        is_ppe = not options['thread_pool_executor']
+        is_ppe = options['process_pool_executor']
         max_workers = options['max_workers']
         max_size = options['max_size'] or 900
 
