@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='article',
             name='is_article',
-            field=models.BooleanField(default=True),
+            field=models.NullBooleanField(default=True),
         ),
     ]

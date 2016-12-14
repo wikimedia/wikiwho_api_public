@@ -22,7 +22,7 @@ class Article(BaseModel):
     rvcontinue = models.CharField(max_length=32, blank=True, null=False, default='0')
     spam = ArrayField(models.IntegerField(), blank=True, null=True)  # array of spam revision ids
     # langauge = models.CharField(choices=(('en', 'English'), ('de', 'German')), max_length=2, default='en')
-    is_article = models.BooleanField(default=True)
+    is_article = models.NullBooleanField(default=True)
 
     objects = ArticleManager()
 
