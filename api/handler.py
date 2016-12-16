@@ -266,6 +266,12 @@ class WPHandler(object):
             raise WPHandlerException('Only articles! Namespace {} is not accepted.'.format(self.namespace))
         self.revision_ids = revision_ids or [self.latest_revision_id]
 
+        if settings.ONLY_READ_FROM_DB:
+            if self.article_obj:
+                return
+            else:
+                raise WPHandlerException('Only read from db is allowed for now.')
+
         # holds the last revision id which is saved. 0 for new article
         rvcontinue = self.saved_rvcontinue
 
