@@ -2,6 +2,19 @@
 """
 Example usage:
 python manage.py get_pages_list -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/server/batch_1/batch_11' -m 4
+
+How to read output:
+from os import listdir
+csv_folder = '.../nonarticle_csvs'
+csv_files = listdir(csv_folder)
+lines_number = 0
+lines = []
+for csv_file in csv_files:
+    with open('{}/{}'.format(csv_folder, csv_file), 'r') as f:
+        lines_number += sum(1 for line in f)
+#         lines = [int(l) for l in f.read().splitlines()]
+#         lines.extend([int(l) for l in f.read().splitlines()])
+print(lines_number)
 """
 from os import mkdir, listdir
 from os.path import basename, exists

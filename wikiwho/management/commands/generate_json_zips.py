@@ -45,7 +45,7 @@ def generate_jsons(f, t, output_folder, log_folder, format_, max_size):
             # if not last_revision_json.get('no_revisions') and last_revision_json['revisions']:
             if last_revision_json['revisions']:
                 last_rev_id = list(last_revision_json['revisions'][0].keys())[0]
-                test = last_revision_json['revisions'][0][last_rev_id]['tokens'][0]  # test for corrupted articles
+                # test = last_revision_json['revisions'][0][last_rev_id]['tokens'][0]  # test for corrupted articles
                 last_rev_id = int(last_rev_id)
             else:
                 last_rev_id = None

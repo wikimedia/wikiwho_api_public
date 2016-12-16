@@ -20,7 +20,7 @@ def set_is_article_field(ids, is_save):
     print('Start: {} - {} at {}'.format(ids[0], ids[-1], strftime("%H:%M:%S %d-%m-%Y")))
     if is_save:
         print('Done: {} - {} at {}'.format(ids[0], ids[-1], strftime("%H:%M:%S %d-%m-%Y")))
-        Article.objects.filter(id__in=ids).update(is_article=False)
+        print(Article.objects.filter(id__in=ids).update(is_article=False))
     else:
         print('Done without saving: {} - {} at {}'.format(ids[:5], ids[-5:], strftime("%H:%M:%S %d-%m-%Y")))
     return True
@@ -32,6 +32,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('-p', '--path', help='Path where csv files of page ids are saved.', required=True)
         parser.add_argument('-m', '--max_workers', type=int, help='Number of threads/processors to run parallel.',
+                            required=False)
+        parser.add_argument('-c', '--concurrent', action='store_true',
+                            help='Use ThreadPoolExecutor or ProcessPoolExecutor. Default is False.', default=False,
                             required=False)
         parser.add_argument('-tpe', '--thread_pool_executor', action='store_true',
                             help='Use ThreadPoolExecutor, default is ProcessPoolExecutor', default=False,
@@ -76,21 +79,29 @@ class Command(BaseCommand):
         batch = options['batch'] or 500000
         articles_count = len(ids)
         max_workers = options['max_workers'] or math.ceil(articles_count / batch)
+        concurrent = options['concurrent']
 
-        # start concurrent update
+        # start update
         print('Start: set is_article field at {}'.format(strftime("%H:%M:%S %d-%m-%Y")))
         print(is_save, batch, articles_count, max_workers, is_ppe)
-        with Executor(max_workers=max_workers) as executor:
-            future_to_slice = dict()
-            for i in range(0, max_workers):
-                future = executor.submit(set_is_article_field, ids[:batch], is_save)
-                future_to_slice[future] = i
-                del ids[:batch]
+        if not concurrent:
+            if is_save:
+                print('Done: all at {}'.format(strftime("%H:%M:%S %d-%m-%Y")))
+                print(Article.objects.filter(id__in=ids).update(is_article=False))
+            else:
+                print('Done: all without saving at {}'.format(strftime("%H:%M:%S %d-%m-%Y")))
+        else:
+            with Executor(max_workers=max_workers) as executor:
+                future_to_slice = dict()
+                for i in range(0, max_workers):
+                    future = executor.submit(set_is_article_field, ids[:batch], is_save)
+                    future_to_slice[future] = i
+                    del ids[:batch]
 
-            for future in as_completed(future_to_slice):
-                i = future_to_slice[future]
-                try:
-                    data = future.result()
-                except Exception as exc:
-                    logger.exception('-{}--------{}'.format(i, settings.LOG_PARSING_PATTERN))
+                for future in as_completed(future_to_slice):
+                    i = future_to_slice[future]
+                    try:
+                        data = future.result()
+                    except Exception as exc:
+                        logger.exception('-{}--------{}'.format(i, settings.LOG_PARSING_PATTERN))
         print('Done: set is_article field at {}'.format(strftime("%H:%M:%S %d-%m-%Y")))

@@ -92,29 +92,29 @@ class Article(BaseModel):
 @receiver(post_delete, sender=Article)
 def article_post_delete(sender, instance, *args, **kwargs):
     # Delete all related elements
-    r_ids = list(Revision.objects.filter(article_id=instance.id).values_list('id', flat=True))
-    rp_ids = RevisionParagraph.objects.filter(revision_id__in=r_ids).values_list('id', flat=True)
-    p_ids = list(RevisionParagraph.objects.filter(revision_id__in=r_ids).values_list('paragraph_id', flat=True))
-    ps_ids = ParagraphSentence.objects.filter(paragraph_id__in=p_ids).values_list('id', flat=True)
-    s_ids = list(ParagraphSentence.objects.filter(paragraph_id__in=p_ids).values_list('sentence_id', flat=True))
-    st_ids = SentenceToken.objects.filter(sentence_id__in=s_ids).values_list('id', flat=True)
-    t_ids = SentenceToken.objects.filter(sentence_id__in=s_ids).values_list('token_id', flat=True)
-    Token.objects.filter(id__in=t_ids).delete()
-    Sentence.objects.filter(id__in=s_ids).delete()
-    SentenceToken.objects.filter(id__in=st_ids).delete()
-    Paragraph.objects.filter(id__in=p_ids).delete()
-    ParagraphSentence.objects.filter(id__in=ps_ids).delete()
-    Revision.objects.filter(id__in=r_ids).delete()
-    RevisionParagraph.objects.filter(id__in=rp_ids).delete()
+    # r_ids = list(Revision.objects.filter(article_id=instance.id).values_list('id', flat=True))
+    # rp_ids = RevisionParagraph.objects.filter(revision_id__in=r_ids).values_list('id', flat=True)
+    # p_ids = list(RevisionParagraph.objects.filter(revision_id__in=r_ids).values_list('paragraph_id', flat=True))
+    # ps_ids = ParagraphSentence.objects.filter(paragraph_id__in=p_ids).values_list('id', flat=True)
+    # s_ids = list(ParagraphSentence.objects.filter(paragraph_id__in=p_ids).values_list('sentence_id', flat=True))
+    # st_ids = SentenceToken.objects.filter(sentence_id__in=s_ids).values_list('id', flat=True)
+    # t_ids = SentenceToken.objects.filter(sentence_id__in=s_ids).values_list('token_id', flat=True)
+    # Token.objects.filter(id__in=t_ids).delete()
+    # Sentence.objects.filter(id__in=s_ids).delete()
+    # SentenceToken.objects.filter(id__in=st_ids).delete()
+    # Paragraph.objects.filter(id__in=p_ids).delete()
+    # ParagraphSentence.objects.filter(id__in=ps_ids).delete()
+    # Revision.objects.filter(id__in=r_ids).delete()
+    # RevisionParagraph.objects.filter(id__in=rp_ids).delete()
     # Delete paragraphs, paragraph sentences and sentences
-    # Paragraph.objects.filter(revisions=None).delete()
-    # Sentence.objects.filter(tokens=None).delete()
+    Paragraph.objects.filter(revisions=None).delete()
+    Sentence.objects.filter(tokens=None).delete()
 
 
 class Revision(BaseModel):
     id = models.IntegerField(primary_key=True, blank=False, null=False, editable=False, help_text='Wikipedia revision id')
-    # article = models.ForeignKey(Article, blank=False, null=False, related_name='revisions')
-    article_id = models.IntegerField(blank=False, null=False)
+    article = models.ForeignKey(Article, blank=False, null=False, related_name='revisions')
+    # article_id = models.IntegerField(blank=False, null=False)
     editor = models.CharField(max_length=87, blank=False, null=False)  # max_length='0|' + 85
     timestamp = models.DateTimeField(blank=True, null=True)
     # timestamp = models.DateTimeField(blank=True, null=True, db_index=True)
@@ -173,7 +173,7 @@ class Revision(BaseModel):
             filter(label_revision__article__id=self.article.id,
                    outbound__len__gt=threshold).\
             exclude(last_used=self.id).\
-            select_related('label_revision', 'label_revision__editor').\
+            select_related('label_revision').\
             order_by('label_revision__timestamp',
                      'token_id').\
             distinct()
@@ -219,10 +219,10 @@ class Revision(BaseModel):
 class RevisionParagraph(BaseModel):
     # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
     id = models.BigAutoField(primary_key=True, verbose_name='ID')
-    # revision = models.ForeignKey(Revision, blank=False, related_name='paragraphs')
-    revision_id = models.IntegerField(blank=False, null=False)
-    # paragraph = models.ForeignKey('Paragraph', blank=False, related_name='revisions')
-    paragraph_id = models.UUIDField(blank=False, null=False, editable=False)
+    revision = models.ForeignKey(Revision, blank=False, related_name='paragraphs')
+    # revision_id = models.IntegerField(blank=False, null=False)
+    paragraph = models.ForeignKey('Paragraph', blank=False, related_name='revisions')
+    # paragraph_id = models.UUIDField(blank=False, null=False, editable=False)
     position = models.IntegerField(blank=False)
 
     # class Meta:
@@ -255,10 +255,10 @@ class Paragraph(BaseModel):
 class ParagraphSentence(BaseModel):
     # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
     id = models.BigAutoField(primary_key=True, verbose_name='ID')
-    # paragraph = models.ForeignKey(Paragraph, blank=False, related_name='sentences')
-    paragraph_id = models.UUIDField(blank=False, null=False, editable=False)
-    # sentence = models.ForeignKey('Sentence', blank=False, related_name='paragraphs')
-    sentence_id = models.UUIDField(blank=False, null=False, editable=False)
+    paragraph = models.ForeignKey(Paragraph, blank=False, related_name='sentences')
+    # paragraph_id = models.UUIDField(blank=False, null=False, editable=False)
+    sentence = models.ForeignKey('Sentence', blank=False, related_name='paragraphs')
+    # sentence_id = models.UUIDField(blank=False, null=False, editable=False)
     position = models.IntegerField(blank=False)
 
     # class Meta:
@@ -290,10 +290,10 @@ class Sentence(BaseModel):
 class SentenceToken(BaseModel):
     # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
     id = models.BigAutoField(primary_key=True, verbose_name='ID')
-    # sentence = models.ForeignKey(Sentence, blank=False, related_name='tokens')
-    sentence_id = models.UUIDField(blank=False, null=False, editable=False)
-    # token = models.ForeignKey('Token', blank=False, related_name='sentences')
-    token_id = models.UUIDField(blank=False, null=False, editable=False)
+    sentence = models.ForeignKey(Sentence, blank=False, related_name='tokens')
+    # sentence_id = models.UUIDField(blank=False, null=False, editable=False)
+    token = models.ForeignKey('Token', blank=False, related_name='sentences')
+    # token_id = models.UUIDField(blank=False, null=False, editable=False)
     position = models.IntegerField(blank=False)
 
     # class Meta:
@@ -315,8 +315,8 @@ class Token(BaseModel):
     last_used = models.IntegerField(blank=False, null=False, default=0)  # last used revision ids
     inbound = ArrayField(models.IntegerField(), blank=True, null=True)  # inbound/reintroduced in revision ids
     outbound = ArrayField(models.IntegerField(), blank=True, null=True)  # outbound/deleted in revision ids
-    # label_revision = models.ForeignKey(Revision, blank=False, related_name='introduced_tokens')
-    label_revision_id = models.IntegerField(blank=False, null=False)
+    label_revision = models.ForeignKey(Revision, blank=False, related_name='introduced_tokens')
+    # label_revision_id = models.IntegerField(blank=False, null=False)
     token_id = models.IntegerField(blank=False)  # sequential id in article, unique per article
 
     # class Meta:
