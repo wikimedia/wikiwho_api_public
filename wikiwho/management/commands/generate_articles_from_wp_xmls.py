@@ -98,9 +98,9 @@ class Command(BaseCommand):
                 with open(json_file, 'r') as f:
                     json_data = json.loads(f.read())
                     for xml_file in json_data:
-                        title_ids = json_data[xml_file]['timeouts'] + \
-                                    json_data[xml_file]['recursions']
-                                    # json_data[xml_file]['operationals']  # TODO not sure about this
+                        title_ids = json_data[xml_file]['timeouts']
+                        if check_exists_in_db:
+                            title_ids += json_data[xml_file]['operationals']
                         # print(title_ids)
                         page_ids = [int(ti[1]) for ti in title_ids]
                         if page_ids:
