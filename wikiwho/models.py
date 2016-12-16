@@ -38,9 +38,14 @@ class Article(BaseModel):
         return 'https://en.wikipedia.org/wiki/{}'.format(self.title)
 
     def deleted_tokens(self, threshold, last_rev_id=None):
+        if threshold > 0:
+            filter_ = {'label_revision__article__id': self.id,
+                       'outbound__len__gt': threshold}
+        else:
+            # threshold as 0.
+            filter_ = {'label_revision__article__id': self.id}
         deleted_tokens = Token.objects.\
-            filter(label_revision__article__id=self.id,
-                   outbound__len__gt=threshold).\
+            filter(**filter_).\
             exclude(last_used=last_rev_id).\
             select_related('label_revision').\
             order_by('label_revision__timestamp',
@@ -169,9 +174,14 @@ class Revision(BaseModel):
         return tokens
 
     def deleted_tokens(self, threshold):
+        if threshold > 0:
+            filter_ = {'label_revision__article__id': self.id,
+                       'outbound__len__gt': threshold}
+        else:
+            # threshold as 0.
+            filter_ = {'label_revision__article__id': self.id}
         deleted_tokens = Token.objects.\
-            filter(label_revision__article__id=self.article.id,
-                   outbound__len__gt=threshold).\
+            filter(**filter_).\
             exclude(last_used=self.id).\
             select_related('label_revision').\
             order_by('label_revision__timestamp',

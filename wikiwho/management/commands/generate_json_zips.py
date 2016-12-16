@@ -41,6 +41,7 @@ def generate_jsons(f, t, output_folder, log_folder, format_, max_size):
         try:
             v = WikiwhoView(article)
             parameters = v.get_parameters()
+            parameters[-1] = 0  # threshold.
             last_revision_json = v.get_revision_json([], parameters, only_last_valid_revision=True, minimal=True)
             # if not last_revision_json.get('no_revisions') and last_revision_json['revisions']:
             if last_revision_json['revisions']:

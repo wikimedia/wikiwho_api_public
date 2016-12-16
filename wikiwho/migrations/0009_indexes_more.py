@@ -32,8 +32,8 @@ class Migration(migrations.Migration):
             reverse_sql='DROP INDEX public.wikiwho_token_label_last_used'
         ),
         # TODO should we do this only for len comparision?
-        migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_token_label_outbound ON public.wikiwho_token USING gin (outbound);',
-            reverse_sql='DROP INDEX public.wikiwho_token_label_outbound'
-        )
+        # migrations.RunSQL(
+        #     sql='CREATE INDEX wikiwho_token_label_outbound ON public.wikiwho_token USING gin (outbound);',
+        #     reverse_sql='DROP INDEX public.wikiwho_token_label_outbound'
+        # )
     ]
