@@ -33,6 +33,7 @@ class Command(BaseCommand):
         timeouts = []
         recursions = []
         operationals = []
+        alreadies = []
         others = []
         entry = []  # entry in logs
         for log_file in listdir(log_folder):
@@ -40,6 +41,7 @@ class Command(BaseCommand):
                 timeouts_curr = []
                 recursions_curr = []
                 operationals_curr = []
+                alreadies_curr = []
                 others_curr = []
                 # print(log_file)
                 with open('{}/{}'.format(log_folder, log_file)) as f:
@@ -55,6 +57,8 @@ class Command(BaseCommand):
                                     timeouts_curr.append([article_title, page_id])
                                 elif 'RecursionError' in log_text:
                                     recursions_curr.append([article_title, page_id])
+                                elif "api.handler.WPHandlerException: 'Article" in log_text:
+                                    alreadies_curr.append([article_title, page_id])
                                 else:
                                     others_curr.append([article_title, page_id])
                                 entry = [line]
@@ -73,17 +77,21 @@ class Command(BaseCommand):
                             timeouts_curr.append([article_title, page_id])
                         elif 'RecursionError' in log_text:
                             recursions_curr.append([article_title, page_id])
+                        elif "api.handler.WPHandlerException: 'Article" in log_text:
+                            alreadies_curr.append([article_title, page_id])
                         else:
                             others_curr.append([article_title, page_id])
                         entry = []
                 timeouts.extend(timeouts_curr)
                 recursions.extend(recursions_curr)
                 operationals.extend(operationals_curr)
+                alreadies.extend(alreadies_curr)
                 others.extend(others_curr)
                 json_errors_dict[log_file.split('_at_')[0]] = {
                     'timeouts': timeouts_curr,
                     'recursions': recursions_curr,
                     'operationals': operationals_curr,
+                    # 'alreadies': alreadies_curr,
                     'others': others_curr
                 }
         with open('{}/errors.json'.format(json_output_folder), 'w') as fp:
@@ -98,6 +106,9 @@ class Command(BaseCommand):
         with open('{}/operationals.csv'.format(csv_output_folder), 'w', newline='') as f:
             writer = csv.writer(f, delimiter=';')
             writer.writerows(operationals)
+        with open('{}/alreadies.csv'.format(csv_output_folder), 'w', newline='') as f:
+            writer = csv.writer(f, delimiter=';')
+            writer.writerows(alreadies)
         with open('{}/others.csv'.format(csv_output_folder), 'w', newline='') as f:
             writer = csv.writer(f, delimiter=';')
             writer.writerows(others)
