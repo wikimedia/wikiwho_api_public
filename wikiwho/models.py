@@ -15,6 +15,11 @@ class ArticleManager(models.Manager):
         return super(ArticleManager, self).get_queryset().filter(is_article=True)
 
 
+class NonArticleManager(models.Manager):
+    def get_queryset(self):
+        return super(NonArticleManager, self).get_queryset().filter(is_article=False)
+
+
 class Article(BaseModel):
     id = models.IntegerField(primary_key=True, blank=False, null=False, editable=False, help_text='Wikipedia page id')
     title = models.CharField(max_length=256, blank=False)
@@ -25,6 +30,8 @@ class Article(BaseModel):
     is_article = models.NullBooleanField(default=True)
 
     objects = ArticleManager()
+    non_articles = NonArticleManager()
+    all_articles = models.Manager()
 
     def __str__(self):
         return self.title

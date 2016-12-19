@@ -19,8 +19,8 @@ from wikiwho.models import Article
 def set_is_article_field(ids, is_save):
     print('Start: {} - {} at {}'.format(ids[0], ids[-1], strftime("%H:%M:%S %d-%m-%Y")))
     if is_save:
-        print('Done: {} - {} at {}'.format(ids[0], ids[-1], strftime("%H:%M:%S %d-%m-%Y")))
         print(Article.objects.filter(id__in=ids).update(is_article=False))
+        print('Done: {} - {} at {}'.format(ids[0], ids[-1], strftime("%H:%M:%S %d-%m-%Y")))
     else:
         print('Done without saving: {} - {} at {}'.format(ids[:5], ids[-5:], strftime("%H:%M:%S %d-%m-%Y")))
     return True
@@ -42,7 +42,7 @@ class Command(BaseCommand):
         parser.add_argument('-s', '--save', help='Save into database.',
                             action='store_true', default=False, required=False)
         parser.add_argument('-b', '--batch', type=int, help='Number of Article objects that '
-                                                            'will be processed per thread. Default is 500000',
+                                                            'will be processed per thread. Default is 200000',
                             required=False)
 
     def handle(self, *args, **options):
@@ -76,7 +76,7 @@ class Command(BaseCommand):
                 with open('{}/{}'.format(csv_folder, csv_file), 'r') as f:
                     ids.extend([int(l) for l in f.read().splitlines()])
         is_save = options['save']
-        batch = options['batch'] or 500000
+        batch = options['batch'] or 200000  # took 95 minutes in total with high resources to postgres
         articles_count = len(ids)
         max_workers = options['max_workers'] or math.ceil(articles_count / batch)
         concurrent = options['concurrent']
@@ -86,8 +86,8 @@ class Command(BaseCommand):
         print(is_save, batch, articles_count, max_workers, is_ppe)
         if not concurrent:
             if is_save:
-                print('Done: all at {}'.format(strftime("%H:%M:%S %d-%m-%Y")))
                 print(Article.objects.filter(id__in=ids).update(is_article=False))
+                print('Done: all at {}'.format(strftime("%H:%M:%S %d-%m-%Y")))
             else:
                 print('Done: all without saving at {}'.format(strftime("%H:%M:%S %d-%m-%Y")))
         else:
