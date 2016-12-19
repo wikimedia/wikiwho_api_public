@@ -60,7 +60,7 @@ class Article(BaseModel):
             distinct()
         return deleted_tokens
 
-    def to_json(self, parameters, content=False, deleted=False, threshold=5, last_rev_id=None):
+    def to_json(self, parameters, content=False, deleted=False, threshold=5, last_rev_id=None, ids=False):
         if not last_rev_id:
             last_rev = self.revisions.order_by('timestamp').last()
             if not last_rev and self.rvcontinue == '1':
@@ -98,6 +98,12 @@ class Article(BaseModel):
             #          "wikiwho_token"."token_id" ASC
             json_data["revision_id"] = last_rev_id
             return json_data
+        elif ids:
+            json_data = dict()
+            annotate_dict, values_list = Revision.get_annotate_and_values(parameters, ids=True)
+            json_data["revisions"] = list(self.revisions.order_by('timestamp').annotate(**annotate_dict).values(*values_list))
+            return json_data
+
         return False
 
 
@@ -142,14 +148,21 @@ class Revision(BaseModel):
         return str(self.id)
 
     @staticmethod
-    def get_annotate_and_values(parameters):
-        annotate_dict = {'str': F('value')}
-        values_list = ['str']
+    def get_annotate_and_values(parameters, ids=False):
+        if ids:
+            annotate_dict = {}
+            values_list = ['id']
+        else:
+            annotate_dict = {'str': F('value')}
+            values_list = ['str']
         if 'rev_id' in parameters:
             annotate_dict['rev_id'] = F('label_revision__id')
             values_list.append('rev_id')
         if 'author' in parameters:
-            annotate_dict['author'] = F('label_revision__editor')
+            if ids:
+                annotate_dict['author'] = F('editor')
+            else:
+                annotate_dict['author'] = F('label_revision__editor')
             values_list.append('author')
         if 'token_id' in parameters:
             values_list.append('token_id')
@@ -157,6 +170,8 @@ class Revision(BaseModel):
             values_list.append('inbound')
         if 'outbound' in parameters:
             values_list.append('outbound')
+        if 'timestamp' in parameters:
+            values_list.append('timestamp')
         return annotate_dict, values_list
 
     # @cached_property

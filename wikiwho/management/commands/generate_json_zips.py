@@ -4,6 +4,7 @@ Example usage:
 python manage.py generate_json_zips -o '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/jsons' -m 4
 """
 import json
+from datetime import datetime
 from os import mkdir, rename
 from os.path import exists, getsize
 import logging
@@ -17,6 +18,16 @@ from django.conf import settings
 
 from wikiwho.models import Article
 from api.views import WikiwhoView
+
+
+def json_serial(obj):
+    """
+    JSON serializer for objects not serializable by default json code
+    """
+    if isinstance(obj, datetime):
+        serial = obj.isoformat()
+        return serial
+    raise TypeError("Type not serializable")
 
 
 def generate_jsons(f, t, output_folder, log_folder, format_, max_size):
@@ -40,8 +51,8 @@ def generate_jsons(f, t, output_folder, log_folder, format_, max_size):
         title = '{}_({})'.format(article.title, article.id)
         try:
             v = WikiwhoView(article)
-            parameters = v.get_parameters()
-            parameters[-1] = 0  # threshold.
+            parameters = v.get_parameters('content')
+            parameters.remove('author')
             last_revision_json = v.get_revision_json([], parameters, only_last_valid_revision=True, minimal=True)
             # if not last_revision_json.get('no_revisions') and last_revision_json['revisions']:
             if last_revision_json['revisions']:
@@ -50,8 +61,12 @@ def generate_jsons(f, t, output_folder, log_folder, format_, max_size):
                 last_rev_id = int(last_rev_id)
             else:
                 last_rev_id = None
+            parameters = v.get_parameters('deleted_content')
+            parameters.remove('author')
+            parameters[-1] = 0  # threshold.
             deleted_tokens_json = v.get_deleted_tokens(parameters, minimal=True, last_rev_id=last_rev_id)
-            revision_ids_json = v.get_revision_ids(minimal=True)
+            parameters = v.get_parameters('rev_ids')
+            revision_ids_json = v.get_revision_ids(parameters, minimal=True)
             with ZipFile(zip_name, 'a', compression=ZIP_LZMA) as zip_:
                 zip_.writestr('{}_content.json'.format(title),
                               json.dumps(last_revision_json, ensure_ascii=False))
@@ -59,7 +74,7 @@ def generate_jsons(f, t, output_folder, log_folder, format_, max_size):
                 zip_.writestr('{}_deleted_content.json'.format(title),
                               json.dumps(deleted_tokens_json, ensure_ascii=False))
                 zip_.writestr('{}_revision_ids.json'.format(title),
-                              json.dumps(revision_ids_json, ensure_ascii=False))
+                              json.dumps(revision_ids_json, ensure_ascii=False, default=json_serial))
             if getsize(zip_name) >> 20 > max_size:  # size > max_size [MB]
                 to_page_id = article.id
                 rename(zip_name, '{}/wikiwho-{}-{}-{}.zip'.format(output_folder,

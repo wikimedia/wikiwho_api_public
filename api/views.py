@@ -29,6 +29,12 @@ query_params = [
     {'description': 'Add some description', 'in': 'query', 'name': 'outbound', 'required': True, 'type': 'boolean'}
 ]
 
+allowed_params = {
+    'deleted_content': ['rev_id', 'author', 'token_id', 'inbound', 'outbound', 'threshold'],
+    'content': ['rev_id', 'author', 'token_id', 'inbound', 'outbound'],
+    'rev_ids': ['author', 'timestamp']
+}
+
 custom_data = {
     # 'info': {'title': 'WikiWho API', 'version': ''},
     'paths':
@@ -112,7 +118,15 @@ custom_data = {
                                       'name': 'article_name',
                                       'required': True,
                                       'type': 'string'},
-                                     ],
+                                     ] +
+                                    [
+                                        query_params[1],
+                                        {'description': 'Add some description',
+                                         'in': 'query',
+                                         'name': 'timestamp',
+                                         'required': True,
+                                         'type': 'boolean'}
+                                    ],
                       'responses': {'200': {'description': ''}},
                       'tags': ['Revision ids'],
                       'summary': 'Get all revision ids of article'
@@ -171,14 +185,18 @@ class WikiwhoView(object):
     def __init__(self, article=None):
         self.article = article
 
-    def get_parameters(self):
+    def get_parameters(self, query_type):
         """
         :return: Full parameters with default values.
         """
         parameters = []
         for parameter in query_params:
-            parameters.append(parameter['name'])
-        parameters.append(settings.DELETED_CONTENT_THRESHOLD_LIMIT)
+            if parameter['name'] in allowed_params[query_type]:
+                parameters.append(parameter['name'])
+        if 'timestamp' in allowed_params[query_type]:
+            parameters.append('timestamp')
+        if 'threshold' in allowed_params[query_type]:
+            parameters.append(settings.DELETED_CONTENT_THRESHOLD_LIMIT)
         return parameters
 
     def get_revision_json(self, revision_ids, parameters, only_last_valid_revision=False, minimal=False):
@@ -236,13 +254,17 @@ class WikiwhoView(object):
         #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
-    def get_revision_ids(self, minimal=False):
+    def get_revision_ids(self, parameters=None, minimal=False):
         json_data = dict()
         json_data["article"] = self.article.title
         if not minimal:
             json_data["success"] = True
             json_data["message"] = None
-        json_data["revisions"] = list(self.article.revisions.order_by('timestamp').values_list('id', flat=True))
+        if parameters:
+            data = self.article.to_json(parameters, ids=True)
+            json_data.update(data)
+        else:
+            json_data["revisions"] = list(self.article.revisions.order_by('timestamp').values_list('id', flat=True))
         return json_data
 
 
@@ -258,14 +280,17 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
     renderer_classes = [JSONRenderer]  # to disable browsable api
     article = None
 
-    def get_parameters(self):
+    def get_parameters(self, query_type):
         parameters = []
         for parameter in query_params:
-            if self.request.GET.get(parameter['name']) == 'true':
+            if self.request.GET.get(parameter['name']) == 'true' and parameter['name'] in allowed_params[query_type]:
                 parameters.append(parameter['name'])
-        threshold = int(self.request.GET.get('threshold', settings.DELETED_CONTENT_THRESHOLD_LIMIT))
-        threshold = 0 if threshold < 0 else threshold
-        parameters.append(threshold)
+        if self.request.GET.get('timestamp') == 'true' and 'timestamp' in allowed_params[query_type]:
+            parameters.append('timestamp')
+        if 'threshold' in allowed_params[query_type]:
+            threshold = int(self.request.GET.get('threshold', settings.DELETED_CONTENT_THRESHOLD_LIMIT))
+            threshold = 0 if threshold < 0 else threshold
+            parameters.append(threshold)
         return parameters
 
     def get_response(self, article_name, parameters, revision_ids=list(), deleted=False, ids=False):
@@ -292,7 +317,7 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
                 # assert response == response_
                 status_ = status.HTTP_200_OK
             elif ids:
-                response = self.get_revision_ids()
+                response = self.get_revision_ids(parameters)
                 # response_ = wp.wikiwho.get_revision_ids()
                 # assert list(response["revisions"]) == response_["revisions"]
                 status_ = status.HTTP_200_OK
@@ -317,13 +342,13 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
         if start_revision_id >= end_revision_id:
             return Response({'Error': 'Second revision id has to be larger than first revision id!'},
                             status=status.HTTP_400_BAD_REQUEST)
-        parameters = self.get_parameters()
+        parameters = self.get_parameters('content')
         return self.get_response(article_name, parameters, [start_revision_id, end_revision_id])
 
     @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_article_revision(self, request, version, article_name, revision_id):
         # TODO cache this if only rev id is the last rev id
-        parameters = self.get_parameters()
+        parameters = self.get_parameters('content')
         return self.get_response(article_name, parameters, [int(revision_id)])
 
     # TODO update to cache only specific articles from rest_framework_extensions.cache.decorators import CacheResponse
@@ -331,7 +356,7 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
     @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_article_by_name(self, request, version, article_name):
         # TODO when models are created, delete cache.delete(this_key) if last_rev_id is changed or obj is deleted!
-        parameters = self.get_parameters()
+        parameters = self.get_parameters('content')
         return self.get_response(article_name, parameters)
 
     def calculate_cache_key(self, view_instance, view_method, request, args, kwargs):
@@ -345,12 +370,12 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
 
     @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_deleted_content_by_name(self, request, version, article_name):
-        parameters = self.get_parameters()
+        parameters = self.get_parameters('deleted_content')
         return self.get_response(article_name, parameters, deleted=True)
 
     @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_revision_ids_by_name(self, request, version, article_name):
-        parameters = self.get_parameters()
+        parameters = self.get_parameters('rev_ids')
         return self.get_response(article_name, parameters, ids=True)
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
