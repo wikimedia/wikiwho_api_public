@@ -207,17 +207,19 @@ class WikiwhoView(object):
             json_data["message"] = None
 
         if only_last_valid_revision:
-            data = self.article.to_json(parameters, content=True, last_rev_id=None)
+            data = self.article.to_json(parameters, content=True, last_rev_id=None, ordered=True)
             json_data["revisions"] = [data] if data else []
         else:
             revisions = []
             db_revision_ids = []
             if len(revision_ids) > 1:
                 filter_ = {'id__range': revision_ids}
+                order_fields = ['timestamp']
             else:
                 filter_ = {'id': revision_ids[0]}
-            for revision in self.article.revisions.filter(**filter_).order_by('timestamp'):
-                revisions.append({revision.id: revision.to_json(parameters, content=True)})
+                order_fields = []
+            for revision in self.article.revisions.filter(**filter_).order_by(*order_fields):
+                revisions.append({revision.id: revision.to_json(parameters, content=True, ordered=True)})
                 db_revision_ids.append(revision.id)
 
             for rev_id in revision_ids:
@@ -242,7 +244,7 @@ class WikiwhoView(object):
         json_data["threshold"] = threshold
 
         # TODO use latest_revision_id from handler?
-        data = self.article.to_json(parameters, deleted=True, threshold=threshold, last_rev_id=last_rev_id)
+        data = self.article.to_json(parameters, deleted=True, threshold=threshold, last_rev_id=last_rev_id, ordered=False)
         json_data.update(data)
         # OR TODO which way is faster?
         # revision = self.article.revisions.select_related('article').order_by('timestamp').last()
@@ -261,7 +263,7 @@ class WikiwhoView(object):
             json_data["success"] = True
             json_data["message"] = None
         if parameters:
-            data = self.article.to_json(parameters, ids=True)
+            data = self.article.to_json(parameters, ids=True, ordered=True)
             json_data.update(data)
         else:
             json_data["revisions"] = list(self.article.revisions.order_by('timestamp').values_list('id', flat=True))

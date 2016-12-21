@@ -6,6 +6,7 @@ from django.db.models import F
 # from django.utils.functional import cached_property
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from django.db import connection
 
 from base.models import BaseModel
 
@@ -44,64 +45,94 @@ class Article(BaseModel):
     def wikipedia_url(self):
         return 'https://en.wikipedia.org/wiki/{}'.format(self.title)
 
-    def deleted_tokens(self, threshold, last_rev_id=None):
+    def deleted_tokens(self, threshold, last_rev_id=None, ordered=False):
         if threshold > 0:
             filter_ = {'label_revision__article__id': self.id,
                        'outbound__len__gt': threshold}
         else:
             # threshold as 0.
             filter_ = {'label_revision__article__id': self.id}
+        order_fields = ['label_revision__timestamp', 'token_id'] if ordered else []
         deleted_tokens = Token.objects.\
             filter(**filter_).\
             exclude(last_used=last_rev_id).\
             select_related('label_revision').\
-            order_by('label_revision__timestamp',
-                     'token_id').\
+            order_by(*order_fields).\
             distinct()
         return deleted_tokens
 
-    def to_json(self, parameters, content=False, deleted=False, threshold=5, last_rev_id=None, ids=False):
-        if not last_rev_id:
+    def to_json(self, parameters, content=False, deleted=False, threshold=5, last_rev_id=None, ids=False, ordered=True, explain=False):
+        if not last_rev_id and not ids:
             last_rev = self.revisions.order_by('timestamp').last()
+            # """
+            # SELECT "wikiwho_revision"."id",
+            #        "wikiwho_revision"."article_id",
+            #        "wikiwho_revision"."editor",
+            #        "wikiwho_revision"."timestamp",
+            #        "wikiwho_revision"."length",
+            #        "wikiwho_revision"."created"
+            # FROM "wikiwho_revision"
+            # WHERE "wikiwho_revision"."article_id" = 662
+            # ORDER BY "wikiwho_revision"."timestamp" DESC LIMIT 1
+            # """
             if not last_rev and self.rvcontinue == '1':
                 # This article has no revision, because all is detected as spam by wikiwho
                 return {}
                 # return {'message': 'This article has no revision in Wikiwho system.'}
             last_rev_id = last_rev.id
-        elif content:
+        elif content and not ids:
             last_rev = Revision.objects.get(id=last_rev_id)
 
         if content:
-            return {last_rev_id: last_rev.to_json(parameters, content=True)}
+            return {last_rev_id: last_rev.to_json(parameters, content=True, custom=True, ordered=ordered, explain=explain)}
         elif deleted:
             annotate_dict, values_list = Revision.get_annotate_and_values(parameters)
-            deleted_tokens = self.deleted_tokens(threshold, last_rev_id=last_rev_id)
+            deleted_tokens = self.deleted_tokens(threshold, last_rev_id, ordered)
             json_data = dict()
             json_data["deleted_tokens"] = list(deleted_tokens.annotate(**annotate_dict).values(*values_list))
             # SQL query:
             # SELECT DISTINCT "wikiwho_token"."token_id",
             #                 "wikiwho_token"."inbound",
             #                 "wikiwho_token"."outbound",
-            #                 "wikiwho_token"."label_revision_id" AS "rev_id",
             #                 "wikiwho_token"."value" AS "str",
-            #                 "wikiwho_revision"."editor" AS "author",
-            #                 "wikiwho_revision"."timestamp"
+            #                 "wikiwho_token"."label_revision_id" AS "rev_id",
+            #                 "wikiwho_revision"."editor" AS "author"
             # FROM "wikiwho_token"
             # INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
-            # WHERE (CASE
-            #            WHEN "wikiwho_token"."outbound" IS NULL THEN NULL
-            #            ELSE coalesce(array_length("wikiwho_token"."outbound", 1), 0)
-            #        END > 5
-            #        AND "wikiwho_revision"."article_id" = 2197
-            #        AND NOT ("wikiwho_token"."last_used" = 747409474))
-            # ORDER BY "wikiwho_revision"."timestamp" ASC,
-            #          "wikiwho_token"."token_id" ASC
+            # WHERE ("wikiwho_revision"."article_id" = 662
+            #        AND CASE
+            #                WHEN "wikiwho_token"."outbound" IS NULL THEN NULL
+            #                ELSE coalesce(array_length("wikiwho_token"."outbound", 1), 0)
+            #            END > 5
+            #        AND NOT ("wikiwho_token"."last_used" = 754673798))
+
+            # no author and threshold = 0
+            # """
+            # EXPLAIN SELECT DISTINCT "wikiwho_token"."token_id",
+            #                 "wikiwho_token"."inbound",
+            #                 "wikiwho_token"."outbound",
+            #                 "wikiwho_token"."label_revision_id" AS "rev_id",
+            #                 "wikiwho_token"."value" AS "str"
+            # FROM "wikiwho_token"
+            # INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
+            # WHERE ("wikiwho_revision"."article_id" = 662
+            #        AND NOT ("wikiwho_token"."last_used" = 754673798))
+            # """
             json_data["revision_id"] = last_rev_id
             return json_data
         elif ids:
             json_data = dict()
             annotate_dict, values_list = Revision.get_annotate_and_values(parameters, ids=True)
-            json_data["revisions"] = list(self.revisions.order_by('timestamp').annotate(**annotate_dict).values(*values_list))
+            order_fields = ['timestamp'] if ordered else []
+            json_data["revisions"] = list(self.revisions.order_by(*order_fields).annotate(**annotate_dict).values(*values_list))
+            # """
+            # EXPLAIN SELECT "wikiwho_revision"."id",
+            #        "wikiwho_revision"."timestamp",
+            #        "wikiwho_revision"."editor" AS "author"
+            # FROM "wikiwho_revision"
+            # WHERE "wikiwho_revision"."article_id" = 662
+            # ORDER BY "wikiwho_revision"."timestamp" ASC
+            # """
             return json_data
 
         return False
@@ -174,76 +205,148 @@ class Revision(BaseModel):
             values_list.append('timestamp')
         return annotate_dict, values_list
 
+    @property
+    def tokens_alter(self):
+        p_ids = RevisionParagraph.objects.filter(revision_id=self.id).values_list('paragraph_id', flat=True)
+        s_ids = ParagraphSentence.objects.filter(paragraph_id__in=p_ids).values_list('sentence_id', flat=True)
+        t_ids = SentenceToken.objects.filter(sentence_id__in=s_ids).values_list('token_id', flat=True)
+        tokens = Token.objects.filter(id__in=t_ids)
+        return tokens
+
     # @cached_property
     @property
     def tokens(self):
-        # TODO compare timing with this
-        # tokens = self.article.tokens.\
-        #     filter(sentences__sentence__paragraphs__paragraph__revisions__revision__id=self.id)
         tokens = Token.objects.\
             filter(sentences__sentence__paragraphs__paragraph__revisions__revision__id=self.id).\
             select_related('label_revision').\
             order_by('sentences__sentence__paragraphs__paragraph__revisions__position',
                      'sentences__sentence__paragraphs__position',
                      'sentences__position')
-            # order_by('label_revision__timestamp', 'token_id')
-        # tokens = SentenceToken.objects\
-        #     .filter(sentence__paragraphs__paragraph__revisions__revision__id=self.id).\
-        #     select_related('label_revision', 'label_revision__editor').\
-        #     order_by('sentence__paragraphs__paragraph__revisions__position',
-        #              'sentence__paragraphs__position',
-        #              'position')
         return tokens
 
-    def deleted_tokens(self, threshold):
+    def tokens_custom(self, values_list, ordered=True, explain=False):
+        select = []
+        columns = []
+        extra_inner = []
+        if 'token_id' in values_list:
+            select .append('"wikiwho_token"."token_id"')
+            columns.append('token_id')
+        if 'inbound' in values_list:
+            select .append('"wikiwho_token"."inbound"')
+            columns.append('inbound')
+        if 'outbound' in values_list:
+            select .append('"wikiwho_token"."outbound"')
+            columns.append('outbound')
+        if 'rev_id' in values_list:
+            select .append('"wikiwho_token"."label_revision_id"')
+            columns.append('rev_id')
+        if 'str' in values_list:
+            select .append('"wikiwho_token"."value"')
+            columns.append('str')
+        if 'author' in values_list:
+            select .append('"wikiwho_revision"."editor"')
+            columns.append('author')
+            extra_inner.append('INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")')
+
+        if ordered:
+            order = """
+                    \nORDER BY "wikiwho_revisionparagraph"."position" ASC,
+                    "wikiwho_paragraphsentence"."position" ASC,
+                    "wikiwho_sentencetoken"."position" ASC
+                    """
+        else:
+            order = ''
+
+        query = """
+                {}SELECT {}
+                FROM "wikiwho_token"
+                INNER JOIN "wikiwho_sentencetoken" ON ("wikiwho_token"."id" = "wikiwho_sentencetoken"."token_id")
+                INNER JOIN "wikiwho_paragraphsentence" ON ("wikiwho_sentencetoken"."sentence_id" = "wikiwho_paragraphsentence"."sentence_id")
+                INNER JOIN "wikiwho_revisionparagraph" ON ("wikiwho_paragraphsentence"."paragraph_id" = "wikiwho_revisionparagraph"."paragraph_id")
+                {}WHERE "wikiwho_revisionparagraph"."revision_id" = %s{}
+                 """.format('EXPLAIN ' if explain else '',
+                            ',\n'.join(select),
+                            '\n'.join(extra_inner),
+                            order)
+        with connection.cursor() as cursor:
+            cursor.execute(query, [self.id])
+            if explain:
+                return cursor.fetchall()
+            tokens = [
+                dict(zip(columns, row))
+                for row in cursor.fetchall()
+                ]
+        return tokens
+
+    def deleted_tokens(self, threshold, ordered=False):
         if threshold > 0:
             filter_ = {'label_revision__article__id': self.id,
                        'outbound__len__gt': threshold}
         else:
             # threshold as 0.
             filter_ = {'label_revision__article__id': self.id}
+        order_fields = ['label_revision__timestamp', 'token_id'] if ordered else []
         deleted_tokens = Token.objects.\
             filter(**filter_).\
             exclude(last_used=self.id).\
             select_related('label_revision').\
-            order_by('label_revision__timestamp',
-                     'token_id').\
+            order_by(*order_fields).\
             distinct()
         return deleted_tokens
 
     # @lru_cache(maxsize=None, typed=False)
     # TODO use this cache only for last rev ids. but how?
-    def to_json(self, parameters, content=False, deleted=False, threshold=5):
+    def to_json(self, parameters, content=False, deleted=False, threshold=5, custom=True, ordered=True, explain=False):
         annotate_dict, values_list = self.get_annotate_and_values(parameters)
         if content:
-            tokens = self.tokens.annotate(**annotate_dict).values(*values_list)
-            #          "wikiwho_sentencetoken"."position" ASC
-            # print(len(tokens))
+            if custom:
+                tokens = self.tokens_custom(values_list, ordered, explain)
+                # SQL query:
+                # """
+                # EXPLAIN SELECT "wikiwho_token"."token_id",
+                #       "wikiwho_token"."inbound",
+                #       "wikiwho_token"."outbound",
+                #       "wikiwho_token"."label_revision_id",
+                #       "wikiwho_token"."value",
+                #       "wikiwho_revision"."editor"
+                # FROM "wikiwho_token"
+                # INNER JOIN "wikiwho_sentencetoken" ON ("wikiwho_token"."id" = "wikiwho_sentencetoken"."token_id")
+                # INNER JOIN "wikiwho_paragraphsentence" ON ("wikiwho_sentencetoken"."sentence_id" = "wikiwho_paragraphsentence"."sentence_id")
+                # INNER JOIN "wikiwho_revisionparagraph" ON ("wikiwho_paragraphsentence"."paragraph_id" = "wikiwho_revisionparagraph"."paragraph_id")
+                # INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
+                # WHERE "wikiwho_revisionparagraph"."revision_id" = 19137
+                # ORDER BY "wikiwho_revisionparagraph"."position" ASC,
+                #         "wikiwho_paragraphsentence"."position" ASC,
+                #         "wikiwho_sentencetoken"."position" ASC
+                # """
+            else:
+                tokens = self.tokens.annotate(**annotate_dict).values(*values_list)
+                tokens = list(tokens)
+                # SQL query:
+                # SELECT "wikiwho_token"."token_id",
+                #        "wikiwho_token"."inbound",
+                #        "wikiwho_token"."outbound",
+                #        "wikiwho_token"."label_revision_id" AS "rev_id",
+                #        "wikiwho_token"."value" AS "str",
+                #        "wikiwho_revision"."editor" AS "author"
+                # FROM "wikiwho_token"
+                # INNER JOIN "wikiwho_sentencetoken" ON ("wikiwho_token"."id" = "wikiwho_sentencetoken"."token_id")
+                # INNER JOIN "wikiwho_sentence" ON ("wikiwho_sentencetoken"."sentence_id" = "wikiwho_sentence"."id")
+                # INNER JOIN "wikiwho_paragraphsentence" ON ("wikiwho_sentence"."id" = "wikiwho_paragraphsentence"."sentence_id")
+                # INNER JOIN "wikiwho_paragraph" ON ("wikiwho_paragraphsentence"."paragraph_id" = "wikiwho_paragraph"."id")
+                # INNER JOIN "wikiwho_revisionparagraph" ON ("wikiwho_paragraph"."id" = "wikiwho_revisionparagraph"."paragraph_id")
+                # INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
+                # WHERE "wikiwho_revisionparagraph"."revision_id" = 9100
+                # ORDER BY "wikiwho_revisionparagraph"."position" ASC,
+                #          "wikiwho_paragraphsentence"."position" ASC,
+                #          "wikiwho_sentencetoken"."position" ASC
             json_data = {"author": self.editor,
                          # "time": str(self.timestamp),
                          "time": self.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                         "tokens": list(tokens)}
-            # SQL query:
-            # SELECT "wikiwho_token"."token_id",
-            #        "wikiwho_token"."inbound",
-            #        "wikiwho_token"."outbound",
-            #        "wikiwho_token"."label_revision_id" AS "rev_id",
-            #        "wikiwho_token"."value" AS "str",
-            #        T8."editor" AS "author"
-            # FROM "wikiwho_token"
-            # INNER JOIN "wikiwho_sentencetoken" ON ("wikiwho_token"."id" = "wikiwho_sentencetoken"."token_id")
-            # INNER JOIN "wikiwho_sentence" ON ("wikiwho_sentencetoken"."sentence_id" = "wikiwho_sentence"."id")
-            # INNER JOIN "wikiwho_paragraphsentence" ON ("wikiwho_sentence"."id" = "wikiwho_paragraphsentence"."sentence_id")
-            # INNER JOIN "wikiwho_paragraph" ON ("wikiwho_paragraphsentence"."paragraph_id" = "wikiwho_paragraph"."id")
-            # INNER JOIN "wikiwho_revisionparagraph" ON ("wikiwho_paragraph"."id" = "wikiwho_revisionparagraph"."paragraph_id")
-            # INNER JOIN "wikiwho_revision" T8 ON ("wikiwho_token"."label_revision_id" = T8."id")
-            # WHERE "wikiwho_revisionparagraph"."revision_id" = 9100
-            # ORDER BY "wikiwho_revisionparagraph"."position" ASC,
-            #          "wikiwho_paragraphsentence"."position" ASC,
-            #          "wikiwho_sentencetoken"."position" ASC
+                         "tokens": tokens}
             return json_data
         elif deleted:
-            deleted_tokens = self.deleted_tokens(threshold).annotate(**annotate_dict).values(*values_list)
+            deleted_tokens = self.deleted_tokens(threshold, ordered).annotate(**annotate_dict).values(*values_list)
             return list(deleted_tokens)
         return False
 

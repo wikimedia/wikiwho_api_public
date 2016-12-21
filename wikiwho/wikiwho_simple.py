@@ -102,6 +102,7 @@ class Wikiwho:
             #         print(type(revision.user.text), revision.user.text, type(revision.user.id), revision.user.id)
             #     print(revision.id, type(revision.text), type(revision.comment),
             #           revision.minor, type(revision.sha1), revision.sha1)
+            # FIXME before next db filling. test and compare this again to be sure!
             # if not text and (revision.deleted.text or revision.deleted.restricted):
             if not text or revision.deleted.text or revision.deleted.restricted:  # or revision.deleted.comment or revision.deleted.user
                 # equivalent of "'texthidden' in revision or 'textmissing' in revision" in analyse_article
@@ -116,6 +117,7 @@ class Wikiwho:
             self.revision_prev = self.revision_curr
 
             rev_id = revision.id
+            # FIXME hash of rev text was in spam list which works but then we dont know which revisions are spam! Find a work around
             if rev_id in self.spam:
                 vandalism = True
 

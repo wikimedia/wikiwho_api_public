@@ -15,25 +15,25 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             # CREATE INDEX orders_unbilled_index ON orders(order_nr) WHERE billed is not true;
             sql='CREATE INDEX wikiwho_is_article_id ON public.wikiwho_article (id) WHERE is_article is true;',
-            reverse_sql='DROP INDEX public.wikiwho_is_article_id'
+            reverse_sql='DROP INDEX public.wikiwho_is_article_id;'
         ),
 
         # we need this indexes for deleted_content queries
         migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_token_label_revision_id ON public.wikiwho_token USING hash (label_revision_id);',
+            sql='CREATE INDEX wikiwho_token_label_revision_id ON public.wikiwho_token USING btree (label_revision_id);',
             reverse_sql='DROP INDEX public.wikiwho_token_label_revision_id'
         ),
+        # migrations.RunSQL(
+        #     sql='CREATE INDEX wikiwho_token_token_id ON public.wikiwho_token USING btree (token_id);',
+        #     reverse_sql='DROP INDEX public.wikiwho_token_token_id;'
+        # ),
         migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_token_label_token_id ON public.wikiwho_token USING btree (token_id);',
-            reverse_sql='DROP INDEX public.wikiwho_token_label_token_id'
-        ),
-        migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_token_label_last_used ON public.wikiwho_token USING hash (last_used);',
-            reverse_sql='DROP INDEX public.wikiwho_token_label_last_used'
+            sql='CREATE INDEX wikiwho_token_last_used ON public.wikiwho_token USING btree (last_used);',
+            reverse_sql='DROP INDEX public.wikiwho_token_last_used;'
         ),
         # TODO should we do this only for len comparision?
         # migrations.RunSQL(
         #     sql='CREATE INDEX wikiwho_token_label_outbound ON public.wikiwho_token USING gin (outbound);',
-        #     reverse_sql='DROP INDEX public.wikiwho_token_label_outbound'
+        #     reverse_sql='DROP INDEX public.wikiwho_token_label_outbound;'
         # )
     ]

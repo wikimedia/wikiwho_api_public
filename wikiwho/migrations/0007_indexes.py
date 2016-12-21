@@ -14,37 +14,37 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql='CREATE INDEX wikiwho_revision_timestamp ON public.wikiwho_revision USING btree ("timestamp");',
-            reverse_sql='DROP INDEX public.wikiwho_revision_timestamp'
+            reverse_sql='DROP INDEX public.wikiwho_revision_timestamp;'
         ),
         migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_revision_article_id ON public.wikiwho_revision USING hash (article_id);',
-            reverse_sql='DROP INDEX public.wikiwho_revision_article_id'
+            sql='CREATE INDEX wikiwho_revision_article_id ON public.wikiwho_revision USING btree (article_id);',
+            reverse_sql='DROP INDEX public.wikiwho_revision_article_id;'
         ),
 
         migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_revisionparagraph_revision_id ON public.wikiwho_revisionparagraph USING hash (revision_id);',
-            reverse_sql='DROP INDEX public.wikiwho_revisionparagraph_revision_id'
+            sql='CREATE INDEX wikiwho_revisionparagraph_revision_id ON public.wikiwho_revisionparagraph USING btree (revision_id);',
+            reverse_sql='DROP INDEX public.wikiwho_revisionparagraph_revision_id;'
         ),
         # migrations.RunSQL(
         #     sql='CREATE INDEX wikiwho_revisionparagraph_paragraph_id ON public.wikiwho_revisionparagraph USING btree (paragraph_id);',
-        #     reverse_sql='DROP INDEX public.wikiwho_revisionparagraph_paragraph_id'
+        #     reverse_sql='DROP INDEX public.wikiwho_revisionparagraph_paragraph_id;'
         # ),
 
         migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_paragraphsentence_paragraph_id ON public.wikiwho_paragraphsentence USING hash (paragraph_id);',
-            reverse_sql='DROP INDEX public.wikiwho_paragraphsentence_paragraph_id'
+            sql='CREATE INDEX wikiwho_paragraphsentence_paragraph_id ON public.wikiwho_paragraphsentence USING btree (paragraph_id);',
+            reverse_sql='DROP INDEX public.wikiwho_paragraphsentence_paragraph_id;'
         ),
         # migrations.RunSQL(
         #     sql='CREATE INDEX wikiwho_paragraphsentence_sentence_id ON public.wikiwho_paragraphsentence USING btree (sentence_id);',
-        #     reverse_sql='DROP INDEX public.wikiwho_paragraphsentence_sentence_id'
+        #     reverse_sql='DROP INDEX public.wikiwho_paragraphsentence_sentence_id;'
         # ),
 
         migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_sentencetoken_sentence_id ON public.wikiwho_sentencetoken USING hash (sentence_id);',
-            reverse_sql='DROP INDEX public.wikiwho_sentencetoken_sentence_id'
+            sql='CREATE INDEX wikiwho_sentencetoken_sentence_id ON public.wikiwho_sentencetoken USING btree (sentence_id);',
+            reverse_sql='DROP INDEX public.wikiwho_sentencetoken_sentence_id;'
         ),
         # migrations.RunSQL(
         #     sql='CREATE INDEX wikiwho_sentencetoken_token_id ON public.wikiwho_sentencetoken USING btree (token_id);',
-        #     reverse_sql='DROP INDEX public.wikiwho_sentencetoken_token_id'
+        #     reverse_sql='DROP INDEX public.wikiwho_sentencetoken_token_id;'
         # ),
     ]
