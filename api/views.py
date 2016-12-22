@@ -17,22 +17,22 @@ from django.utils.translation import get_language
 from django.conf import settings
 # from django.core.signals import request_started, request_finished
 # from django.http import HttpResponse
-
+from wikiwho.models import Revision
 from .handler import WPHandler, WPHandlerException
 
 # TODO add descriptions
 query_params = [
     {'description': 'Add some description', 'in': 'query', 'name': 'rev_id', 'required': True, 'type': 'boolean'},  # 'default': 'false',
-    {'description': 'Add some description', 'in': 'query', 'name': 'author', 'required': True, 'type': 'boolean'},
+    {'description': 'Add some description', 'in': 'query', 'name': 'editor', 'required': True, 'type': 'boolean'},
     {'description': 'Add some description', 'in': 'query', 'name': 'token_id', 'required': True, 'type': 'boolean'},
     {'description': 'Add some description', 'in': 'query', 'name': 'inbound', 'required': True, 'type': 'boolean'},
     {'description': 'Add some description', 'in': 'query', 'name': 'outbound', 'required': True, 'type': 'boolean'}
 ]
 
 allowed_params = {
-    'deleted_content': ['rev_id', 'author', 'token_id', 'inbound', 'outbound', 'threshold'],
-    'content': ['rev_id', 'author', 'token_id', 'inbound', 'outbound'],
-    'rev_ids': ['author', 'timestamp']
+    'deleted_content': ['rev_id', 'editor', 'token_id', 'inbound', 'outbound', 'threshold'],
+    'content': ['rev_id', 'editor', 'token_id', 'inbound', 'outbound'],
+    'rev_ids': ['editor', 'timestamp']
 }
 
 custom_data = {
@@ -190,6 +190,10 @@ class WikiwhoView(object):
         :return: Full parameters with default values.
         """
         parameters = []
+        if query_type == 'content' or query_type == 'deleted_content':
+            parameters.append('str')
+        if query_type == 'rev_ids':
+            parameters.append('rev_id')
         for parameter in query_params:
             if parameter['name'] in allowed_params[query_type]:
                 parameters.append(parameter['name'])
@@ -207,7 +211,7 @@ class WikiwhoView(object):
             json_data["message"] = None
 
         if only_last_valid_revision:
-            data = self.article.to_json(parameters, content=True, last_rev_id=None, ordered=True)
+            data = self.article.to_json(parameters, content=True, last_rev_id=None, ordered=True, minimal=minimal)
             json_data["revisions"] = [data] if data else []
         else:
             revisions = []
@@ -218,8 +222,8 @@ class WikiwhoView(object):
             else:
                 filter_ = {'id': revision_ids[0]}
                 order_fields = []
-            for revision in self.article.revisions.filter(**filter_).order_by(*order_fields):
-                revisions.append({revision.id: revision.to_json(parameters, content=True, ordered=True)})
+            for revision in Revision.objects.filter(**filter_).order_by(*order_fields):
+                revisions.append({revision.id: revision.to_json(parameters, content=True, ordered=True, minimal=minimal)})
                 db_revision_ids.append(revision.id)
 
             for rev_id in revision_ids:
@@ -244,7 +248,7 @@ class WikiwhoView(object):
         json_data["threshold"] = threshold
 
         # TODO use latest_revision_id from handler?
-        data = self.article.to_json(parameters, deleted=True, threshold=threshold, last_rev_id=last_rev_id, ordered=False)
+        data = self.article.to_json(parameters, deleted=True, threshold=threshold, last_rev_id=last_rev_id, ordered=False, minimal=minimal)
         json_data.update(data)
         # OR TODO which way is faster?
         # revision = self.article.revisions.select_related('article').order_by('timestamp').last()
@@ -262,11 +266,8 @@ class WikiwhoView(object):
         if not minimal:
             json_data["success"] = True
             json_data["message"] = None
-        if parameters:
-            data = self.article.to_json(parameters, ids=True, ordered=True)
-            json_data.update(data)
-        else:
-            json_data["revisions"] = list(self.article.revisions.order_by('timestamp').values_list('id', flat=True))
+        data = self.article.to_json(parameters, ids=True, ordered=True)
+        json_data.update(data)
         return json_data
 
 
@@ -278,12 +279,16 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
     throttle_classes = (throttling.UserRateThrottle, throttling.AnonRateThrottle, BurstRateThrottle)
     # serializer_class = WikiWhoSerializer
     # filter_fields = ('query_option_1', 'query_option_2',)
-    # query_fields = ('rev_id', 'author', 'token_id', )
+    # query_fields = ('rev_id', 'editor', 'token_id', )
     renderer_classes = [JSONRenderer]  # to disable browsable api
     article = None
 
     def get_parameters(self, query_type):
         parameters = []
+        if query_type == 'content' or query_type == 'deleted_content':
+            parameters.append('str')
+        if query_type == 'rev_ids':
+            parameters.append('rev_id')
         for parameter in query_params:
             if self.request.GET.get(parameter['name']) == 'true' and parameter['name'] in allowed_params[query_type]:
                 parameters.append(parameter['name'])

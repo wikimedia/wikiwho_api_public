@@ -136,23 +136,23 @@ class TestWikiwho:
 
         with WPHandler(article_name) as wp:
             wp.handle([revision_id], 'json', is_api=False)
-        # pickle_revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'rev_id', 'author', 'token_id'})
+        # pickle_revision_json = wp.wikiwho.get_revision_json(wp.revision_ids, {'rev_id', 'editor', 'token_id'})
 
         v = WikiwhoApiView()
         v.article = wp.article_obj
 
-        # create json with rev and author ids
-        revision_json_without_tokenid = v.get_revision_json(wp.revision_ids, {'rev_id', 'author'})
+        # create json with rev and editor ids
+        revision_json_without_tokenid = v.get_revision_json(wp.revision_ids, {'str', 'rev_id', 'editor'})
         json_file_path_without_tokenid = '{}/{}_db_ri_ai.json'.format(temp_folder, article_name)
         with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
                                sort_keys=True, ensure_ascii=False))
-        # compare jsons with rev and author ids
+        # compare jsons with rev and editor ids
         test_json_file_path = '{}/{}_db_ri_ai.json'.format(test_json_folder, article_name)
         is_content_same_1 = filecmp.cmp(json_file_path_without_tokenid, test_json_file_path)
 
         # create json with token ids
-        revision_json = v.get_revision_json(wp.revision_ids, {'token_id'})
+        revision_json = v.get_revision_json(wp.revision_ids, {'str', 'token_id'})
         # check if all token ids are unique
         for _, rev in revision_json['revisions'][0].items():
             token_ids = [t['token_id'] for t in rev['tokens']]
@@ -166,7 +166,7 @@ class TestWikiwho:
         is_content_same_2 = filecmp.cmp(json_file_path, test_json_file_path)
 
         # create json with in/outbounds
-        revision_json_with_io = v.get_revision_json(wp.revision_ids, {'inbound', 'outbound'})
+        revision_json_with_io = v.get_revision_json(wp.revision_ids, {'str', 'inbound', 'outbound'})
         json_file_path_with_io = '{}/{}_db_io.json'.format(temp_folder, article_name)
         with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
@@ -209,18 +209,18 @@ class TestWikiwho:
         v = WikiwhoApiView()
         v.article = wp.article_obj
 
-        # create json with rev and author ids
-        revision_json_without_tokenid = v.get_revision_json([revision_id], {'rev_id', 'author'})
+        # create json with rev and editor ids
+        revision_json_without_tokenid = v.get_revision_json([revision_id], {'str', 'rev_id', 'editor'})
         json_file_path_without_tokenid = '{}/{}_db_ri_ai.json'.format(temp_folder, article_name)
         with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
                                sort_keys=True, ensure_ascii=False))
-        # compare jsons with rev and author ids
+        # compare jsons with rev and editor ids
         test_json_file_path = '{}/{}_db_ri_ai.json'.format(test_json_folder, article_name)
         is_content_same_1 = filecmp.cmp(json_file_path_without_tokenid, test_json_file_path)
 
         # create json with token ids
-        revision_json = v.get_revision_json([revision_id], {'token_id'})
+        revision_json = v.get_revision_json([revision_id], {'str', 'token_id'})
         # check if all token ids are unique
         for _, rev in revision_json['revisions'][0].items():
             token_ids = [t['token_id'] for t in rev['tokens']]
@@ -234,7 +234,7 @@ class TestWikiwho:
         is_content_same_2 = filecmp.cmp(json_file_path, test_json_file_path)
 
         # create json with in/outbounds
-        revision_json_with_io = v.get_revision_json([revision_id], {'inbound', 'outbound'})
+        revision_json_with_io = v.get_revision_json([revision_id], {'str', 'inbound', 'outbound'})
         json_file_path_with_io = '{}/{}_db_io.json'.format(temp_folder, article_name)
         with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
@@ -271,7 +271,7 @@ class TestWikiwho:
         v.article = wp.article_obj
 
         # compare jsons without token ids
-        revision_json_without_tokenid = v.get_revision_json(wp.revision_ids, {'rev_id', 'author'})
+        revision_json_without_tokenid = v.get_revision_json(wp.revision_ids, {'str', 'rev_id', 'editor'})
         json_file_path_without_tokenid = '{}/{}_db_ri_ai.json'.format(temp_folder, article_name)
         with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
@@ -281,7 +281,7 @@ class TestWikiwho:
         assert is_content_same, "{}: 'json without token ids' doesn't match".format(article_name)
 
         # compare jsons with token ids
-        revision_json = v.get_revision_json(wp.revision_ids, {'token_id'})
+        revision_json = v.get_revision_json(wp.revision_ids, {'str', 'token_id'})
         json_file_path = '{}/{}_db_ti.json'.format(temp_folder, article_name)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
@@ -290,7 +290,7 @@ class TestWikiwho:
         assert is_content_same, "{}: json doesn't match".format(article_name)
 
         # compare jsons with in/outbounds
-        revision_json_with_io = v.get_revision_json(wp.revision_ids, {'inbound', 'outbound'})
+        revision_json_with_io = v.get_revision_json(wp.revision_ids, {'str', 'inbound', 'outbound'})
         json_file_path_with_io = '{}/{}_db_io.json'.format(temp_folder, article_name)
         with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),

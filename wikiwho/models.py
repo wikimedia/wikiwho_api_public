@@ -61,7 +61,7 @@ class Article(BaseModel):
             distinct()
         return deleted_tokens
 
-    def to_json(self, parameters, content=False, deleted=False, threshold=5, last_rev_id=None, ids=False, ordered=True, explain=False):
+    def to_json(self, parameters, content=False, deleted=False, threshold=5, last_rev_id=None, ids=False, ordered=True, explain=False, minimal=False):
         if not last_rev_id and not ids:
             last_rev = self.revisions.order_by('timestamp').last()
             # """
@@ -84,9 +84,9 @@ class Article(BaseModel):
             last_rev = Revision.objects.get(id=last_rev_id)
 
         if content:
-            return {last_rev_id: last_rev.to_json(parameters, content=True, custom=True, ordered=ordered, explain=explain)}
+            return {last_rev_id: last_rev.to_json(parameters, content=True, custom=True, ordered=ordered, explain=explain, minimal=minimal)}
         elif deleted:
-            annotate_dict, values_list = Revision.get_annotate_and_values(parameters)
+            annotate_dict, values_list = Revision.get_annotate_and_values(parameters, minimal=minimal)
             deleted_tokens = self.deleted_tokens(threshold, last_rev_id, ordered)
             json_data = dict()
             json_data["deleted_tokens"] = list(deleted_tokens.annotate(**annotate_dict).values(*values_list))
@@ -96,7 +96,7 @@ class Article(BaseModel):
             #                 "wikiwho_token"."outbound",
             #                 "wikiwho_token"."value" AS "str",
             #                 "wikiwho_token"."label_revision_id" AS "rev_id",
-            #                 "wikiwho_revision"."editor" AS "author"
+            #                 "wikiwho_revision"."editor" AS "editor"
             # FROM "wikiwho_token"
             # INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
             # WHERE ("wikiwho_revision"."article_id" = 662
@@ -106,7 +106,7 @@ class Article(BaseModel):
             #            END > 5
             #        AND NOT ("wikiwho_token"."last_used" = 754673798))
 
-            # no author and threshold = 0
+            # no editor and threshold = 0
             # """
             # EXPLAIN SELECT DISTINCT "wikiwho_token"."token_id",
             #                 "wikiwho_token"."inbound",
@@ -128,11 +128,12 @@ class Article(BaseModel):
             # """
             # EXPLAIN SELECT "wikiwho_revision"."id",
             #        "wikiwho_revision"."timestamp",
-            #        "wikiwho_revision"."editor" AS "author"
+            #        "wikiwho_revision"."editor"
             # FROM "wikiwho_revision"
             # WHERE "wikiwho_revision"."article_id" = 662
             # ORDER BY "wikiwho_revision"."timestamp" ASC
             # """
+            # json_data["revisions"] = list(self.revisions.order_by(*order_fields).annotate(**annotate_dict).values_list(*values_list, flat=True))
             return json_data
 
         return False
@@ -179,28 +180,37 @@ class Revision(BaseModel):
         return str(self.id)
 
     @staticmethod
-    def get_annotate_and_values(parameters, ids=False):
-        if ids:
-            annotate_dict = {}
-            values_list = ['id']
-        else:
-            annotate_dict = {'str': F('value')}
-            values_list = ['str']
+    def get_annotate_and_values(parameters, ids=False, minimal=False):
+        annotate_dict = {}
+        values_list = []
+        if 'str' in parameters:
+            annotate_dict['str'] = F('value')
+            values_list.append('str')
         if 'rev_id' in parameters:
-            annotate_dict['rev_id'] = F('label_revision__id')
+            annotate_dict['rev_id'] = F('id' if ids else 'label_revision__id')
             values_list.append('rev_id')
-        if 'author' in parameters:
-            if ids:
-                annotate_dict['author'] = F('editor')
-            else:
-                annotate_dict['author'] = F('label_revision__editor')
-            values_list.append('author')
+        if 'editor' in parameters:
+            if not ids:
+                annotate_dict['editor'] = F('label_revision__editor')
+            values_list.append('editor')
         if 'token_id' in parameters:
-            values_list.append('token_id')
+            if minimal:
+                annotate_dict['t_id'] = F('token_id')
+                values_list.append('t_id')
+            else:
+                values_list.append('token_id')
         if 'inbound' in parameters:
-            values_list.append('inbound')
+            if minimal:
+                annotate_dict['in'] = F('inbound')
+                values_list.append('in')
+            else:
+                values_list.append('inbound')
         if 'outbound' in parameters:
-            values_list.append('outbound')
+            if minimal:
+                annotate_dict['out'] = F('outbound')
+                values_list.append('out')
+            else:
+                values_list.append('outbound')
         if 'timestamp' in parameters:
             values_list.append('timestamp')
         return annotate_dict, values_list
@@ -231,21 +241,30 @@ class Revision(BaseModel):
         if 'token_id' in values_list:
             select .append('"wikiwho_token"."token_id"')
             columns.append('token_id')
+        elif 't_id' in values_list:
+            select .append('"wikiwho_token"."token_id"')
+            columns.append('t_id')
         if 'inbound' in values_list:
             select .append('"wikiwho_token"."inbound"')
             columns.append('inbound')
+        elif 'in' in values_list:
+            select .append('"wikiwho_token"."inbound"')
+            columns.append('in')
         if 'outbound' in values_list:
             select .append('"wikiwho_token"."outbound"')
             columns.append('outbound')
+        elif 'out' in values_list:
+            select .append('"wikiwho_token"."outbound"')
+            columns.append('out')
         if 'rev_id' in values_list:
             select .append('"wikiwho_token"."label_revision_id"')
             columns.append('rev_id')
         if 'str' in values_list:
             select .append('"wikiwho_token"."value"')
             columns.append('str')
-        if 'author' in values_list:
+        if 'editor' in values_list:
             select .append('"wikiwho_revision"."editor"')
-            columns.append('author')
+            columns.append('editor')
             extra_inner.append('INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")')
 
         if ordered:
@@ -296,8 +315,8 @@ class Revision(BaseModel):
 
     # @lru_cache(maxsize=None, typed=False)
     # TODO use this cache only for last rev ids. but how?
-    def to_json(self, parameters, content=False, deleted=False, threshold=5, custom=True, ordered=True, explain=False):
-        annotate_dict, values_list = self.get_annotate_and_values(parameters)
+    def to_json(self, parameters, content=False, deleted=False, threshold=5, custom=True, ordered=True, explain=False, minimal=False):
+        annotate_dict, values_list = self.get_annotate_and_values(parameters, minimal=minimal)
         if content:
             if custom:
                 tokens = self.tokens_custom(values_list, ordered, explain)
@@ -328,7 +347,7 @@ class Revision(BaseModel):
                 #        "wikiwho_token"."outbound",
                 #        "wikiwho_token"."label_revision_id" AS "rev_id",
                 #        "wikiwho_token"."value" AS "str",
-                #        "wikiwho_revision"."editor" AS "author"
+                #        "wikiwho_revision"."editor"
                 # FROM "wikiwho_token"
                 # INNER JOIN "wikiwho_sentencetoken" ON ("wikiwho_token"."id" = "wikiwho_sentencetoken"."token_id")
                 # INNER JOIN "wikiwho_sentence" ON ("wikiwho_sentencetoken"."sentence_id" = "wikiwho_sentence"."id")
@@ -340,7 +359,7 @@ class Revision(BaseModel):
                 # ORDER BY "wikiwho_revisionparagraph"."position" ASC,
                 #          "wikiwho_paragraphsentence"."position" ASC,
                 #          "wikiwho_sentencetoken"."position" ASC
-            json_data = {"author": self.editor,
+            json_data = {"editor": self.editor,
                          # "time": str(self.timestamp),
                          "time": self.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'),
                          "tokens": tokens}

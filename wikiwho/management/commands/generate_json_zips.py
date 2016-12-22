@@ -52,7 +52,7 @@ def generate_jsons(f, t, output_folder, log_folder, format_, max_size):
         try:
             v = WikiwhoView(article)
             parameters = v.get_parameters('content')
-            parameters.remove('author')
+            parameters.remove('editor')
             last_revision_json = v.get_revision_json([], parameters, only_last_valid_revision=True, minimal=True)
             # if not last_revision_json.get('no_revisions') and last_revision_json['revisions']:
             if last_revision_json['revisions']:
@@ -62,7 +62,7 @@ def generate_jsons(f, t, output_folder, log_folder, format_, max_size):
             else:
                 last_rev_id = None
             parameters = v.get_parameters('deleted_content')
-            parameters.remove('author')
+            parameters.remove('editor')
             parameters[-1] = 0  # threshold.
             deleted_tokens_json = v.get_deleted_tokens(parameters, minimal=True, last_rev_id=last_rev_id)
             parameters = v.get_parameters('rev_ids')
@@ -99,7 +99,7 @@ class Command(BaseCommand):
                                                             'Default is total number of articles in db.',
                             required=False)
         parser.add_argument('-f', '--offset', type=int, help='Offset to start process. Default is 0.', required=False)
-        parser.add_argument('-s', '--max_size', type=int, help='Max size of each zip file. Default is 900 MB. [MB]',
+        parser.add_argument('-s', '--max_size', type=int, help='Max size of each zip file. Default is 975 MB. [MB]',
                             required=False)
         parser.add_argument('-ppe', '--process_pool_executor', action='store_true',
                             help='Use ProcessPoolExecutor, default is ThreadPoolExecutor', default=False,
@@ -117,7 +117,7 @@ class Command(BaseCommand):
             mkdir(log_folder)
         is_ppe = options['process_pool_executor']
         max_workers = options['max_workers']
-        max_size = options['max_size'] or 900
+        max_size = options['max_size'] or 975
 
         if is_ppe:
             Executor = ProcessPoolExecutor
