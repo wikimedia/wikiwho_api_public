@@ -12,16 +12,27 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_revisionparagraph_position ON public.wikiwho_revisionparagraph USING btree ("position");',
-            reverse_sql='DROP INDEX public.wikiwho_revisionparagraph_position;'
-        ),
-        migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_paragraphsentence_position ON public.wikiwho_paragraphsentence USING btree ("position");',
-            reverse_sql='DROP INDEX public.wikiwho_paragraphsentence_position;'
-        ),
-        migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_sentencetoken_position ON public.wikiwho_sentencetoken USING btree ("position");',
-            reverse_sql='DROP INDEX public.wikiwho_sentencetoken_position;'
-        )
+        # TODO
+        # migrations.RunSQL(
+        #     sql='CREATE INDEX wikiwho_revisionparagraph_position ON public.wikiwho_revisionparagraph USING btree ("position");',
+        #     reverse_sql='DROP INDEX public.wikiwho_revisionparagraph_position;'
+        # ),
+        # migrations.RunSQL(
+        #     sql='CREATE INDEX wikiwho_paragraphsentence_position ON public.wikiwho_paragraphsentence USING btree ("position");',
+        #     reverse_sql='DROP INDEX public.wikiwho_paragraphsentence_position;'
+        # ),
+        # migrations.RunSQL(
+        #     sql='CREATE INDEX wikiwho_sentencetoken_position ON public.wikiwho_sentencetoken USING btree ("position");',
+        #     reverse_sql='DROP INDEX public.wikiwho_sentencetoken_position;'
+        # )
     ]
+
+    # HACK: always fake. These fields are actually not FK on db.
+    # This is done to use django's fk queries, emulated cascaded deletion
+    def apply(self, project_state, schema_editor, collect_sql=False):
+        return project_state.clone()
+        # return project_state
+
+    def unapply(self, project_state, schema_editor, collect_sql=False):
+        return project_state.clone()
+        # return project_state

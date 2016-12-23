@@ -37,3 +37,13 @@ class Migration(migrations.Migration):
         #     reverse_sql='DROP INDEX public.wikiwho_token_label_outbound;'
         # )
     ]
+
+    # HACK: always fake. These fields are actually not FK on db.
+    # This is done to use django's fk queries, emulated cascaded deletion
+    def apply(self, project_state, schema_editor, collect_sql=False):
+        return project_state.clone()
+        # return project_state
+
+    def unapply(self, project_state, schema_editor, collect_sql=False):
+        return project_state.clone()
+        # return project_state

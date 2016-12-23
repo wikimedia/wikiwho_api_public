@@ -13,12 +13,18 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_revision_timestamp ON public.wikiwho_revision USING btree ("timestamp");',
+            sql='CREATE INDEX wikiwho_revision_article_id ON public.wikiwho_revision USING btree (article_id);',
+            reverse_sql='DROP INDEX public.wikiwho_revision_article_id;'
+        ),
+        # An index stored in ascending order with nulls first can satisfy either ORDER BY x ASC NULLS LAST or
+        # ORDER BY x DESC NULLS FIRST depending on which direction it is scanned in.
+        migrations.RunSQL(
+            sql='CREATE INDEX wikiwho_revision_timestamp ON public.wikiwho_revision USING btree ("timestamp");',  # by default ASC NULLS LAST
             reverse_sql='DROP INDEX public.wikiwho_revision_timestamp;'
         ),
         migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_revision_article_id ON public.wikiwho_revision USING btree (article_id);',
-            reverse_sql='DROP INDEX public.wikiwho_revision_article_id;'
+            sql='CREATE INDEX wikiwho_revision_article_id_ts ON public.wikiwho_revision USING btree (article_id, "timestamp" DESC);',
+            reverse_sql='DROP INDEX public.wikiwho_revision_article_id_ts;'
         ),
 
         migrations.RunSQL(
@@ -48,3 +54,13 @@ class Migration(migrations.Migration):
         #     reverse_sql='DROP INDEX public.wikiwho_sentencetoken_token_id;'
         # ),
     ]
+
+    # HACK: always fake. These fields are actually not FK on db.
+    # This is done to use django's fk queries, emulated cascaded deletion
+    def apply(self, project_state, schema_editor, collect_sql=False):
+        return project_state.clone()
+        # return project_state
+
+    def unapply(self, project_state, schema_editor, collect_sql=False):
+        return project_state.clone()
+        # return project_state
