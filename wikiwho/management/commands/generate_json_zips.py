@@ -143,7 +143,7 @@ class Command(BaseCommand):
             f += batch_size
             t += batch_size
             batches.append((f, t))
-            if t >= articles_count:
+            if t >= (articles_count + offset):
                 break
 
         print(max_workers, len(batches))
