@@ -47,18 +47,17 @@ class Article(BaseModel):
 
     def deleted_tokens(self, threshold, last_rev_id=None, ordered=False):
         if threshold > 0:
-            filter_ = {'label_revision__article__id': self.id,
+            filter_ = {'label_revision__article_id': self.id,
                        'outbound__len__gt': threshold}
         else:
             # threshold as 0.
-            filter_ = {'label_revision__article__id': self.id}
+            filter_ = {'label_revision__article_id': self.id}
         order_fields = ['label_revision__timestamp', 'token_id'] if ordered else []
         deleted_tokens = Token.objects.\
             filter(**filter_).\
             exclude(last_used=last_rev_id).\
             select_related('label_revision').\
-            order_by(*order_fields).\
-            distinct()
+            order_by(*order_fields)
         return deleted_tokens
 
     def to_json(self, parameters, content=False, deleted=False, threshold=5, last_rev_id=None, ids=False, ordered=True, explain=False, minimal=False):
@@ -90,13 +89,17 @@ class Article(BaseModel):
             deleted_tokens = self.deleted_tokens(threshold, last_rev_id, ordered)
             json_data = dict()
             json_data["deleted_tokens"] = list(deleted_tokens.annotate(**annotate_dict).values(*values_list))
+            # token_ids = [t['token_id'] for t in json_data['deleted_tokens']]
+            # print(len(token_ids), len(set(token_ids)))
+            # assert len(token_ids) == len(set(token_ids)), "{}: there are duplicated token ids".format(self.title)
+            # assert len(token_ids) == len(json_data['deleted_tokens']), "{}: there are duplicated token ids".format(self.title)
             # SQL query:
-            # SELECT DISTINCT "wikiwho_token"."token_id",
-            #                 "wikiwho_token"."inbound",
-            #                 "wikiwho_token"."outbound",
-            #                 "wikiwho_token"."value" AS "str",
-            #                 "wikiwho_token"."label_revision_id" AS "rev_id",
-            #                 "wikiwho_revision"."editor" AS "editor"
+            # SELECT "wikiwho_token"."token_id",
+            #        "wikiwho_token"."inbound",
+            #        "wikiwho_token"."outbound",
+            #        "wikiwho_token"."label_revision_id" AS "rev_id",
+            #        "wikiwho_revision"."editor" AS "editor",
+            #        "wikiwho_token"."value" AS "str"
             # FROM "wikiwho_token"
             # INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
             # WHERE ("wikiwho_revision"."article_id" = 662
@@ -108,15 +111,15 @@ class Article(BaseModel):
 
             # no editor and threshold = 0
             # """
-            # EXPLAIN SELECT DISTINCT "wikiwho_token"."token_id",
-            #                 "wikiwho_token"."inbound",
-            #                 "wikiwho_token"."outbound",
-            #                 "wikiwho_token"."label_revision_id" AS "rev_id",
-            #                 "wikiwho_token"."value" AS "str"
-            # FROM "wikiwho_token"
-            # INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
-            # WHERE ("wikiwho_revision"."article_id" = 662
-            #        AND NOT ("wikiwho_token"."last_used" = 754673798))
+            # EXPLAIN SELECT "wikiwho_token"."token_id",
+            #                "wikiwho_token"."inbound",
+            #                "wikiwho_token"."outbound",
+            #                "wikiwho_token"."label_revision_id" AS "rev_id",
+            #                "wikiwho_token"."value" AS "str"
+            #         FROM "wikiwho_token"
+            #         INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
+            #         WHERE ("wikiwho_revision"."article_id" = 662
+            #                AND NOT ("wikiwho_token"."last_used" = 754673798))
             # """
             json_data["revision_id"] = last_rev_id
             return json_data
@@ -299,18 +302,17 @@ class Revision(BaseModel):
 
     def deleted_tokens(self, threshold, ordered=False):
         if threshold > 0:
-            filter_ = {'label_revision__article__id': self.id,
+            filter_ = {'label_revision__article_id': self.article_id,
                        'outbound__len__gt': threshold}
         else:
             # threshold as 0.
-            filter_ = {'label_revision__article__id': self.id}
+            filter_ = {'label_revision__article_id': self.article_id}
         order_fields = ['label_revision__timestamp', 'token_id'] if ordered else []
         deleted_tokens = Token.objects.\
             filter(**filter_).\
             exclude(last_used=self.id).\
             select_related('label_revision').\
-            order_by(*order_fields).\
-            distinct()
+            order_by(*order_fields)
         return deleted_tokens
 
     # @lru_cache(maxsize=None, typed=False)
