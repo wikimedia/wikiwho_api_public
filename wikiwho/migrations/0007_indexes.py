@@ -12,10 +12,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            sql='CREATE INDEX wikiwho_revision_article_id ON public.wikiwho_revision USING btree (article_id);',
-            reverse_sql='DROP INDEX public.wikiwho_revision_article_id;'
-        ),
+        # However there are cases where a multi-column index clearly makes sense. An index on columns (a, b) can be
+        # used by queries containing WHERE a = x AND b = y, or queries using WHERE a = x only,
+        # but will not be used by a query using WHERE b = y. So if this matches the query patterns of your application,
+        # the multi-column index approach is worth considering. Also note that in this case creating an index on 'a'
+        # alone would be redundant.
+        # migrations.RunSQL(
+        #     sql='CREATE INDEX wikiwho_revision_article_id ON public.wikiwho_revision USING btree (article_id);',
+        #     reverse_sql='DROP INDEX public.wikiwho_revision_article_id;'
+        # ),
         # An index stored in ascending order with nulls first can satisfy either ORDER BY x ASC NULLS LAST or
         # ORDER BY x DESC NULLS FIRST depending on which direction it is scanned in.
         migrations.RunSQL(
