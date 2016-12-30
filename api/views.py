@@ -185,15 +185,19 @@ class WikiwhoView(object):
     def __init__(self, article=None):
         self.article = article
 
+    @staticmethod
+    def _set_default_type_parameters(query_type, parameters):
+        if query_type == 'content' or query_type == 'deleted_content':
+            parameters.append('str')
+        if query_type == 'rev_ids':
+            parameters.append('rev_id')
+
     def get_parameters(self, query_type):
         """
         :return: Full parameters with default values.
         """
         parameters = []
-        if query_type == 'content' or query_type == 'deleted_content':
-            parameters.append('str')
-        if query_type == 'rev_ids':
-            parameters.append('rev_id')
+        self._set_default_type_parameters(query_type, parameters)
         for parameter in query_params:
             if parameter['name'] in allowed_params[query_type]:
                 parameters.append(parameter['name'])
@@ -284,20 +288,15 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
     article = None
 
     def get_parameters(self, query_type):
+        all_parameters = super(WikiwhoApiView, self).get_parameters(query_type)
         parameters = []
-        if query_type == 'content' or query_type == 'deleted_content':
-            parameters.append('str')
-        if query_type == 'rev_ids':
-            parameters.append('rev_id')
-        for parameter in query_params:
-            if self.request.GET.get(parameter['name']) == 'true' and parameter['name'] in allowed_params[query_type]:
-                parameters.append(parameter['name'])
-        if self.request.GET.get('timestamp') == 'true' and 'timestamp' in allowed_params[query_type]:
-            parameters.append('timestamp')
-        if 'threshold' in allowed_params[query_type]:
-            threshold = int(self.request.GET.get('threshold', settings.DELETED_CONTENT_THRESHOLD_LIMIT))
-            threshold = 0 if threshold < 0 else threshold
-            parameters.append(threshold)
+        self._set_default_type_parameters(query_type, parameters)
+        for parameter in all_parameters:
+            if type(parameter) == int:
+                threshold = int(self.request.GET.get('threshold', settings.DELETED_CONTENT_THRESHOLD_LIMIT))
+                parameters.append(0 if threshold < 0 else threshold)
+            elif self.request.GET.get(parameter) == 'true':
+                parameters.append(parameter)
         return parameters
 
     def get_response(self, article_name, parameters, revision_ids=list(), deleted=False, ids=False):
