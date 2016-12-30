@@ -6,9 +6,9 @@ from django.db.models import F
 # from django.utils.functional import cached_property
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
-from django.db import connection
 
 from base.models import BaseModel
+from wikiwho.utils_db import tokens_custom
 
 
 class ArticleManager(models.Manager):
@@ -47,12 +47,12 @@ class Article(BaseModel):
 
     def deleted_tokens(self, threshold, last_rev_id=None, ordered=False):
         if threshold > 0:
-            filter_ = {'label_revision__article_id': self.id,
+            filter_ = {'article_id': self.id,
                        'outbound__len__gt': threshold}
         else:
             # threshold as 0.
-            filter_ = {'label_revision__article_id': self.id}
-        order_fields = ['label_revision__timestamp', 'token_id'] if ordered else []
+            filter_ = {'article_id': self.id}
+        order_fields = ['timestamp', 'token_id'] if ordered else []
         deleted_tokens = Token.objects.\
             filter(**filter_).\
             exclude(last_used=last_rev_id).\
@@ -94,19 +94,18 @@ class Article(BaseModel):
             # assert len(token_ids) == len(set(token_ids)), "{}: there are duplicated token ids".format(self.title)
             # assert len(token_ids) == len(json_data['deleted_tokens']), "{}: there are duplicated token ids".format(self.title)
             # SQL query:
-            # SELECT "wikiwho_token"."token_id",
+            # SELECT "wikiwho_token"."editor",
+            #        "wikiwho_token"."token_id",
             #        "wikiwho_token"."inbound",
             #        "wikiwho_token"."outbound",
             #        "wikiwho_token"."label_revision_id" AS "rev_id",
-            #        "wikiwho_revision"."editor" AS "editor",
             #        "wikiwho_token"."value" AS "str"
             # FROM "wikiwho_token"
-            # INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
-            # WHERE ("wikiwho_revision"."article_id" = 662
-            #        AND CASE
-            #                WHEN "wikiwho_token"."outbound" IS NULL THEN NULL
-            #                ELSE coalesce(array_length("wikiwho_token"."outbound", 1), 0)
-            #            END > 5
+            # WHERE (CASE
+            #            WHEN "wikiwho_token"."outbound" IS NULL THEN NULL
+            #            ELSE coalesce(array_length("wikiwho_token"."outbound", 1), 0)
+            #        END > 5
+            #        AND "wikiwho_token"."article_id" = 662
             #        AND NOT ("wikiwho_token"."last_used" = 754673798))
 
             # no editor and threshold = 0
@@ -117,8 +116,7 @@ class Article(BaseModel):
             #                "wikiwho_token"."label_revision_id" AS "rev_id",
             #                "wikiwho_token"."value" AS "str"
             #         FROM "wikiwho_token"
-            #         INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
-            #         WHERE ("wikiwho_revision"."article_id" = 662
+            #         WHERE ("wikiwho_token"."article_id" = 662
             #                AND NOT ("wikiwho_token"."last_used" = 754673798))
             # """
             json_data["revision_id"] = last_rev_id
@@ -129,12 +127,12 @@ class Article(BaseModel):
             order_fields = ['timestamp'] if ordered else []
             json_data["revisions"] = list(self.revisions.order_by(*order_fields).annotate(**annotate_dict).values(*values_list))
             # """
-            # EXPLAIN SELECT "wikiwho_revision"."id",
-            #        "wikiwho_revision"."timestamp",
-            #        "wikiwho_revision"."editor"
-            # FROM "wikiwho_revision"
-            # WHERE "wikiwho_revision"."article_id" = 662
-            # ORDER BY "wikiwho_revision"."timestamp" ASC
+            # EXPLAIN SELECT "wikiwho_revision"."editor",
+            #                "wikiwho_revision"."timestamp",
+            #                "wikiwho_revision"."id" AS "rev_id"
+            #         FROM "wikiwho_revision"
+            #         WHERE "wikiwho_revision"."article_id" = 662
+            #         ORDER BY "wikiwho_revision"."timestamp" ASC
             # """
             # json_data["revisions"] = list(self.revisions.order_by(*order_fields).annotate(**annotate_dict).values_list(*values_list, flat=True))
             return json_data
@@ -190,11 +188,9 @@ class Revision(BaseModel):
             annotate_dict['str'] = F('value')
             values_list.append('str')
         if 'rev_id' in parameters:
-            annotate_dict['rev_id'] = F('id' if ids else 'label_revision__id')
+            annotate_dict['rev_id'] = F('id' if ids else 'label_revision_id')
             values_list.append('rev_id')
         if 'editor' in parameters:
-            if not ids:
-                annotate_dict['editor'] = F('label_revision__editor')
             values_list.append('editor')
         if 'token_id' in parameters:
             if minimal:
@@ -237,77 +233,17 @@ class Revision(BaseModel):
                      'sentences__position')
         return tokens
 
-    def tokens_custom(self, values_list, ordered=True, explain=False):
-        select = []
-        columns = []
-        extra_inner = []
-        if 'token_id' in values_list:
-            select .append('"wikiwho_token"."token_id"')
-            columns.append('token_id')
-        elif 't_id' in values_list:
-            select .append('"wikiwho_token"."token_id"')
-            columns.append('t_id')
-        if 'inbound' in values_list:
-            select .append('"wikiwho_token"."inbound"')
-            columns.append('inbound')
-        elif 'in' in values_list:
-            select .append('"wikiwho_token"."inbound"')
-            columns.append('in')
-        if 'outbound' in values_list:
-            select .append('"wikiwho_token"."outbound"')
-            columns.append('outbound')
-        elif 'out' in values_list:
-            select .append('"wikiwho_token"."outbound"')
-            columns.append('out')
-        if 'rev_id' in values_list:
-            select .append('"wikiwho_token"."label_revision_id"')
-            columns.append('rev_id')
-        if 'str' in values_list:
-            select .append('"wikiwho_token"."value"')
-            columns.append('str')
-        if 'editor' in values_list:
-            select .append('"wikiwho_revision"."editor"')
-            columns.append('editor')
-            extra_inner.append('INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")')
-
-        if ordered:
-            order = """
-                    \nORDER BY "wikiwho_revisionparagraph"."position" ASC,
-                    "wikiwho_paragraphsentence"."position" ASC,
-                    "wikiwho_sentencetoken"."position" ASC
-                    """
-        else:
-            order = ''
-
-        query = """
-                {}SELECT {}
-                FROM "wikiwho_token"
-                INNER JOIN "wikiwho_sentencetoken" ON ("wikiwho_token"."id" = "wikiwho_sentencetoken"."token_id")
-                INNER JOIN "wikiwho_paragraphsentence" ON ("wikiwho_sentencetoken"."sentence_id" = "wikiwho_paragraphsentence"."sentence_id")
-                INNER JOIN "wikiwho_revisionparagraph" ON ("wikiwho_paragraphsentence"."paragraph_id" = "wikiwho_revisionparagraph"."paragraph_id")
-                {}WHERE "wikiwho_revisionparagraph"."revision_id" = %s{}
-                 """.format('EXPLAIN ' if explain else '',
-                            ',\n'.join(select),
-                            '\n'.join(extra_inner),
-                            order)
-        with connection.cursor() as cursor:
-            cursor.execute(query, [self.id])
-            if explain:
-                return cursor.fetchall()
-            tokens = [
-                dict(zip(columns, row))
-                for row in cursor.fetchall()
-                ]
-        return tokens
+    def tokens_custom(self, values_list, ordered=True, explain=False, return_dict=True):
+        return tokens_custom(self.id, values_list, ordered, explain, return_dict)
 
     def deleted_tokens(self, threshold, ordered=False):
         if threshold > 0:
-            filter_ = {'label_revision__article_id': self.article_id,
+            filter_ = {'article_id': self.article_id,
                        'outbound__len__gt': threshold}
         else:
             # threshold as 0.
-            filter_ = {'label_revision__article_id': self.article_id}
-        order_fields = ['label_revision__timestamp', 'token_id'] if ordered else []
+            filter_ = {'article_id': self.article_id}
+        order_fields = ['timestamp', 'token_id'] if ordered else []
         deleted_tokens = Token.objects.\
             filter(**filter_).\
             exclude(last_used=self.id).\
@@ -325,20 +261,19 @@ class Revision(BaseModel):
                 # SQL query:
                 # """
                 # EXPLAIN SELECT "wikiwho_token"."token_id",
-                #       "wikiwho_token"."inbound",
-                #       "wikiwho_token"."outbound",
-                #       "wikiwho_token"."label_revision_id",
-                #       "wikiwho_token"."value",
-                #       "wikiwho_revision"."editor"
-                # FROM "wikiwho_token"
-                # INNER JOIN "wikiwho_sentencetoken" ON ("wikiwho_token"."id" = "wikiwho_sentencetoken"."token_id")
-                # INNER JOIN "wikiwho_paragraphsentence" ON ("wikiwho_sentencetoken"."sentence_id" = "wikiwho_paragraphsentence"."sentence_id")
-                # INNER JOIN "wikiwho_revisionparagraph" ON ("wikiwho_paragraphsentence"."paragraph_id" = "wikiwho_revisionparagraph"."paragraph_id")
-                # INNER JOIN "wikiwho_revision" ON ("wikiwho_token"."label_revision_id" = "wikiwho_revision"."id")
-                # WHERE "wikiwho_revisionparagraph"."revision_id" = 19137
-                # ORDER BY "wikiwho_revisionparagraph"."position" ASC,
-                #         "wikiwho_paragraphsentence"."position" ASC,
-                #         "wikiwho_sentencetoken"."position" ASC
+                #                "wikiwho_token"."inbound",
+                #                "wikiwho_token"."outbound",
+                #                "wikiwho_token"."label_revision_id",
+                #                "wikiwho_token"."value",
+                #                "wikiwho_token"."editor"
+                #         FROM "wikiwho_token"
+                #         INNER JOIN "wikiwho_sentencetoken" ON ("wikiwho_token"."id" = "wikiwho_sentencetoken"."token_id")
+                #         INNER JOIN "wikiwho_paragraphsentence" ON ("wikiwho_sentencetoken"."sentence_id" = "wikiwho_paragraphsentence"."sentence_id")
+                #         INNER JOIN "wikiwho_revisionparagraph" ON ("wikiwho_paragraphsentence"."paragraph_id" = "wikiwho_revisionparagraph"."paragraph_id")
+                #         WHERE "wikiwho_revisionparagraph"."revision_id" = 19137
+                #         ORDER BY "wikiwho_revisionparagraph"."position" ASC,
+                #                  "wikiwho_paragraphsentence"."position" ASC,
+                #                  "wikiwho_sentencetoken"."position" ASC
                 # """
             else:
                 tokens = self.tokens.annotate(**annotate_dict).values(*values_list)
@@ -474,6 +409,10 @@ class Token(BaseModel):
     label_revision = models.ForeignKey(Revision, blank=False, related_name='introduced_tokens')
     # label_revision_id = models.IntegerField(blank=False, null=False)
     token_id = models.IntegerField(blank=False)  # sequential id in article, unique per article
+    article_id = models.IntegerField(blank=False, null=False)
+    editor = models.CharField(max_length=87, default='', help_text='Editor of label revision')  # max_length='0|' + 85
+    timestamp = models.DateTimeField(blank=True, null=True, help_text='Timestamp of label revision')
+    conflict_score = models.IntegerField(null=True)
 
     # class Meta:
     #     ordering = ['sentences__sentence__paragraphs__paragraph__revisions__revision__timestamp',
@@ -487,14 +426,6 @@ class Token(BaseModel):
     @property
     def text(self):
         return self.value
-
-    @property
-    def article(self):
-        return self.label_revision.article
-
-    @property
-    def article_id(self):
-        return self.label_revision.article.id
 
 """
 class Editor(BaseModel):
@@ -561,3 +492,45 @@ def get_cached_sentences_data(paragraph_id):
 @lru_cache(maxsize=None, typed=False)
 def get_cached_tokens_data(sentence_id):
     return get_tokens_data(sentence_id)
+
+
+class LastRevision(BaseModel):
+    """
+    Table of last revision per month-year per article
+    """
+    id = models.IntegerField(primary_key=True, blank=False, null=False, editable=False, help_text='Wikipedia revision id')
+    timestamp = models.DateTimeField(blank=True, null=True, help_text='Timestamp of this last revision')
+    # year = models.IntegerField(help_text='Year of this last revision')
+    # month = models.IntegerField(help_text='Month of this last revision')
+    article_id = models.IntegerField(blank=False, null=False)
+    editor = models.CharField(max_length=87, blank=False, null=False, help_text='Editor of this last revision')  # max_length='0|' + 85
+
+
+class SurvivedOriginalAdds(BaseModel):
+    """
+    Table of survived original tokens per month-year per editor per article
+    CREATE TABLE "wikiwho_survivedoriginaladds"
+    (
+      year integer,
+      month integer,
+      article_id integer,
+      editor character varying(87),
+      survived_org_adds integer,
+      survived_org_adds_all integer
+    )
+    WITH (
+      OIDS=FALSE
+    );
+    ALTER TABLE public.wikiwho_survivedoriginaladds
+      OWNER TO wikiwho;
+    """
+    year = models.IntegerField()
+    month = models.IntegerField()
+    article_id = models.IntegerField(blank=False, null=False)
+    editor = models.CharField(max_length=87, blank=False, null=False)  # max_length='0|' + 85
+    survived_org_adds = models.IntegerField(blank=False, null=False,
+                                            help_text='# survived org adds of this editor in this article '
+                                                      'which are org added in this month.')
+    survived_org_adds_all = models.IntegerField(blank=False, null=False,
+                                                help_text='# survived org adds of this editor in this article '
+                                                          'which are org added before and in this month.')
