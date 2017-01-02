@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-python manage.py generate_stats -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats' -m 4 -l 10
+python manage.py generate_stats -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats' -m 4 -l 5 -s '1-2001' -e '1-2002'
+
+# Needed indexes:
+CREATE INDEX wikiwho_lastrevision_id ON wikiwho_lastrevision USING btree ("timestamp");
+CREATE INDEX wikiwho_lastrevision_id ON wikiwho_lastrevision USING btree ("article_id");
 """
 from os import mkdir
 from os.path import exists
@@ -9,13 +13,15 @@ import logging
 from time import strftime
 import sys
 import csv
+import datetime
+import pytz
 
 from concurrent.futures import ProcessPoolExecutor, as_completed, ThreadPoolExecutor
 
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-from wikiwho.models import LastRevision
+from wikiwho.models import LastRevision, Article
 from wikiwho.utils_db import tokens_custom
 
 
@@ -83,16 +89,17 @@ class Command(BaseCommand):
     help = 'Generates stats for survived original adds per month-year per editor per article'
 
     def add_arguments(self, parser):
-        parser.add_argument('-f', '--folder', required=True,
-                            help='Folder where to write logs and csv.')
+        parser.add_argument('-f', '--folder', required=True, help='Folder where to write logs and csv.')
         parser.add_argument('-m', '--max_workers', type=int, required=True,
                             help='Number of processors/threads to run parallel. '
                                  'Default is # compressed files in given folder path.')
         parser.add_argument('-ppe', '--process_pool_executor', action='store_true', default=False, required=False,
                             help='Use ProcessPoolExecutor, default is ThreadPoolExecutor')
+        parser.add_argument('-s', '--my_start', required=False, help='Month-year start. Default: 1-2001.')
+        parser.add_argument('-e', '--my_end', required=False, help='Month-year end. Default: 11-2016.')
         parser.add_argument('-l', '--limit', type=int, required=False,
-                            help='Queryset limit. Default is all.')
-        parser.add_argument('-o', '--offset', type=int, required=False, help='Queryset offset. Default is 0.')
+                            help='Article queryset limit. Default is all.')
+        parser.add_argument('-o', '--offset', type=int, required=False, help='Article queryset offset. Default is 0.')
 
     def handle(self, *args, **options):
         folder = options['folder']
@@ -117,70 +124,97 @@ class Command(BaseCommand):
         file_handler.setFormatter(formatter)
         logger.handlers = [file_handler]
 
+        m_start_default = 1
+        y_start_default = 2001
+        m_end_default = 11
+        y_end_default = 2016
+        my_start = options['my_start'] or '{}-{}'.format(m_start_default, y_start_default)
+        m_start, y_start = map(int, my_start.split('-'))
+        my_end = options['my_end'] or '{}-{}'.format(m_end_default, y_end_default)
+        m_end, y_end = map(int, my_end.split('-'))
+        print(m_start, y_start, m_end, y_end)
         max_workers = options['max_workers']
         print(max_workers)
         print('Start: O adds stats at {}'.format(strftime("%H:%M:%S %d-%m-%Y")))
         # calculate offset, limit and total number of last rev ids to be processed
         limit = options['limit']
         offset = options['offset'] or 0
-        last_revs_data = LastRevision.objects.values_list('id', 'timestamp', 'article_id')
+        articles = Article.objects.values_list('id', flat=True)
         if limit and offset:
-            last_revs_data = last_revs_data[offset:limit]
-            last_revs_all = limit - offset
+            articles = articles[offset:limit]
+            articles_all = limit - offset
         elif limit:
-            last_revs_data = last_revs_data[:limit]
-            last_revs_all = limit - 0
+            articles = articles[:limit]
+            articles_all = limit - 0
         elif offset:
-            last_revs_data = last_revs_data[offset:]
-            last_revs_all = LastRevision.objects.count() - offset
+            articles = articles[offset:]
+            articles_all = Article.objects.count() - offset
         else:
-            last_revs_all = LastRevision.objects.count()
-        last_revs_data = last_revs_data.iterator()
-        last_revs_left = last_revs_all
+            articles_all = Article.objects.count()
+        articles = articles.iterator()
+        articles_all *= len(list(month_year_iter(m_start, y_start, m_end, y_end)))
+        articles_left = articles_all
+        articles_sent_left = articles_all
 
-        # create empty persistence_data dict
+        # create empty persistence_data dict for whole history
         persistence_data = {}
-        for m_y_added in month_year_iter(1, 2001, 11, 2016):
+        for m_y_added in month_year_iter(m_start_default, y_start_default, m_end_default, y_end_default):
             persistence_data[m_y_added] = {}
-            for m_y_survived in month_year_iter(1, 2001, 11, 2016):
+            for m_y_survived in month_year_iter(m_start_default, y_start_default, m_end_default, y_end_default):
                 persistence_data[m_y_added][m_y_survived] = 0
 
         # calculate survived original adds and persistence table data concurrently
         with Executor(max_workers=max_workers) as executor:
             jobs = {}
-            while last_revs_left:
-                for last_rev_id, timestamps, article_id in last_revs_data:
-                    month_survived = timestamps.date().month
-                    year_survived = timestamps.date().year
-                    # print(last_rev_data)
-                    job = executor.submit(generate_stats, last_rev_id, month_survived, year_survived, article_id)
-                    jobs[job] = '{}-{}-{}-{}'.format(article_id, last_rev_id, month_survived, year_survived)
+            article_id = articles.__next__()
+            my_iter = month_year_iter(m_start, y_start, m_end, y_end)
+            while articles_left:
+                # print(article_id)
+                first_last_rev_ts = LastRevision.objects.filter(article_id=article_id).\
+                    values_list('timestamp', flat=True).order_by('timestamp').first()
+                for month_year in my_iter:
+                    articles_sent_left -= 1
+                    m, y = map(int, month_year.split('-'))  # month_survived, year_survived
+                    d = datetime.datetime(y+1 if m == 12 else y, 1 if m == 12 else m+1, 1, tzinfo=pytz.timezone('UTC'))
+                    if first_last_rev_ts > d:
+                        continue
+                    # last_rev_id, timestamp = Revision.objects.filter(article_id=article_id, timestamp__lt=d).\
+                    last_rev_id = LastRevision.objects.filter(article_id=article_id, timestamp__lt=d).\
+                        values_list('id', flat=True).\
+                        order_by('timestamp').\
+                        last()
+                    job = executor.submit(generate_stats, last_rev_id, m, y, article_id)
+                    jobs[job] = '{}-{}-{}-{}'.format(article_id, last_rev_id, m, y)
                     if len(jobs) == max_workers:  # limit # jobs with max_workers
                         break
 
-                for job in as_completed(jobs):
-                    last_revs_left -= 1
-                    article_rev_id = jobs[job]
-                    try:
-                        data = job.result()
-                        # add data into persistence_data dict
-                        month_year_survived = '-'.join(article_rev_id.split('-')[2:])
-                        for month_year_added, survived_o_adds in data.items():
-                            persistence_data[month_year_added][month_year_survived] += survived_o_adds
-                    except Exception as exc:
-                        logger.exception(article_rev_id)
+                if len(jobs) < max_workers and articles_sent_left:
+                    article_id = articles.__next__()
+                    my_iter = month_year_iter(m_start, y_start, m_end, y_end)
+                else:
+                    for job in as_completed(jobs):
+                        articles_left -= 1
+                        article_rev_id = jobs[job]
+                        try:
+                            data = job.result()
+                            # add data into persistence_data dict
+                            month_year_survived = '-'.join(article_rev_id.split('-')[2:])
+                            for month_year_added, survived_o_adds in data.items():
+                                persistence_data[month_year_added][month_year_survived] += survived_o_adds
+                        except Exception as exc:
+                            logger.exception(article_rev_id)
 
-                    # progress percentage
-                    sys.stdout.write('\r{:.3f}%'.format(((last_revs_all - last_revs_left) * 100) / last_revs_all))
-                    del jobs[job]
-                    break  # to add a new job, if there is any
+                        # progress percentage
+                        sys.stdout.write('\r{:.3f}%'.format(((articles_all - articles_left) * 100) / articles_all))
+                        del jobs[job]
+                        break  # to add a new job, if there is any
 
         # print(persistence_data)
         # write persistence_data into csv
-        with open('{}/persistence_data_{}_{}.csv'.format(folder, offset, limit or last_revs_all), 'w') as f:
-            w = csv.DictWriter(f, ['month_added'] + list(month_year_iter(1, 2001, 11, 2016)))
+        with open('{}/persistence_data_{}_{}.csv'.format(folder, offset, limit or articles_all), 'w') as f:
+            w = csv.DictWriter(f, ['month_added'] + list(month_year_iter(m_start_default, y_start_default, m_end_default, y_end_default)))
             w.writeheader()
-            for m_y_added in month_year_iter(1, 2001, 11, 2016):
+            for m_y_added in month_year_iter(m_start, y_start, m_end, y_end):
                 persistence_data[m_y_added].update({'month_added': m_y_added})
                 w.writerow(persistence_data[m_y_added])
         print('\nDone: O adds stats at {}'.format(strftime("%H:%M:%S %d-%m-%Y")))
