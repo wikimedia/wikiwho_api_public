@@ -5,6 +5,7 @@ Created on Feb 20, 2013
 @author: maribelacosta
 @author: Andriy Rodchenko
 """
+# TODO udpate Structures according to Models.
 
 
 class Word(object):
@@ -13,6 +14,8 @@ class Word(object):
     """
     def __init__(self):
         self.id = ''  # uuid.uuid3(uuid.NAMESPACE_X500, '{}{}{}'.format(article_id, token_id))
+        self.editor = ''  # id if id != 0 else '0|{}'.format(name)
+        # TODO remove author_id and author_name
         self.author_id = 0  # Identificator of the author of the word.
         self.author_name = ''  # Username of the author of the word.
         self.revision = 0  # Revision where the word was included.
@@ -104,6 +107,8 @@ class Revision(object):
     def __init__(self):
         self.id = 0  # Fake sequential id. Starts in 0.
         self.wikipedia_id = 0  # Wikipedia revision id.
+        self.editor = ''  # id if id != 0 else '0|{}'.format(name)
+        # TODO remove contributor_id and contributor_name
         self.contributor_id = 0  # Id of the contributor who performed the revision.
         self.contributor_name = ''  # Name of the contributor who performed the revision.
         # self.contributor_ip = ''  # IP of the contributor who performed the revision.

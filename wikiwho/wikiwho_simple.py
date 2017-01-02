@@ -149,6 +149,7 @@ class Wikiwho:
                 # Some revisions don't have contributor.
                 if revision.user:
                     self.revision_curr.contributor_name = revision.user.text or ''  # Not Available
+                    # TODO test here again
                     if revision.user.id is None and self.revision_curr.contributor_name:
                         self.revision_curr.contributor_id = 0
                     elif revision.user.id == 0:
@@ -158,6 +159,9 @@ class Wikiwho:
                 else:
                     self.revision_curr.contributor_name = ''
                     self.revision_curr.contributor_id = ''
+                editor = self.revision_curr.contributor_id
+                editor = str(editor) if editor != 0 else '0|{}'.format(self.revision_curr.contributor_name)
+                self.revision_curr.editor = editor
 
                 # Content within the revision.
                 # Software should only work with Unicode strings internally, converting to a particular encoding on
@@ -182,11 +186,9 @@ class Wikiwho:
                 else:
                     # Add the current revision with all the information.
                     self.revisions.update({self.revision_curr.wikipedia_id: self.revision_curr})
-                    editor = self.revision_curr.contributor_id
-                    editor = str(editor) if editor != 0 else '0|{}'.format(self.revision_curr.contributor_name)
                     r = Revision_(id=self.revision_curr.wikipedia_id,
                                   article_id=self.page_id,
-                                  editor=editor,
+                                  editor=self.revision_curr.editor,
                                   timestamp=parse_datetime(self.revision_curr.time),
                                   length=self.revision_curr.length)
                     self.revisions_to_save.append(r)
@@ -251,6 +253,9 @@ class Wikiwho:
                 # Some revisions don't have contributor.
                 self.revision_curr.contributor_id = revision.get('userid', '')  # Not Available
                 self.revision_curr.contributor_name = revision.get('user', '')
+                editor = self.revision_curr.contributor_id
+                editor = str(editor) if editor != 0 else '0|{}'.format(self.revision_curr.contributor_name)
+                self.revision_curr.editor = editor
 
                 # Content within the revision.
                 # Software should only work with Unicode strings internally, converting to a particular encoding on
@@ -278,11 +283,9 @@ class Wikiwho:
                 else:
                     # Add the current revision with all the information.
                     self.revisions.update({self.revision_curr.wikipedia_id: self.revision_curr})
-                    editor = self.revision_curr.contributor_id
-                    editor = str(editor) if editor != 0 else '0|{}'.format(self.revision_curr.contributor_name)
                     r = Revision_(id=self.revision_curr.wikipedia_id,
                                   article_id=self.page_id,
-                                  editor=editor,
+                                  editor=self.revision_curr.editor,
                                   timestamp=parse_datetime(self.revision_curr.time),
                                   length=self.revision_curr.length)
                     self.revisions_to_save.append(r)
@@ -699,6 +702,7 @@ class Wikiwho:
         return unmatched_sentences_curr, unmatched_sentences_prev, matched_sentences_prev, total_sentences
 
     def analyse_words_in_sentences(self, unmatched_sentences_curr, unmatched_sentences_prev, possible_vandalism):
+        # TODO conflict_score. save into both pickle and db
         matched_words_prev = []
         unmatched_words_prev = []
 
@@ -749,7 +753,11 @@ class Wikiwho:
                               token_id=word_curr.token_id,
                               last_used=word_curr.last_used,
                               inbound=word_curr.inbound,
-                              outbound=word_curr.outbound)
+                              outbound=word_curr.outbound,
+                              article_id=self.page_id,
+                              editor=self.revision_curr.editor,
+                              timestamp=parse_datetime(self.revision_curr.time)
+                              )
                     self.tokens_curr_to_save.append(t)
                     st = SentenceToken(sentence_id=sentence_curr.id,
                                        token_id=word_curr.id,
@@ -823,7 +831,11 @@ class Wikiwho:
                                       token_id=word_curr.token_id,
                                       last_used=word_curr.last_used,
                                       inbound=word_curr.inbound,
-                                      outbound=word_curr.outbound)
+                                      outbound=word_curr.outbound,
+                                      article_id=self.page_id,
+                                      editor=self.revision_curr.editor,
+                                      timestamp=parse_datetime(self.revision_curr.time),
+                                      )
                             self.tokens_curr_to_save.append(t)
                             st = SentenceToken(sentence_id=sentence_curr.id,
                                                token_id=word_curr.id,
@@ -854,7 +866,11 @@ class Wikiwho:
                               token_id=word_curr.token_id,
                               last_used=word_curr.last_used,
                               inbound=word_curr.inbound,
-                              outbound=word_curr.outbound)
+                              outbound=word_curr.outbound,
+                              article_id=self.page_id,
+                              editor=self.revision_curr.editor,
+                              timestamp=parse_datetime(self.revision_curr.time)
+                              )
                     self.tokens_curr_to_save.append(t)
                     st = SentenceToken(sentence_id=sentence_curr.id,
                                        token_id=word_curr.id,
