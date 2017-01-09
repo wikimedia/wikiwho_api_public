@@ -31,7 +31,6 @@ psycopg2
 
 #mediawiki-utilities
 mwxml
-
-# pathos
+mwreverts
 
 # django-postgres-copy
