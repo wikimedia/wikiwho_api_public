@@ -15,5 +15,6 @@ test_jsons_without_fixed_deepcopy
 assets/images/fav/
 tmp_pickles/
 static/
+notebooks/
 Wikiwho_simple.py
 structuresML
