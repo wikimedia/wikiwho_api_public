@@ -45,6 +45,7 @@ def getSHA(article_revs, dumps_folder, dumps_articles_dict, max_workers):
     files_all = files_left
     if max_workers > files_all:
         max_workers = files_all
+    print('max workers:', max_workers)
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         jobs = {}
         while files_left:
@@ -213,7 +214,7 @@ def main():
         # print(checksum)
         print('\nlen(article_revs)', len(article_revs))
         print('len(dumps_articles_dict)', len(dumps_articles_dict))
-        with open(output_folder + '{}_checksum.json'.format(input_file_name), 'w') as f:
+        with open(output_folder + '/{}_checksum.json'.format(input_file_name), 'w') as f:
             # json.dump(checksum, f, ensure_ascii=False, indent=4, separators=(',', ': '), sort_keys=True)
             json.dump(checksum, f, ensure_ascii=False)
 
