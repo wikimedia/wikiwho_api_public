@@ -64,6 +64,7 @@ def split_tokens(base_path, current_content_file, partition_size, total_size):
 
 
 def split_revisions(base_path, revisions_file):
+    # tokens_folder = '{}/{}/current_tokens'.format(base_path, 'partitions')
     tokens_folder = '{}/{}/tokens'.format(base_path, 'partitions')
     if not exists(tokens_folder):
         raise Exception('Tokens folder does not exist: {}'.format(tokens_folder))
@@ -71,11 +72,15 @@ def split_revisions(base_path, revisions_file):
     if not exists(output_folder):
         mkdir(output_folder)
 
-    partition_limits = []
+    token_parts = {}
     for token_partition_file in listdir(tokens_folder):
         if not token_partition_file.endswith('.csv'):
             continue
-        ids = token_partition_file.split('-')[-2:]
+        token_parts[token_partition_file.split('-')[2][4:]] = token_partition_file
+
+    partition_limits = []
+    for k in sorted(token_parts, key=int):
+        ids = token_parts[k].split('-')[-2:]
         first_id = int(ids[0])
         last_id = int(ids[1].split('.')[0])
         partition_limits.append([first_id, last_id])
@@ -90,6 +95,9 @@ def split_revisions(base_path, revisions_file):
         for row in reader:
             if 'article_id' in row:
                 continue
+            # skip problematic article id 17387412.
+            # if int(row[0]) == 17387412:
+            #     continue
             row[-1] = '0' if row[-1] == '\\N' else row[-1]
             if article_id is None:
                 first_article_id_in_part = int(row[0])
@@ -120,11 +128,15 @@ def split_articles(base_path, articles_file):
     if not exists(output_folder):
         mkdir(output_folder)
 
-    partition_limits = []
+    token_parts = {}
     for token_partition_file in listdir(tokens_folder):
         if not token_partition_file.endswith('.csv'):
             continue
-        ids = token_partition_file.split('-')[-2:]
+        token_parts[token_partition_file.split('-')[2][4:]] = token_partition_file
+
+    partition_limits = []
+    for k in sorted(token_parts, key=int):
+        ids = token_parts[k].split('-')[-2:]
         first_id = int(ids[0])
         last_id = int(ids[1].split('.')[0])
         partition_limits.append([first_id, last_id])
@@ -143,6 +155,10 @@ def split_articles(base_path, articles_file):
             row = int(row)
             if article_id is None:
                 first_article_id_in_part = row
+            # skip problematic article id 17387412.
+            # if row == 17387412:
+            #     print([first_article_id_in_part, row])
+            #     continue
             if article_id != row and [first_article_id_in_part, article_id] in partition_limits:
                 partition_limits.remove([first_article_id_in_part, article_id])
                 write_into_partition_file(first_article_id_in_part, article_id,
