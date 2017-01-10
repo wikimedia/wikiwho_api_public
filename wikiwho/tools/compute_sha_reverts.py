@@ -1,12 +1,12 @@
-'''
-Created on 29.12.2016
+"""
+python wikiwho/tools/compute_sha_reverts.py -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/sha_reverts' -i '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/partitions/revisions' -d '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/server' -m 4
+"""
 
-@author: maribelacosta
-'''
 import json
 import csv
 from os import listdir, mkdir
 from os.path import isfile, exists
+from time import strftime
 from mwxml import Dump
 from mwtypes.files import reader
 import mwreverts
@@ -14,6 +14,7 @@ import pprint
 from concurrent.futures import ProcessPoolExecutor, as_completed  # , ThreadPoolExecutor
 import sys
 import argparse
+import logging
 
 
 def get_sha_task(article_revs, dumps_folder, dump_file, article_ids):
@@ -38,14 +39,17 @@ def get_sha_task(article_revs, dumps_folder, dump_file, article_ids):
     return checksum_revisions
 
 
-def getSHA(article_revs, dumps_folder, dumps_articles_dict, max_workers):
+def get_sha_parallel(article_revs, dumps_folder, dumps_articles_dict, max_workers):
+    """
+    To process a single input file concurrently.
+    """
+    # TODO FIXME, update this method.
     checksum_revisions = {}
     dump_files_iter = iter(list(dumps_articles_dict.keys()))
     files_left = len(dumps_articles_dict)
     files_all = files_left
     if max_workers > files_all:
         max_workers = files_all
-    print('max workers:', max_workers)
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         jobs = {}
         while files_left:
@@ -70,6 +74,23 @@ def getSHA(article_revs, dumps_folder, dumps_articles_dict, max_workers):
                 sys.stdout.write('\r{}-{:.3f}%'.format(files_left, ((files_all - files_left) * 100) / files_all))
                 del jobs[job]
                 break  # to add a new job, if there is any
+    return checksum_revisions
+
+
+def get_sha_sequential(article_revs, dumps_folder, dumps_articles_dict):
+    """
+    To process multi input files concurrently and each file sequentially.
+    """
+    checksum_revisions = {}
+    for dump_file, article_ids in dumps_articles_dict.items():
+        sub_article_revs = {}
+        for i in article_ids:
+            sub_article_revs.update({i: article_revs[i]})
+            # del article_revs[i]
+        assert len(sub_article_revs) > 0
+        data = get_sha_task(sub_article_revs, dumps_folder, dump_file, article_ids)
+        checksum_revisions.update(data)
+        # del dumps_articles_dict[dump_file]
     return checksum_revisions
 
 
@@ -139,11 +160,13 @@ def getRevisions(revision_file):
     article_revs = {}
     metadata = {}
 
-    print("Load article id and load revision meta-data.")
+    # print("Load article id and load revision meta-data.")
     with open(revision_file, newline='') as f:
-        reader = csv.reader(f, delimiter='\t')
+        reader = csv.reader(f, delimiter=',')
         for line in reader:
-            # article_id, revision_id, editor, timestamp, ?
+            # article_id, revision_id, editor, timestamp, oadds
+            if 'article_id' in line:
+                continue
             article_id = int(line[0])
             revision_id = int(line[1])
             if article_id in article_revs:
@@ -162,6 +185,48 @@ def group_articles(dumps_articles_dict, article_revs, dumps_dict):
         else:
             dumps_articles_dict[article_dump_file] = [article_id]
     return dumps_articles_dict
+
+
+def compute_sha_reverts(input_file, input_file_name, output_folder, dumps_folder, dumps_dict,
+                        max_workers=None, log_folder=None):
+    logger = logging.getLogger(input_file_name[:-4])
+    file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
+                                                                input_file_name,
+                                                                strftime("%Y-%m-%d-%H:%M:%S")))
+    file_handler.setLevel(logging.ERROR)
+    format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'
+    formatter = logging.Formatter(format_)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    try:
+        # print("Getting revisions ...")
+        article_revs, metadata = getRevisions(input_file)
+        # print(article_revs)
+        # print('len article_revs', len(article_revs))
+
+        dumps_articles_dict = {}
+        group_articles(dumps_articles_dict, article_revs, dumps_dict)
+        # pprint.pprint(dumps_articles_dict)
+        # print(len(dumps_articles_dict))
+        if len(dumps_articles_dict) == 1 and None in dumps_articles_dict:
+            raise Exception('None of the articles found in dumps')
+
+        # print("Getting SHA values ...")
+        # checksum = get_sha_parallel(article_revs, dumps_folder, dumps_articles_dict, max_workers)
+        checksum = get_sha_sequential(article_revs, dumps_folder, dumps_articles_dict)
+        # print(checksum)
+        # print('\nlen(article_revs)', len(article_revs))
+        # print('len(dumps_articles_dict):', len(dumps_articles_dict))
+        with open(output_folder + '/{}_checksum.json'.format(input_file_name), 'w') as f:
+            # json.dump(checksum, f, ensure_ascii=False, indent=4, separators=(',', ': '), sort_keys=True)
+            json.dump(checksum, f, ensure_ascii=False)
+
+        # print("Computing SHA reverts")
+        fout = '{}/{}_reverts-sha-out.csv'.format(output_folder, input_file_name)
+        computeSHAReverts(checksum, metadata, fout)
+    except Exception as e:
+        logger.exception(input_file_name)
+    return True
 
 
 def get_args():
@@ -190,40 +255,67 @@ def main():
     if not exists(output_folder):
         mkdir(output_folder)
 
+    print("Getting revision files ...")
+    dumps_dict = getRevisionFiles(dumps_folder)  # {(first_article_id, last_article_id): dumps_path, ...}
+    # pprint.pprint(dumps_dict)
+
+    # for input_file_name in listdir(input_folder):
+    #     input_file = '{}/{}'.format(input_folder, input_file_name)
+    #     if not isfile(input_file):
+    #         continue
+    #     print('Start:', input_file, strftime("%Y-%m-%d-%H:%M:%S"))
+    #     compute_sha_reverts(input_file, input_file_name, output_folder, dumps_folder, dumps_dict, max_workers)
+    #     print('Done:', input_file, strftime("%Y-%m-%d-%H:%M:%S"))
+
+
+    input_files_dict = {}
     for input_file_name in listdir(input_folder):
         input_file = '{}/{}'.format(input_folder, input_file_name)
-        print('Start:', input_file)
-        print("Getting revision files ...")
-        dumps_dict = getRevisionFiles(dumps_folder)  # {(first_article_id, last_article_id): dumps_path, ...}
-        # pprint.pprint(dumps_dict)
+        input_files_dict[input_file_name.split('-')[2][4:]] = [input_file, input_file_name]
 
-        print("Getting revisions ...")
-        article_revs, metadata = getRevisions(input_file)
-        # print(article_revs)
-        print('len article_revs', len(article_revs))
+    input_files = []
+    for k in sorted(input_files_dict, key=int):
+        input_files.append(input_files_dict[k])
 
-        dumps_articles_dict = {}
-        group_articles(dumps_articles_dict, article_revs, dumps_dict)
-        # pprint.pprint(dumps_articles_dict)
-        print(len(dumps_articles_dict))
-        if len(dumps_articles_dict) == 1 and None in dumps_articles_dict:
-            raise Exception('None of the articles found in dumps')
+    log_folder = '{}/{}'.format(output_folder, 'logs')
+    if not exists(log_folder):
+        mkdir(log_folder)
+    logger = logging.getLogger('future_log')
+    file_handler = logging.FileHandler('{}/sha_reverts_future_at_{}.log'.format(log_folder,
+                                                                                strftime("%Y-%m-%d-%H:%M:%S")))
+    file_handler.setLevel(logging.ERROR)
+    format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'
+    formatter = logging.Formatter(format_)
+    file_handler.setFormatter(formatter)
+    logger.handlers = [file_handler]
 
-        print("Getting SHA values ...")
-        checksum = getSHA(article_revs, dumps_folder, dumps_articles_dict, max_workers)
-        # print(checksum)
-        print('\nlen(article_revs)', len(article_revs))
-        print('len(dumps_articles_dict)', len(dumps_articles_dict))
-        with open(output_folder + '/{}_checksum.json'.format(input_file_name), 'w') as f:
-            # json.dump(checksum, f, ensure_ascii=False, indent=4, separators=(',', ': '), sort_keys=True)
-            json.dump(checksum, f, ensure_ascii=False)
+    print(max_workers)
+    print("Start: ", strftime("%Y-%m-%d-%H:%M:%S"))
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        jobs = {}
+        files_left = len(input_files)
+        files_all = len(input_files)
+        files_iter = iter(input_files)
+        while files_left:
+            for input_file, input_file_name in files_iter:
+                job = executor.submit(compute_sha_reverts, input_file, input_file_name, output_folder,
+                                      dumps_folder, dumps_dict, max_workers, log_folder)
+                jobs[job] = input_file_name
+                if len(jobs) == max_workers:  # limit # jobs with max_workers
+                    break
 
-        print("Computing SHA reverts")
-        fout = '{}/{}_reverts-sha-out.csv'.format(output_folder, input_file_name)
-        computeSHAReverts(checksum, metadata, fout)
-        print('Done:', input_file)
+            for job in as_completed(jobs):
+                files_left -= 1
+                input_file_name_ = jobs[job]
+                try:
+                    data = job.result()
+                except Exception as exc:
+                    logger.exception(input_file_name_)
 
-    print("Done!")
+                del jobs[job]
+                sys.stdout.write('\r{}-{:.3f}%'.format(files_left, ((files_all - files_left) * 100) / files_all))
+                break  # to add a new job, if there is any
+    print("Done: ", strftime("%Y-%m-%d-%H:%M:%S"))
 
 
 if __name__ == '__main__':
