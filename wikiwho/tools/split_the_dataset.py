@@ -28,11 +28,11 @@ def write_into_partition_file(first_article_id_in_part, last_article_id_in_part,
     return True
 
 
-def split_tokens(base_path, current_content_file, partition_size, total_size):
+def split_tokens(base_path, current_content_file, partition_size, total_size, output_name='currentcontent'):
     output_folder = '{}/{}'.format(base_path, 'partitions')
     if not exists(output_folder):
         mkdir(output_folder)
-    output_folder = '{}/tokens'.format(output_folder)
+    output_folder = '{}/{}'.format(output_folder, 'current_tokens' if output_name == 'currentcontent' else output_name)
     if not exists(output_folder):
         mkdir(output_folder)
     total_files = int(total_size/partition_size)
@@ -50,7 +50,7 @@ def split_tokens(base_path, current_content_file, partition_size, total_size):
             if i >= (partition_size * output_counter) and article_id != int(row[0]):
                 write_into_partition_file(first_article_id_in_part, article_id,
                                           output_folder, header, partition_content,
-                                          'currentcontent', output_counter, total_files)
+                                          output_name, output_counter, total_files)
                 output_counter += 1
                 partition_content = [row]
                 first_article_id_in_part = int(row[0])
@@ -60,12 +60,11 @@ def split_tokens(base_path, current_content_file, partition_size, total_size):
     # last partition
     write_into_partition_file(first_article_id_in_part, article_id,
                               output_folder, header, partition_content,
-                              'currentcontent', output_counter, total_files)
+                              output_name, output_counter, total_files)
 
 
 def split_revisions(base_path, revisions_file):
-    # tokens_folder = '{}/{}/current_tokens'.format(base_path, 'partitions')
-    tokens_folder = '{}/{}/tokens'.format(base_path, 'partitions')
+    tokens_folder = '{}/{}/current_tokens'.format(base_path, 'partitions')
     if not exists(tokens_folder):
         raise Exception('Tokens folder does not exist: {}'.format(tokens_folder))
     output_folder = '{}/{}/revisions'.format(base_path, 'partitions')
@@ -121,7 +120,7 @@ def split_revisions(base_path, revisions_file):
 
 
 def split_articles(base_path, articles_file):
-    tokens_folder = '{}/{}/tokens'.format(base_path, 'partitions')
+    tokens_folder = '{}/{}/current_tokens'.format(base_path, 'partitions')
     if not exists(tokens_folder):
         raise Exception('Tokens folder does not exist: {}'.format(tokens_folder))
     output_folder = '{}/{}/articles'.format(base_path, 'partitions')
@@ -189,13 +188,14 @@ def get_args():
     parser.add_argument('-t', '--total_size',  type=int,
                         help='Total number of lines in input file. Default is 7572311408 lines')
     # NOTE by default there must be ~360 partition files
-    parser.add_argument('-m', '--mode', required=True, type=int, help='1: tokens, 2: revisions, 3:articles')
+    parser.add_argument('-m', '--mode', required=True, type=int,
+                        help='1: current_tokens, 2: revisions, 3:articles, 4: tokens')
     # parser.add_argument('-d', '--debug', help='Run in debug mode', action='store_true')
 
     args = parser.parse_args()
 
-    if args.mode not in [1, 2, 3]:
-        parser.error("argument -m/--mode must be 1, 2 or 3")
+    if args.mode not in [1, 2, 3, 4]:
+        parser.error("argument -m/--mode must be 1, 2, 3 or 4")
 
     return args
 
@@ -210,11 +210,16 @@ def main():
     if mode == 1:
         partition_size = args.partition_size or 21 * 1000 * 1000  # lines
         total_size = args.total_size or 7572311408  # lines
-        split_tokens(base_path, input_file, partition_size, total_size)
+        split_tokens(base_path, input_file, partition_size, total_size, 'currentcontent')
     elif mode == 2:
         split_revisions(base_path, input_file)
     elif mode == 3:
         split_articles(base_path, input_file)
+    elif mode == 4:
+        # split_tokens_2(base_path, input_file)
+        partition_size = args.partition_size or 21 * 1000 * 1000  # lines
+        total_size = args.total_size or 7572311408  # lines
+        split_tokens(base_path, input_file, partition_size, total_size, 'tokens')
 
 if __name__ == "__main__":
     main()
