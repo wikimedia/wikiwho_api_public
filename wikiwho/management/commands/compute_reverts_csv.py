@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-python manage.py calculate_reverts -i '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/tokens_in_lastrevisions_2.csv' -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats' -m 4 -s '1-2001' -e '1-2002'
-
+python manage.py compute_reverts_csv -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/partitions_/tokens/test' -m 4 -l 1368
 """
 from os import mkdir, listdir
-from os.path import exists, isfile
+from os.path import exists, isfile, basename
 import logging
 from time import strftime
 import sys
@@ -29,8 +28,8 @@ def buildNetworkReverts(article_id, revisions):
         # Obtain meta-data of revision i.
         # rev_i_id = d[article]["rev_order"][i]
         rev_i = revisions["revs"][rev_i_id]
-        s_outs = (set(rev_i["token-outs"]))
-        s_ins = (set(rev_i["token-ins"]))
+        s_outs = set(rev_i["token-outs"])
+        s_ins = set(rev_i["token-ins"])
 
         # Iterate over previous revisions j, starting from i and backwards.
         # Loop to detect reverts from i to j.
@@ -42,10 +41,11 @@ def buildNetworkReverts(article_id, revisions):
             rev_j = revisions["revs"][rev_j_id]
 
             # Count number of reverted actions from i to j.
+            # how many of the actions of j are reverted by i.
             reverted_actions = 0
 
             # Detect reverts by deletion.
-            if (len(s_outs) > 0):
+            if len(s_outs) > 0:
 
                 s1 = (set(rev_j["oadds"]) | set(rev_j["token-ins"]))
 
@@ -56,7 +56,7 @@ def buildNetworkReverts(article_id, revisions):
                     s_outs -= intersection
 
             # Detect reverts by re-introduction.
-            if (len(s_ins) > 0):
+            if len(s_ins) > 0:
                 s1 = set(rev_j["token-outs"])
 
                 # Revision i re-introduced content was deleted in j.
@@ -66,9 +66,11 @@ def buildNetworkReverts(article_id, revisions):
                     s_ins -= intersection
 
             # Check if i reverted actions from j.
-            if (reverted_actions > 0):
-                # TODO why not total actions of rev_i ??
-                total_actions = len(rev_j["oadds"]) + len(rev_j["token-ins"]) + len(rev_j["token-outs"])
+            if reverted_actions > 0:
+                # total actions done in j
+                total_actions = len(rev_j["oadds"]) + \
+                                len(rev_j["token-ins"]) + \
+                                len(rev_j["token-outs"])
 
                 data.append([article_id, rev_i_id, rev_j_id, reverted_actions, total_actions,
                              revisions["revs"][rev_i_id]["editor"],
@@ -106,33 +108,43 @@ def buildActionsPerRevision(article_id, article_content):
     return revisions
 
 
-def calculate_reverts(input_csv):
+def compute_reverts(input_csv, log_folder, format_):
     print(input_csv)
-    output_csv = input_csv + '.output.csv'
-    header = "article,source,target,reverted_actions,total_actions,source_editor,target_editor".split(',')
-    with open(output_csv, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
+    input_file_name = basename(input_csv)
+    logger = logging.getLogger(input_file_name[:-4])
+    file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
+                                                                input_file_name,
+                                                                strftime("%Y-%m-%d-%H:%M:%S")))
+    file_handler.setLevel(logging.ERROR)
+    formatter = logging.Formatter(format_)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    try:
+        output_csv = input_csv + '.output.csv'
+        header = "article,source,target,reverted_actions,total_actions,source_editor,target_editor".split(',')
+        with open(output_csv, 'w', newline='') as f_out:
+            writer = csv.writer(f_out)
+            writer.writerow(header)
 
-    with open(input_csv, newline='') as f:
-        reader = csv.reader(f)
-        article_id = None
-        article_content = []
-        for row in reader:
-            # article_id,revision_id,token_id,str,origin,inbound,outbound
-            if 'article_id' in row:
-                continue
-            # if next article in csv
-            if article_id is not None and article_id != int(row[0]):
-                revisions = buildActionsPerRevision(article_id, article_content)
-                data = buildNetworkReverts(article_id, revisions)
-                writer.writerows(data)
-
-                article_id = int(row[0])
-            else:
-                # token_id, origin, inbound, outbound
-                article_content.append([row[2], row[4], row[5], row[6]])
-                article_id = int(row[0])
+            with open(input_csv, newline='') as f_in:
+                reader = csv.reader(f_in)
+                article_id = None
+                article_content = []
+                for row in reader:
+                    # article_id,revision_id,token_id,str,origin,inbound,outbound
+                    if 'article_id' in row or 'article' in row:
+                        continue
+                    # if next article in csv
+                    if article_id is not None and article_id != int(row[0]):
+                        revisions = buildActionsPerRevision(article_id, article_content)
+                        data = buildNetworkReverts(article_id, revisions)
+                        writer.writerows(data)
+                    else:
+                        # token_id, origin, inbound, outbound
+                        article_content.append([row[2], row[4], row[5], row[6]])
+                    article_id = int(row[0])
+    except Exception as e:
+        logger.exception(input_file_name)
     return True
 
 
@@ -209,7 +221,7 @@ class Command(BaseCommand):
             csvs_all = csvs_left
             while csvs_left:
                 for input_csv in input_csvs_iter:
-                    job = executor.submit(calculate_reverts, input_csv)
+                    job = executor.submit(compute_reverts, input_csv, log_folder, format_)
                     jobs[job] = input_csv
                     if len(jobs) == max_workers:  # limit number of jobs with max_workers
                         break
