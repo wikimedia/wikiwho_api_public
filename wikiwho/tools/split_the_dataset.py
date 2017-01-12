@@ -64,7 +64,7 @@ def split_tokens(base_path, current_content_file, partition_size, total_size, ou
 
 
 def split_revisions(base_path, revisions_file):
-    tokens_folder = '{}/{}/current_tokens'.format(base_path, 'partitions')
+    tokens_folder = '{}/{}/tokens'.format(base_path, 'partitions')
     if not exists(tokens_folder):
         raise Exception('Tokens folder does not exist: {}'.format(tokens_folder))
     output_folder = '{}/{}/revisions'.format(base_path, 'partitions')
@@ -120,7 +120,7 @@ def split_revisions(base_path, revisions_file):
 
 
 def split_articles(base_path, articles_file):
-    tokens_folder = '{}/{}/current_tokens'.format(base_path, 'partitions')
+    tokens_folder = '{}/{}/tokens'.format(base_path, 'partitions')
     if not exists(tokens_folder):
         raise Exception('Tokens folder does not exist: {}'.format(tokens_folder))
     output_folder = '{}/{}/articles'.format(base_path, 'partitions')
