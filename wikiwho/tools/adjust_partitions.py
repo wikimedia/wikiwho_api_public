@@ -2,6 +2,7 @@ import subprocess
 import csv
 from os import listdir
 import time
+import sys
 
 
 def adjust_partitions(input_folder):
@@ -16,6 +17,8 @@ def adjust_partitions(input_folder):
     # continues in next part
     change_dict = {}
     previous_last_article_id = None
+    files_all = len(listdir(input_folder))
+    files_left = files_all
     for part in sorted(listdir(input_folder)):
         part_id = int(part.split('_part')[1])
         part = '{}/{}'.format(input_folder, part)
@@ -49,6 +52,8 @@ def adjust_partitions(input_folder):
         last_line = subprocess.check_output(['tail', '-1', part])
         previous_last_article_id = int(last_line.split(b',')[0]) if last_line else None
         # time.sleep(5)
+        files_left -= 1
+        sys.stdout.write('\r{}-{:.3f}%'.format(files_left, ((files_all - files_left) * 100) / files_all))
     return change_dict
 
 
