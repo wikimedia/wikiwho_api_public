@@ -1,6 +1,6 @@
 import subprocess
 import csv
-from os import listdir, rename
+from os import listdir, rename, remove
 import time
 import sys
 
@@ -17,6 +17,7 @@ def adjust_partitions(input_folder):
     # continues in next part
     change_dict = {}
     rename_list = []
+    delete_list = []
     previous_last_article_id = None
     files_all = len(listdir(input_folder))
     files_left = files_all
@@ -53,6 +54,7 @@ def adjust_partitions(input_folder):
         last_line = subprocess.check_output(['tail', '-1', part])
         last_article_id = int(last_line.split(b',', 1)[0]) if last_line else None
         if first_article_id == last_article_id:
+            delete_list.append(part)
             print('First and last article id in file ({}) same!'.format(part))
         else:
             previous_part = part
@@ -70,6 +72,9 @@ def adjust_partitions(input_folder):
     print('renaming ..')
     for old_name, new_name in rename_list:
         rename(old_name, new_name)
+    print('deleting empty files ..')
+    for f in delete_list:
+        remove(f)
     return change_dict
 
 
