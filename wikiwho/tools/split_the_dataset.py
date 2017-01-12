@@ -42,7 +42,7 @@ def split_tokens(base_path, current_content_file, partition_size, total_size, ou
         partition_content = []
         output_counter = 1
         for i, row in enumerate(reader, 1):
-            if 'article_id' in row:
+            if 'article_id' == row[0]:
                 header = row
                 continue
             if article_id is None:
@@ -92,7 +92,7 @@ def split_revisions(base_path, revisions_file):
         output_counter = 1
         header = ['article_id', 'revision_id', 'editor', 'timestamp', 'oadds']
         for row in reader:
-            if 'article_id' in row:
+            if 'article_id' == row[0]:
                 continue
             # skip problematic article id 17387412.
             # if int(row[0]) == 17387412:
@@ -149,7 +149,7 @@ def split_articles(base_path, articles_file):
         lines = f.read().splitlines()
         lines.sort(key=int)
         for row in lines:
-            if 'article_id' in row:
+            if 'article_id' == row:
                 continue
             row = int(row)
             if article_id is None:
