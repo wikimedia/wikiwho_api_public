@@ -75,8 +75,9 @@ def split_revisions(base_path, revisions_file):
     for token_partition_file in listdir(tokens_folder):
         if not token_partition_file.endswith('.csv'):
             continue
-        token_parts[token_partition_file.split('-')[2][4:]] = token_partition_file
+        token_parts[token_partition_file.split('-')[3][4:]] = token_partition_file
 
+    # print(len(token_parts), token_parts['1'])
     partition_limits = []
     for k in sorted(token_parts, key=int):
         ids = token_parts[k].split('-')[-2:]
@@ -131,8 +132,9 @@ def split_articles(base_path, articles_file):
     for token_partition_file in listdir(tokens_folder):
         if not token_partition_file.endswith('.csv'):
             continue
-        token_parts[token_partition_file.split('-')[2][4:]] = token_partition_file
+        token_parts[token_partition_file.split('-')[3][4:]] = token_partition_file
 
+    # print(len(token_parts), token_parts['1'])
     partition_limits = []
     for k in sorted(token_parts, key=int):
         ids = token_parts[k].split('-')[-2:]
