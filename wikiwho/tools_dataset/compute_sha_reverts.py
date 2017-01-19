@@ -83,14 +83,12 @@ def get_sha_sequential(article_revs, dumps_folder, dumps_articles_dict):
     """
     checksum_revisions = {}
     for dump_file, article_ids in dumps_articles_dict.items():
-        sub_article_revs = {}
-        for i in article_ids:
-            sub_article_revs.update({i: article_revs[i]})
-            # del article_revs[i]
-        assert len(sub_article_revs) > 0
-        data = get_sha_task(sub_article_revs, dumps_folder, dump_file, article_ids)
+        # sub_article_revs = {}
+        # for i in article_ids:
+        #     sub_article_revs.update({i: article_revs[i]})
+        # assert len(sub_article_revs) > 0
+        data = get_sha_task(article_revs, dumps_folder, dump_file, article_ids)
         checksum_revisions.update(data)
-        # del dumps_articles_dict[dump_file]
     return checksum_revisions
 
 
@@ -165,7 +163,7 @@ def getRevisions(revision_file):
         reader = csv.reader(f, delimiter=',')
         for line in reader:
             # article_id, revision_id, editor, timestamp, oadds
-            if 'article_id' in line:
+            if 'article_id' == line[0]:
                 continue
             article_id = int(line[0])
             revision_id = int(line[1])
@@ -194,7 +192,7 @@ def compute_sha_reverts(input_file, input_file_name, output_folder, dumps_folder
                                                                 input_file_name,
                                                                 strftime("%Y-%m-%d-%H:%M:%S")))
     file_handler.setLevel(logging.ERROR)
-    format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'
+    format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
     formatter = logging.Formatter(format_)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -267,10 +265,11 @@ def main():
     #     compute_sha_reverts(input_file, input_file_name, output_folder, dumps_folder, dumps_dict, max_workers)
     #     print('Done:', input_file, strftime("%Y-%m-%d-%H:%M:%S"))
 
-
+    # order input files
     input_files_dict = {}
     for input_file_name in listdir(input_folder):
         input_file = '{}/{}'.format(input_folder, input_file_name)
+        # ex input_file_name: revisions-20161226-part1-12-5617.csv
         input_files_dict[input_file_name.split('-')[2][4:]] = [input_file, input_file_name]
 
     input_files = []
@@ -284,7 +283,7 @@ def main():
     file_handler = logging.FileHandler('{}/sha_reverts_future_at_{}.log'.format(log_folder,
                                                                                 strftime("%Y-%m-%d-%H:%M:%S")))
     file_handler.setLevel(logging.ERROR)
-    format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'
+    format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
     formatter = logging.Formatter(format_)
     file_handler.setFormatter(formatter)
     logger.handlers = [file_handler]

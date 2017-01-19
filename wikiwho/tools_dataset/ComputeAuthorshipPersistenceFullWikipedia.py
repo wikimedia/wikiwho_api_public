@@ -83,12 +83,12 @@ def computePersistence(article_file, revision_file, token_file, bot_file, f1):
             editor = art[aux[0]]["revs"][aux[1]]["editor"]
             if editor[:2] == "0|":
                 isIP = True
-                print("Editor is IP", editor)
+                #print("Editor is IP", editor)
             elif editor in botList.keys():
                 isBot = True
-                print("Editor is bot", editor, botList[editor])
-            else:
-                print("Editor is regular user")
+                #print("Editor is bot", editor, botList[editor])
+            #else:
+            #    print("Editor is regular user")
             #    isReg = True
                 
             # Cleaning outbound.
@@ -145,7 +145,7 @@ def computePersistence(article_file, revision_file, token_file, bot_file, f1):
     out2.close()
     
 if __name__ == '__main__':
-    
+    csv.field_size_limit(sys.maxsize) 
     article_file = sys.argv[1]  # No requirements on article_file.
     revision_file = sys.argv[2]    # Requirement on article_file: revisions ordered by timestamp.
     token_file = sys.argv[3]    # No requirements on token_file. 

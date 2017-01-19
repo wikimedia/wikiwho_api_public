@@ -100,6 +100,7 @@ def buildActionsPerRevision(article_file, revision_file, token_file):
         for line in infile:
             aux = line
             aux[0] = int(aux[0])  # article_id
+            aux[1] = int(aux[1])  # label_revision_id (origin)
             aux[2] = int(aux[2])  # token_id
             aux[4] = eval(aux[4].replace("{", "[").replace("}", "]"))  # inbound
             aux[5] = eval(aux[5].replace("{", "[").replace("}", "]"))  # outbound
@@ -122,6 +123,8 @@ def buildActionsPerRevision(article_file, revision_file, token_file):
 
 
 if __name__ == '__main__':
+    csv.field_size_limit(sys.maxsize)
+
     article_file = sys.argv[1]
     revision_file = sys.argv[2]
     token_file = sys.argv[3]

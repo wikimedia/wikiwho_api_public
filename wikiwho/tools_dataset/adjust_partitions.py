@@ -13,7 +13,6 @@ def adjust_partitions(input_folder):
     split -d --lines=21000000 mac-tokens-all.csv /home/nuser/dumps/wikiwho_dataset/partitions/tokens/mac-tokens-all.csv_part
     split -d --line-bytes=1080M tokens_in_lastrevisions.csv tokens_in_lastrevisions/random/tokens_in_lastrevisions.csv_
     """
-    # FIXME this script doesnt handle if a part contains only one article which exists in previous part and
     # continues in next part
     change_dict = {}
     rename_list = []
@@ -23,7 +22,6 @@ def adjust_partitions(input_folder):
     files_left = files_all
     i = 0
     for part in sorted(listdir(input_folder)):
-        part_id = int(part.split('_part')[1])
         part = '{}/{}'.format(input_folder, part)
         content_for_previous = []
         if previous_last_article_id:
