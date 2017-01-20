@@ -1,3 +1,6 @@
+"""
+python wikiwho/tools_dataset/partitioning/delete_from_all_content.py -ic '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/partitions/current_tokens' -ia '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/partitions/tokens' -o '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/partitions/o' -m 2
+"""
 import csv
 import sys
 import argparse
@@ -10,7 +13,7 @@ import logging
 
 def delete_from(all, current, output_file):
     # article_id, revision_id, token_id, str, origin, inbound, outbound
-    header = 'page_id,last_rev_id,token_id,str,origin_rev_id,in,out'.split(',')
+    # header = 'page_id,last_rev_id,token_id,str,origin_rev_id,in,out'.split(',')
     with open(current, newline='') as f:
         reader = csv.reader(f, delimiter=',')
         current_content = {}
@@ -19,10 +22,10 @@ def delete_from(all, current, output_file):
             # if 'page_id' == row[0]:
             #     continue
             current_content['{}-{}'.format(row[0], row[2])] = True  # article id, token id
-    print('len(current_content): ', len(current_content))
+    # print('len(current_content): ', len(current_content))
 
+    # page_id,last_rev_id,token_id,str,origin_rev_id,in,out
     header = 'page_id,last_rev_id,token_id,str,origin_rev_id,in,out'.split(',')
-    header = 'page_id,last_rev_id,token_id,str,origin_rev_id, origin_editor, origin_timestamp,in,out'.split(',')
     counter = 0
     with open(all, newline='') as f:
         reader = csv.reader(f, delimiter=',')
@@ -34,14 +37,15 @@ def delete_from(all, current, output_file):
             counter += 1
             if not '{}-{}'.format(row[0], row[2]) in current_content:  # article id, token id
                 # page_id,last_rev_id,token_id,str,origin_rev_id, in,out
-                deleted_content.append([row[0], row[1], row[2], row[3], row[4], row[7], row[8]])
-    print('len(deleted_content)', len(deleted_content))
-    print('len(all_content)', counter)
-    print(output_file)
+                deleted_content.append(row)
+    del current_content
+    # print('len(all_content)', counter)
+    # print(output_file)
     with open(output_file, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(header)
         writer.writerows(deleted_content)
+    # print('len(deleted_content)', len(deleted_content))
     return True
 
 
@@ -54,17 +58,12 @@ def get_args():
     parser.add_argument('-m', '--max_workers', type=int, help='Default is 10')
 
     args = parser.parse_args()
-
-    if args.mode not in [1, 2, 3, 4]:
-        parser.error("argument -m/--mode must be 1, 2, 3 or 4")
-
     return args
 
 
 def main():
     args = get_args()
     output_folder = args.output
-    output_folder = '{}/{}'.format(output_folder, 'output')
     if not exists(output_folder):
         mkdir(output_folder)
     max_workers = args.max_workers or 10
@@ -77,7 +76,7 @@ def main():
         # ex input_file_name: currentcontent-20161226-part1-12-5617.csv
         part_id = input_file_name.split('-')[2][4:]
         first_article_id = input_file_name.split('-')[3]
-        last_article_id = input_file_name.split('-')[4]
+        last_article_id = input_file_name.split('-')[4][:-4]
         input_current_dict[part_id] = [input_file, first_article_id, last_article_id]
     input_all_folder = args.input_all
     input_all_dict = {}
@@ -86,15 +85,17 @@ def main():
         # ex input_file_name: mac-tokens-all-part1-12-1728.csv
         part_id = input_file_name.split('-')[3][4:]
         first_article_id = input_file_name.split('-')[4]
-        last_article_id = input_file_name.split('-')[5]
+        last_article_id = input_file_name.split('-')[5][:-4]
         input_all_dict[part_id] = [input_file, first_article_id, last_article_id]
     assert len(input_current_dict) == len(input_all_dict)
     input_files = []
     for k in sorted(input_current_dict, key=int):
+        # print(input_current_dict[k])
+        # print(input_all_dict[k])
         assert input_current_dict[k][1] == input_all_dict[k][1]
         assert input_current_dict[k][2] == input_all_dict[k][2]
         input_files.append([input_current_dict[k][0], input_all_dict[k][0],
-                            input_current_dict[k][2], input_current_dict[k][2], k])
+                            input_current_dict[k][1], input_current_dict[k][2], k])
 
     # set logging
     log_folder = '{}/{}'.format(output_folder, 'logs')
@@ -139,11 +140,6 @@ def main():
                 sys.stdout.write('\r{}-{:.3f}%'.format(files_left, ((files_all - files_left) * 100) / files_all))
                 break  # to add a new job, if there is any
     print("Done: ", strftime("%Y-%m-%d-%H:%M:%S"))
-
-    # current = '/home/nuser/dumps/wikiwho_dataset/partitions/samples/currentcontent-20161226-part1-12-316.csv'
-    # all = '/home/nuser/dumps/wikiwho_dataset/partitions/samples/allcontent-12-316.csv'
-    # delete_from(current, all)
-    # print('done!')
 
 if __name__ == '__main__':
     main()
