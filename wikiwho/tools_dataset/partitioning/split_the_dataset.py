@@ -32,11 +32,11 @@ def write_into_partition_file(first_article_id_in_part, last_article_id_in_part,
     return True
 
 
-def split_tokens(base_path, current_content_file, partition_size, total_size, output_name='currentcontent'):
+def split_tokens_with_size(base_path, current_content_file, partition_size, total_size, output_name):
     output_folder = '{}/{}'.format(base_path, 'partitions')
     if not exists(output_folder):
         mkdir(output_folder)
-    output_folder = '{}/{}'.format(output_folder, 'current_tokens' if output_name == 'currentcontent' else output_name)
+    output_folder = '{}/{}'.format(output_folder, 'current_tokens' if output_name == 'current_content' else output_name)
     if not exists(output_folder):
         mkdir(output_folder)
     total_files = int(total_size/partition_size)
@@ -45,10 +45,11 @@ def split_tokens(base_path, current_content_file, partition_size, total_size, ou
         article_id = None
         partition_content = []
         output_counter = 1
+        header = next(reader)
         for i, row in enumerate(reader, 1):
-            if 'article_id' == row[0]:
-                header = row
-                continue
+            # if 'article_id' == row[0]:
+            #     header = row
+            #     continue
             if article_id is None:
                 first_article_id_in_part = int(row[0])
             if i >= (partition_size * output_counter) and article_id != int(row[0]):
@@ -95,10 +96,10 @@ def split_revisions(base_path, revisions_file):
         article_id = None
         partition_content = []
         output_counter = 1
-        header = ['article_id', 'revision_id', 'editor', 'timestamp', 'oadds']
+        # header = 'article_id,revision_id,editor,timestamp,oadds'.split(',')  # output for analysis
+        header = 'page_id,rev_id,timestamp,editor'.split(',')  # output for served dataset
+        next(reader, None)  # skip the header
         for row in reader:
-            if 'article_id' == row[0]:
-                continue
             # skip problematic article id 17387412.
             # if int(row[0]) == 17387412:
             #     continue
@@ -113,13 +114,69 @@ def split_revisions(base_path, revisions_file):
                 partition_content = [row]
                 first_article_id_in_part = int(row[0])
             else:
-                partition_content.append(row)
+                # partition_content.append(row)  # output for analysis
+                partition_content.append([row[0], row[1], row[3], row[2]])  # output for served dataset
             article_id = int(row[0])
     # last partition
     if [first_article_id_in_part, article_id] in partition_limits:
         partition_limits.remove([first_article_id_in_part, article_id])
         write_into_partition_file(first_article_id_in_part, article_id,
                                   output_folder, header, partition_content, 'revisions', output_counter)
+    # print(partition_limits)
+    assert len(partition_limits) == 0
+
+
+def split_tokens(base_path, tokens_file):
+    tokens_folder = '{}/{}/tokens'.format(base_path, 'partitions')
+    if not exists(tokens_folder):
+        raise Exception('Tokens folder does not exist: {}'.format(tokens_folder))
+    output_folder = '{}/{}/current_tokens'.format(base_path, 'partitions')
+    if not exists(output_folder):
+        mkdir(output_folder)
+
+    token_parts = {}
+    for token_partition_file in listdir(tokens_folder):
+        if not token_partition_file.endswith('.csv'):
+            continue
+        token_parts[token_partition_file.split('-')[3][4:]] = token_partition_file
+
+    # print(len(token_parts), token_parts['1'])
+    partition_limits = []
+    for k in sorted(token_parts, key=int):
+        ids = token_parts[k].split('-')[-2:]
+        first_id = int(ids[0])
+        last_id = int(ids[1].split('.')[0])
+        partition_limits.append([first_id, last_id])
+    print('len(partition_limits):', len(partition_limits))
+
+    with open(base_path + '/' + tokens_file, newline='') as f:
+        reader = csv.reader(f)
+        article_id = None
+        partition_content = []
+        output_counter = 1
+        # header = 'article_id,revision_id,token_id,str,origin,inbound,outbound'.split(',')
+        header = 'page_id,last_rev_id,token_id,str,origin_rev_id,in,out'.split(',')
+        next(reader, None)  # skip the header
+        for row in reader:
+            # if 'article_id' == row[0]:
+            #     continue
+            if article_id is None:
+                first_article_id_in_part = int(row[0])
+            if article_id != int(row[0]) and [first_article_id_in_part, article_id] in partition_limits:
+                partition_limits.remove([first_article_id_in_part, article_id])
+                write_into_partition_file(first_article_id_in_part, article_id,
+                                          output_folder, header, partition_content, 'current_content', output_counter)
+                output_counter += 1
+                partition_content = [row]
+                first_article_id_in_part = int(row[0])
+            else:
+                partition_content.append(row)
+            article_id = int(row[0])
+    # last partition
+    if [first_article_id_in_part, article_id] in partition_limits:
+        partition_limits.remove([first_article_id_in_part, article_id])
+        write_into_partition_file(first_article_id_in_part, article_id,
+                                  output_folder, header, partition_content, 'current_content', output_counter)
     # print(partition_limits)
     assert len(partition_limits) == 0
 
@@ -151,7 +208,8 @@ def split_articles(base_path, articles_file):
         article_id = None
         partition_content = []
         output_counter = 1
-        header = ['article_id']
+        # header = ['article_id']
+        header = ['page_id']
         lines = f.read().splitlines()
         lines.sort(key=int)
         for row in lines:
@@ -195,7 +253,7 @@ def get_args():
                         help='Total number of lines in input file. Default is 7572311408 lines')
     # NOTE by default there must be ~360 partition files
     parser.add_argument('-m', '--mode', required=True, type=int,
-                        help='1: current_tokens, 2: revisions, 3:articles, 4: tokens')
+                        help='1: tokens_with_size, 2: revisions, 3:articles, 4: tokens')
     # parser.add_argument('-d', '--debug', help='Run in debug mode', action='store_true')
 
     args = parser.parse_args()
@@ -216,16 +274,14 @@ def main():
     if mode == 1:
         partition_size = args.partition_size or 21 * 1000 * 1000  # lines
         total_size = args.total_size or 7572311408  # lines
-        split_tokens(base_path, input_file, partition_size, total_size, 'currentcontent')
+        split_tokens_with_size(base_path, input_file, partition_size, total_size, 'tokens')
+        # split_tokens(base_path, input_file, partition_size, total_size, 'current_content')
     elif mode == 2:
         split_revisions(base_path, input_file)
     elif mode == 3:
         split_articles(base_path, input_file)
     elif mode == 4:
-        # split_tokens_2(base_path, input_file)
-        partition_size = args.partition_size or 21 * 1000 * 1000  # lines
-        total_size = args.total_size or 7572311408  # lines
-        split_tokens(base_path, input_file, partition_size, total_size, 'tokens')
+        split_tokens(base_path, input_file)
 
 if __name__ == "__main__":
     main()
