@@ -12,33 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='LastRevision',
-            fields=[
-                ('id', models.IntegerField(editable=False, help_text='Wikipedia revision id', primary_key=True, serialize=False)),
-                ('timestamp', models.DateTimeField(blank=True, help_text='Timestamp of this last revision', null=True)),
-                ('article_id', models.IntegerField()),
-                ('editor', models.CharField(help_text='Editor of this last revision', max_length=87)),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
-            name='SurvivedOriginalAdds',
-            fields=[
-                # ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('year', models.IntegerField()),
-                ('month', models.IntegerField()),
-                ('article_id', models.IntegerField()),
-                ('editor', models.CharField(max_length=87)),
-                ('survived_org_adds', models.IntegerField(help_text='# survived org adds of this editor in this article which are org added in this month.')),
-                ('survived_org_adds_all', models.IntegerField(help_text='# survived org adds of this editor in this article which are org added before and in this month.')),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
         migrations.AddField(
             model_name='token',
             name='conflict_score',
@@ -60,13 +33,3 @@ class Migration(migrations.Migration):
             field=models.IntegerField(blank=False, null=False),
         ),
     ]
-
-    # HACK: always fake. These fields are actually not FK on db.
-    # This is done to use django's fk queries, emulated cascaded deletion
-    def apply(self, project_state, schema_editor, collect_sql=False):
-        return project_state.clone()
-        # return project_state
-
-    def unapply(self, project_state, schema_editor, collect_sql=False):
-        return project_state.clone()
-        # return project_state

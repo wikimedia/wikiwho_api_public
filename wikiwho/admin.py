@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from django.utils.html import format_html
 from .models import Article, Revision, RevisionParagraph, Paragraph, ParagraphSentence, Sentence, \
-    SentenceToken, Token, LastRevision, SurvivedOriginalAdds
+    SentenceToken, Token
 from base.admin import BaseAdmin
 
 # TODO make everything read only + base admin class + check list_filters, show_change_link + test searching
@@ -146,8 +146,6 @@ admin.site.register(Sentence, SentenceAdmin)
 admin.site.register(SentenceToken, SentenceTokenAdmin)
 # admin.site.register(Token, TokenAdmin)
 admin.site.register(Token)
-admin.site.register(LastRevision)
-admin.site.register(SurvivedOriginalAdds)
 
 
 # class ArticleAdmin(BaseAdmin):
