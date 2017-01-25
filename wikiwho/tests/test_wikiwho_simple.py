@@ -166,7 +166,23 @@ class TestWikiwho:
         is_content_same_2 = filecmp.cmp(json_file_path, test_json_file_path)
 
         # create json with in/outbounds
+        in_out_test_len = True
+        in_out_test_spam = True
+        # last_used_test_spam = True
         revision_json_with_io = v.get_revision_json(wp.revision_ids, {'str', 'inbound', 'outbound'})
+        for i, ri in enumerate(wp.revision_ids):
+            for t in revision_json_with_io['revisions'][i][ri]['tokens']:
+                in_out_test_len = 0 <= len(t['outbound']) - len(t['inbound']) <= 1
+                for r in t['outbound']:
+                    if r in v.article.spam:
+                        in_out_test_spam = False
+                for r in t['inbound']:
+                    if r in v.article.spam:
+                        in_out_test_spam = False
+                # last_used_test_spam = not (t['last_used'] in v.article.spam)
+                if not in_out_test_len or not in_out_test_spam:
+                    # print(t['str'], len(t['outbound']), len(t['inbound']), t['outbound'], t['inbound'])
+                    break
         json_file_path_with_io = '{}/{}_db_io.json'.format(temp_folder, article_name)
         with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
@@ -175,9 +191,13 @@ class TestWikiwho:
         test_json_file_path = '{}/{}_db_io.json'.format(test_json_folder, article_name)
         is_content_same_3 = filecmp.cmp(json_file_path_with_io, test_json_file_path)
 
+        # print(v.article.spam)
         assert is_content_same_1, "{}: 'json with ri and ai doesn't match".format(article_name)
         assert is_content_same_2, "{}: json with ti doesn't match".format(article_name)
+        assert in_out_test_len and in_out_test_spam, "len: {}, spam: {}".format('passed' if in_out_test_len else 'failed',
+                                                                                'passed' if in_out_test_spam else 'failed')
         assert is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_name)
+        # assert last_used_test_spam, 'last used in spam'
 
     def test_json_output_xml(self, temp_folder, article_name, revision_id):
         """
@@ -200,7 +220,7 @@ class TestWikiwho:
         for page in dump:
             if page.title.replace(' ', '_') == article_name:
                 title_matched = True
-                with WPHandler(article_name) as wp:
+                with WPHandler(article_name, page.id, is_xml=True) as wp:
                     wp.handle_from_xml(page)
                 break
 
@@ -234,20 +254,38 @@ class TestWikiwho:
         is_content_same_2 = filecmp.cmp(json_file_path, test_json_file_path)
 
         # create json with in/outbounds
+        in_out_test_len = True
+        in_out_test_spam = True
+        # last_used_test_spam = True
         revision_json_with_io = v.get_revision_json([revision_id], {'str', 'inbound', 'outbound'})
+        for i, ri in enumerate(wp.revision_ids):
+            for t in revision_json_with_io['revisions'][i][ri]['tokens']:
+                in_out_test_len = 0 <= len(t['outbound']) - len(t['inbound']) <= 1
+                for r in t['outbound']:
+                    if r in v.article.spam:
+                        in_out_test_spam = False
+                for r in t['inbound']:
+                    if r in v.article.spam:
+                        in_out_test_spam = False
+                # last_used_test_spam = not (t['last_used'] in v.article.spam)
+                if not in_out_test_len or not in_out_test_spam:
+                    # print(t['str'], len(t['outbound']), len(t['inbound']), t['outbound'], t['inbound'])
+                    break
         json_file_path_with_io = '{}/{}_db_io.json'.format(temp_folder, article_name)
         with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
                                sort_keys=True, ensure_ascii=False))
         # compare jsons with in/outbounds
-        # FIXME cant compare in/outputs, because this test analyses the article until last revision.
         # But in test_json_output, it is analysed until one point.
-        # test_json_file_path = '{}/{}_db_io.json'.format(test_json_folder, article_name)
-        # is_content_same_3 = filecmp.cmp(json_file_path_with_io, test_json_file_path)
+        test_json_file_path = '{}/{}_db_io.json'.format(test_json_folder, article_name)
+        is_content_same_3 = filecmp.cmp(json_file_path_with_io, test_json_file_path)
 
         assert is_content_same_1, "{}: 'json with ri and ai doesn't match".format(article_name)
         assert is_content_same_2, "{}: json with ti doesn't match".format(article_name)
-        # assert is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_name)
+        assert in_out_test_len and in_out_test_spam, "len: {}, spam: {}".format('passed' if in_out_test_len else 'failed',
+                                                                                'passed' if in_out_test_spam else 'failed')
+        assert is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_name)
+        # assert last_used_test_spam, 'last used in spam'
 
     def test_continue_logic(self, temp_folder, article_name, revision_id_start, revision_id_end):
         """
