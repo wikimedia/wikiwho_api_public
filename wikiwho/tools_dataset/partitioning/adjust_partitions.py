@@ -1,8 +1,10 @@
 import subprocess
 import csv
 from os import listdir, rename, remove
-import time
+# import time
 import sys
+
+csv.field_size_limit(sys.maxsize)
 
 
 def adjust_partitions(input_folder):
@@ -67,7 +69,7 @@ def adjust_partitions(input_folder):
         files_left -= 1
         sys.stdout.write('\r{}-{:.3f}%'.format(files_left, ((files_all - files_left) * 100) / files_all))
 
-    print('renaming ..')
+    print('\nrenaming ..')
     for old_name, new_name in rename_list:
         rename(old_name, new_name)
     print('deleting empty files ..')

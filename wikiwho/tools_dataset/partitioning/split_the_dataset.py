@@ -3,7 +3,8 @@
 Workflow for partitioning:
 1) split -d --lines=21000000 mac-tokens-all.csv /home/nuser/dumps/wikiwho_dataset/partitions/tokens/mac-tokens-all.csv_part
 2) adjust_paritions.py for all tokens
-3) python wikiwho/tools_dataset/split_the_dataset.py -i 'wikiwho_currentcontent_20161226_test.csv' -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/' -s 500000 -t 11523567 -m 1
+# 3) python wikiwho/tools_dataset/split_the_dataset.py -i 'wikiwho_currentcontent_20161226_test.csv' -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/' -s 500000 -t 11523567 -m 1
+3) python wikiwho/tools_dataset/split_the_dataset.py -i 'wikiwho_currentcontent_20161226_test.csv' -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/' -m 4
 4) python wikiwho/tools_dataset/split_the_dataset.py -i 'mac-revisions-all.tsv' -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/' -m 2
 5) python wikiwho/tools_dataset/split_the_dataset.py -i 'mac-articles-all.txt' -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/' -m 3
 6) delete_from_all_content.py to substract current content from all content in order to get deleted content
