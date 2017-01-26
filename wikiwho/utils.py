@@ -125,3 +125,32 @@ def computeAvgWordFreq(text_list, revision_id=0):
         return sum(d.values()) / len(d)
     else:
         return 0
+
+
+def iter_rev_tokens(revision):
+    # x = []
+    # from copy import deepcopy
+    # ps_copy = deepcopy(revision.paragraphs)
+    tmp = {'p': [], 's': []}
+    for hash_paragraph in revision.ordered_paragraphs:
+        # paragraph = ps_copy[hash_paragraph].pop(0)
+        if len(revision.paragraphs[hash_paragraph]) > 1:
+            tmp['p'].append(hash_paragraph)
+            paragraph = revision.paragraphs[hash_paragraph][tmp['p'].count(hash_paragraph)-1]
+        else:
+            paragraph = revision.paragraphs[hash_paragraph][0]
+        # paragraph = revision.paragraphs[hash_paragraph].pop(0)
+        tmp['s'][:] = []
+        for hash_sentence in paragraph.ordered_sentences:
+            if len(paragraph.sentences[hash_sentence]) > 1:
+                # tmp['s'].append('{}-{}'.format(hash_paragraph, hash_sentence))  # and dont do tmp['s'][:] = []
+                tmp['s'].append(hash_sentence)
+                sentence = paragraph.sentences[hash_sentence][tmp['s'].count(hash_sentence)-1]
+            else:
+                sentence = paragraph.sentences[hash_sentence][0]
+            # sentence = paragraph.sentences[hash_sentence].pop(0)
+            for word in sentence.words:
+                # TODO decide generator or list
+                # x.append(word)
+                yield word
+    # return x

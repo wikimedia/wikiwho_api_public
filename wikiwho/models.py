@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import F
@@ -24,15 +22,14 @@ class NonArticleManager(models.Manager):
 class Article(BaseModel):
     id = models.IntegerField(primary_key=True, blank=False, null=False, editable=False, help_text='Wikipedia page id')
     title = models.CharField(max_length=256, blank=False)
-    # title = models.CharField(max_length=256, blank=False, db_index=True)
     rvcontinue = models.CharField(max_length=32, blank=True, null=False, default='0')
-    spam = ArrayField(models.IntegerField(), blank=True, null=True)  # array of spam revision ids
+    spam_ids = ArrayField(models.IntegerField(), blank=True, null=True)  # array of spam revision ids
     # langauge = models.CharField(choices=(('en', 'English'), ('de', 'German')), max_length=2, default='en')
-    is_article = models.NullBooleanField(default=True)
+    # is_article = models.NullBooleanField(default=True)
 
-    objects = ArticleManager()
-    non_articles = NonArticleManager()
-    all_articles = models.Manager()
+    # objects = ArticleManager()
+    # non_articles = NonArticleManager()
+    # all_articles = models.Manager()
 
     def __str__(self):
         return self.title
@@ -158,8 +155,9 @@ def article_post_delete(sender, instance, *args, **kwargs):
     # Revision.objects.filter(id__in=r_ids).delete()
     # RevisionParagraph.objects.filter(id__in=rp_ids).delete()
     # Delete paragraphs, paragraph sentences and sentences
-    Paragraph.objects.filter(revisions=None).delete()
-    Sentence.objects.filter(tokens=None).delete()
+    # Paragraph.objects.filter(revisions=None).delete()
+    # Sentence.objects.filter(tokens=None).delete()
+    pass  # TODO ?
 
 
 class Revision(BaseModel):
@@ -168,10 +166,11 @@ class Revision(BaseModel):
     # article_id = models.IntegerField(blank=False, null=False)
     editor = models.CharField(max_length=87, blank=False, null=False)  # max_length='0|' + 85
     timestamp = models.DateTimeField(blank=True, null=True)
-    # timestamp = models.DateTimeField(blank=True, null=True, db_index=True)
     length = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
-    # relations = JSON
+    position = models.IntegerField(blank=False)
+    original_adds = models.IntegerField(blank=False)
+    token_ids = ArrayField(models.IntegerField(), blank=True, null=True)  # ordered list of token ids
 
     # class Meta:
     #     ordering = ['timestamp', 'id']
@@ -213,14 +212,6 @@ class Revision(BaseModel):
         if 'timestamp' in parameters:
             values_list.append('timestamp')
         return annotate_dict, values_list
-
-    @property
-    def tokens_alter(self):
-        p_ids = RevisionParagraph.objects.filter(revision_id=self.id).values_list('paragraph_id', flat=True)
-        s_ids = ParagraphSentence.objects.filter(paragraph_id__in=p_ids).values_list('sentence_id', flat=True)
-        t_ids = SentenceToken.objects.filter(sentence_id__in=s_ids).values_list('token_id', flat=True)
-        tokens = Token.objects.filter(id__in=t_ids)
-        return tokens
 
     # @cached_property
     @property
@@ -307,112 +298,19 @@ class Revision(BaseModel):
         return False
 
 
-class RevisionParagraph(BaseModel):
-    # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
-    id = models.BigAutoField(primary_key=True, verbose_name='ID')
-    revision = models.ForeignKey(Revision, blank=False, related_name='paragraphs')
-    # revision_id = models.IntegerField(blank=False, null=False)
-    paragraph = models.ForeignKey('Paragraph', blank=False, related_name='revisions')
-    # paragraph_id = models.UUIDField(blank=False, null=False, editable=False)
-    position = models.IntegerField(blank=False)
-
-    # class Meta:
-    #     ordering = ['revision__timestamp',
-    #                 'position']
-
-    def __str__(self):
-        return 'RP #{}'.format(self.id)
-        # return 'RP #{}: {}'.format(self.id, self.paragraph.hash_value)
-
-
-class Paragraph(BaseModel):
-    id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
-    hash_value = models.CharField(max_length=32, blank=False, default='')
-
-    def __str__(self):
-        return 'Paragraph #{}'.format(self.id)
-
-    # class Meta:
-    #     ordering = ['id']
-
-    @property
-    def text(self):
-        text = []
-        for s in self.sentences.all():
-            text.append(s.sentence.text)
-        return ' '.join(text)
-
-
-class ParagraphSentence(BaseModel):
-    # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
-    id = models.BigAutoField(primary_key=True, verbose_name='ID')
-    paragraph = models.ForeignKey(Paragraph, blank=False, related_name='sentences')
-    # paragraph_id = models.UUIDField(blank=False, null=False, editable=False)
-    sentence = models.ForeignKey('Sentence', blank=False, related_name='paragraphs')
-    # sentence_id = models.UUIDField(blank=False, null=False, editable=False)
-    position = models.IntegerField(blank=False)
-
-    # class Meta:
-    #     ordering = ['paragraph__revisions__revision__timestamp',
-    #                 'paragraph__revisions__position',
-    #                 'position']
-
-    def __str__(self):
-        return 'PS #{}'.format(self.id)
-        # return 'PS #{}: {}'.format(self.id, self.sentence.hash_value)
-
-
-class Sentence(BaseModel):
-    id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
-    hash_value = models.CharField(max_length=32, blank=False, default='')
-
-    def __str__(self):
-        return 'Sentence #{}'.format(self.id)
-
-    @property
-    def splitted(self):
-        return self.tokens.select_related('token').values_list('token__value', flat=True)
-
-    @property
-    def text(self):
-        return ' '.join(self.splitted)
-
-
-class SentenceToken(BaseModel):
-    # id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
-    id = models.BigAutoField(primary_key=True, verbose_name='ID')
-    sentence = models.ForeignKey(Sentence, blank=False, related_name='tokens')
-    # sentence_id = models.UUIDField(blank=False, null=False, editable=False)
-    token = models.ForeignKey('Token', blank=False, related_name='sentences')
-    # token_id = models.UUIDField(blank=False, null=False, editable=False)
-    position = models.IntegerField(blank=False)
-
-    # class Meta:
-    #     unique_together = (('token_id', 'label_revision_id'),)  # TODO this must be satisfied!
-
-    #     ordering = ['sentence__paragraphs__paragraph__revisions__revision__timestamp',
-    #                 'sentence__paragraphs__paragraph__revisions__position',
-    #                 'sentence__paragraphs__position',
-    #                 'position']
-
-    def __str__(self):
-        return 'ST #{}'.format(self.id)
-        # return 'ST #{}: {}'.format(self.id, self.token)
-
-
 class Token(BaseModel):
     id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)  # unique per article
     value = models.TextField(blank=False, null=False)
+    article_id = models.IntegerField(blank=False, null=False)
+    token_id = models.IntegerField(blank=False)  # sequential id in article, unique per article
+    label_revision = models.ForeignKey(Revision, blank=False, related_name='introduced_tokens')
+    # label_revision_id = models.IntegerField(blank=False, null=False)
+    editor = models.CharField(max_length=87, default='', help_text='Editor of label revision')  # max_length='0|' + 85
+    timestamp = models.DateTimeField(blank=True, null=True, help_text='Timestamp of label revision')
     last_used = models.IntegerField(blank=False, null=False, default=0)  # last used revision ids
     inbound = ArrayField(models.IntegerField(), blank=True, null=True)  # inbound/reintroduced in revision ids
     outbound = ArrayField(models.IntegerField(), blank=True, null=True)  # outbound/deleted in revision ids
-    label_revision = models.ForeignKey(Revision, blank=False, related_name='introduced_tokens')
-    # label_revision_id = models.IntegerField(blank=False, null=False)
-    token_id = models.IntegerField(blank=False)  # sequential id in article, unique per article
-    article_id = models.IntegerField(blank=False, null=False)
-    editor = models.CharField(max_length=87, default='', help_text='Editor of label revision')  # max_length='0|' + 85
-    timestamp = models.DateTimeField(blank=True, null=True, help_text='Timestamp of label revision')
-    conflict_score = models.IntegerField(null=True)
+    # conflict_score = models.IntegerField(null=True)
 
     # class Meta:
     #     ordering = ['sentences__sentence__paragraphs__paragraph__revisions__revision__timestamp',
@@ -426,69 +324,3 @@ class Token(BaseModel):
     @property
     def text(self):
         return self.value
-
-"""
-class Editor(BaseModel):
-    id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)
-    # wikipedia_id = models.IntegerField(default=0, db_index=True)  # they are not unique in wp
-    wikipedia_id = models.IntegerField(default=0)
-    name = models.CharField(max_length=87, blank=True, null=False, default='')
-
-    # class Meta:
-    #     unique_together = (('wikipedia_id', 'name'),)
-
-    def __str__(self):
-        editor = 'Editor {}'.format(self.wikipedia_id)
-        if self.name:
-            editor = '{} - {}'.format(editor, self.name)
-        return editor
-
-    def save(self, *args, **kwargs):
-        if not self.id:
-            self.id = uuid.uuid3(uuid.NAMESPACE_X500, '{}{}'.format(self.wikipedia_id, self.name))
-        super(Editor, self).save(*args, **kwargs)
-
-    @property
-    def wikipedia_url(self):
-        return 'https://en.wikipedia.org/wiki/User:{}'.format(self.name)
-"""
-
-
-def get_paragraphs_data(revision_id):
-    return RevisionParagraph.objects.filter(revision_id=revision_id).\
-                    select_related('paragraph').\
-                    order_by('position').\
-                    values('paragraph_id', 'paragraph__hash_value')
-
-
-def get_sentences_data(paragraph_id):
-    return ParagraphSentence.objects.filter(paragraph_id=paragraph_id).\
-                            select_related('sentence').\
-                            order_by('position').\
-                            values('sentence_id', 'sentence__hash_value')
-
-
-def get_tokens_data(sentence_id):
-    return SentenceToken.objects.filter(sentence_id=sentence_id).\
-                                    select_related('token').\
-                                    order_by('position').\
-                                    values('token_id', 'token__value', 'token__token_id',
-                                           'token__last_used', 'token__inbound', 'token__outbound')
-
-
-# TODO check https://github.com/tvavrys/django-memoize + https://github.com/3Top/lru2cache
-# TODO or write your own decorator to do this by using memcached!
-# each server restart clears the local cache
-@lru_cache(maxsize=None, typed=False)  # The LRU feature performs best when maxsize is a power-of-two.
-def get_cached_paragraphs_data(revision_id):
-    return get_paragraphs_data(revision_id)
-
-
-@lru_cache(maxsize=None, typed=False)
-def get_cached_sentences_data(paragraph_id):
-    return get_sentences_data(paragraph_id)
-
-
-@lru_cache(maxsize=None, typed=False)
-def get_cached_tokens_data(sentence_id):
-    return get_tokens_data(sentence_id)

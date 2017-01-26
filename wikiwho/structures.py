@@ -5,28 +5,23 @@ Created on Feb 20, 2013
 @author: maribelacosta
 @author: Andriy Rodchenko
 """
-# TODO udpate Structures according to Models.
 
 
 class Word(object):
     """
-    Implementation of the structure "Word", which includes the authorship information.
+    Implementation of the structure "Word (Token)", which includes the authorship information.
     """
     def __init__(self):
-        self.id = ''  # uuid.uuid3(uuid.NAMESPACE_X500, '{}{}{}'.format(article_id, token_id))
-        self.editor = ''  # id if id != 0 else '0|{}'.format(name)
-        # TODO remove author_id and author_name
-        self.author_id = 0  # Identificator of the author of the word.
-        self.author_name = ''  # Username of the author of the word.
-        self.revision = 0  # Revision where the word was included.
+        self.token_id = 0  # Sequential id (position) in article. Unique per article.
         self.value = ''  # The word (simple text).
-        self.matched = False
-        # self.length = 0
-        self.token_id = 0  # sequential id in article. unique per article
-        # self.used = []
-        self.last_used = 0
-        self.inbound = []
+        self.editor = ''  # id if id != 0 else '0|{}'.format(name)
+        self.origin_rev_id = 0  # Revision id where the word was included.
+        self.origin_ts = 0  # Timestamp when the word was included.
         self.outbound = []
+        self.inbound = []
+        self.last_rev_id = 0  # Revision id where the word was last time used.
+        # self.conflict_score = 0
+        self.matched = False
 
     def __repr__(self):
         return str(id(self))
@@ -34,7 +29,7 @@ class Word(object):
     def to_dict(self):
         word = {}
         # word.update({'author' : {'id': self.author_id, 'username': self.author_name}})
-        word.update({str(self.revision): self.value})
+        word.update({str(self.origin_rev_id): self.value})
         return word
 
 
@@ -44,7 +39,6 @@ class Sentence(object):
     """
     def __init__(self):
         self.hash_value = ''  # The hash value of the sentence.
-        self.id = ''  # uuid.uuid3(uuid.NAMESPACE_X500, '{}{}{}'.format(paragraph_id, c, hash_value))
         self.value = ''  # The sentence (simple text).
         self.splitted = []  # List of strings composing the sentence.
         self.words = []  # List of words in the sentence. It is an array of Word.
@@ -71,9 +65,8 @@ class Paragraph(object):
     """
     def __init__(self):
         self.hash_value = ''  # The hash value of the paragraph.
-        self.id = ''  # uuid.uuid3(uuid.NAMESPACE_X500, '{}{}{}'.format(rev_wp_id, c, hash_value))
         self.value = ''  # The text of the paragraph.
-        self.sentences = {}  # Dictionary of sentences in the paragraph. It is a dictionary of the form {sentence_hash : [Sentence, ..]}
+        self.sentences = {}  # Dictionary of sentences in the paragraph. {sentence_hash : [sentence_obj, ..]}
         self.ordered_sentences = []  # List with the hash of the sentences, ordered by hash appeareances.
         self.matched = False  # Flag.
 
@@ -105,25 +98,22 @@ class Revision(object):
     """
 
     def __init__(self):
-        self.id = 0  # Fake sequential id. Starts in 0.
-        self.wikipedia_id = 0  # Wikipedia revision id.
+        self.id = 0  # Wikipedia revision id.
         self.editor = ''  # id if id != 0 else '0|{}'.format(name)
-        # TODO remove contributor_id and contributor_name
-        self.contributor_id = 0  # Id of the contributor who performed the revision.
-        self.contributor_name = ''  # Name of the contributor who performed the revision.
-        # self.contributor_ip = ''  # IP of the contributor who performed the revision.
-        self.paragraphs = {}  # Dictionary of paragraphs. It is of the form {paragraph_hash : [Paragraph, ..]}.
+        self.timestamp = 0
+        self.paragraphs = {}  # Dictionary of paragraphs. {paragraph_hash : [paragraph_obj, ..]}.
         self.ordered_paragraphs = []  # Ordered list of paragraph hashes.
         self.length = 0  # Content length (bytes).
-        # self.total_tokens = 0  # Number of tokens in the revision.
-        self.time = 0  # timestamp
+        # self.hash_value = ''
+        self.original_adds = 0  # Number of tokens originally added in this revision.
+        self.position = 0  # Fake sequential id (position in article). Starts from 1.
 
     def __repr__(self):
         return str(id(self))
 
     def to_dict(self):
         revision = {}
-        # json_revision.update({'id' : revisions[revision].wikipedia_id})
+        # json_revision.update({'id' : revisions[revision].id})
         # revision.update({'author' : {'id' : self.contributor_id, 'name' : self.contributor_name}})
         # json_revision.update({'length' : revisions[revision].length})
         # json_revision.update({'paragraphs' : revisions[revision].ordered_paragraphs})

@@ -7,8 +7,7 @@ TEMPLATE_DEBUG = DEBUG
 ALLOWED_HOSTS = ['local_host', '127.0.0.1']
 INTERNAL_IPS = ['127.0.0.1']
 
-PICKLE_FOLDER = 'tmp_pickles'  # ''pickle_api'
-PICKLE_FOLDER_2 = 'tmp_pickles'  # ''../disk2/pickle_api_2'
+PICKLE_FOLDER = 'tmp_pickles'
 
 INSTALLED_APPS += ['debug_toolbar',
                    'debug_panel']

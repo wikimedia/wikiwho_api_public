@@ -1,8 +1,7 @@
 from django.contrib import admin
 
 from django.utils.html import format_html
-from .models import Article, Revision, RevisionParagraph, Paragraph, ParagraphSentence, Sentence, \
-    SentenceToken, Token
+from .models import Article, Revision, Token
 from base.admin import BaseAdmin
 
 # TODO make everything read only + base admin class + check list_filters, show_change_link + test searching
@@ -61,69 +60,6 @@ class RevisionAdmin(BaseAdmin):
     revision_paragraphs.short_description = 'Revision paragraphs'
 
 
-class RevisionParagraphAdmin(BaseAdmin):
-    list_select_related = ('revision', 'paragraph', )
-    list_display = ('id', 'revision', 'paragraph', 'position', )
-    # list_filter = ('revision', )
-    readonly_fields = ('revision', 'paragraph', 'position', )
-
-
-class ParagraphAdmin(BaseAdmin):
-    list_display = ('id', 'hash_value', )
-    readonly_fields = ('id', 'hash_value', 'paragraph_sentences', )
-
-    def paragraph_sentences(self, obj):
-        table = '<table style="width:100%">'
-        table += '<thead><tr><th>SENTENCE</th><th>POSITION</th></thead>'
-        table += '<tbody>'
-        i = 1
-        c = 0
-        for ps in obj.sentences.select_related('sentence').all():
-            table += '<tr class="row{}"><td><a href="{}">{}</a></td><td>{}</td></tr>'.\
-                format(i, ps.sentence.get_admin_url(), ps.sentence, ps.position)
-            i = 1 if i == 2 else 2
-            c += 1
-        table += '</tbody>'
-        table += '</table>'
-        table = '<br><div># sentences: {}</div>'.format(c) + table
-        return format_html(table)
-    paragraph_sentences.short_description = 'Paragraph sentences'
-
-
-class ParagraphSentenceAdmin(BaseAdmin):
-    list_select_related = ('paragraph', 'sentence', )
-    list_display = ('id', 'paragraph', 'sentence', 'position', )
-    readonly_fields = ('paragraph', 'sentence', 'position', )
-
-
-class SentenceAdmin(BaseAdmin):
-    list_display = ('id', 'hash_value', )
-    readonly_fields = ('id', 'hash_value', 'sentence_tokens', )
-
-    def sentence_tokens(self, obj):
-        table = '<table style="width:100%">'
-        table += '<thead><tr><th>TOKEN</th><th>POSITION</th></thead>'
-        table += '<tbody>'
-        i = 1
-        c = 0
-        for st in obj.tokens.select_related('token').all():
-            table += '<tr class="row{}"><td><a href="{}">{}</a></td><td>{}</td></tr>'.\
-                format(i, st.token.get_admin_url(), st.token, st.position)
-            i = 1 if i == 2 else 2
-            c += 1
-        table += '</tbody>'
-        table += '</table>'
-        table = '<br><div># tokens: {}</div>'.format(c) + table
-        return format_html(table)
-    sentence_tokens.short_description = 'Sentence tokens'
-
-
-class SentenceTokenAdmin(BaseAdmin):
-    list_select_related = ('sentence', 'token', )
-    list_display = ('id', 'sentence', 'token', 'position', )
-    readonly_fields = ('sentence', 'token', 'position', )
-
-
 class TokenAdmin(BaseAdmin):
     list_select_related = ('label_revision', )
     list_display = ('id', 'value', 'label_revision', 'token_id', 'last_used', 'len_inbound', 'len_outbound', )
@@ -139,11 +75,6 @@ class TokenAdmin(BaseAdmin):
 
 admin.site.register(Article, ArticleAdmin)
 admin.site.register(Revision, RevisionAdmin)
-admin.site.register(RevisionParagraph, RevisionParagraphAdmin)
-admin.site.register(Paragraph, ParagraphAdmin)
-admin.site.register(ParagraphSentence, ParagraphSentenceAdmin)
-admin.site.register(Sentence, SentenceAdmin)
-admin.site.register(SentenceToken, SentenceTokenAdmin)
 # admin.site.register(Token, TokenAdmin)
 admin.site.register(Token)
 

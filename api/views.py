@@ -207,7 +207,12 @@ class WikiwhoView(object):
             parameters.append(settings.DELETED_CONTENT_THRESHOLD_LIMIT)
         return parameters
 
-    def get_revision_json(self, revision_ids, parameters, only_last_valid_revision=False, minimal=False):
+    def get_revision_json(self, wp, parameters, only_last_valid_revision=False, minimal=False, from_db=False):
+        if not from_db:
+            return wp.wikiwho.get_revision_json(wp.revision_ids, parameters, only_last_valid_revision, minimal)
+
+        # TODO update to use token_list
+        revision_ids = wp.revision_ids
         json_data = dict()
         json_data["article"] = self.article.title
         if not minimal:
@@ -221,6 +226,7 @@ class WikiwhoView(object):
             revisions = []
             db_revision_ids = []
             if len(revision_ids) > 1:
+                # FIXME revision ids are not ordered
                 filter_ = {'id__range': revision_ids}
                 order_fields = ['timestamp']
             else:
@@ -285,7 +291,7 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
     # filter_fields = ('query_option_1', 'query_option_2',)
     # query_fields = ('rev_id', 'editor', 'token_id', )
     renderer_classes = [JSONRenderer]  # to disable browsable api
-    article = None
+    # article = None
 
     def get_parameters(self, query_type):
         all_parameters = super(WikiwhoApiView, self).get_parameters(query_type)
@@ -316,7 +322,7 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
             response = {'Error': 'HTTP Response error from Wikipedia! Please try again later.'}
             status_ = status.HTTP_400_BAD_REQUEST
         else:
-            self.article = wp.article_obj
+            # self.article = wp.article_obj
             if deleted:
                 response = self.get_deleted_tokens(parameters)
                 # response_ = wp.wikiwho.get_deleted_tokens(parameters)
@@ -328,9 +334,7 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
                 # assert list(response["revisions"]) == response_["revisions"]
                 status_ = status.HTTP_200_OK
             else:
-                response = self.get_revision_json(wp.revision_ids, parameters)
-                # response_ = wp.wikiwho.get_revision_json(wp.revision_ids, parameters)
-                # assert response == response_
+                response = self.get_revision_json(wp, parameters)
                 if 'Error' in response:
                     status_ = status.HTTP_400_BAD_REQUEST
                 else:

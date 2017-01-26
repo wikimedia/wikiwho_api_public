@@ -9,10 +9,11 @@ TEMPLATE_DEBUG = DEBUG
 SWAGGER_SETTINGS['VALIDATOR_URL'] = 'https://online.swagger.io/validator'
 
 ALLOWED_HOSTS = ['193.175.238.88',
+                 '180.163.113.82',
                  'www.wikiwho.net',
                  'wikiwho.net']
 
-ONLY_READ_FROM_DB = True
+ONLY_READ_ALLOWED = True
 
 # def custom_show_toolbar(request):
 #     return True  # show toolbar always for staging
