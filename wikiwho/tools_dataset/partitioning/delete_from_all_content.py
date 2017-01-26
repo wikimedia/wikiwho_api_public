@@ -123,6 +123,9 @@ def main():
             for input_current, input_all, first_article_id, last_article_id, part_id in files_iter:
                 output_file = '{}/deleted_content-20161226-part{}-{}-{}.csv'.format(output_folder, part_id,
                                                                                     first_article_id, last_article_id)
+                if exists(output_file):
+                    files_left -= 1
+                    continue
                 job = executor.submit(delete_from, input_all, input_current, output_file)
                 jobs[job] = '{}-{}'.format(first_article_id, last_article_id)
                 if len(jobs) == max_workers:  # limit # jobs with max_workers
