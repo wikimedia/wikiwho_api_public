@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
+python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/test' -t 0.1 -m 2 -d 'R' --check_exists
 python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/' -t 30 -m 24
 python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/' -j '' -m 24 --check_exists
 """
@@ -21,7 +22,7 @@ from api.handler import WPHandler
 from base.utils import is_db_running
 
 
-def generate_articles_postgres(xml_file_path, page_ids, log_folder, format_, check_exists_in_db=False, timeout=None):
+def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables, check_exists=False, timeout=None):
     xml_file_name = basename(xml_file_path)
     logger = logging.getLogger(xml_file_name[:-3].split('-')[-1])
     file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
@@ -46,7 +47,8 @@ def generate_articles_postgres(xml_file_path, page_ids, log_folder, format_, che
         for page in dump:
             try:
                 if page.namespace == 0 and not page.redirect and (not page_ids or int(page.id) in page_ids):
-                    with WPHandler(page.title, page_id=page.id, save_into_db=True, check_exists_in_db=check_exists_in_db, is_xml=True) as wp:
+                    with WPHandler(page.title, page_id=page.id, save_tables=save_tables,
+                                   check_exists=check_exists, is_xml=True) as wp:
                         # print(wp.article_title)
                         wp.handle_from_xml(page, timeout)
             except (OperationalError, DatabaseError):
@@ -72,25 +74,27 @@ class Command(BaseCommand):
         parser.add_argument('-m', '--max_workers', type=int, help='Number of processors/threads to run parallel. '
                                                                   'Default is # compressed files in given folder path.',
                             required=False)
+        parser.add_argument('-d', '--mode', help='Empty: dont save into db, A: Save only articles , '
+                                                 'R: save only revisions, ART: Save all. Default is empty.',
+                            required=False)
         parser.add_argument('-t', '--timeout', type=float, required=False,
                             help='Timeout value for each processor for analyzing articles [minutes]')
         parser.add_argument('-tpe', '--thread_pool_executor', action='store_true',
                             help='Use ThreadPoolExecutor, default is ProcessPoolExecutor', default=False,
                             required=False)
         parser.add_argument('-c', '--check_exists', action='store_true',
-                            help='Check if an article exists in db before creating it.'
-                                 ' If yes, go to the next article. If not, process article. '
-                                 'Be careful that if yes, this costs 1 extra db query for each article!',
+                            help='Check if an article exists before creating it.'
+                                 ' If yes, go to the next article. If not, process article. ',
                             default=False, required=False)
 
     def handle(self, *args, **options):
         xml_folder = options['path']
         xml_folder = xml_folder[:-1] if xml_folder.endswith('/') else xml_folder
 
-        check_exists_in_db = options['check_exists']
+        check_exists = options['check_exists']
         json_folder = options['json']
         xml_files = []
-        if json_folder and check_exists_in_db:
+        if json_folder and check_exists:
             import json
             json_folder = json_folder[:-1] if json_folder.endswith('/') else json_folder
             json_files = ['{}/{}'.format(json_folder, j) for j in listdir(json_folder) if j.endswith('.json')]
@@ -99,7 +103,7 @@ class Command(BaseCommand):
                     json_data = json.loads(f.read())
                     for xml_file in json_data:
                         title_ids = json_data[xml_file]['timeouts']
-                        if check_exists_in_db:
+                        if check_exists:
                             title_ids += json_data[xml_file]['operationals']
                         # print(title_ids)
                         page_ids = [int(ti[1]) for ti in title_ids]
@@ -129,7 +133,7 @@ class Command(BaseCommand):
             # format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
 
         # for xml_file_path in xml_files:
-        #     generate_articles_postgres(xml_file_path, log_folder, format_, check_exists_in_db, timeout)
+        #     generate_articles_postgres(xml_file_path, log_folder, format_, check_exists, timeout)
 
         logger = logging.getLogger('future_log')
         file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
@@ -141,7 +145,16 @@ class Command(BaseCommand):
         logger.handlers = [file_handler]
         # logger.addHandler(file_handler)
 
-        print(max_workers)
+        mode = options['mode']
+        save_tables = []
+        for m in mode:
+            if m.upper() == 'A':
+                save_tables.append('article')
+            elif m.upper() == 'R':
+                save_tables.append('revision')
+            elif m.upper() == 'T':
+                save_tables.append('token')
+        print(max_workers, save_tables)
         # print(xml_files)
         with Executor(max_workers=max_workers) as executor:
             jobs = {}
@@ -150,8 +163,8 @@ class Command(BaseCommand):
 
             while files_left:
                 for xml_file_path, page_ids in files_iter:
-                    job = executor.submit(generate_articles_postgres, xml_file_path, page_ids, log_folder,
-                                          format_, check_exists_in_db, timeout)
+                    job = executor.submit(generate_articles, xml_file_path, page_ids, log_folder,
+                                          format_, save_tables, check_exists, timeout)
                     jobs[job] = basename(xml_file_path)
                     if len(jobs) == max_workers:  # limit # jobs with max_workers
                         break

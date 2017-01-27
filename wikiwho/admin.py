@@ -9,8 +9,8 @@ from base.admin import BaseAdmin
 
 class ArticleAdmin(BaseAdmin):
     search_fields = ('id', 'title', )
-    list_display = ('id', 'title', 'rvcontinue', 'spam', )
-    readonly_fields = ('id', 'title', 'rvcontinue', 'spam', 'article_revisions', )
+    list_display = ('id', 'title', 'rvcontinue', 'spam_ids', )
+    readonly_fields = ('id', 'title', 'rvcontinue', 'spam_ids', 'article_revisions', )
 
     def article_revisions(self, obj):
         table = '<table style="width:100%">'
@@ -30,40 +30,19 @@ class ArticleAdmin(BaseAdmin):
     article_revisions.short_description = 'Article revisions'
 
 
-# class RevisionParagraphInline(admin.TabularInline):
-#     model = RevisionParagraph
-
-
 class RevisionAdmin(BaseAdmin):
     # inlines = [RevisionParagraphInline]
     search_fields = ('id', )
-    list_select_related = ('article', )
-    list_display = ('id', 'article', 'editor', 'timestamp', 'created', )
+    # list_select_related = ('article', )
+    list_display = ('id', 'article_id', 'editor', 'timestamp', 'created', )
     # list_filter = ('article', )
-    readonly_fields = ('id', 'article', 'editor', 'timestamp', 'length', 'created', 'revision_paragraphs', )
-
-    def revision_paragraphs(self, obj):
-        table = '<table style="width:100%">'
-        table += '<thead><tr><th>Paragraph</th><th>POSITION</th></thead>'
-        table += '<tbody>'
-        i = 1
-        c = 0
-        for rp in obj.paragraphs.select_related('paragraph').all():
-            table += '<tr class="row{}"><td><a href="{}">{}</a></td><td>{}</td></tr>'.\
-                format(i, rp.paragraph.get_admin_url(), rp.paragraph, rp.position)
-            i = 1 if i == 2 else 2
-            c += 1
-        table += '</tbody>'
-        table += '</table>'
-        table = '<br><div># paragraphs: {}</div>'.format(c) + table
-        return format_html(table)
-    revision_paragraphs.short_description = 'Revision paragraphs'
+    readonly_fields = ('id', 'article_id', 'editor', 'timestamp', 'length', 'created', )
 
 
 class TokenAdmin(BaseAdmin):
-    list_select_related = ('label_revision', )
-    list_display = ('id', 'value', 'label_revision', 'token_id', 'last_used', 'len_inbound', 'len_outbound', )
-    readonly_fields = ('id', 'value', 'last_used', 'inbound', 'outbound', 'label_revision', 'token_id', )
+    list_select_related = ('origin_rev', )
+    list_display = ('id', 'value', 'origin_rev', 'token_id', 'last_rev_id', 'len_inbound', 'len_outbound', )
+    readonly_fields = ('id', 'value', 'last_rev_id', 'inbound', 'outbound', 'origin_rev', 'token_id', )
 
     def len_inbound(self, obj):
         return len(obj.inbound)
@@ -74,63 +53,8 @@ class TokenAdmin(BaseAdmin):
     len_outbound.short_description = 'len outbound'
 
 admin.site.register(Article, ArticleAdmin)
+# admin.site.register(Article)
 admin.site.register(Revision, RevisionAdmin)
-# admin.site.register(Token, TokenAdmin)
-admin.site.register(Token)
-
-
-# class ArticleAdmin(BaseAdmin):
-#     list_display = ('id', 'title', 'rvcontinue', 'spam', )
-#     readonly_fields = ('id', 'title', 'rvcontinue', 'spam', )
-#
-#
-# class RevisionAdmin(BaseAdmin):
-#     list_display = ('id', 'article_id', 'editor', 'timestamp', 'created', )
-#     readonly_fields = ('id', 'article_id', 'editor', 'timestamp', 'length', 'created', )
-#
-#
-# class RevisionParagraphAdmin(BaseAdmin):
-#     list_display = ('id', 'revision_id', 'paragraph_id', 'position', )
-#     readonly_fields = ('revision_id', 'paragraph_id', 'position', )
-#
-#
-# class ParagraphAdmin(BaseAdmin):
-#     list_display = ('id', 'hash_value', )
-#     readonly_fields = ('id', 'hash_value', )
-#
-#
-# class ParagraphSentenceAdmin(BaseAdmin):
-#     list_display = ('id', 'paragraph_id', 'sentence_id', 'position', )
-#     readonly_fields = ('paragraph_id', 'sentence_id', 'position', )
-#
-#
-# class SentenceAdmin(BaseAdmin):
-#     list_display = ('id', 'hash_value', )
-#     readonly_fields = ('id', 'hash_value', )
-#
-#
-# class SentenceTokenAdmin(BaseAdmin):
-#     list_display = ('id', 'sentence_id', 'token_id', 'position', )
-#     readonly_fields = ('sentence_id', 'token_id', 'position', )
-#
-#
-# class TokenAdmin(BaseAdmin):
-#     list_display = ('id', 'value', 'label_revision_id', 'token_id', 'last_used', 'len_inbound', 'len_outbound', )
-#     readonly_fields = ('id', 'value', 'last_used', 'inbound', 'outbound', 'label_revision_id', 'token_id', )
-#
-#     def len_inbound(self, obj):
-#         return len(obj.inbound)
-#     len_inbound.short_description = 'len inbound'
-#
-#     def len_outbound(self, obj):
-#         return len(obj.outbound)
-#     len_outbound.short_description = 'len outbound'
-#
-# admin.site.register(Article, ArticleAdmin)
-# admin.site.register(Revision, RevisionAdmin)
-# admin.site.register(RevisionParagraph, RevisionParagraphAdmin)
-# admin.site.register(Paragraph, ParagraphAdmin)
-# admin.site.register(ParagraphSentence, ParagraphSentenceAdmin)
-# admin.site.register(Sentence, SentenceAdmin)
-# admin.site.register(SentenceToken, SentenceTokenAdmin)
-# admin.site.register(Token, TokenAdmin)
+# admin.site.register(Revision)
+admin.site.register(Token, TokenAdmin)
+# admin.site.register(Token)

@@ -27,7 +27,8 @@ class WPHandlerException(Exception):
 
 
 class WPHandler(object):
-    def __init__(self, article_title, page_id=None, pickle_folder='', save_into_db=False, check_exists=True, is_xml=False, *args, **kwargs):
+    def __init__(self, article_title, page_id=None, pickle_folder='', save_tables=(),
+                 check_exists=True, is_xml=False, *args, **kwargs):
         # super(WPHandler, self).__init__(article_title, pickle_folder=pickle_folder, *args, **kwargs)
         self.article_title = article_title
         self.saved_article_title = ''
@@ -38,7 +39,7 @@ class WPHandler(object):
         self.saved_rvcontinue = ''
         self.latest_revision_id = None
         self.page_id = page_id
-        self.save_into_db = save_into_db
+        self.save_tables = save_tables
         self.check_exists = check_exists
         self.already_exists = False
         self.is_xml = is_xml
@@ -72,7 +73,7 @@ class WPHandler(object):
             self.wikiwho = pickle_load(self.pickle_path)
             self.wikiwho.title = self.saved_article_title
         self.saved_rvcontinue = self.wikiwho.rvcontinue
-        # if self.save_into_db:
+        # if self.save_tables:
         #     update titles of other articles with other page ids by using wp api (celery task)
         #     articles = [a for a in Article.objects.filter(title=self.saved_article_title)]
         #     for article in articles:
@@ -248,8 +249,9 @@ class WPHandler(object):
             updated_prev_tokens = self.wikiwho.updated_prev_tokens
             self.wikiwho.clean_attributes()
             pickle_dump(self.wikiwho, self.pickle_path)
-            if self.save_into_db:
-                wikiwho_to_db(self.wikiwho, updated_prev_tokens, self.already_exists)
+            if self.save_tables:
+                wikiwho_to_db(self.wikiwho, save_tables=self.save_tables,
+                              updated_prev_tokens=updated_prev_tokens, already_exists=self.already_exists)
         # return True
         # time2 = time()
         # print("Execution time exit: {}".format(time2-time1))

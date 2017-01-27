@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 import xmltodict
 import os
-from api.utils import pickle_
+from api.utils_pickles import pickle_dump
 from wikiwho.wikiwho_simple import Wikiwho
 
 # this is taken from examples.Finger_Lakes3.xml
@@ -387,7 +387,7 @@ def xml_to_pickle(output_path):
                     wikiwho.clean_attributes()
     if pickle_name:
         pickle_path = '{}/{}.p'.format(output_path, pickle_name)
-        pickle_(wikiwho, pickle_path)
+        pickle_dump(wikiwho, pickle_path)
 
 
 class Command(BaseCommand):

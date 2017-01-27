@@ -16,7 +16,7 @@ class Word(object):
         self.value = ''  # The word (simple text).
         self.editor = ''  # id if id != 0 else '0|{}'.format(name)
         self.origin_rev_id = 0  # Revision id where the word was included.
-        self.origin_ts = 0  # Timestamp when the word was included.
+        self.timestamp = 0  # Timestamp when the word was included.
         self.outbound = []
         self.inbound = []
         self.last_rev_id = 0  # Revision id where the word was last time used.

@@ -60,7 +60,7 @@ class Wikiwho:
         self.temp = []
 
     def analyse_article_xml(self, page):
-        position = self.revision_prev.position + 1
+        position = self.revision_curr.position + 1
         # Iterate over revisions of the article.
         for revision in page:
             text = revision.text or ''
@@ -141,7 +141,7 @@ class Wikiwho:
             self.temp = []
 
     def analyse_article(self, revisions):
-        position = self.revision_prev.position + 1
+        position = self.revision_curr.position + 1
         # Iterate over revisions of the article.
         for revision in revisions:
             if 'texthidden' in revision or 'textmissing' in revision:
@@ -620,7 +620,7 @@ class Wikiwho:
                     word_curr.token_id = self.token_id
                     word_curr.editor = self.revision_curr.editor
                     word_curr.origin_rev_id = self.revision_curr.id
-                    word_curr.origin_ts = self.revision_curr.timestamp
+                    word_curr.timestamp = self.revision_curr.timestamp
                     word_curr.last_rev_id = self.revision_curr.id
 
                     sentence_curr.words.append(word_curr)
@@ -666,7 +666,7 @@ class Wikiwho:
                             word_curr.token_id = self.token_id
                             word_curr.editor = self.revision_curr.editor
                             word_curr.origin_rev_id = self.revision_curr.id
-                            word_curr.origin_ts = self.revision_curr.timestamp
+                            word_curr.timestamp = self.revision_curr.timestamp
                             word_curr.last_rev_id = self.revision_curr.id
 
                             sentence_curr.words.append(word_curr)
@@ -683,7 +683,7 @@ class Wikiwho:
                     word_curr.token_id = self.token_id
                     word_curr.editor = self.revision_curr.editor
                     word_curr.origin_rev_id = self.revision_curr.id
-                    word_curr.origin_ts = self.revision_curr.timestamp
+                    word_curr.timestamp = self.revision_curr.timestamp
                     word_curr.last_rev_id = self.revision_curr.id
                     sentence_curr.words.append(word_curr)
 
@@ -692,12 +692,11 @@ class Wikiwho:
 
         return matched_words_prev, possible_vandalism
 
-    def get_revision_json(self, revision_ids, parameters, only_last_valid_revision=False, minimal=False):
+    def get_revision_json(self, revision_ids, parameters, only_last_valid_revision=False):
         json_data = dict()
         json_data["article"] = self.title
-        if not minimal:
-            json_data["success"] = True
-            json_data["message"] = None
+        json_data["success"] = True
+        json_data["message"] = None
 
         revisions = []
         positions = []
@@ -743,7 +742,61 @@ class Wikiwho:
         #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
+    def get_revision_min_json(self, revision_ids, parameters, only_last_valid_revision=False):
+        json_data = dict()
+        json_data["article"] = self.title
+        json_data["success"] = True
+        json_data["message"] = None
+
+        revisions = []
+        positions = []
+        for rev_id in revision_ids:
+            if rev_id not in self.revisions:
+                return {'Error': 'Revision ID ({}) does not exist or is spam or deleted!'.format(rev_id)}
+
+        for rev_id, revision in self.revisions.items():
+            if len(revision_ids) == 2:
+                # FIXME revision ids are not ordered
+                if rev_id < revision_ids[0] or rev_id > revision_ids[1]:
+                    continue
+            else:
+                if rev_id != revision_ids[0]:
+                    continue
+
+            positions.append(revision.position)
+            values = []
+            rev_ids = []
+            editors = []
+            token_ids = []
+            outs = []
+            ins = []
+            revisions.append({rev_id: {"editor": revision.editor,
+                                       "time": revision.timestamp,
+                                       "str": values,
+                                       "rev_ids": rev_ids,
+                                       "editors": editors,
+                                       "token_ids": token_ids,
+                                       "outs": outs,
+                                       "ins": ins,
+                                       }})
+            for word in iter_rev_tokens(revision):
+                values.append(word.value)
+                rev_ids.append(word.origin_rev_id)
+                editors.append(word.editor)
+                token_ids.append(word.token_id)
+                outs.append(word.outbound)
+                ins.append(word.inbound)
+
+        json_data['revisions'] = [rs for (p, rs) in sorted(zip(positions, revisions), key=lambda pair: pair[0])] \
+            if len(revision_ids) > 1 else revisions
+
+        # import json
+        # with open('tmp_pickles/{}.json'.format(self.title), 'w') as f:
+        #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        return json_data
+
     def get_deleted_tokens(self, parameters):
+        # TODO  update fields and make faster, add min version of this method
         response = dict()
         response["success"] = "true"
         response["article"] = self.title
@@ -756,30 +809,24 @@ class Wikiwho:
         revisions = [rev_id for time, rev_id in sorted(revisions, key=lambda x: x[0])]
         last_rev_id = revisions[-1].id
         for revision in revisions[:-1]:
-            # ps_copy = deepcopy(revision.paragraphs)
-            for hash_paragraph in revision.ordered_paragraphs:
-                # paragraph = ps_copy[hash_paragraph].pop(0)
-                paragraph = revision.paragraphs[hash_paragraph].pop(0)
-                for hash_sentence in paragraph.ordered_sentences:
-                    sentence = paragraph.sentences[hash_sentence].pop(0)
-                    for word in sentence.words:
-                        if len(word.outbound) > threshold and word.last_rev_id != last_rev_id:
-                            token = dict()
-                            token['str'] = word.value
-                            if 'rev_id' in parameters:
-                                token['rev_id'] = word.origin_rev_id
-                            if 'editor' in parameters:
-                                token['editor'] = word.editor
-                            if 'token_id' in parameters:
-                                token['token_id'] = word.token_id
-                            if 'inbound' in parameters:
-                                token['inbound'] = word.inbound
-                            if 'outbound' in parameters:
-                                token['outbound'] = word.outbound
-                            key = '{}-{}'.format(word.origin_rev_id, word.token_id)
-                            if key not in deleted_token_keys:
-                                deleted_token_keys.append(key)
-                                deleted_tokens.append(token)
+            for word in iter_rev_tokens(revision):
+                if len(word.outbound) > threshold and word.last_rev_id != last_rev_id:
+                    token = dict()
+                    token['str'] = word.value
+                    if 'rev_id' in parameters:
+                        token['rev_id'] = word.origin_rev_id
+                    if 'editor' in parameters:
+                        token['editor'] = word.editor
+                    if 'token_id' in parameters:
+                        token['token_id'] = word.token_id
+                    if 'inbound' in parameters:
+                        token['inbound'] = word.inbound
+                    if 'outbound' in parameters:
+                        token['outbound'] = word.outbound
+                    key = '{}-{}'.format(word.origin_rev_id, word.token_id)
+                    if key not in deleted_token_keys:
+                        deleted_token_keys.append(key)
+                        deleted_tokens.append(token)
         response["deleted_tokens"] = deleted_tokens
 
         response["threshold"] = threshold
@@ -791,16 +838,17 @@ class Wikiwho:
         return response
 
     def get_revision_ids(self):
-        response = dict()
-        response["success"] = "true"
+        json_data = dict()
+        json_data["article"] = self.title
+        json_data["success"] = True
+        json_data["message"] = None
         revisions = []
-        response["article"] = self.title
         from datetime import datetime
         for rev_id, rev in self.revisions.items():
+            # TODO use position ?
             revisions.append((datetime.strptime(rev.timestamp, '%Y-%m-%dT%H:%M:%SZ'), rev_id))
-        response["revisions"] = [rev_id for time, rev_id in sorted(revisions, key=lambda x: x[0])]
-        response["message"] = None
-        return response
+        json_data["revisions"] = [rev_id for time, rev_id in sorted(revisions, key=lambda x: x[0])]
+        return json_data
 
     def get_revision_text(self, revision_id):
         revision = self.revisions[revision_id]
