@@ -84,7 +84,7 @@ def pytest_generate_tests(metafunc):
 
 
 def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
-    test_json_folder = 'test_jsons'
+    test_json_folder = 'test_jsons/after_spams_hash_fix'
 
     v = WikiwhoView()
     # create json with rev and editor ids
@@ -202,7 +202,7 @@ class TestWikiwho:
         temp_folder = '{}/test_json_output'.format(temp_folder)
         with WPHandler(article_name, pickle_folder=pickle_folder) as wp:
             wp.handle([revision_id], is_api_call=False)
-        _test_json(wp, temp_folder, article_name, test_io=False)
+        _test_json(wp, temp_folder, article_name)
 
     @pytest.mark.django_db
     def test_json_output_db(self, temp_folder, article_name, revision_id):
@@ -216,7 +216,7 @@ class TestWikiwho:
         temp_folder = '{}/test_json_output'.format(temp_folder)
         with WPHandler(article_name, pickle_folder=pickle_folder, save_tables=('article', 'revision', 'token', )) as wp:
             wp.handle([revision_id], is_api_call=False)
-        _test_json(wp, temp_folder, article_name, test_io=False, from_db=True)
+        _test_json(wp, temp_folder, article_name, from_db=True)
 
     def test_json_output_xml(self, temp_folder, article_name, revision_id):
         """
@@ -230,6 +230,9 @@ class TestWikiwho:
         temp_folder = '{}/test_json_output_xml'.format(temp_folder)
         # read from xml dumps (7z)
         xml_file_path = 'test_jsons/{}'.format(article_zips[article_name])
+        if not os.path.exists(xml_file_path):
+            # server
+            xml_file_path = '/home/nuser/pdisk/xmls_7z/batch_all/{}'.format(article_zips[article_name])
         dump = Dump.from_file(reader(xml_file_path))
         article_name = article_name.replace(' ', '_')
         title_matched = False
@@ -258,6 +261,9 @@ class TestWikiwho:
         temp_folder = '{}/test_json_output_xml'.format(temp_folder)
         # read from xml dumps (7z)
         xml_file_path = 'test_jsons/{}'.format(article_zips[article_name])
+        if not os.path.exists(xml_file_path):
+            # server
+            xml_file_path = '/home/nuser/pdisk/xmls_7z/batch_all/{}'.format(article_zips[article_name])
         dump = Dump.from_file(reader(xml_file_path))
         article_name = article_name.replace(' ', '_')
         title_matched = False

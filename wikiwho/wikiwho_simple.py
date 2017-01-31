@@ -46,8 +46,6 @@ class Wikiwho:
         self.revision_curr = Revision()
         self.revision_prev = Revision()
 
-        self.continue_rev_ts = None  # to detect updated previous tokens
-        self.updated_prev_tokens = []  # [token_id, ..]
         self.text_curr = ''
         self.temp = []
 
@@ -55,7 +53,6 @@ class Wikiwho:
         # empty attributes
         self.revision_prev = None
 
-        self.updated_prev_tokens = []
         self.text_curr = ''
         self.temp = []
 
@@ -250,9 +247,6 @@ class Wikiwho:
                 for word_prev in unmatched_sentence.words:
                     if not word_prev.matched:
                         word_prev.outbound.append(self.revision_curr.id)
-                        if self.continue_rev_ts and self.continue_rev_ts >= word_prev.timestamp:
-                        # if self.continue_rev_id and self.continue_rev_id >= word_prev.origin_rev_id:
-                            self.updated_prev_tokens.append(word_prev.token_id)
             if not unmatched_sentences_prev:
                 # if all current paragraphs are matched
                 for unmatched_paragraph in unmatched_paragraphs_prev:
@@ -261,8 +255,6 @@ class Wikiwho:
                             for word_prev in sentence.words:
                                 if not word_prev.matched:
                                     word_prev.outbound.append(self.revision_curr.id)
-                                    if self.continue_rev_ts and self.continue_rev_ts >= word_prev.timestamp:
-                                        self.updated_prev_tokens.append(word_prev.token_id)
 
         # Reset matched structures from old revisions.
         for matched_paragraph in matched_paragraphs_prev:
@@ -277,8 +269,6 @@ class Wikiwho:
                             if word_prev.last_rev_id != self.revision_prev.id:
                                 word_prev.inbound.append(self.revision_curr.id)
                             word_prev.last_rev_id = self.revision_curr.id
-                            if self.continue_rev_ts and self.continue_rev_ts >= word_prev.timestamp:
-                                self.updated_prev_tokens.append(word_prev.token_id)
                         # reset
                         word_prev.matched = False
 
@@ -291,8 +281,6 @@ class Wikiwho:
                     if word_prev.last_rev_id != self.revision_prev.id:
                         word_prev.inbound.append(self.revision_curr.id)
                     word_prev.last_rev_id = self.revision_curr.id
-                    if self.continue_rev_ts and self.continue_rev_ts >= word_prev.timestamp:
-                        self.updated_prev_tokens.append(word_prev.token_id)
                 # reset
                 word_prev.matched = False
 
@@ -302,8 +290,6 @@ class Wikiwho:
             if not vandalism and word_prev.matched:
                 if word_prev.outbound and word_prev.outbound[-1] != self.revision_curr.id:
                     word_prev.last_rev_id = self.revision_curr.id
-                if self.continue_rev_ts and self.continue_rev_ts >= word_prev.timestamp:
-                    self.updated_prev_tokens.append(word_prev.token_id)
             # reset
             matched_word.matched = False
 
@@ -618,9 +604,7 @@ class Wikiwho:
                     word_curr = Word()
                     word_curr.value = word
                     word_curr.token_id = self.token_id
-                    word_curr.editor = self.revision_curr.editor
-                    word_curr.origin_rev_id = self.revision_curr.id
-                    word_curr.timestamp = self.revision_curr.timestamp
+                    word_curr.origin_rev = self.revision_curr
                     word_curr.last_rev_id = self.revision_curr.id
 
                     sentence_curr.words.append(word_curr)
@@ -664,9 +648,7 @@ class Wikiwho:
                             word_curr = Word()
                             word_curr.value = word
                             word_curr.token_id = self.token_id
-                            word_curr.editor = self.revision_curr.editor
-                            word_curr.origin_rev_id = self.revision_curr.id
-                            word_curr.timestamp = self.revision_curr.timestamp
+                            word_curr.origin_rev = self.revision_curr
                             word_curr.last_rev_id = self.revision_curr.id
 
                             sentence_curr.words.append(word_curr)
@@ -681,9 +663,7 @@ class Wikiwho:
                     word_curr = Word()
                     word_curr.value = word
                     word_curr.token_id = self.token_id
-                    word_curr.editor = self.revision_curr.editor
-                    word_curr.origin_rev_id = self.revision_curr.id
-                    word_curr.timestamp = self.revision_curr.timestamp
+                    word_curr.origin_rev = self.revision_curr
                     word_curr.last_rev_id = self.revision_curr.id
                     sentence_curr.words.append(word_curr)
 
@@ -723,9 +703,9 @@ class Wikiwho:
                 token = dict()
                 token['str'] = word.value
                 if 'rev_id' in parameters:
-                    token['rev_id'] = word.origin_rev_id
+                    token['rev_id'] = word.origin_rev.id
                 if 'editor' in parameters:
-                    token['editor'] = word.editor
+                    token['editor'] = word.origin_rev.editor
                 if 'token_id' in parameters:
                     token['token_id'] = word.token_id
                 if 'inbound' in parameters:
@@ -781,8 +761,8 @@ class Wikiwho:
                                        }})
             for word in iter_rev_tokens(revision):
                 values.append(word.value)
-                rev_ids.append(word.origin_rev_id)
-                editors.append(word.editor)
+                rev_ids.append(word.origin_rev.id)
+                editors.append(word.origin_rev.editor)
                 token_ids.append(word.token_id)
                 outs.append(word.outbound)
                 ins.append(word.inbound)
@@ -814,16 +794,16 @@ class Wikiwho:
                     token = dict()
                     token['str'] = word.value
                     if 'rev_id' in parameters:
-                        token['rev_id'] = word.origin_rev_id
+                        token['rev_id'] = word.origin_rev.id
                     if 'editor' in parameters:
-                        token['editor'] = word.editor
+                        token['editor'] = word.origin_rev.editor
                     if 'token_id' in parameters:
                         token['token_id'] = word.token_id
                     if 'inbound' in parameters:
                         token['inbound'] = word.inbound
                     if 'outbound' in parameters:
                         token['outbound'] = word.outbound
-                    key = '{}-{}'.format(word.origin_rev_id, word.token_id)
+                    key = '{}-{}'.format(word.origin_rev.id, word.token_id)
                     if key not in deleted_token_keys:
                         deleted_token_keys.append(key)
                         deleted_tokens.append(token)
@@ -862,5 +842,5 @@ class Wikiwho:
                 sentence = paragraph.sentences[hash_sentence].pop(0)
                 for word in sentence.words:
                     text.append(word.value)
-                    label_rev_ids.append(word.origin_rev_id)
+                    label_rev_ids.append(word.origin_rev.id)
         return text, label_rev_ids

@@ -246,12 +246,10 @@ class WPHandler(object):
         # logging.debug(wikiwho.lastrev_date)
         if self.wikiwho and self.wikiwho.rvcontinue != self.saved_rvcontinue:
             # if there is a new revision or first revision of the article
-            updated_prev_tokens = self.wikiwho.updated_prev_tokens
             self.wikiwho.clean_attributes()
             pickle_dump(self.wikiwho, self.pickle_path)
             if self.save_tables:
-                wikiwho_to_db(self.wikiwho, save_tables=self.save_tables,
-                              updated_prev_tokens=updated_prev_tokens, already_exists=self.already_exists)
+                wikiwho_to_db(self.wikiwho, save_tables=self.save_tables)
         # return True
         # time2 = time()
         # print("Execution time exit: {}".format(time2-time1))

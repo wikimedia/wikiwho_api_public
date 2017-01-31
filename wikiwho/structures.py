@@ -14,22 +14,17 @@ class Word(object):
     def __init__(self):
         self.token_id = 0  # Sequential id (position) in article. Unique per article.
         self.value = ''  # The word (simple text).
-        self.editor = ''  # id if id != 0 else '0|{}'.format(name)
-        self.origin_rev_id = 0  # Revision id where the word was included.
-        self.timestamp = 0  # Timestamp when the word was included.
+        self.origin_rev = None  # Revision id where the word was included.
         self.outbound = []
         self.inbound = []
         self.last_rev_id = 0  # Revision id where the word was last time used.
-        # self.conflict_score = 0
         self.matched = False
 
     def __repr__(self):
         return str(id(self))
 
     def to_dict(self):
-        word = {}
-        # word.update({'author' : {'id': self.author_id, 'username': self.author_name}})
-        word.update({str(self.origin_rev_id): self.value})
+        word = {self.origin_rev.id: self.value}
         return word
 
 
@@ -104,12 +99,12 @@ class Revision(object):
         self.paragraphs = {}  # Dictionary of paragraphs. {paragraph_hash : [paragraph_obj, ..]}.
         self.ordered_paragraphs = []  # Ordered list of paragraph hashes.
         self.length = 0  # Content length (bytes).
-        # self.hash_value = ''
         self.original_adds = 0  # Number of tokens originally added in this revision.
         self.position = 0  # Fake sequential id (position in article). Starts from 1.
 
     def __repr__(self):
         return str(id(self))
+        # return str(self.id)
 
     def to_dict(self):
         revision = {}

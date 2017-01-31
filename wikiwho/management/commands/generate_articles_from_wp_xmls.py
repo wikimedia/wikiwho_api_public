@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/test' -t 0.1 -m 2 -d 'R' --check_exists
+python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/test' -t 1 -m 2 -d 'R' --check_exists
 python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/' -t 30 -m 24
 python manage.py generate_articles_from_wp_xmls -p '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/' -j '' -m 24 --check_exists
 """
@@ -126,11 +126,11 @@ class Command(BaseCommand):
 
         if is_ppe:
             Executor = ProcessPoolExecutor
-            format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'
+            format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
         else:
             raise NotImplemented  # Not used/tested
             # Executor = ThreadPoolExecutor
-            # format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
+            # format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'
 
         # for xml_file_path in xml_files:
         #     generate_articles_postgres(xml_file_path, log_folder, format_, check_exists, timeout)

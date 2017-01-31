@@ -1,8 +1,7 @@
 from django.db import connection
 
 
-def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', ),
-                  updated_prev_tokens=None, already_exists=False):
+def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
     from django.utils.dateparse import parse_datetime
     from .models import Article, Revision, Token
     from .utils import iter_rev_tokens
@@ -10,15 +9,14 @@ def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', ),
     save_article = 'article' in save_tables
     save_revision = 'revision' in save_tables
     save_token = 'token' in save_tables
+    created = True
     # Article
     if save_article:
-        if not already_exists:
-            article_obj = Article.objects.create(id=wikiwho.page_id,
-                                                 title=wikiwho.title,
-                                                 spam_ids=wikiwho.spam_ids,
-                                                 rvcontinue=wikiwho.rvcontinue)
-        else:
-            article_obj = Article.objects.get(id=wikiwho.page_id)
+        article_obj, created = Article.objects.get_or_create(id=wikiwho.page_id,
+                                                             defaults={'title': wikiwho.title,
+                                                                       'spam_ids': wikiwho.spam_ids,
+                                                                       'rvcontinue': wikiwho.rvcontinue})
+        if not created:
             if article_obj.rvcontinue != wikiwho.rvcontinue and article_obj.spam_ids != wikiwho.spam_ids:
                 article_obj.rvcontinue = wikiwho.rvcontinue
                 article_obj.spam_ids = wikiwho.spam_ids
@@ -32,58 +30,68 @@ def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', ),
 
     # Revisions and Tokens
     if save_revision or save_token:
+        if created:
+            last_revision_ts = None
+        else:
+            last_revision = Revision.objects.order_by('timestamp').last().only('timestamp')
+            last_revision_ts = last_revision.timestamp if last_revision else None
         revisions = []
         tokens = []
         article_token_ids = []
-        # TODO loop revisions and check self.continue_rev_ts > rev.ts and detect new revisions
+        updated_prev_tokens = {}
         for rev_id, revision in wikiwho.revisions.items():
+            rev_timestamp = parse_datetime(revision.timestamp)
+            if last_revision_ts and rev_timestamp <= last_revision_ts:
+                continue
+
             rev_token_ids = []
-            timestamp = parse_datetime(revision.timestamp)
             for word in iter_rev_tokens(revision):
                 if save_token and word.token_id not in article_token_ids:  # FIXME get faster unique words
                     t = Token(id=uuid.uuid3(uuid.NAMESPACE_X500, '{}-{}'.format(wikiwho.page_id, word.token_id)),
                               value=word.value,
-                              origin_rev_id=word.origin_rev_id,
+                              origin_rev_id=word.origin_rev.id,
                               token_id=word.token_id,
                               last_rev_id=word.last_rev_id,
                               inbound=word.inbound,
                               outbound=word.outbound,
                               article_id=wikiwho.page_id,
-                              editor=word.editor,
-                              timestamp=word.timestamp
+                              editor=word.origin_rev.editor
                               )
                     tokens.append(t)
                     article_token_ids.append(word.token_id)
+                    # prev tokens that are updated by last_used, in or out
+                    if last_revision_ts and parse_datetime(word.origin_rev.timestamp) <= last_revision_ts:
+                       # parse_datetime(wikiwho.revisions[word.origin_rev.id].timestamp) <= last_revision_ts:
+                        updated_prev_tokens[word.token_id] = word
                 if save_revision:
                     rev_token_ids.append(word.token_id)
             if save_revision:
                 r = Revision(id=rev_id,
                              article_id=wikiwho.page_id,
                              editor=revision.editor,
-                             timestamp=timestamp,
+                             timestamp=rev_timestamp,
                              length=revision.length,
                              position=revision.position,
                              original_adds=revision.original_adds,
                              token_ids=rev_token_ids)
                 revisions.append(r)
 
-            # TODO update updated_prev_tokens
-            # if updated_prev_tokens:
-            #     tokens_to_update = Token.objects.filter(id__in=updated_prev_tokens)
-            #     for token in tokens_to_update:
-            #         token_ = wikiwho.tokens_to_update[token.id]
-            #         update_fields = []
-            #         if token.last_used != token_.last_used:
-            #             token.last_used = token_.last_used
-            #             update_fields.append('last_used')
-            #         if token.inbound != token_.inbound:
-            #             token.inbound = token_.inbound
-            #             update_fields.append('inbound')
-            #         if token.outbound != token_.outbound:
-            #             token.outbound = token_.outbound
-            #             update_fields.append('outbound')
-            #         token.save(update_fields=update_fields)
-            # del updated_prev_tokens
+            if updated_prev_tokens:
+                tokens_to_update = Token.objects.filter(id__in=list(updated_prev_tokens.keys()))
+                for token in tokens_to_update:
+                    token_ = updated_prev_tokens[token.id]
+                    update_fields = []
+                    if token.last_used != token_.last_used:
+                        token.last_used = token_.last_used
+                        update_fields.append('last_used')
+                    if token.inbound != token_.inbound:
+                        token.inbound = token_.inbound
+                        update_fields.append('inbound')
+                    if token.outbound != token_.outbound:
+                        token.outbound = token_.outbound
+                        update_fields.append('outbound')
+                    token.save(update_fields=update_fields)
+                del updated_prev_tokens
 
         # del wikiwho
         if revisions:
