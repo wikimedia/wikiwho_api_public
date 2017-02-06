@@ -127,8 +127,7 @@ def computeAvgWordFreq(text_list, revision_id=0):
         return 0
 
 
-def iter_rev_tokens(revision, unique_words=False):
-    # TODO how to return each word only one time
+def iter_rev_tokens(revision):
     # x = []
     # from copy import deepcopy
     # ps_copy = deepcopy(revision.paragraphs)
@@ -151,7 +150,6 @@ def iter_rev_tokens(revision, unique_words=False):
                 sentence = paragraph.sentences[hash_sentence][0]
             # sentence = paragraph.sentences[hash_sentence].pop(0)
             for word in sentence.words:
-                # TODO decide generator or list
                 # x.append(word)
                 yield word
     # return x

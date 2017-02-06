@@ -46,7 +46,7 @@ def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
 
             rev_token_ids = []
             for word in iter_rev_tokens(revision):
-                if save_token and word.token_id not in article_token_ids:  # FIXME get faster unique words in article!
+                if save_token and word.token_id not in article_token_ids:
                     t = Token(id=uuid.uuid3(uuid.NAMESPACE_X500, '{}-{}'.format(wikiwho.page_id, word.token_id)),
                               value=word.value,
                               origin_rev_id=word.origin_rev_id,

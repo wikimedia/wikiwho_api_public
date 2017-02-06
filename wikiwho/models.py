@@ -182,7 +182,6 @@ class Revision(BaseModel):
         return deleted_tokens
 
     # @lru_cache(maxsize=None, typed=False)
-    # TODO use this cache only for last rev ids. but how?
     def to_json(self, parameters, content=False, deleted=False, threshold=5, custom=False, ordered=True, explain=False, with_token_ids=True):
         annotate_dict, values_list = self.get_annotate_and_values(parameters, deleted=deleted)
         if content:
