@@ -113,7 +113,6 @@ class Revision(BaseModel):
     timestamp = models.DateTimeField(blank=True, null=True)
     length = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
-    position = models.IntegerField(blank=False)
     original_adds = models.IntegerField(blank=False)
     token_ids = ArrayField(models.IntegerField(), blank=True, null=True)  # ordered list of token ids
 
@@ -207,6 +206,8 @@ class Revision(BaseModel):
 
 
 class Token(BaseModel):
+    # TODO use uuid v1? must be better for indexing but we dont want to index?!
+    # Definetely use uuid, gives uniqueness everywhere!
     id = models.UUIDField(primary_key=True, blank=False, null=False, editable=False)  # unique per article
     value = models.TextField(blank=False, null=False)
     article = models.ForeignKey(Article, blank=False, null=False, related_name='tokens')
@@ -218,7 +219,6 @@ class Token(BaseModel):
     last_rev_id = models.IntegerField(blank=False, null=False, default=0)
     inbound = ArrayField(models.IntegerField(), blank=True, null=True)  # inbound/reintroduced in revision ids
     outbound = ArrayField(models.IntegerField(), blank=True, null=True)  # outbound/deleted in revision ids
-    # conflict_score = models.IntegerField(null=True)
 
     # class Meta:
     #     ordering = []

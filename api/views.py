@@ -283,7 +283,7 @@ class WikiwhoView(object):
         json_data["success"] = True
         json_data["message"] = None
         annotate_dict, values_list = Revision.get_annotate_and_values(parameters, ids=True)
-        order_fields = ['timestamp']  # TODO use position ?
+        order_fields = ['timestamp']
         json_data["revisions"] = list(Revision.objects.filter(article_id=wp.page_id).order_by(*order_fields).
                                       annotate(**annotate_dict).values(*values_list))
         # """

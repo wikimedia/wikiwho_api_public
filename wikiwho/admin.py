@@ -40,9 +40,8 @@ class RevisionAdmin(BaseAdmin):
 
 
 class TokenAdmin(BaseAdmin):
-    list_select_related = ('origin_rev', )
-    list_display = ('id', 'value', 'origin_rev', 'token_id', 'last_rev_id', 'len_inbound', 'len_outbound', )
-    readonly_fields = ('id', 'value', 'last_rev_id', 'inbound', 'outbound', 'origin_rev', 'token_id', )
+    list_display = ('id', 'value', 'origin_rev_id', 'token_id', 'last_rev_id', 'len_inbound', 'len_outbound', )
+    readonly_fields = ('id', 'value', 'last_rev_id', 'inbound', 'outbound', 'origin_rev_id', 'token_id', )
 
     def len_inbound(self, obj):
         return len(obj.inbound)

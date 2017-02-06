@@ -35,7 +35,6 @@ class Migration(migrations.Migration):
                 ('timestamp', models.DateTimeField(blank=True, null=True)),
                 ('length', models.IntegerField(default=0)),
                 ('created', models.DateTimeField(auto_now_add=True)),
-                ('position', models.IntegerField()),
                 ('original_adds', models.IntegerField()),
                 ('token_ids', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), blank=True, null=True, size=None)),
             ],

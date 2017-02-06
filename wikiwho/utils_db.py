@@ -46,22 +46,21 @@ def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
 
             rev_token_ids = []
             for word in iter_rev_tokens(revision):
-                if save_token and word.token_id not in article_token_ids:  # FIXME get faster unique words
+                if save_token and word.token_id not in article_token_ids:  # FIXME get faster unique words in article!
                     t = Token(id=uuid.uuid3(uuid.NAMESPACE_X500, '{}-{}'.format(wikiwho.page_id, word.token_id)),
                               value=word.value,
-                              origin_rev_id=word.origin_rev.id,
+                              origin_rev_id=word.origin_rev_id,
                               token_id=word.token_id,
                               last_rev_id=word.last_rev_id,
                               inbound=word.inbound,
                               outbound=word.outbound,
                               article_id=wikiwho.page_id,
-                              editor=word.origin_rev.editor
+                              editor=wikiwho.revisions[word.origin_rev_id].editor
                               )
                     tokens.append(t)
                     article_token_ids.append(word.token_id)
                     # prev tokens that are updated by last_used, in or out
-                    if last_revision_ts and parse_datetime(word.origin_rev.timestamp) <= last_revision_ts:
-                       # parse_datetime(wikiwho.revisions[word.origin_rev.id].timestamp) <= last_revision_ts:
+                    if last_revision_ts and parse_datetime(wikiwho.revisions[word.origin_rev_id].timestamp) <= last_revision_ts:
                         updated_prev_tokens[word.token_id] = word
                 if save_revision:
                     rev_token_ids.append(word.token_id)
@@ -71,7 +70,6 @@ def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
                              editor=revision.editor,
                              timestamp=rev_timestamp,
                              length=revision.length,
-                             position=revision.position,
                              original_adds=revision.original_adds,
                              token_ids=rev_token_ids)
                 revisions.append(r)

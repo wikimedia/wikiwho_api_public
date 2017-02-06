@@ -99,17 +99,12 @@ def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
 
     # create json with token ids
     revision_json = v.get_revision_json(wp, {'str', 'token_id'}, from_db=from_db, with_token_ids=True)
-    # check if all token ids and revision positions are unique
+    # check if all token ids are unique
     for _, rev in revision_json['revisions'][0].items():
         token_ids = [t['token_id'] for t in rev['tokens']]
         assert len(token_ids) == len(set(token_ids)), "{}: there are duplicated token ids".format(
             article_name)
         break
-    positions = []
-    for i in wp.wikiwho.revisions:
-        positions.append(i)
-    assert len(positions) == len(set(positions)), "{}: there are duplicated rev positions".format(
-        article_name)
     # compare jsons with token ids
     json_file_path = '{}/{}_db_ti.json'.format(temp_folder, article_name)
     test_json_file_path = '{}/{}_db_ti.json'.format(test_json_folder, article_name)
@@ -313,15 +308,11 @@ class TestWikiwho:
 
         # compare jsons with token ids
         revision_json = v.get_revision_json(wp.revision_ids, {'str', 'token_id'})
-        # TODO check if all token ids and revision positions are unique
+        # TODO check if all token ids are unique
         # for _, rev in revision_json['revisions'][0].items():
         #     token_ids = [t['token_id'] for t in rev['tokens']]
         #     assert len(token_ids) == len(set(token_ids)), "{}: there are duplicated token ids".format(article_name)
         #     break
-        # positions = []
-        # for i in wp.wikiwho.revisions:
-        #     positions.append(i)
-        # assert len(positions) == len(set(positions)), "{}: there are duplicated rev positions".format(article_name)
         json_file_path = '{}/{}_db_ti.json'.format(temp_folder, article_name)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
