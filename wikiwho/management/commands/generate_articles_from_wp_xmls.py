@@ -44,6 +44,7 @@ def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables,
     except Exception as e:
         logger.exception('{}--------{}'.format(xml_file_name, parsing_pattern))
     else:
+        c = 0
         for page in dump:
             try:
                 if page.namespace == 0 and not page.redirect and (not page_ids or int(page.id) in page_ids):
@@ -51,6 +52,10 @@ def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables,
                                    check_exists=check_exists, is_xml=True) as wp:
                         # print(wp.article_title)
                         wp.handle_from_xml(page, timeout)
+                        if page_ids:
+                            c += 1
+                            if c == len(page_ids):
+                                break
             except (OperationalError, DatabaseError):
                 while not is_db_running():
                     sleep(60*5)
@@ -102,9 +107,10 @@ class Command(BaseCommand):
                 with open(json_file, 'r') as f:
                     json_data = json.loads(f.read())
                     for xml_file in json_data:
-                        title_ids = json_data[xml_file]['timeouts']
+                        title_ids = json_data[xml_file].get('timeouts', [])
                         if check_exists:
-                            title_ids += json_data[xml_file]['operationals']
+                            title_ids += json_data[xml_file].get('operationals', [])
+                        title_ids += json_data[xml_file].get('missing', [])
                         # print(title_ids)
                         page_ids = [int(ti[1]) for ti in title_ids]
                         if page_ids:
@@ -145,7 +151,7 @@ class Command(BaseCommand):
         logger.handlers = [file_handler]
         # logger.addHandler(file_handler)
 
-        mode = options['mode']
+        mode = options['mode'] or ''
         save_tables = []
         for m in mode:
             if m.upper() == 'A':
