@@ -248,7 +248,7 @@ class Wikiwho:
                     for word_prev in sentence.words:
                         # first update inbound and last used info of matched words of all previous revisions
                         if not vandalism and word_prev.matched and \
-                                word_prev.outbound and word_prev.outbound[-1] != self.revision_curr.id:
+                                (not word_prev.outbound or word_prev.outbound[-1] != self.revision_curr.id):
                             if word_prev.last_rev_id != self.revision_prev.id:
                                 word_prev.inbound.append(self.revision_curr.id)
                             word_prev.last_rev_id = self.revision_curr.id
@@ -260,7 +260,7 @@ class Wikiwho:
             for word_prev in matched_sentence.words:
                 # first update inbound and last used info of matched words of all previous revisions
                 if not vandalism and word_prev.matched and \
-                        word_prev.outbound and word_prev.outbound[-1] != self.revision_curr.id:
+                        (not word_prev.outbound or word_prev.outbound[-1] != self.revision_curr.id):
                     if word_prev.last_rev_id != self.revision_prev.id:
                         word_prev.inbound.append(self.revision_curr.id)
                     word_prev.last_rev_id = self.revision_curr.id
@@ -271,7 +271,7 @@ class Wikiwho:
             # first update last used info of matched prev words
             # there is no inbound chance because we only diff with words of previous revision
             if not vandalism and word_prev.matched:
-                if word_prev.outbound and word_prev.outbound[-1] != self.revision_curr.id:
+                if not word_prev.outbound or word_prev.outbound[-1] != self.revision_curr.id:
                     word_prev.last_rev_id = self.revision_curr.id
             # reset
             matched_word.matched = False
