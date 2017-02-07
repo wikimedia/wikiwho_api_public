@@ -215,6 +215,7 @@ class Token(BaseModel):
     origin_rev = models.ForeignKey(Revision, blank=False, related_name='introduced_tokens')
     # origin_rev_id = models.IntegerField(blank=False, null=False)
     editor = models.CharField(max_length=87, default='', help_text='Editor of label revision')  # max_length='0|' + 85
+    timestamp = models.DateTimeField(blank=True, null=True)
     last_rev_id = models.IntegerField(blank=False, null=False, default=0)
     inbound = ArrayField(models.IntegerField(), blank=True, null=True)  # inbound/reintroduced in revision ids
     outbound = ArrayField(models.IntegerField(), blank=True, null=True)  # outbound/deleted in revision ids

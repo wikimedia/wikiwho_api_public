@@ -66,6 +66,7 @@ class Migration(migrations.Migration):
                 ('token_id', models.IntegerField()),
                 ('origin_rev_id', models.IntegerField()),
                 ('editor', models.CharField(default='', help_text='Editor of label revision', max_length=87)),
+                ('timestamp', models.DateTimeField(blank=True, null=True)),
                 ('last_rev_id', models.IntegerField(default=0)),
                 ('inbound', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), blank=True, null=True, size=None)),
                 ('outbound', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), blank=True, null=True, size=None)),

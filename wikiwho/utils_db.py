@@ -55,7 +55,8 @@ def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
                               inbound=word.inbound,
                               outbound=word.outbound,
                               article_id=wikiwho.page_id,
-                              editor=wikiwho.revisions[word.origin_rev_id].editor
+                              editor=wikiwho.revisions[word.origin_rev_id].editor,
+                              timestamp=parse_datetime(wikiwho.revisions[word.origin_rev_id].timestamp)
                               )
                     tokens.append(t)
                     article_token_ids.append(word.token_id)
