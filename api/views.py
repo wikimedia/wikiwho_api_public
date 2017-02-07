@@ -210,9 +210,9 @@ class WikiwhoView(object):
     def get_revision_json(self, wp, parameters, only_last_valid_revision=False, minimal=False, from_db=False, with_token_ids=True):
         if not from_db:
             if minimal:
-                return wp.wikiwho.get_revision_min_json(wp.revision_ids, parameters, only_last_valid_revision)
+                return wp.wikiwho.get_revision_min_json(wp.revision_ids)
             else:
-                return wp.wikiwho.get_revision_json(wp.revision_ids, parameters, only_last_valid_revision)
+                return wp.wikiwho.get_revision_json(wp.revision_ids, parameters)
 
         # TODO minimal
         revision_ids = wp.revision_ids

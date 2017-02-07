@@ -18,14 +18,13 @@ from .utils import calculateHash, splitIntoParagraphs, splitIntoSentences, split
     iter_rev_tokens
 
 
-# spam detection variables.
+# Spam detection variables.
 CHANGE_PERCENTAGE = -0.40
 PREVIOUS_LENGTH = 1000
 CURR_LENGTH = 1000
 FLAG = "move"
 UNMATCHED_PARAGRAPH = 0.0
 WORD_DENSITY = 10
-# WORD_DENSITY = 12
 WORD_LEN = 100
 
 
@@ -42,7 +41,7 @@ class Wikiwho:
         self.rvcontinue = '0'
         self.title = article_title
         self.page_id = None  # article id
-        self.token_id = 0  # sequential id for words in article. unique per article
+        self.token_id = 0  # sequential id for tokens in article. unique per token per article.
         # Revisions to compare.
         self.revision_curr = Revision()
         self.revision_prev = Revision()
@@ -51,9 +50,12 @@ class Wikiwho:
         self.temp = []
 
     def clean_attributes(self):
-        # empty attributes
-        self.revision_prev = None
+        """
+        Empty attributes that are usually not needed after analyzing an article.
 
+        Making them empty reduces pickle size too.
+        """
+        self.revision_prev = None
         self.text_curr = ''
         self.temp = []
 
@@ -62,7 +64,6 @@ class Wikiwho:
         for revision in page:
             text = revision.text or ''
             if not text and (revision.deleted.text or revision.deleted.restricted):
-            # if not text or revision.deleted.text or revision.deleted.restricted:  # or revision.deleted.comment or revision.deleted.user
                 # equivalent of "'texthidden' in revision or 'textmissing' in revision" in analyse_article
                 continue
 
@@ -88,7 +89,6 @@ class Wikiwho:
 
             if vandalism:
                 # print("---------------------------- FLAG 1")
-                # print(self.text_curr)
                 self.revision_curr = self.revision_prev
                 self.spam_ids.append(rev_id)
                 self.spam_hashes.append(rev_hash)
@@ -99,7 +99,7 @@ class Wikiwho:
                 self.revision_curr.length = text_len
                 self.revision_curr.timestamp = revision.timestamp.long_format()
 
-                # Some revisions don't have contributor.
+                # Get editor information
                 if revision.user:
                     contributor_name = revision.user.text or ''  # Not Available
                     if revision.user.id is None and contributor_name or revision.user.id == 0:
@@ -107,6 +107,7 @@ class Wikiwho:
                     else:
                         contributor_id = revision.user.id or ''
                 else:
+                    # Some revisions don't have contributor.
                     contributor_name = ''
                     contributor_id = ''
                 editor = contributor_id
@@ -114,11 +115,7 @@ class Wikiwho:
                 self.revision_curr.editor = editor
 
                 # Content within the revision.
-                # Software should only work with Unicode strings internally, converting to a particular encoding on
-                # output.
-                # https://docs.python.org/2/howto/unicode.html#tips-for-writing-unicode-aware-programs
-                # https://pythonhosted.org/kitchen/unicode-frustrations.html
-                self.text_curr = text.lower()  # .encode("utf-8")
+                self.text_curr = text.lower()
 
                 # Perform comparison.
                 vandalism = self.determine_authorship()
@@ -163,7 +160,6 @@ class Wikiwho:
 
             if vandalism:
                 # print("---------------------------- FLAG 1")
-                # print(self.text_curr)
                 self.revision_curr = self.revision_prev
                 self.spam_ids.append(rev_id)
                 self.spam_hashes.append(rev_hash)
@@ -174,28 +170,22 @@ class Wikiwho:
                 self.revision_curr.length = text_len
                 self.revision_curr.timestamp = revision['timestamp']
 
-                # Some revisions don't have contributor.
-                contributor_id = revision.get('userid', '')  # Not Available
+                # Get editor information.
+                # Some revisions don't have editor.
+                contributor_id = revision.get('userid', '')
                 contributor_name = revision.get('user', '')
                 editor = contributor_id
                 editor = str(editor) if editor != 0 else '0|{}'.format(contributor_name)
                 self.revision_curr.editor = editor
 
                 # Content within the revision.
-                # Software should only work with Unicode strings internally, converting to a particular encoding on
-                # output.
-                # https://docs.python.org/2/howto/unicode.html#tips-for-writing-unicode-aware-programs
-                # https://pythonhosted.org/kitchen/unicode-frustrations.html
-                self.text_curr = text.lower()  # .encode("utf-8")
+                self.text_curr = text.lower()
 
                 # Perform comparison.
                 vandalism = self.determine_authorship()
 
                 if vandalism:
                     # print "---------------------------- FLAG 2"
-                    # print revision.getId()
-                    # print revision.getText()
-                    # print
                     self.revision_curr = self.revision_prev  # skip revision with vandalism in history
                     self.spam_ids.append(rev_id)
                     self.spam_hashes.append(rev_hash)
@@ -666,29 +656,37 @@ class Wikiwho:
 
         return matched_words_prev, possible_vandalism
 
-    def get_revision_json(self, revision_ids, parameters, only_last_valid_revision=False):
+    def get_revision_json(self, revision_ids, parameters):
+        """
+        :param revision_ids: List of revision ids. 2 revision ids mean a range.
+        :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound') to decide
+        content of revision(s).
+        :return: Content of revision in json format.
+        """
         json_data = dict()
         json_data["article"] = self.title
         json_data["success"] = True
         json_data["message"] = None
 
-        revisions = []
+        # Check if given rev ids exits
         for rev_id in revision_ids:
             if rev_id not in self.revisions:
                 return {'Error': 'Revision ID ({}) does not exist or is spam or deleted!'.format(rev_id)}
 
         if len(revision_ids) == 2:
+            # Get range of revisions
             start_index = self.ordered_revisions.index(revision_ids[0])
             end_index = self.ordered_revisions.index(revision_ids[1])
             revision_ids = self.ordered_revisions[start_index:end_index]
 
+        json_data['revisions'] = []
         for rev_id in revision_ids:
+            # Prepare output revision content according to parameters
             revision = self.revisions[rev_id]
             tokens = []
-            revisions.append({rev_id: {"editor": revision.editor,
-                                       "time": revision.timestamp,
-                                       "tokens": tokens}})
-
+            json_data['revisions'].append({rev_id: {"editor": revision.editor,
+                                                    "time": revision.timestamp,
+                                                    "tokens": tokens}})
             for word in iter_rev_tokens(revision):
                 token = dict()
                 token['str'] = word.value
@@ -704,29 +702,38 @@ class Wikiwho:
                     token['outbound'] = word.outbound
                 tokens.append(token)
 
-        json_data['revisions'] = revisions
         # import json
-        # with open('tmp_pickles/{}.json'.format(self.title), 'w') as f:
+        # with open('tmp_pickles/{}.json'.format(self.page_id), 'w') as f:
         #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
-    def get_revision_min_json(self, revision_ids, parameters, only_last_valid_revision=False):
+    def get_revision_min_json(self, revision_ids):
+        """
+        Calculates the revision content in minimum form (list of values).
+
+        It behaves as all parameters are given.
+        :param revision_ids: List of revision ids. 2 revision ids mean a range.
+        :return: Content of revision in json format in min form.
+        """
         json_data = dict()
         json_data["article"] = self.title
         json_data["success"] = True
         json_data["message"] = None
 
-        revisions = []
+        # Check if given rev ids exits
         for rev_id in revision_ids:
             if rev_id not in self.revisions:
                 return {'Error': 'Revision ID ({}) does not exist or is spam or deleted!'.format(rev_id)}
 
         if len(revision_ids) == 2:
+            # Get range of revisions
             start_index = self.ordered_revisions.index(revision_ids[0])
             end_index = self.ordered_revisions.index(revision_ids[1])
             revision_ids = self.ordered_revisions[start_index:end_index]
 
+        json_data['revisions'] = []
         for rev_id in revision_ids:
+            # Prepare output revision content
             revision = self.revisions[rev_id]
             values = []
             rev_ids = []
@@ -734,15 +741,15 @@ class Wikiwho:
             token_ids = []
             outs = []
             ins = []
-            revisions.append({rev_id: {"editor": revision.editor,
-                                       "time": revision.timestamp,
-                                       "str": values,
-                                       "rev_ids": rev_ids,
-                                       "editors": editors,
-                                       "token_ids": token_ids,
-                                       "outs": outs,
-                                       "ins": ins,
-                                       }})
+            json_data['revisions'].append({rev_id: {"editor": revision.editor,
+                                                    "time": revision.timestamp,
+                                                    "str": values,
+                                                    "rev_ids": rev_ids,
+                                                    "editors": editors,
+                                                    "token_ids": token_ids,
+                                                    "outs": outs,
+                                                    "ins": ins,
+                                                    }})
             for word in iter_rev_tokens(revision):
                 values.append(word.value)
                 rev_ids.append(word.origin_rev_id)
@@ -751,13 +758,21 @@ class Wikiwho:
                 outs.append(word.outbound)
                 ins.append(word.inbound)
 
-        json_data['revisions'] = revisions
         # import json
-        # with open('tmp_pickles/{}.json'.format(self.title), 'w') as f:
+        # with open('tmp_pickles/{}.json'.format(self.page_id), 'w') as f:
         #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
     def get_deleted_tokens(self, parameters):
+        """
+        Calculates and returns deleted content of this article.
+
+        Deleted content is all tokens that are not present
+        in last revision.
+        :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound') to decide
+        content of revision(s).
+        :return: Deleted content of revision in json format.
+        """
         # TODO  update fields and make faster, add min version of this method + use self.ordered_revisions
         response = dict()
         response["success"] = "true"
@@ -800,6 +815,9 @@ class Wikiwho:
         return response
 
     def get_revision_ids(self):
+        """
+        :return: List of revision ids of this article in json format.
+        """
         json_data = dict()
         json_data["article"] = self.title
         json_data["success"] = True
@@ -808,16 +826,14 @@ class Wikiwho:
         return json_data
 
     def get_revision_text(self, revision_id):
+        """
+        :param revision_id:
+        :return: List of token values and list of origin of rev id respectively.
+        """
         revision = self.revisions[revision_id]
         text = []
-        label_rev_ids = []
-        # ps_copy = deepcopy(revision.paragraphs)
-        ps_copy = revision.paragraphs(revision.paragraphs)
-        for hash_paragraph in revision.ordered_paragraphs:
-            paragraph = ps_copy[hash_paragraph].pop(0)
-            for hash_sentence in paragraph.ordered_sentences:
-                sentence = paragraph.sentences[hash_sentence].pop(0)
-                for word in sentence.words:
-                    text.append(word.value)
-                    label_rev_ids.append(word.origin_rev_id)
-        return text, label_rev_ids
+        origin_rev_ids = []
+        for word in iter_rev_tokens(revision):
+            text.append(word.value)
+            origin_rev_ids.append(word.origin_rev_id)
+        return text, origin_rev_ids
