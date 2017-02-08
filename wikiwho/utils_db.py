@@ -1,11 +1,14 @@
+import csv
+import uuid
+
 from django.db import connection
+from django.utils.dateparse import parse_datetime
+
+from .utils import iter_rev_tokens
 
 
 def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
-    from django.utils.dateparse import parse_datetime
     from .models import Article, Revision, Token
-    from .utils import iter_rev_tokens
-    import uuid
     save_article = 'article' in save_tables
     save_revision = 'revision' in save_tables
     save_token = 'token' in save_tables
@@ -97,6 +100,39 @@ def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
             Revision.objects.bulk_create(revisions, batch_size=1000000)
         if tokens:
             Token.objects.bulk_create(tokens, batch_size=1000000)
+
+
+def wikiwho_to_csv(wikiwho, output_folder):
+    content = []
+    current_content = []
+    deleted_content = []
+    article_token_ids = []
+    article_last_rev_id = wikiwho.ordered_revisions[-1]
+    for rev_id, revision in wikiwho.revisions.items():
+        for word in iter_rev_tokens(revision):
+            if word.token_id not in article_token_ids:
+                # page_id,last_rev_id,token_id,str,origin_rev_id,in,out
+                inbound = '{{{}}}'.format(str(word.inbound)[1:-1]) if word.inbound else '{}'
+                outbound = '{{{}}}'.format(str(word.outbound)[1:-1]) if word.outbound else '{}'
+                row = [wikiwho.page_id, word.last_rev_id, word.token_id, word.value, word.origin_rev_id,
+                       inbound, outbound]
+                content.append(row)
+                if word.last_rev_id == article_last_rev_id:
+                    current_content.append(row)
+                else:
+                    deleted_content.append(row)
+                article_token_ids.append(word.token_id)
+
+    with open('{}/{}_content.csv'.format(output_folder, wikiwho.page_id), 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(content)
+    with open('{}/{}_current_content.csv'.format(output_folder, wikiwho.page_id), 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(current_content)
+    with open('{}/{}_deleted_content.csv'.format(output_folder, wikiwho.page_id), 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(deleted_content)
+    # TODO write into revisions csv
 
 
 def tokens_custom(rev_id, values_list, ordered=True, explain=False, return_dict=True):

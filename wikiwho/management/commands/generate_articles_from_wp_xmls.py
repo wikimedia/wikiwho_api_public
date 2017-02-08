@@ -20,9 +20,11 @@ from django.conf import settings
 
 from api.handler import WPHandler
 from base.utils import is_db_running
+from wikiwho.utils_db import wikiwho_to_csv
 
 
-def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables, check_exists=False, timeout=None):
+def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables,
+                      check_exists=False, timeout=None, is_write_into_csv=False):
     xml_file_name = basename(xml_file_path)
     logger = logging.getLogger(xml_file_name[:-3].split('-')[-1])
     file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
@@ -48,10 +50,15 @@ def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables,
         for page in dump:
             try:
                 if page.namespace == 0 and not page.redirect and (not page_ids or int(page.id) in page_ids):
+                # if not page_ids or int(page.id) in page_ids:
+                    # logger.error('processing {}'.format(page.id))
                     with WPHandler(page.title, page_id=page.id, save_tables=save_tables,
                                    check_exists=check_exists, is_xml=True) as wp:
                         # print(wp.article_title)
                         wp.handle_from_xml(page, timeout)
+                        if is_write_into_csv:
+                            wikiwho_to_csv(wp.wikiwho, log_folder + '/csv')
+                            # TODO write article ids into a csv
                         if page_ids:
                             c += 1
                             if c == len(page_ids):
@@ -91,8 +98,13 @@ class Command(BaseCommand):
                             help='Check if an article exists before creating it.'
                                  ' If yes, go to the next article. If not, process article. ',
                             default=False, required=False)
+        parser.add_argument('-w', '--write_into_csv', action='store_true',
+                            help='Write content, current content and deleted content into csv. '
+                                 'This must be called with check_exists flag. Default is False.',
+                            default=False, required=False)
 
     def handle(self, *args, **options):
+        # get path of xml dumps
         xml_folder = options['path']
         xml_folder = xml_folder[:-1] if xml_folder.endswith('/') else xml_folder
 
@@ -100,6 +112,7 @@ class Command(BaseCommand):
         json_folder = options['json']
         xml_files = []
         if json_folder and check_exists:
+            # get page ids for each xml file from parse_logs json outputs
             import json
             json_folder = json_folder[:-1] if json_folder.endswith('/') else json_folder
             json_files = ['{}/{}'.format(json_folder, j) for j in listdir(json_folder) if j.endswith('.json')]
@@ -116,20 +129,14 @@ class Command(BaseCommand):
                         if page_ids:
                             xml_files.append(['{}/{}'.format(xml_folder, xml_file), page_ids])
         elif not json_folder:
+            # if there is no json inputs, process all pages in each xml dump
             xml_files = [['{}/{}'.format(xml_folder, x), []] for x in listdir(xml_folder) if x.endswith('.7z')]
 
         if not xml_files:
             raise CommandError('In given folder ({}), there are no 7z files.'.format(xml_folder))
-        log_folder = options['log_folder']
-        log_folder = log_folder[:-1] if log_folder and log_folder.endswith('/') else log_folder
-        log_folder = '{}/{}'.format(log_folder or xml_folder, 'logs')
-        if not exists(log_folder):
-            mkdir(log_folder)
 
-        max_workers = options['max_workers'] or len(xml_files)
+        # decide concurrency type
         is_ppe = not options['thread_pool_executor']
-        timeout = int(options['timeout'] * 60) if options['timeout'] else None  # convert into seconds
-
         if is_ppe:
             Executor = ProcessPoolExecutor
             format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
@@ -138,9 +145,12 @@ class Command(BaseCommand):
             # Executor = ThreadPoolExecutor
             # format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'
 
-        # for xml_file_path in xml_files:
-        #     generate_articles_postgres(xml_file_path, log_folder, format_, check_exists, timeout)
-
+        # set logging
+        log_folder = options['log_folder']
+        log_folder = log_folder[:-1] if log_folder and log_folder.endswith('/') else log_folder
+        log_folder = '{}/{}'.format(log_folder or xml_folder, 'logs')
+        if not exists(log_folder):
+            mkdir(log_folder)
         logger = logging.getLogger('future_log')
         file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
                                                                     xml_folder.split('/')[-1],
@@ -149,8 +159,22 @@ class Command(BaseCommand):
         formatter = logging.Formatter(format_)
         file_handler.setFormatter(formatter)
         logger.handlers = [file_handler]
-        # logger.addHandler(file_handler)
 
+        # if outputs will be written into csv
+        is_write_into_csv = options['write_into_csv']
+        if is_write_into_csv:
+            import csv
+            import sys
+            csv.field_size_limit(sys.maxsize)
+            csv_folder = log_folder + '/csv'
+            if not exists(csv_folder):
+                mkdir(csv_folder)
+
+        # get max number of concurrent workers and timeout value for process of each article
+        max_workers = options['max_workers'] or len(xml_files)
+        timeout = int(options['timeout'] * 60) if options['timeout'] else None  # convert into seconds
+
+        # decide which tables in db will be filled
         mode = options['mode'] or ''
         save_tables = []
         for m in mode:
@@ -160,6 +184,13 @@ class Command(BaseCommand):
                 save_tables.append('revision')
             elif m.upper() == 'T':
                 save_tables.append('token')
+
+        # Sequential process of xml dumps - test purposes
+        # for xml_file_path in xml_files:
+        #     generate_articles(xml_file_path, page_ids, log_folder, format_,
+        #                       save_tables, check_exists, timeout, is_write_into_csv)
+
+        # Concurrent process of xml dumps
         print(max_workers, save_tables)
         # print(xml_files)
         with Executor(max_workers=max_workers) as executor:
@@ -170,7 +201,7 @@ class Command(BaseCommand):
             while files_left:
                 for xml_file_path, page_ids in files_iter:
                     job = executor.submit(generate_articles, xml_file_path, page_ids, log_folder,
-                                          format_, save_tables, check_exists, timeout)
+                                          format_, save_tables, check_exists, timeout, is_write_into_csv)
                     jobs[job] = basename(xml_file_path)
                     if len(jobs) == max_workers:  # limit # jobs with max_workers
                         break
