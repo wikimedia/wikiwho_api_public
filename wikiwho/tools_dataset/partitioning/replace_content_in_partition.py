@@ -4,7 +4,7 @@ Example usage:
 python wikiwho/tools_dataset/partitioning/replace_content_in_partition.py -o '../partitions' -i '' -m 2 -d 'cd'
 """
 from os import mkdir, listdir
-from os.path import exists
+from os.path import exists, isfile
 import logging
 from time import strftime
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -13,7 +13,8 @@ import argparse
 
 
 def replace_content_in_partition(input_folder, part_data, output_folder, log_folder, mode='ACD'):
-    # We dont need to use csv module in this method. Because all input files are already in csv format.
+    # NOTE: We dont need to use csv module in this method. Because all input files are already guaranteed to be
+    # in csv format.
     part_str = 'part_{}'.format(part_data[0])
     logger = logging.getLogger(part_str)
     file_handler = logging.FileHandler('{}/partition_{}_at_{}.log'.format(log_folder,
@@ -28,7 +29,7 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
         if 'a' in mode.lower():
             # replace all content
             all_output_folder = '{}/tokens'.format(output_folder)
-            partition_content_file = '{}/mac-tokens-all-part{}-{}-{}.csv'.\
+            partition_content_file = '{}/20161226-tokens-part{}-{}-{}.csv'.\
                 format(all_output_folder, part_data[0], part_data[1][0], part_data[1][1])
             with open(partition_content_file, 'r') as f:
                 content = ''
@@ -47,7 +48,7 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                         replaced = False
                         content += line
 
-            new_file_all = '{}/new/mac-tokens-all-part{}-{}-{}.csv'.\
+            new_file_all = '{}/new/20161226-tokens-part{}-{}-{}.csv'.\
                 format(all_output_folder, part_data[0], part_data[1][0], part_data[1][1])
             with open(new_file_all, 'w') as f:
                 f.write(content)
@@ -55,8 +56,8 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
 
         if 'c' in mode.lower():
             # replace current content
-            current_output_folder = '{}/current_tokens'.format(output_folder)
-            partition_current_file = '{}/current_content-20161226-part{}-{}-{}.csv'.\
+            current_output_folder = '{}/current_content'.format(output_folder)
+            partition_current_file = '{}/20161226-current_content-part{}-{}-{}.csv'.\
                 format(current_output_folder, part_data[0], part_data[1][0], part_data[1][1])
             with open(partition_current_file, 'r') as f:
                 header = next(f)
@@ -76,7 +77,7 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                         replaced = False
                         current_content += line
 
-            new_file_current = '{}/new/current_content-20161226-part{}-{}-{}.csv'.\
+            new_file_current = '{}/new/20161226-current_content-part{}-{}-{}.csv'.\
                 format(current_output_folder, part_data[0], part_data[1][0], part_data[1][1])
             with open(new_file_current, 'w') as f:
                 f.write(current_content)
@@ -85,7 +86,7 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
         if 'd' in mode.lower():
             # replace deleted content
             deleted_output_folder = '{}/deleted_content'.format(output_folder)
-            partition_deleted_file = '{}/deleted_content-20161226-part{}-{}-{}.csv'.\
+            partition_deleted_file = '{}/20161226-deleted_content-part{}-{}-{}.csv'.\
                 format(deleted_output_folder, part_data[0], part_data[1][0], part_data[1][1])
             with open(partition_deleted_file, 'r') as f:
                 header = next(f)
@@ -105,7 +106,7 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                         replaced = False
                         deleted_content += line
 
-            new_file_deleted = '{}/new/deleted_content-20161226-part{}-{}-{}.csv'.\
+            new_file_deleted = '{}/new/20161226-deleted_content-part{}-{}-{}.csv'.\
                 format(deleted_output_folder, part_data[0], part_data[1][0], part_data[1][1])
             with open(new_file_deleted, 'w') as f:
                 f.write(deleted_content)
@@ -119,8 +120,10 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
 def group_articles(input_folder, output_folder):
     # calculate parts dict
     parts = {}  # {partition_file_path: [part_number, (part_from, part_to), article_ids_set], ..}
-    output_folder = output_folder + '/' + 'current_tokens'
+    output_folder = output_folder + '/' + 'current_content'
     for o in listdir(output_folder):
+        if not isfile('{}/{}'.format(output_folder, o)):
+            continue
         part_info = o.split('-part')[1].split('.csv')[0]
         part_number, part_from, part_to = map(int, part_info.split('-'))
         parts['{}/{}'.format(output_folder, o)] = [part_number, (part_from, part_to), set()]
@@ -199,8 +202,8 @@ def main():
             if not exists('{}/tokens/new'.format(output_folder)):
                 mkdir('{}/tokens/new'.format(output_folder))
         elif i == 'c':
-            if not exists('{}/current_tokens/new'.format(output_folder)):
-                mkdir('{}/current_tokens/new'.format(output_folder))
+            if not exists('{}/current_content/new'.format(output_folder)):
+                mkdir('{}/current_content/new'.format(output_folder))
         elif i == 'd':
             if not exists('{}/deleted_content/new'.format(output_folder)):
                 mkdir('{}/deleted_content/new'.format(output_folder))

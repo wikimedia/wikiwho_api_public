@@ -12,6 +12,8 @@ import logging
 
 
 def delete_from(all, current, output_file):
+    # TODO we dont need to use csv module here. use simply open as f and for line in f:... check NOTE in
+    # replace_content_in_partition
     # article_id, revision_id, token_id, str, origin, inbound, outbound
     # header = 'page_id,last_rev_id,token_id,str,origin_rev_id,in,out'.split(',')
     with open(current, newline='') as f:
@@ -121,7 +123,7 @@ def main():
         files_iter = iter(input_files)
         while files_left:
             for input_current, input_all, first_article_id, last_article_id, part_id in files_iter:
-                output_file = '{}/deleted_content-20161226-part{}-{}-{}.csv'.format(output_folder, part_id,
+                output_file = '{}/20161226-deleted_content-part{}-{}-{}.csv'.format(output_folder, part_id,
                                                                                     first_article_id, last_article_id)
                 if exists(output_file):
                     files_left -= 1

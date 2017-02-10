@@ -8,6 +8,8 @@ csv.field_size_limit(sys.maxsize)
 
 
 def adjust_partitions(input_folder):
+    # TODO we dont need to use csv module here. use simply open as f and for line in f:... check NOTE in
+    # replace_content_in_partition
     """
     Adjust randomly splited partitions. Looks last line of each partition and appends rows with same article id in
     next partition.
@@ -61,10 +63,9 @@ def adjust_partitions(input_folder):
             previous_first_article_id = first_article_id
             previous_last_article_id = last_article_id
             i += 1
-            rename_list.append([part, '{}-part{}-{}-{}.csv'.format(part.split('.csv')[0],
-                                                                   i,
-                                                                   previous_first_article_id,
-                                                                   previous_last_article_id)])
+            rename_list.append([part, '20161226-tokens-part{}-{}-{}.csv'.format(i,
+                                                                                previous_first_article_id,
+                                                                                previous_last_article_id)])
         # time.sleep(5)
         files_left -= 1
         sys.stdout.write('\r{}-{:.3f}%'.format(files_left, ((files_all - files_left) * 100) / files_all))

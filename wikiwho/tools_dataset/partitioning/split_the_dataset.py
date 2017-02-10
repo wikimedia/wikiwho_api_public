@@ -9,6 +9,19 @@ Workflow for partitioning:
 4) python wikiwho/tools_dataset/split_the_dataset.py -i 'mac-revisions-all.tsv' -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/' -m 2
 5) python wikiwho/tools_dataset/split_the_dataset.py -i 'mac-articles-all.txt' -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/' -m 3
 6) delete_from_all_content.py to substract current content from all content in order to get deleted content
+
+def rename_files(folder, type_):
+    # type_ = 'tokens' / 'current_content' / 'deleted_content'
+    from os import rename, listdir
+    from os.path import isfile
+    for f in listdir(folder):
+        if not isfile('{}/{}'.format(folder, f)):
+            continue
+        s = '{}/{}'.format(folder, f)
+        part_info = f.split('-part')[1].split('.csv')[0]
+        part_number, part_from, part_to = map(int, part_info.split('-'))
+        d = '{}/20161226-{}-part{}-{}-{}'.format(folder, type_, part_number, part_from, part_to)
+        rename(s, d)
 """
 import csv
 import argparse
@@ -17,9 +30,12 @@ from os.path import exists
 from os import mkdir, listdir
 
 
+# TODO we dont need to use csv module here. use simply open as f and for line in f:... check NOTE in
+# replace_content_in_partition
+
 def write_into_partition_file(first_article_id_in_part, last_article_id_in_part, output_folder,
                               header, partition_content, output_name, output_counter=None, total_files=None):
-    partition_file = '{}-20161226-part{}-{}-{}.csv'.format(output_name, output_counter,
+    partition_file = '20161226-{}-part{}-{}-{}.csv'.format(output_name, output_counter,
                                                            first_article_id_in_part,
                                                            last_article_id_in_part)
     with open(output_folder + '/' + partition_file, 'w', newline='') as f_out:
@@ -38,7 +54,7 @@ def split_tokens_with_size(base_path, current_content_file, partition_size, tota
     output_folder = '{}/{}'.format(base_path, 'partitions')
     if not exists(output_folder):
         mkdir(output_folder)
-    output_folder = '{}/{}'.format(output_folder, 'current_tokens' if output_name == 'current_content' else output_name)
+    output_folder = '{}/{}'.format(output_folder, output_name)
     if not exists(output_folder):
         mkdir(output_folder)
     total_files = int(total_size/partition_size)
@@ -132,7 +148,7 @@ def split_tokens(base_path, tokens_file):
     tokens_folder = '{}/{}/tokens'.format(base_path, 'partitions')
     if not exists(tokens_folder):
         raise Exception('Tokens folder does not exist: {}'.format(tokens_folder))
-    output_folder = '{}/{}/current_tokens'.format(base_path, 'partitions')
+    output_folder = '{}/{}/current_content'.format(base_path, 'partitions')
     if not exists(output_folder):
         mkdir(output_folder)
 
