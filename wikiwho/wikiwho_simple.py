@@ -73,7 +73,7 @@ class Wikiwho:
 
             rev_id = revision.id
             rev_hash = revision.sha1 or calculateHash(text)
-            if rev_hash in self.spam_hashes:
+            if rev_id in self.spam_ids:
                 vandalism = True
 
             # TODO: spam detection: DELETION
@@ -144,7 +144,7 @@ class Wikiwho:
             text = revision.get('*', '')
             rev_id = int(revision['revid'])
             rev_hash = revision.get('sha1', calculateHash(text))
-            if rev_hash in self.spam_hashes:
+            if rev_id in self.spam_ids:
                 vandalism = True
 
             # TODO: spam detection: DELETION
