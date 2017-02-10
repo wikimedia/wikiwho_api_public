@@ -2,7 +2,6 @@
 .cache
 *.pyc
 *.sqlite3
-*.ipynb
 
 wikiwho_api/settings.py
 
@@ -15,7 +14,9 @@ test_jsons_without_fixed_deepcopy
 assets/images/fav/
 tmp_pickles/
 static/
-notebooks/
+notebooks/ipython_log.py
+notebooks/ignore
+.ipynb_checkpoints/
 Wikiwho_simple.py
 structuresML
 wikiwho/migrations/bak/
