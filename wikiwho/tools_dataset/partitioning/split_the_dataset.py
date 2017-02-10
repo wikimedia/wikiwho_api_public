@@ -8,6 +8,7 @@ Workflow for partitioning:
 3) python wikiwho/tools_dataset/split_the_dataset.py -i 'wikiwho_currentcontent_20161226_test.csv' -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/' -m 4
 4) python wikiwho/tools_dataset/split_the_dataset.py -i 'mac-revisions-all.tsv' -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/' -m 2
 5) python wikiwho/tools_dataset/split_the_dataset.py -i 'mac-articles-all.txt' -f '/home/kenan/PycharmProjects/wikiwho_api/wikiwho/tests/test_jsons/stats/' -m 3
+# TODO next time export deleted content as last_rev_id != rev id from last rev table.
 6) delete_from_all_content.py to substract current content from all content in order to get deleted content
 
 def rename_files(folder, type_):
@@ -20,7 +21,7 @@ def rename_files(folder, type_):
         s = '{}/{}'.format(folder, f)
         part_info = f.split('-part')[1].split('.csv')[0]
         part_number, part_from, part_to = map(int, part_info.split('-'))
-        d = '{}/20161226-{}-part{}-{}-{}'.format(folder, type_, part_number, part_from, part_to)
+        d = '{}/20161226-{}-part{}-{}-{}.csv'.format(folder, type_, part_number, part_from, part_to)
         rename(s, d)
 """
 import csv
