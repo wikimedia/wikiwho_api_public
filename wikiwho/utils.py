@@ -128,6 +128,9 @@ def computeAvgWordFreq(text_list, revision_id=0):
 
 
 def iter_rev_tokens(revision):
+    """
+    Yields tokens of the revision in order.
+    """
     # x = []
     # from copy import deepcopy
     # ps_copy = deepcopy(revision.paragraphs)
@@ -155,6 +158,9 @@ def iter_rev_tokens(revision):
 
 
 def iter_wikiwho_tokens(wikiwho):
+    """
+    Yields tokens of the article in order.
+    """
     article_token_ids = set()
     for rev_id in wikiwho.ordered_revisions:
         for word in iter_rev_tokens(wikiwho.revisions[rev_id]):
