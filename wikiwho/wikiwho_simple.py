@@ -36,6 +36,7 @@ class Wikiwho:
 
         self.spam_ids = []
         self.spam_hashes = []
+        self.tokens = []  # [word_obj, ..] ordered, unique list of tokens of this article
         self.revisions = {}  # {rev_id : rev_obj, ...}
         self.ordered_revisions = []  # [rev_id, ...]
         self.rvcontinue = '0'
@@ -594,6 +595,7 @@ class Wikiwho:
                     sentence_curr.words.append(word_curr)
                     self.token_id += 1
                     self.revision_curr.original_adds += 1
+                    self.tokens.append(word_curr)
             return matched_words_prev, possible_vandalism
 
         d = Differ()
@@ -638,6 +640,7 @@ class Wikiwho:
                             sentence_curr.words.append(word_curr)
                             self.token_id += 1
                             self.revision_curr.original_adds += 1
+                            self.tokens.append(word_curr)
                             diff[pos] = ''
                             pos = len(diff) + 1
                     pos += 1
@@ -653,6 +656,7 @@ class Wikiwho:
 
                     self.token_id += 1
                     self.revision_curr.original_adds += 1
+                    self.tokens.append(word_curr)
 
         return matched_words_prev, possible_vandalism
 

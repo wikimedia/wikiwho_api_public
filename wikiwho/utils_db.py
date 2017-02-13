@@ -39,6 +39,7 @@ def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
             last_revision_ts = last_revision.timestamp if last_revision else None
         revisions = []
         tokens = []
+        # TODO update and iterate wikiwho.tokens + test it
         article_token_ids = set()
         updated_prev_tokens = {}
         for rev_id, revision in wikiwho.revisions.items():
@@ -106,7 +107,8 @@ def wikiwho_to_csv(wikiwho, output_folder):
     current_content = ''
     deleted_content = ''
     article_last_rev_id = wikiwho.ordered_revisions[-1]
-    for word in iter_wikiwho_tokens(wikiwho):
+    # for word in iter_wikiwho_tokens(wikiwho):
+    for word in wikiwho.tokens:
         # page_id,last_rev_id,token_id,str,origin_rev_id,in,out
         if word.inbound:
             if len(word.inbound) == 1:
