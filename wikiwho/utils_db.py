@@ -1,4 +1,3 @@
-import csv
 import uuid
 
 from django.db import connection
@@ -103,35 +102,45 @@ def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
 
 
 def wikiwho_to_csv(wikiwho, output_folder):
-    content = []
-    current_content = []
-    deleted_content = []
+    content = ''
+    current_content = ''
+    deleted_content = ''
     article_token_ids = []
     article_last_rev_id = wikiwho.ordered_revisions[-1]
     for rev_id, revision in wikiwho.revisions.items():
         for word in iter_rev_tokens(revision):
             if word.token_id not in article_token_ids:
                 # page_id,last_rev_id,token_id,str,origin_rev_id,in,out
-                inbound = '{{{}}}'.format(str(word.inbound)[1:-1]) if word.inbound else '{}'
-                outbound = '{{{}}}'.format(str(word.outbound)[1:-1]) if word.outbound else '{}'
-                row = [wikiwho.page_id, word.last_rev_id, word.token_id, word.value, word.origin_rev_id,
-                       inbound, outbound]
-                content.append(row)
-                if word.last_rev_id == article_last_rev_id:
-                    current_content.append(row)
+                if word.inbound:
+                    if len(word.inbound) == 1:
+                        inbound = '{{{}}}'.format(word.inbound[0])
+                    else:
+                        inbound = '"{{{}}}"'.format(','.join(map(str, word.inbound)))
                 else:
-                    deleted_content.append(row)
+                    inbound = '{}'
+                if word.outbound:
+                    if len(word.outbound) == 1:
+                        outbound = '{{{}}}'.format(word.outbound[0])
+                    else:
+                        outbound = '"{{{}}}"'.format(','.join(map(str, word.outbound)))
+                else:
+                    outbound = '{}'
+                value = '"{}"'.format(word.value) if ',' in word.value else word.value
+                row = '{},{},{},{},{},{},{}\n'.format(wikiwho.page_id, word.last_rev_id, word.token_id, value,
+                                                      word.origin_rev_id, inbound, outbound)
+                content += row
+                if word.last_rev_id == article_last_rev_id:
+                    current_content += row
+                else:
+                    deleted_content += row
                 article_token_ids.append(word.token_id)
 
-    with open('{}/{}_content.csv'.format(output_folder, wikiwho.page_id), 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerows(content)
-    with open('{}/{}_current_content.csv'.format(output_folder, wikiwho.page_id), 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerows(current_content)
-    with open('{}/{}_deleted_content.csv'.format(output_folder, wikiwho.page_id), 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerows(deleted_content)
+    with open('{}/{}_content.csv'.format(output_folder, wikiwho.page_id), 'w') as f:
+        f.write(content[:-1])
+    with open('{}/{}_current_content.csv'.format(output_folder, wikiwho.page_id), 'w') as f:
+        f.write(current_content[:-1])
+    with open('{}/{}_deleted_content.csv'.format(output_folder, wikiwho.page_id), 'w') as f:
+        f.write(deleted_content[:-1])
     # TODO write into revisions csv
 
 
