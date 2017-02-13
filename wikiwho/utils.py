@@ -156,8 +156,8 @@ def iter_rev_tokens(revision):
 
 def iter_wikiwho_tokens(wikiwho):
     article_token_ids = set()
-    for rev_id, revision in wikiwho.revisions.items():
-        for word in iter_rev_tokens(revision):
+    for rev_id in wikiwho.ordered_revisions:
+        for word in iter_rev_tokens(wikiwho.revisions[rev_id]):
             if word.token_id not in article_token_ids:
                 article_token_ids.add(word.token_id)
                 yield word
