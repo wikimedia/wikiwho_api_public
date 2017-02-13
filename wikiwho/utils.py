@@ -14,7 +14,7 @@ def calculateHash(text):
 
 
 def splitIntoParagraphs(text):
-    paragraphs = text.replace('\r\n', '\n').replace('\r', '\n').split("\n\n")
+    paragraphs = text.replace('\r\n', '\n').replace('\r', '\n').split('\n\n')
     return paragraphs
 
 
@@ -131,7 +131,7 @@ def iter_rev_tokens(revision):
     # x = []
     # from copy import deepcopy
     # ps_copy = deepcopy(revision.paragraphs)
-    tmp = {'p': [], 's': []}
+    tmp = {'p': [], 's': []}  # ~250 times faster than deepcopy
     for hash_paragraph in revision.ordered_paragraphs:
         # paragraph = ps_copy[hash_paragraph].pop(0)
         if len(revision.paragraphs[hash_paragraph]) > 1:
@@ -139,7 +139,6 @@ def iter_rev_tokens(revision):
             paragraph = revision.paragraphs[hash_paragraph][tmp['p'].count(hash_paragraph)-1]
         else:
             paragraph = revision.paragraphs[hash_paragraph][0]
-        # paragraph = revision.paragraphs[hash_paragraph].pop(0)
         tmp['s'][:] = []
         for hash_sentence in paragraph.ordered_sentences:
             if len(paragraph.sentences[hash_sentence]) > 1:
@@ -153,3 +152,12 @@ def iter_rev_tokens(revision):
                 # x.append(word)
                 yield word
     # return x
+
+
+def iter_wikiwho_tokens(wikiwho):
+    article_token_ids = set()
+    for rev_id, revision in wikiwho.revisions.items():
+        for word in iter_rev_tokens(revision):
+            if word.token_id not in article_token_ids:
+                article_token_ids.add(word.token_id)
+                yield word

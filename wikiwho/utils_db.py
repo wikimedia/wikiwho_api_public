@@ -3,7 +3,7 @@ import uuid
 from django.db import connection
 from django.utils.dateparse import parse_datetime
 
-from .utils import iter_rev_tokens
+from .utils import iter_rev_tokens, iter_wikiwho_tokens
 
 
 def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
@@ -39,7 +39,7 @@ def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
             last_revision_ts = last_revision.timestamp if last_revision else None
         revisions = []
         tokens = []
-        article_token_ids = []
+        article_token_ids = set()
         updated_prev_tokens = {}
         for rev_id, revision in wikiwho.revisions.items():
             rev_timestamp = parse_datetime(revision.timestamp)
@@ -61,7 +61,7 @@ def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):
                               timestamp=parse_datetime(wikiwho.revisions[word.origin_rev_id].timestamp)
                               )
                     tokens.append(t)
-                    article_token_ids.append(word.token_id)
+                    article_token_ids.add(word.token_id)
                     # prev tokens that are updated by last_used, in or out
                     if last_revision_ts and parse_datetime(wikiwho.revisions[word.origin_rev_id].timestamp) <= last_revision_ts:
                         updated_prev_tokens[word.token_id] = word
@@ -105,36 +105,31 @@ def wikiwho_to_csv(wikiwho, output_folder):
     content = ''
     current_content = ''
     deleted_content = ''
-    article_token_ids = []
     article_last_rev_id = wikiwho.ordered_revisions[-1]
-    for rev_id, revision in wikiwho.revisions.items():
-        for word in iter_rev_tokens(revision):
-            if word.token_id not in article_token_ids:
-                # page_id,last_rev_id,token_id,str,origin_rev_id,in,out
-                if word.inbound:
-                    if len(word.inbound) == 1:
-                        inbound = '{{{}}}'.format(word.inbound[0])
-                    else:
-                        inbound = '"{{{}}}"'.format(','.join(map(str, word.inbound)))
-                else:
-                    inbound = '{}'
-                if word.outbound:
-                    if len(word.outbound) == 1:
-                        outbound = '{{{}}}'.format(word.outbound[0])
-                    else:
-                        outbound = '"{{{}}}"'.format(','.join(map(str, word.outbound)))
-                else:
-                    outbound = '{}'
-                value = '"{}"'.format(word.value) if ',' in word.value else word.value
-                row = '{},{},{},{},{},{},{}\n'.format(wikiwho.page_id, word.last_rev_id, word.token_id, value,
-                                                      word.origin_rev_id, inbound, outbound)
-                content += row
-                if word.last_rev_id == article_last_rev_id:
-                    current_content += row
-                else:
-                    deleted_content += row
-                article_token_ids.append(word.token_id)
-
+    for word in iter_wikiwho_tokens(wikiwho):
+        # page_id,last_rev_id,token_id,str,origin_rev_id,in,out
+        if word.inbound:
+            if len(word.inbound) == 1:
+                inbound = '{{{}}}'.format(word.inbound[0])
+            else:
+                inbound = '"{{{}}}"'.format(','.join(map(str, word.inbound)))
+        else:
+            inbound = '{}'
+        if word.outbound:
+            if len(word.outbound) == 1:
+                outbound = '{{{}}}'.format(word.outbound[0])
+            else:
+                outbound = '"{{{}}}"'.format(','.join(map(str, word.outbound)))
+        else:
+            outbound = '{}'
+        value = '"{}"'.format(word.value) if ',' in word.value else word.value
+        row = '{},{},{},{},{},{},{}\n'.format(wikiwho.page_id, word.last_rev_id, word.token_id, value,
+                                              word.origin_rev_id, inbound, outbound)
+        content += row
+        if word.last_rev_id == article_last_rev_id:
+            current_content += row
+        else:
+            deleted_content += row
     with open('{}/{}_content.csv'.format(output_folder, wikiwho.page_id), 'w') as f:
         f.write(content[:-1])
     with open('{}/{}_current_content.csv'.format(output_folder, wikiwho.page_id), 'w') as f:
