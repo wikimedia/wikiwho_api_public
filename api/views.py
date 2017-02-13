@@ -250,7 +250,7 @@ class WikiwhoView(object):
         #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
-    def get_deleted_tokens(self, wp, parameters, minimal=False, last_rev_id=None, from_db=True):
+    def get_deleted_tokens(self, wp, parameters, minimal=False, last_rev_id=None, from_db=False):
         if not from_db:
             return wp.wikiwho.get_deleted_tokens(parameters)
         if not self.article:
@@ -275,9 +275,9 @@ class WikiwhoView(object):
         #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
-    def get_revision_ids(self, wp, parameters=None, from_db=True):
+    def get_revision_ids(self, wp, parameters=None, from_db=False):
         if not from_db:
-            return wp.wikiwho.get_revision_ids()
+            return wp.wikiwho.get_revision_ids(parameters)
         json_data = dict()
         json_data["article"] = wp.saved_article_title
         json_data["success"] = True

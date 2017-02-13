@@ -777,48 +777,39 @@ class Wikiwho:
         content of revision(s).
         :return: Deleted content of revision in json format.
         """
-        # TODO  update fields and make faster, add min version of this method + use self.ordered_revisions
-        response = dict()
-        response["success"] = "true"
-        response["article"] = self.title
+        json_data = dict()
+        json_data["article"] = self.title
+        json_data["success"] = True
+        json_data["message"] = None
 
         threshold = parameters[-1]
-        deleted_tokens = []
-        deleted_token_keys = []
-        from datetime import datetime
-        revisions = [(datetime.strptime(rev.timestamp, '%Y-%m-%dT%H:%M:%SZ'), rev) for rev in self.revisions.values()]
-        revisions = [rev_id for time, rev_id in sorted(revisions, key=lambda x: x[0])]
-        last_rev_id = revisions[-1].id
-        for revision in revisions[:-1]:
-            for word in iter_rev_tokens(revision):
-                if len(word.outbound) > threshold and word.last_rev_id != last_rev_id:
-                    token = dict()
-                    token['str'] = word.value
-                    if 'rev_id' in parameters:
-                        token['rev_id'] = word.origin_rev_id
-                    if 'editor' in parameters:
-                        token['editor'] = self.revisions[word.origin_rev_id].editor
-                    if 'token_id' in parameters:
-                        token['token_id'] = word.token_id
-                    if 'inbound' in parameters:
-                        token['inbound'] = word.inbound
-                    if 'outbound' in parameters:
-                        token['outbound'] = word.outbound
-                    key = '{}-{}'.format(word.origin_rev_id, word.token_id)
-                    if key not in deleted_token_keys:
-                        deleted_token_keys.append(key)
-                        deleted_tokens.append(token)
-        response["deleted_tokens"] = deleted_tokens
+        json_data["threshold"] = threshold
+        last_rev_id = self.ordered_revisions[-1]
+        json_data["revision_id"] = last_rev_id
 
-        response["threshold"] = threshold
-        response["revision_id"] = last_rev_id
-        response["message"] = None
+        deleted_tokens = []
+        json_data["deleted_tokens"] = deleted_tokens
+        for word in self.tokens:
+            if len(word.outbound) > threshold and word.last_rev_id != last_rev_id:
+                token = dict()
+                token['str'] = word.value
+                if 'rev_id' in parameters:
+                    token['rev_id'] = word.origin_rev_id
+                if 'editor' in parameters:
+                    token['editor'] = self.revisions[word.origin_rev_id].editor
+                if 'token_id' in parameters:
+                    token['token_id'] = word.token_id
+                if 'inbound' in parameters:
+                    token['inbound'] = word.inbound
+                if 'outbound' in parameters:
+                    token['outbound'] = word.outbound
+                deleted_tokens.append(token)
         # import json
         # with open('tmp_pickles/{}_deleted_tokens.json'.format(self.title), 'w') as f:
         #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
-        return response
+        return json_data
 
-    def get_revision_ids(self):
+    def get_revision_ids(self, parameters):
         """
         :return: List of revision ids of this article in json format.
         """
@@ -826,7 +817,17 @@ class Wikiwho:
         json_data["article"] = self.title
         json_data["success"] = True
         json_data["message"] = None
-        json_data["revisions"] = self.ordered_revisions
+
+        revisions = []
+        json_data["revisions"] = revisions
+        for rev_id in self.ordered_revisions:
+            rev = {'id': rev_id}
+            revision = self.revisions[rev_id]
+            if 'editor' in parameters:
+                rev['editor'] = revision.editor
+            if 'timestamp' in parameters:
+                rev['timestamp'] = revision.timestamp
+            revisions.append(rev)
         return json_data
 
     def get_revision_text(self, revision_id):
