@@ -43,7 +43,7 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                             with open(in_content_file, 'r') as f_new:
                                 for line_new in f_new:
                                     content += line_new
-                                # content += '\n'
+                                content += '\n'
                     else:
                         replaced = False
                         content += line
@@ -72,7 +72,7 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                             with open(in_current_file, 'r') as f_new:
                                 for line_new in f_new:
                                     current_content += line_new
-                                # current_content += '\n'
+                                current_content += '\n'
                     else:
                         replaced = False
                         current_content += line
@@ -101,7 +101,7 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                             with open(in_current_file, 'r') as f_new:
                                 for line_new in f_new:
                                     deleted_content += line_new
-                                # deleted_content += '\n'
+                                deleted_content += '\n'
                     else:
                         replaced = False
                         deleted_content += line
