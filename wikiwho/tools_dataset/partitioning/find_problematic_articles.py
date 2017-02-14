@@ -16,6 +16,8 @@ import csv
 import json
 import argparse
 
+from django.utils.dateparse import parse_datetime
+
 
 def find_problematic_articles(tokens_file, part_number, revisions_file, log_folder):
     part_str = 'part_{}'.format(part_number)
@@ -31,12 +33,12 @@ def find_problematic_articles(tokens_file, part_number, revisions_file, log_fold
     problematic_articles = []
     try:
         # get list of revision ids per article id
-        revisions_dict = defaultdict(set)
+        revisions_dict = defaultdict(dict)
         with open(revisions_file, newline='') as f:
-            header = next(f)
+            header = next(f)  # page_id,rev_id,timestamp,editor
             for line in f:
                 row = line.split(',')
-                revisions_dict[str(row[0])].add(str(row[1]))
+                revisions_dict[str(row[0])].update({str(row[1]): parse_datetime(row[2])})
 
         with open(tokens_file, newline='') as f:
             reader = csv.reader(f, delimiter=',')
@@ -72,6 +74,24 @@ def find_problematic_articles(tokens_file, part_number, revisions_file, log_fold
                         problematic = True
                         problematic_articles.append(['', row[0]])
                         break
+                if problematic:
+                    continue
+                # check timestamp cond
+                for o, i in zip(outs, ins):
+                    ts_diff = (revisions_dict[row[0]][i] - revisions_dict[row[0]][o]).total_seconds()
+                    if ts_diff < 0:
+                        logger.error('ts_diff 1:{} - {} - {} - {}'.format(ts_diff, row[0], len(ins), len(outs)))
+                        problematic = True
+                        problematic_articles.append(['', row[0]])
+                        break
+                if problematic:
+                    continue
+                if len(outs) > len(ins) and ins:
+                    ts_diff = (revisions_dict[row[0]][outs[-1]] - revisions_dict[row[0]][ins[-1]]).total_seconds()
+                    if ts_diff < 0:
+                        logger.error('ts_diff 2:{}'.format(ts_diff))
+                        problematic = True
+                        problematic_articles.append(['', row[0]])
 
     except Exception as e:
         logger.exception(part_str)
@@ -129,6 +149,7 @@ def main():
         # tokens file path, part number, revisions file path
         partitions.append(['{}/{}'.format(tokens_folder, i), part_number,
                            '{}/{}'.format(revisions_folder, revisions_file)])
+    # print(partitions)
 
     # dumps
     dumps_folder = args.dumps_folder
@@ -150,9 +171,8 @@ def main():
     if not exists(log_folder):
         mkdir(log_folder)
     logger = logging.getLogger('future_log')
-    file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
-                                                                'future_in_outs',
-                                                                strftime("%Y-%m-%d-%H:%M:%S")))
+    file_handler = logging.FileHandler('{}/problematic_articles_at_{}.log'.format(log_folder,
+                                                                                  strftime("%Y-%m-%d-%H:%M:%S")))
     file_handler.setLevel(logging.ERROR)
     formatter = logging.Formatter('%(message)s')
     file_handler.setFormatter(formatter)
