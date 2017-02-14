@@ -29,6 +29,7 @@ from api.handler import WPHandler
 from wikiwho.tests.utils import article_zips
 from wikiwho.utils import splitIntoWords
 from api.views import WikiwhoApiView, WikiwhoView
+from django.utils.dateparse import parse_datetime
 
 # TODO use django's default test tool: https://docs.djangoproject.com/en/1.10/topics/testing/
 
@@ -116,6 +117,7 @@ def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
     # create json with in/outbounds
     in_out_test_len = True
     in_out_test_spam = True
+    in_out_test_ts = True
     # last_used_test_spam = True
     revision_json_with_io = v.get_revision_json(wp, {'str', 'inbound', 'outbound'}, from_db=from_db, with_token_ids=False)
     for i, ri in enumerate(wp.revision_ids):
@@ -127,8 +129,18 @@ def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
             for r in t['inbound']:
                 if r in wp.wikiwho.spam_ids:
                     in_out_test_spam = False
+            for o, i in zip(t['outbound'], t['inbound']):
+                ts_diff = (parse_datetime(wp.wikiwho.revisions[i].timestamp) -
+                           parse_datetime(wp.wikiwho.revisions[o].timestamp)).total_seconds()
+                if ts_diff < 0:
+                    in_out_test_ts = True
+            if len(t['outbound']) > len(t['inbound']) and t['inbound']:
+                ts_diff = (parse_datetime(wp.wikiwho.revisions[t['outbound'][-1]].timestamp) -
+                           parse_datetime(wp.wikiwho.revisions[t['inbound'][-1]].timestamp)).total_seconds()
+                if ts_diff < 0:
+                    in_out_test_ts = True
             # last_used_test_spam = not (t['last_used'] in wp.wikiwho.spam_ids)
-            if not in_out_test_len or not in_out_test_spam:
+            if not in_out_test_len or not in_out_test_spam or not in_out_test_ts:
                 # print(t['str'], len(t['outbound']), len(t['inbound']), t['outbound'], t['inbound'])
                 break
     json_file_path_with_io = '{}/{}_db_io.json'.format(temp_folder, article_name)
@@ -142,9 +154,8 @@ def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
     # print(wp.wikiwho.spam_ids)
     assert is_content_same_1, "{}: 'json with ri and ai doesn't match".format(article_name)
     assert is_content_same_2, "{}: json with ti doesn't match".format(article_name)
-    assert in_out_test_len and in_out_test_spam, "len: {}, spam: {}".format(
-        'passed' if in_out_test_len else 'failed',
-        'passed' if in_out_test_spam else 'failed')
+    assert in_out_test_len and in_out_test_spam and in_out_test_ts, "len: {}, spam: {}, ts: {}".format(
+        in_out_test_len,  in_out_test_spam, in_out_test_ts)
     assert test_io or is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_name)
     # assert last_used_test_spam, 'last used in spam'
 
