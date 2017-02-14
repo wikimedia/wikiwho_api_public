@@ -130,7 +130,7 @@ def split_revisions(base_path, revisions_file):
                 write_into_partition_file(first_article_id_in_part, article_id,
                                           output_folder, header, partition_content, 'revisions', output_counter)
                 output_counter += 1
-                partition_content = [row]
+                partition_content = [[row[0], row[1], row[3], row[2]]]
                 first_article_id_in_part = int(row[0])
             else:
                 # partition_content.append(row)  # output for analysis
