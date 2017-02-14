@@ -31,12 +31,12 @@ def find_problematic_articles(tokens_file, part_number, revisions_file, log_fold
     problematic_articles = []
     try:
         # get list of revision ids per article id
-        revisions_dict = defaultdict(list)
+        revisions_dict = defaultdict(set)
         with open(revisions_file, newline='') as f:
             header = next(f)
             for line in f:
                 row = line.split(',')
-                revisions_dict[str(row[0])].append(str(row[1]))
+                revisions_dict[str(row[0])].add(str(row[1]))
 
         with open(tokens_file, newline='') as f:
             reader = csv.reader(f, delimiter=',')
