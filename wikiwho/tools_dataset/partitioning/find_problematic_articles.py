@@ -80,7 +80,7 @@ def find_problematic_articles(tokens_file, part_number, revisions_file, log_fold
                 for o, i in zip(outs, ins):
                     ts_diff = (revisions_dict[row[0]][i] - revisions_dict[row[0]][o]).total_seconds()
                     if ts_diff < 0:
-                        logger.error('ts_diff 1:{} - {} - {} - {}'.format(ts_diff, row[0], len(ins), len(outs)))
+                        # logger.error('ts_diff 1:{} - {} - {} - {}'.format(ts_diff, row[0], len(ins), len(outs)))
                         problematic = True
                         problematic_articles.append(['', row[0]])
                         break
@@ -89,7 +89,7 @@ def find_problematic_articles(tokens_file, part_number, revisions_file, log_fold
                 if len(outs) > len(ins) and ins:
                     ts_diff = (revisions_dict[row[0]][outs[-1]] - revisions_dict[row[0]][ins[-1]]).total_seconds()
                     if ts_diff < 0:
-                        logger.error('ts_diff 2:{}'.format(ts_diff))
+                        # logger.error('ts_diff 2:{}'.format(ts_diff))
                         problematic = True
                         problematic_articles.append(['', row[0]])
 
