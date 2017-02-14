@@ -125,7 +125,7 @@ class Command(BaseCommand):
                             title_ids += json_data[xml_file].get('operationals', [])
                         title_ids += json_data[xml_file].get('missing', [])
                         # print(title_ids)
-                        page_ids = [int(ti[1]) for ti in title_ids]
+                        page_ids = set(int(ti[1]) for ti in title_ids)
                         if page_ids:
                             xml_files.append(['{}/{}'.format(xml_folder, xml_file), page_ids])
         elif not json_folder:
