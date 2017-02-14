@@ -51,9 +51,9 @@ def find_problematic_articles(tokens_file, part_number, revisions_file, log_fold
                 article_id = row[0]
                 if problematic:
                     continue
-                ins = row[5][1:-1]
+                ins = row[-2][1:-1]
                 ins = ins.split(',') if ins else []
-                outs = row[6][1:-1]
+                outs = row[-1][1:-1]
                 outs = outs.split(',') if outs else []
                 # len diff of in and outs must be 0 or 1
                 if not (0 <= len(outs) - len(ins) <= 1):
