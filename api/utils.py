@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 import signal
 
-from six.moves import urllib
+# from six.moves import urllib
 from lxml import etree
 import requests
 
@@ -55,16 +55,13 @@ def create_wp_session():
     session.headers.update(headers)
     # Login request
     url = 'https://en.wikipedia.org/w/api.php'
-    params = '?action=query&meta=tokens&type=login&format=json'
     # get token
-    r1 = session.post(url + params)
+    r1 = session.post(url, data={'action': 'query', 'meta': 'tokens', 'type': 'login', 'format': 'json'})
     token = r1.json()["query"]["tokens"]["logintoken"]
-    token = urllib.parse.quote(token)
+    # token = urllib.parse.quote(token)
     # log in
-    params2 = '?action=login&lgname={}&lgpassword={}&lgtoken={}&format=json'.format(settings.WP_USER,
-                                                                                    settings.WP_PASSWORD,
-                                                                                    token)
-    r2 = session.post(url + params2)
+    r2 = session.post(url, data={'action': 'login', 'format': 'json', 'lgname': settings.WP_USER,
+                                 'lgpassword': settings.WP_PASSWORD, 'lgtoken': token})
     return session
 
 

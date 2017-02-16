@@ -184,5 +184,6 @@ XML_DUPLICATE_ARTICLES = {
 }
 
 # Wikipedia
+# WP_HEADERS_USER_AGENT = 'wikiwho-api'
 WP_HEADERS_USER_AGENT = 'Wikiwho API'
 WP_HEADERS_FROM = 'philipp.singer@gesis.org, fabian.floeck@gesis.org and kenan.erdogan@gesis.org'
