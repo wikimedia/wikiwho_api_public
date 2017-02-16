@@ -430,50 +430,27 @@ class TestWikiwho:
                             i += 1
 
     def test_authorship(self, temp_folder, article_name, revision_id, token, context, correct_rev_id):
-        """
-        This is not needed anymore. Covered by 'test_json_output' case.
-        """
-        sub_text = split_into_tokens(context)
-        with WPHandler(article_name, pickle_folder='{}/test_authorship'.format(temp_folder), save_into_pickle=True, save_into_db=False) as wp:
-            wp.handle([revision_id], 'json', is_api=False)
+        sub_token_list = split_into_tokens(context)
+        n = len(sub_token_list)
 
-        # revision = wp.article_obj.revisions.get(id=revision_id)
-        # text_ = []
-        # rev_ids_ = []
-        # for data in revision.tokens.values('token', 'label_revision__id'):
-        #     text_.append(data['token'])
-        #     rev_ids_.append(data['label_revision__id'])
-        # n = len(sub_text)
-        # found = 0
-        ww_db_rev_id = 0
-        # for i in range(len(text_) - n + 1):
-        #     if sub_text == text_[i:i + n]:
-        #         token_i = i + sub_text.index(token)
-        #         ww_db_rev_id = rev_ids_[token_i]
-        #         found = 1
-        #         break
+        pickle_folder = temp_folder
+        with WPHandler(article_name, pickle_folder=pickle_folder) as wp:
+            wp.handle([revision_id], is_api_call=False)
 
-        text, label_rev_ids = wp.wikiwho.get_revision_text(revision_id)
-        n = len(sub_text)
+        token_list, origin_rev_ids = wp.wikiwho.get_revision_text(revision_id)
         found = 0
         # print(wp.wikiwho.spam)
         print(token, context)
-        print(sub_text)
-        for i in range(len(text) - n + 1):
-            if sub_text == text[i:i + n]:
-                token_i = i + sub_text.index(token)
-                ww_rev_id = label_rev_ids[token_i]
+        print(sub_token_list)
+        for i in range(len(token_list) - n + 1):
+            if sub_token_list == token_list[i:i + n]:
+                token_i = i + sub_token_list.index(token)
+                ww_rev_id = origin_rev_ids[token_i]
                 found = 1
-                assert ww_rev_id == correct_rev_id, "1){}: {}: rev id was {} - {}, should be {}".format(article_name,
-                                                                                                 token,
-                                                                                                 ww_rev_id,
-                                                                                                 ww_db_rev_id,
-                                                                                                 correct_rev_id)
-                # assert ww_db_rev_id == correct_rev_id, "2){}: {}: rev id was {} - {}, should be {}".format(article_name,
-                #                                                                                  token,
-                #                                                                                  ww_rev_id,
-                #                                                                                  ww_db_rev_id,
-                #                                                                                  correct_rev_id)
+                assert ww_rev_id == correct_rev_id, "1){}: {}: rev id was {}, should be {}".format(article_name,
+                                                                                                   token,
+                                                                                                   ww_rev_id,
+                                                                                                   correct_rev_id)
                 break
         assert found, "{}: {} -> token not found".format(article_name, token)
 
