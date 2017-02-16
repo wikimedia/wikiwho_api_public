@@ -7,131 +7,117 @@ Created on Feb 20, 2013
 from __future__ import division
 from __future__ import unicode_literals
 import hashlib
+from collections import Counter
+import re
 
 
-def calculateHash(text):
+regex_dot = re.compile(r"(\w\w\w\.) ")
+regex_url = re.compile(r"(http.*?://.*?)[ \|<>\n\r]")
+
+
+def calculate_hash(text):
     return hashlib.md5(text.encode('utf-8')).hexdigest()
 
 
-def splitIntoParagraphs(text):
-    paragraphs = text.replace('\r\n', '\n').replace('\r', '\n').split('\n\n')
-    return paragraphs
+def split_into_paragraphs(text):
+    text = text.replace('\r\n', '\n').replace('\r', '\n')
+    # html table syntax
+    text = text.replace('<table>', '\n\n<table>').replace('</table>', '</table>\n\n')
+    text = text.replace('<tr>', '\n\n<tr>').replace('</tr>', '</tr>\n\n')
+    # wp table syntax
+    text = text.replace('{|', '\n\n{|').replace('|}', '|}\n\n')
+    text = text.replace('|-\n', '\n\n|-\n')
+    return text.split('\n\n')
 
 
-def splitIntoSentences(p):
-    p = p.replace('. ', '.@@@@')
-    p = p.replace('\n', '\n@@@@')
-    p = p.replace('; ', ';@@@@')
-    p = p.replace('? ', '?@@@@')
-    p = p.replace('! ', '!@@@@')
-    # p = p.replace('.{', '.||{')
-    # p = p.replace('!{', '!||{')
-    # p = p.replace('?{', '?||{')
-    p = p.replace('>{', '>@@@@{')
-    p = p.replace('}<', '}@@@@<')
-    # p = p.replace('.[', '.||[')
-    # p = p.replace('.]]', '.]]||')
-    # p = p.replace('![', '!||[')
-    # p = p.replace('?[', '?||[')
-    p = p.replace('<ref', '@@@@<ref')
-    p = p.replace('/ref>', '/ref>@@@@')
+def split_into_sentences(text):
+    text = text.replace('\n', '\n@@@@')
+    # punctuation = ('. ', '\n', '; ', '? ', '! ', ': ', )
+    # text = text.replace('. ', '.@@@@')
+    regex_dot.sub(r'\1@@@@', text)
+    text = text.replace('; ', ';@@@@')
+    text = text.replace('? ', '?@@@@')
+    text = text.replace('! ', '!@@@@')
+    text = text.replace(': ', ':@@@@')
+    text = text.replace('\t ', '\t@@@@')
+    # comments as sentence
+    text = text.replace('<!--', '@@@@<!--')
+    text = text.replace('-->', '-->@@@@')
+    # references as sentence. ex: <ref name="...">{{ ... }}</ref>
+    # text = text.replace('>{', '>@@@@{')
+    # text = text.replace('}<', '}@@@@<')
+    text = text.replace('<ref', '@@@@<ref')
+    text = text.replace('/ref>', '/ref>@@@@')
+    # urls as sentence
+    regex_url.sub(r'@@@@\1@@@@', text)
 
-    while '@@@@@@@@' in p:
-        p = p.replace('@@@@@@@@', '@@@@')
+    # text = text.replace('.{', '.||{')
+    # text = text.replace('!{', '!||{')
+    # text = text.replace('?{', '?||{')
+    # text = text.replace('.[', '.||[')
+    # text = text.replace('.]]', '.]]||')
+    # text = text.replace('![', '!||[')
+    # text = text.replace('?[', '?||[')
 
-    sentences = p.split('@@@@')
-    return sentences
-
-
-def splitIntoWords(p):
-    p = p.replace('|', '||@||')
-
-    p = p.replace('<', '||<').replace('>', '>||')
-    p = p.replace('?', '?||').replace('!', '!||').replace('.[[', '.||[[').replace('\n', '||')
-
-    p = p.replace('.', '||.||').replace(',', '||,||').replace(';', '||;||').replace(':', '||:||').replace('?', '||?||').replace('!', '||!||')
-    p = p.replace('-', '||-||').replace('/', '||/||').replace('\\', '||\\||').replace('\'\'\'', '||\'\'\'||')
-    p = p.replace('(', '||(||').replace(')', '||)||')
-    p = p.replace('[', '||[||').replace(']', '||]||')
-    p = p.replace('{', '||{||').replace('}', '||}||')
-    p = p.replace('*', '||*||').replace('#', '||#||').replace('@', '||@||').replace('&', '||&||')
-    p = p.replace('=', '||=||').replace('+', '||+||').replace('_', '||_||').replace('%', '||%||')
-    p = p.replace('~', '||~||')
-    p = p.replace('$', '||$||')
-    p = p.replace('^', '||^||')
-
-    p = p.replace('<', '||<||').replace('>', '||>||')
-    p = p.replace('[||||[', '[[').replace(']||||]', ']]')
-    p = p.replace('{||||{', '{{').replace('}||||}', '}}')
-    p = p.replace('||.||||.||||.||', '...').replace('/||||>', '/>').replace('<||||/', '</')
-    p = p.replace('-||||-', '--')
-
-    p = p.replace('<||||!||||--||', '||<!--||').replace('||--||||>', '||-->||')
-    p = p.replace(' ', '||')
-
-    while '||||' in p:
-        p = p.replace('||||', '||')
-
-    words = filter(lambda a: a != '', p.split('||'))
-    words = ['|' if w == '@' else w for w in words]
-
-    return words
+    while '@@@@@@@@' in text:
+        text = text.replace('@@@@@@@@', '@@@@')
+    return text.split('@@@@')
 
 
-def computeAvgWordFreq(text_list, revision_id=0):
-    d = {}
+def split_into_tokens(text, extended=False):
+    # TODO if replace with 4 @, this turns all |s into 4@s in the end
+    text = text.replace('|', '||ææææ||')  # use | as delimiter
 
-    for elem in text_list:
-        if elem not in d:
-            d.update({elem: text_list.count(elem)})
+    text = text.replace('\n', '||').replace(' ', '||')
 
-    if '<' in d:
-        del d['<']
+    symbols = ['.', ',', ';', ':', '?', '!', '-', '_', '/', '\\', '(', ')', '[', ']', '{', '}', '*', '#', '@',
+               '&', '=', '+', '%', '~', '$', '^', '<', '>', '"', '\'', '´', '`', '¸', '˛', '’']
+    currency_symbols = []
+    extra_symbols = []
+    if extended:
+        # currency_symbols_long = '¢,£,¤,¥,֏,؋,৲,৳,৻,૱,௹,฿,៛,₠,₡,₢,₣,₤,₥,₦,₧,₨,₩,₪,₫,€,₭,₮,₯,₰,₱,₲,₳,₴,₵' \
+        #                    ',₶,₷,₸,₹,₺,꠸,﷼,﹩,＄,￠,￡,￥,￦'.split(',')
+        # currency_symbols = '¤,₳,฿,₵,​¢,​₡,​₢,​₫,​₯,​֏,₠,​€,ƒ,​₣,₲,₴,₭,₺,​₾,ℳ,​₥,₦,₧,​₱,​₰,​£,៛,​₽,​₹,₨,₪,৳,​₸,​₮,₩,¥'.split(',')
+        currency_symbols = ['¤', '₳', '฿', '₵', '¢', '₡', '₢', '₫', '₯', '֏', '₠', '€', 'ƒ', '₣', '₲', '₴', '₭', '₺',
+                            '₾', 'ℳ', '₥', '₦', '₧', '₱', '₰', '£', '៛', '₽', '₹', '₨', '₪', '৳', '₸', '₮', '₩', '¥']
+        # extra_symbols = '§,‖,¦,⟨,⟩,–,—,¯,»,«,”,÷,×,′,″,‴,¡,¿,©,℗,®,℠,™'.split(',')
+        extra_symbols = ['§', '‖', '¦', '⟨', '⟩', '–', '—', '¯', '»', '«', '”', '÷', '×', '′', '″', '‴', '¡',
+                         '¿', '©', '℗', '®', '℠', '™']
+    for c in symbols+currency_symbols+extra_symbols:
+        text = text.replace(c, '||{}||'.format(c))
 
-    if '>' in d:
-        del d['>']
+    # re-construct some special character groups as they are tokens
+    # text = text.replace('[||||[', '[[').replace(']||||]', ']]')
+    # text = text.replace('{||||{', '{{').replace('}||||}', '}}')
+    # text = text.replace('||.||||.||||.||', '...')
+    # text = text.replace('/||||>', '/>').replace('<||||/', '</')
+    # text = text.replace('-||||-', '--')
+    # text = text.replace('<||||!||||--||', '||<!--||').replace('||--||||>', '||-->||')
+    text = text.replace('<||||!||||-||||-||', '||<!--||').replace('||-||||-||||>', '||-->||')
 
-    if 'tr' in d:
-        del d['tr']
+    while '||||' in text:
+        text = text.replace('||||', '||')
 
-    if 'td' in d:
-        del d['td']
+    tokens = filter(lambda a: a != '', text.split('||'))  # filter empty strings
+    tokens = ['|' if w == 'ææææ' else w for w in tokens]  # insert back the |s
+    return tokens
 
-    # if '(' in d:
-    #     del d['(']
-    #
-    # if ')' in d:
-    #     del d[')']
 
-    if '[' in d:
-        del d['[']
+def compute_avg_word_freq(token_list):
+    c = Counter(token_list)  # compute count of each token in the list
+    # remove some tokens
+    remove_list = ('<', '>', 'tr', 'td', '[', ']', '"', '*', '==', '{', '}', '|', '-')  # '(', ')'
+    for t in remove_list:
+        if t in c:
+            del c[t]
 
-    if ']' in d:
-        del d[']']
-
-    if '"' in d:
-        del d['"']
-
-    # if '|' in d:
-    #     del d['|']
-
-    if '*' in d:
-        del d['*']
-
-    if '==' in d:
-        del d['==']
-
-    if d:
-        return sum(d.values()) / len(d)
-    else:
-        return 0
+    return sum(c.values()) / len(c) if c else 0
 
 
 def iter_rev_tokens(revision):
     """
     Yields tokens of the revision in order.
     """
-    # x = []
     # from copy import deepcopy
     # ps_copy = deepcopy(revision.paragraphs)
     tmp = {'p': [], 's': []}  # ~250 times faster than deepcopy
@@ -152,9 +138,7 @@ def iter_rev_tokens(revision):
                 sentence = paragraph.sentences[hash_sentence][0]
             # sentence = paragraph.sentences[hash_sentence].pop(0)
             for word in sentence.words:
-                # x.append(word)
                 yield word
-    # return x
 
 
 def iter_wikiwho_tokens(wikiwho):

@@ -27,7 +27,7 @@ from mwtypes.files import reader
 
 from api.handler import WPHandler
 from wikiwho.tests.utils import article_zips
-from wikiwho.utils import splitIntoWords
+from wikiwho.utils import split_into_tokens
 from api.views import WikiwhoApiView, WikiwhoView
 from django.utils.dateparse import parse_datetime
 
@@ -433,7 +433,7 @@ class TestWikiwho:
         """
         This is not needed anymore. Covered by 'test_json_output' case.
         """
-        sub_text = splitIntoWords(context)
+        sub_text = split_into_tokens(context)
         with WPHandler(article_name, pickle_folder='{}/test_authorship'.format(temp_folder), save_into_pickle=True, save_into_db=False) as wp:
             wp.handle([revision_id], 'json', is_api=False)
 

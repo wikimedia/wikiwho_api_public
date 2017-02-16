@@ -14,8 +14,8 @@ from __future__ import unicode_literals
 from difflib import Differ
 
 from .structures import Word, Sentence, Paragraph, Revision
-from .utils import calculateHash, splitIntoParagraphs, splitIntoSentences, splitIntoWords, computeAvgWordFreq, \
-    iter_rev_tokens
+from .utils import calculate_hash, split_into_paragraphs, split_into_sentences, split_into_tokens, \
+    compute_avg_word_freq, iter_rev_tokens
 
 
 # Spam detection variables.
@@ -73,7 +73,7 @@ class Wikiwho:
             self.revision_prev = self.revision_curr
 
             rev_id = revision.id
-            rev_hash = revision.sha1 or calculateHash(text)
+            rev_hash = revision.sha1 or calculate_hash(text)
             if rev_id in self.spam_ids:
                 vandalism = True
 
@@ -144,7 +144,7 @@ class Wikiwho:
 
             text = revision.get('*', '')
             rev_id = int(revision['revid'])
-            rev_hash = revision.get('sha1', calculateHash(text))
+            rev_hash = revision.get('sha1', calculate_hash(text))
             if rev_id in self.spam_ids:
                 vandalism = True
 
@@ -304,7 +304,7 @@ class Wikiwho:
         matched_paragraphs_prev = []
 
         # Split the text of the current into paragraphs.
-        paragraphs = splitIntoParagraphs(self.text_curr)
+        paragraphs = split_into_paragraphs(self.text_curr)
 
         # Iterate over the paragraphs of the current version.
         for paragraph in paragraphs:
@@ -313,7 +313,7 @@ class Wikiwho:
             if not paragraph:
                 # dont track empty lines
                 continue
-            hash_curr = calculateHash(paragraph)
+            hash_curr = calculate_hash(paragraph)
             matched_curr = False
 
             # If the paragraph is in the previous revision,
@@ -439,7 +439,7 @@ class Wikiwho:
         # Iterate over the unmatched paragraphs of the current revision.
         for paragraph_curr in unmatched_paragraphs_curr:
             # Split the current paragraph into sentences.
-            sentences = splitIntoSentences(paragraph_curr.value)
+            sentences = split_into_sentences(paragraph_curr.value)
             # Iterate over the sentences of the current paragraph
             for sentence in sentences:
                 # Create the Sentence structure.
@@ -447,8 +447,8 @@ class Wikiwho:
                 if not sentence:
                     # dont track empty lines
                     continue
-                sentence = ' '.join(splitIntoWords(sentence))
-                hash_curr = calculateHash(sentence)
+                sentence = ' '.join(split_into_tokens(sentence))
+                hash_curr = calculate_hash(sentence)
                 matched_curr = False
                 total_sentences += 1
 
@@ -566,7 +566,7 @@ class Wikiwho:
 
         text_curr = []
         for sentence_curr in unmatched_sentences_curr:
-            words = splitIntoWords(sentence_curr.value)
+            words = split_into_tokens(sentence_curr.value)
             text_curr.extend(words)
             sentence_curr.splitted.extend(words)
 
@@ -576,7 +576,7 @@ class Wikiwho:
 
         # spam detection.
         if possible_vandalism:
-            token_density = computeAvgWordFreq(text_curr, self.revision_curr.id)
+            token_density = compute_avg_word_freq(text_curr)
             if token_density > WORD_DENSITY:
                 return matched_words_prev, possible_vandalism
             else:
