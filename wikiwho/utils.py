@@ -39,7 +39,7 @@ def split_into_sentences(text):
     text = text.replace('? ', '?@@@@')
     text = text.replace('! ', '!@@@@')
     text = text.replace(': ', ':@@@@')
-    text = text.replace('\t ', '\t@@@@')
+    text = text.replace('\t', '\t@@@@')
     # comments as sentence
     text = text.replace('<!--', '@@@@<!--')
     text = text.replace('-->', '-->@@@@')
@@ -64,25 +64,22 @@ def split_into_sentences(text):
     return text.split('@@@@')
 
 
-def split_into_tokens(text, extended=False):
-    # TODO if replace with 4 @, this turns all |s into 4@s in the end
+def split_into_tokens(text):
+    # TODO is æ okay?
     text = text.replace('|', '||ææææ||')  # use | as delimiter
 
     text = text.replace('\n', '||').replace(' ', '||')
 
     symbols = ['.', ',', ';', ':', '?', '!', '-', '_', '/', '\\', '(', ')', '[', ']', '{', '}', '*', '#', '@',
                '&', '=', '+', '%', '~', '$', '^', '<', '>', '"', '\'', '´', '`', '¸', '˛', '’']
-    currency_symbols = []
-    extra_symbols = []
-    if extended:
-        # currency_symbols_long = '¢,£,¤,¥,֏,؋,৲,৳,৻,૱,௹,฿,៛,₠,₡,₢,₣,₤,₥,₦,₧,₨,₩,₪,₫,€,₭,₮,₯,₰,₱,₲,₳,₴,₵' \
-        #                    ',₶,₷,₸,₹,₺,꠸,﷼,﹩,＄,￠,￡,￥,￦'.split(',')
-        # currency_symbols = '¤,₳,฿,₵,​¢,​₡,​₢,​₫,​₯,​֏,₠,​€,ƒ,​₣,₲,₴,₭,₺,​₾,ℳ,​₥,₦,₧,​₱,​₰,​£,៛,​₽,​₹,₨,₪,৳,​₸,​₮,₩,¥'.split(',')
-        currency_symbols = ['¤', '₳', '฿', '₵', '¢', '₡', '₢', '₫', '₯', '֏', '₠', '€', 'ƒ', '₣', '₲', '₴', '₭', '₺',
-                            '₾', 'ℳ', '₥', '₦', '₧', '₱', '₰', '£', '៛', '₽', '₹', '₨', '₪', '৳', '₸', '₮', '₩', '¥']
-        # extra_symbols = '§,‖,¦,⟨,⟩,–,—,¯,»,«,”,÷,×,′,″,‴,¡,¿,©,℗,®,℠,™'.split(',')
-        extra_symbols = ['§', '‖', '¦', '⟨', '⟩', '–', '—', '¯', '»', '«', '”', '÷', '×', '′', '″', '‴', '¡',
-                         '¿', '©', '℗', '®', '℠', '™']
+    # currency_symbols_long = '¢,£,¤,¥,֏,؋,৲,৳,৻,૱,௹,฿,៛,₠,₡,₢,₣,₤,₥,₦,₧,₨,₩,₪,₫,€,₭,₮,₯,₰,₱,₲,₳,₴,₵' \
+    #                    ',₶,₷,₸,₹,₺,꠸,﷼,﹩,＄,￠,￡,￥,￦'.split(',')
+    # currency_symbols = '¤,₳,฿,₵,​¢,​₡,​₢,​₫,​₯,​֏,₠,​€,ƒ,​₣,₲,₴,₭,₺,​₾,ℳ,​₥,₦,₧,​₱,​₰,​£,៛,​₽,​₹,₨,₪,৳,​₸,​₮,₩,¥'.split(',')
+    currency_symbols = ['¤', '₳', '฿', '₵', '¢', '₡', '₢', '₫', '₯', '֏', '₠', '€', 'ƒ', '₣', '₲', '₴', '₭', '₺',
+                        '₾', 'ℳ', '₥', '₦', '₧', '₱', '₰', '£', '៛', '₽', '₹', '₨', '₪', '৳', '₸', '₮', '₩', '¥']
+    # extra_symbols = '§,‖,¦,⟨,⟩,–,—,¯,»,«,”,÷,×,′,″,‴,¡,¿,©,℗,®,℠,™'.split(',')
+    extra_symbols = ['§', '‖', '¦', '⟨', '⟩', '–', '—', '¯', '»', '«', '”', '÷', '×', '′', '″', '‴', '¡',
+                     '¿', '©', '℗', '®', '℠', '™']
     for c in symbols+currency_symbols+extra_symbols:
         text = text.replace(c, '||{}||'.format(c))
 
