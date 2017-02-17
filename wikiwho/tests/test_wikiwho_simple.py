@@ -156,7 +156,7 @@ def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
     assert is_content_same_2, "{}: json with ti doesn't match".format(article_name)
     assert in_out_test_len and in_out_test_spam and in_out_test_ts, "len: {}, spam: {}, ts: {}".format(
         in_out_test_len,  in_out_test_spam, in_out_test_ts)
-    assert test_io or is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_name)
+    assert not test_io or is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_name)
     # assert last_used_test_spam, 'last used in spam'
 
 
