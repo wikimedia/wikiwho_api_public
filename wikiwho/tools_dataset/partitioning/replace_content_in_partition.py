@@ -3,6 +3,7 @@
 Example usage:
 python wikiwho/tools_dataset/partitioning/replace_content_in_partition.py -o '../partitions' -i '' -m 2 -d 'cd'
 """
+from collections import defaultdict
 from os import mkdir, listdir
 from os.path import exists, isfile
 import logging
@@ -31,6 +32,14 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
             all_output_folder = '{}/tokens'.format(output_folder)
             partition_content_file = '{}/20161226-tokens-part{}-{}-{}.csv'.\
                 format(all_output_folder, part_data[0], part_data[1][0], part_data[1][1])
+
+            replace_dict = defaultdict(str)
+            for article_id in part_data[2]:
+                in_content_file = '{}/{}_content.csv'.format(input_folder, article_id)
+                with open(in_content_file, 'r') as f_new:
+                    replace_dict[article_id] += f_new.read()
+                    replace_dict[article_id] += '\n'
+
             with open(partition_content_file, 'r') as f:
                 content = ''
                 replaced = False
@@ -39,11 +48,8 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                     if article_id in part_data[2]:
                         if not replaced:
                             replaced = True
-                            in_content_file = '{}/{}_content.csv'.format(input_folder, article_id)
-                            with open(in_content_file, 'r') as f_new:
-                                for line_new in f_new:
-                                    content += line_new
-                                content += '\n'
+                            content += replace_dict[article_id]
+                            del replace_dict[article_id]
                     else:
                         replaced = False
                         content += line
@@ -59,6 +65,14 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
             current_output_folder = '{}/current_content'.format(output_folder)
             partition_current_file = '{}/20161226-current_content-part{}-{}-{}.csv'.\
                 format(current_output_folder, part_data[0], part_data[1][0], part_data[1][1])
+
+            replace_dict = defaultdict(str)
+            for article_id in part_data[2]:
+                in_current_file = '{}/{}_current_content.csv'.format(input_folder, article_id)
+                with open(in_current_file, 'r') as f_new:
+                    replace_dict[article_id] += f_new.read()
+                    replace_dict[article_id] += '\n'
+
             with open(partition_current_file, 'r') as f:
                 header = next(f)
                 current_content = header
@@ -68,11 +82,8 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                     if article_id in part_data[2]:
                         if not replaced:
                             replaced = True
-                            in_current_file = '{}/{}_current_content.csv'.format(input_folder, article_id)
-                            with open(in_current_file, 'r') as f_new:
-                                for line_new in f_new:
-                                    current_content += line_new
-                                current_content += '\n'
+                            current_content += replace_dict[article_id]
+                            del replace_dict[article_id]
                     else:
                         replaced = False
                         current_content += line
@@ -88,6 +99,14 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
             deleted_output_folder = '{}/deleted_content'.format(output_folder)
             partition_deleted_file = '{}/20161226-deleted_content-part{}-{}-{}.csv'.\
                 format(deleted_output_folder, part_data[0], part_data[1][0], part_data[1][1])
+
+            replace_dict = defaultdict(str)
+            for article_id in part_data[2]:
+                in_deleted_file = '{}/{}_deleted_content.csv'.format(input_folder, article_id)
+                with open(in_deleted_file, 'r') as f_new:
+                    replace_dict[article_id] += f_new.read()
+                    replace_dict[article_id] += '\n'
+
             with open(partition_deleted_file, 'r') as f:
                 header = next(f)
                 deleted_content = header
@@ -97,11 +116,8 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                     if article_id in part_data[2]:
                         if not replaced:
                             replaced = True
-                            in_current_file = '{}/{}_deleted_content.csv'.format(input_folder, article_id)
-                            with open(in_current_file, 'r') as f_new:
-                                for line_new in f_new:
-                                    deleted_content += line_new
-                                deleted_content += '\n'
+                            deleted_content += replace_dict[article_id]
+                            del replace_dict[article_id]
                     else:
                         replaced = False
                         deleted_content += line
