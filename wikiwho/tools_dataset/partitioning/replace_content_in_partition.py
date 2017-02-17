@@ -40,19 +40,18 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                     replace_dict[article_id] += f_new.read()
                     replace_dict[article_id] += '\n'
 
+            prev_article_id = None
             with open(partition_content_file, 'r') as f:
                 content = ''
-                replaced = False
                 for line in f:
                     article_id = int(line.split(',')[0])
                     if article_id in part_data[2]:
-                        if not replaced:
-                            replaced = True
+                        if prev_article_id != article_id:
                             content += replace_dict[article_id]
                             del replace_dict[article_id]
                     else:
-                        replaced = False
                         content += line
+                    prev_article_id = article_id
 
             new_file_all = '{}/new/20161226-tokens-part{}-{}-{}.csv'.\
                 format(all_output_folder, part_data[0], part_data[1][0], part_data[1][1])
@@ -73,20 +72,19 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                     replace_dict[article_id] += f_new.read()
                     replace_dict[article_id] += '\n'
 
+            prev_article_id = None
             with open(partition_current_file, 'r') as f:
                 header = next(f)
                 current_content = header
-                replaced = False
                 for line in f:
                     article_id = int(line.split(',')[0])
                     if article_id in part_data[2]:
-                        if not replaced:
-                            replaced = True
+                        if prev_article_id != article_id:
                             current_content += replace_dict[article_id]
                             del replace_dict[article_id]
                     else:
-                        replaced = False
                         current_content += line
+                    prev_article_id = article_id
 
             new_file_current = '{}/new/20161226-current_content-part{}-{}-{}.csv'.\
                 format(current_output_folder, part_data[0], part_data[1][0], part_data[1][1])
@@ -107,20 +105,19 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                     replace_dict[article_id] += f_new.read()
                     replace_dict[article_id] += '\n'
 
+            prev_article_id = None
             with open(partition_deleted_file, 'r') as f:
                 header = next(f)
                 deleted_content = header
-                replaced = False
                 for line in f:
                     article_id = int(line.split(',')[0])
                     if article_id in part_data[2]:
-                        if not replaced:
-                            replaced = True
+                        if prev_article_id != article_id:
                             deleted_content += replace_dict[article_id]
                             del replace_dict[article_id]
                     else:
-                        replaced = False
                         deleted_content += line
+                    prev_article_id = article_id
 
             new_file_deleted = '{}/new/20161226-deleted_content-part{}-{}-{}.csv'.\
                 format(deleted_output_folder, part_data[0], part_data[1][0], part_data[1][1])
