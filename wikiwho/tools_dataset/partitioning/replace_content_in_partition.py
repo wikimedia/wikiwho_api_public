@@ -45,10 +45,9 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                 content = ''
                 for line in f:
                     article_id = int(line.split(',')[0])
-                    if article_id in part_data[2]:
+                    if article_id in part_data[2] and replace_dict[article_id]:
                         if prev_article_id != article_id:
                             content += replace_dict[article_id]
-                            del replace_dict[article_id]
                     else:
                         content += line
                     prev_article_id = article_id
@@ -78,10 +77,9 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                 current_content = header
                 for line in f:
                     article_id = int(line.split(',')[0])
-                    if article_id in part_data[2]:
+                    if article_id in part_data[2] and replace_dict[article_id]:
                         if prev_article_id != article_id:
                             current_content += replace_dict[article_id]
-                            del replace_dict[article_id]
                     else:
                         current_content += line
                     prev_article_id = article_id
@@ -111,10 +109,9 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
                 deleted_content = header
                 for line in f:
                     article_id = int(line.split(',')[0])
-                    if article_id in part_data[2]:
+                    if article_id in part_data[2] and replace_dict[article_id]:
                         if prev_article_id != article_id:
                             deleted_content += replace_dict[article_id]
-                            del replace_dict[article_id]
                     else:
                         deleted_content += line
                     prev_article_id = article_id
