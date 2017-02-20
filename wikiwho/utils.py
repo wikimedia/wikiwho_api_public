@@ -11,8 +11,8 @@ from collections import Counter
 import re
 
 
-regex_dot = re.compile(r"(\w\w\w\.) ")
-regex_url = re.compile(r"(http.*?://.*?)[ \|<>\n\r]")
+regex_dot = re.compile(r"([^\s\.=][^\s\.=][^\s\.=]\.) ")
+regex_url = re.compile(r"(http.*?://.*?[ \|<>\n\r])")
 
 
 def calculate_hash(text):
@@ -34,7 +34,7 @@ def split_into_sentences(text):
     text = text.replace('\n', '\n@@@@')
     # punctuation = ('. ', '\n', '; ', '? ', '! ', ': ', )
     # text = text.replace('. ', '.@@@@')
-    regex_dot.sub(r'\1@@@@', text)
+    text = regex_dot.sub(r'\1@@@@', text)
     text = text.replace('; ', ';@@@@')
     text = text.replace('? ', '?@@@@')
     text = text.replace('! ', '!@@@@')
@@ -49,7 +49,7 @@ def split_into_sentences(text):
     text = text.replace('<ref', '@@@@<ref')
     text = text.replace('/ref>', '/ref>@@@@')
     # urls as sentence
-    regex_url.sub(r'@@@@\1@@@@', text)
+    text = regex_url.sub(r'@@@@\1@@@@', text)
 
     # text = text.replace('.{', '.||{')
     # text = text.replace('!{', '!||{')
@@ -82,8 +82,8 @@ def split_into_tokens(text):
         text = text.replace(c, '||{}||'.format(c))
 
     # re-construct some special character groups as they are tokens
-    # text = text.replace('[||||[', '[[').replace(']||||]', ']]')
-    # text = text.replace('{||||{', '{{').replace('}||||}', '}}')
+    text = text.replace('[||||[', '[[').replace(']||||]', ']]')
+    text = text.replace('{||||{', '{{').replace('}||||}', '}}')
     # text = text.replace('||.||||.||||.||', '...')
     # text = text.replace('/||||>', '/>').replace('<||||/', '</')
     # text = text.replace('-||||-', '--')

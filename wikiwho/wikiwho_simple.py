@@ -447,8 +447,8 @@ class Wikiwho:
                 if not sentence:
                     # dont track empty lines
                     continue
-                sentence = ' '.join(split_into_tokens(sentence))
-                hash_curr = calculate_hash(sentence)
+                sentence = ' '.join(split_into_tokens(sentence))  # here whitespaces in the sentence are cleaned
+                hash_curr = calculate_hash(sentence)  # then hash values is calculated
                 matched_curr = False
                 total_sentences += 1
 
