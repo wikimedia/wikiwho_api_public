@@ -85,7 +85,7 @@ def pytest_generate_tests(metafunc):
 
 
 def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
-    test_json_folder = 'test_jsons/after_spams_hash_fix'
+    test_json_folder = 'test_jsons/after_newer_splitting'
 
     v = WikiwhoView()
     # create json with rev and editor ids

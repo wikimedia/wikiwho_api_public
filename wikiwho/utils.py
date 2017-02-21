@@ -13,6 +13,7 @@ import re
 
 regex_dot = re.compile(r"([^\s\.=][^\s\.=][^\s\.=]\.) ")
 regex_url = re.compile(r"(http.*?://.*?[ \|<>\n\r])")
+# regex_url = re.compile(r"(http[s]?://.*?[ \|<>\n\r])")
 
 
 def calculate_hash(text):

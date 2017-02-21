@@ -122,7 +122,7 @@ def getRevisionFiles(filepath):
     files = listdir(filepath)
     d = {}
     for f in files:
-        if not isfile(filepath+'/'+f):
+        if not isfile(filepath+'/'+f) and not f.endswith('.7z'):
             continue
         pos = f.find("xml")
         aux = f[pos+4:-3]
