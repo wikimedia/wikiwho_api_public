@@ -151,12 +151,21 @@ def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
     test_json_file_path = '{}/{}_db_io.json'.format(test_json_folder, article_name)
     is_content_same_3 = filecmp.cmp(json_file_path_with_io, test_json_file_path)
 
+    # test spams
+    file_path_spams = '{}/{}_spams.txt'.format(temp_folder, article_name)
+    with io.open(file_path_spams, 'w', encoding='utf-8') as f:
+        for spam_id in wp.wikiwho.spam_ids:
+            f.write('{}\n'.format(spam_id))
+    test_file_path_spams = '{}/{}_spams.txt'.format(test_json_folder, article_name)
+    is_content_same_4 = filecmp.cmp(file_path_spams, test_file_path_spams)
+
     # print(wp.wikiwho.spam_ids)
     assert is_content_same_1, "{}: 'json with ri and ai doesn't match".format(article_name)
     assert is_content_same_2, "{}: json with ti doesn't match".format(article_name)
     assert in_out_test_len and in_out_test_spam and in_out_test_ts, "len: {}, spam: {}, ts: {}".format(
         in_out_test_len,  in_out_test_spam, in_out_test_ts)
     assert not test_io or is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_name)
+    assert is_content_same_4, "{}: spam ids don't match".format(article_name)
     # assert last_used_test_spam, 'last used in spam'
 
 
