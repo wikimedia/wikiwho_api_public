@@ -313,6 +313,8 @@ class Wikiwho:
             if not paragraph:
                 # dont track empty lines
                 continue
+            # TODO should we clean whitespaces in paragraph level?
+            # paragraph = ' '.join(split_into_tokens(paragraph))
             hash_curr = calculate_hash(paragraph)
             matched_curr = False
 
@@ -566,7 +568,8 @@ class Wikiwho:
 
         text_curr = []
         for sentence_curr in unmatched_sentences_curr:
-            words = split_into_tokens(sentence_curr.value)
+            # split_into_tokens is already done in analyse_sentences_in_paragraphs
+            words = sentence_curr.value.split(' ')
             text_curr.extend(words)
             sentence_curr.splitted.extend(words)
 
