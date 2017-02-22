@@ -151,13 +151,15 @@ def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
     test_json_file_path = '{}/{}_db_io.json'.format(test_json_folder, article_name)
     is_content_same_3 = filecmp.cmp(json_file_path_with_io, test_json_file_path)
 
-    # test spams
-    file_path_spams = '{}/{}_spams.txt'.format(temp_folder, article_name)
-    with io.open(file_path_spams, 'w', encoding='utf-8') as f:
-        for spam_id in wp.wikiwho.spam_ids:
-            f.write('{}\n'.format(spam_id))
-    test_file_path_spams = '{}/{}_spams.txt'.format(test_json_folder, article_name)
-    is_content_same_4 = filecmp.cmp(file_path_spams, test_file_path_spams)
+    # test spams: api and xml dumps don't contain same revisions, so it is not possible to compare them
+    # file_path_spams = '{}/{}_spams.txt'.format(temp_folder, article_name)
+    # with io.open(file_path_spams, 'w', encoding='utf-8') as f:
+    #     for spam_id in wp.wikiwho.spam_ids:
+    #         f.write('{}\n'.format(spam_id))
+    # test_file_path_spams = '{}/{}_spams.txt'.format(test_json_folder, article_name)
+    # is_content_same_4 = filecmp.cmp(file_path_spams, test_file_path_spams)
+
+    # TODO rev_ids.txt + deleted_content.json with threshold=0
 
     # print(wp.wikiwho.spam_ids)
     assert is_content_same_1, "{}: 'json with ri and ai doesn't match".format(article_name)
@@ -165,7 +167,7 @@ def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
     assert in_out_test_len and in_out_test_spam and in_out_test_ts, "len: {}, spam: {}, ts: {}".format(
         in_out_test_len,  in_out_test_spam, in_out_test_ts)
     assert not test_io or is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_name)
-    assert is_content_same_4, "{}: spam ids don't match".format(article_name)
+    # assert is_content_same_4, "{}: spam ids don't match".format(article_name)
     # assert last_used_test_spam, 'last used in spam'
 
 
@@ -261,7 +263,7 @@ class TestWikiwho:
 
         assert title_matched, '{}--{}'.format(article_name, page.title)
 
-        _test_json(wp, temp_folder, article_name)
+        _test_json(wp, temp_folder, article_name, test_io=False)
 
     def test_json_output_xml_db(self, temp_folder, article_name, revision_id):
         """
@@ -293,7 +295,7 @@ class TestWikiwho:
 
         assert title_matched, '{}--{}'.format(article_name, page.title)
 
-        _test_json(wp, temp_folder, article_name, from_db=True)
+        _test_json(wp, temp_folder, article_name, test_io=False, from_db=True)
 
     def test_continue_logic(self, temp_folder, article_name, revision_id_start, revision_id_end):
         """
@@ -305,13 +307,13 @@ class TestWikiwho:
 
         # first create article and revisions until revision_id_start
         with WPHandler(article_name) as wp:
-            wp.handle([revision_id_start], 'json', is_api=False)
+            wp.handle([revision_id_start], is_api_call=False)
 
         assert wp.article_obj is not None
 
         # continue creating revisions of this article until revision_id_end
         with WPHandler(article_name) as wp:
-            wp.handle([revision_id_end], 'json', is_api=False)
+            wp.handle([revision_id_end], is_api_call=False)
 
         v = WikiwhoApiView()
         v.article = wp.article_obj
