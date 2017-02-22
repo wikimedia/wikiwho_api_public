@@ -37,26 +37,30 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
             for article_id in part_data[2]:
                 in_content_file = '{}/{}_content.csv'.format(input_folder, article_id)
                 with open(in_content_file, 'r') as f_new:
-                    replace_dict[article_id] += f_new.read()
-                    replace_dict[article_id] += '\n'
+                    replace_dict[article_id] += f_new.read() + '\n'
 
             prev_article_id = None
             with open(partition_content_file, 'r') as f:
                 content = ''
                 for line in f:
                     article_id = int(line.split(',')[0])
-                    if article_id in part_data[2] and replace_dict[article_id]:
-                        if prev_article_id != article_id:
-                            content += replace_dict[article_id]
-                    else:
+                    if prev_article_id is not None and prev_article_id != article_id and content:
+                        replace_dict[prev_article_id] = content
+                        content = ''
+                    if article_id not in replace_dict:
                         content += line
                     prev_article_id = article_id
+                if content:
+                    replace_dict[prev_article_id] = content
 
             new_file_all = '{}/new/20161226-tokens-part{}-{}-{}.csv'.\
                 format(all_output_folder, part_data[0], part_data[1][0], part_data[1][1])
             with open(new_file_all, 'w') as f:
-                f.write(content)
-            del content
+                for article_id in sorted(replace_dict):
+                    data = replace_dict[article_id]
+                    if data.strip():  # there are some files that contain only '\n'
+                        f.write(data)
+            del replace_dict
 
         if 'c' in mode.lower():
             # replace current content
@@ -68,27 +72,32 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
             for article_id in part_data[2]:
                 in_current_file = '{}/{}_current_content.csv'.format(input_folder, article_id)
                 with open(in_current_file, 'r') as f_new:
-                    replace_dict[article_id] += f_new.read()
-                    replace_dict[article_id] += '\n'
+                    replace_dict[article_id] += f_new.read() + '\n'
 
             prev_article_id = None
             with open(partition_current_file, 'r') as f:
                 header = next(f)
-                current_content = header
+                current_content = ''
                 for line in f:
                     article_id = int(line.split(',')[0])
-                    if article_id in part_data[2] and replace_dict[article_id]:
-                        if prev_article_id != article_id:
-                            current_content += replace_dict[article_id]
-                    else:
+                    if prev_article_id is not None and prev_article_id != article_id and current_content:
+                        replace_dict[prev_article_id] = current_content
+                        current_content = ''
+                    if article_id not in replace_dict:
                         current_content += line
                     prev_article_id = article_id
+                if current_content:
+                    replace_dict[prev_article_id] = current_content
 
             new_file_current = '{}/new/20161226-current_content-part{}-{}-{}.csv'.\
                 format(current_output_folder, part_data[0], part_data[1][0], part_data[1][1])
             with open(new_file_current, 'w') as f:
-                f.write(current_content)
-            del current_content
+                f.write(header)
+                for article_id in sorted(replace_dict):
+                    data = replace_dict[article_id]
+                    if data.strip():  # there are some files that contain only '\n'
+                        f.write(data)
+            del replace_dict
 
         if 'd' in mode.lower():
             # replace deleted content
@@ -100,27 +109,32 @@ def replace_content_in_partition(input_folder, part_data, output_folder, log_fol
             for article_id in part_data[2]:
                 in_deleted_file = '{}/{}_deleted_content.csv'.format(input_folder, article_id)
                 with open(in_deleted_file, 'r') as f_new:
-                    replace_dict[article_id] += f_new.read()
-                    replace_dict[article_id] += '\n'
+                    replace_dict[article_id] += f_new.read() + '\n'
 
             prev_article_id = None
             with open(partition_deleted_file, 'r') as f:
                 header = next(f)
-                deleted_content = header
+                deleted_content = ''
                 for line in f:
                     article_id = int(line.split(',')[0])
-                    if article_id in part_data[2] and replace_dict[article_id]:
-                        if prev_article_id != article_id:
-                            deleted_content += replace_dict[article_id]
-                    else:
+                    if prev_article_id is not None and prev_article_id != article_id and deleted_content:
+                        replace_dict[prev_article_id] = deleted_content
+                        deleted_content = ''
+                    if article_id not in replace_dict:
                         deleted_content += line
                     prev_article_id = article_id
+                if deleted_content:
+                    replace_dict[prev_article_id] = deleted_content
 
             new_file_deleted = '{}/new/20161226-deleted_content-part{}-{}-{}.csv'.\
                 format(deleted_output_folder, part_data[0], part_data[1][0], part_data[1][1])
             with open(new_file_deleted, 'w') as f:
-                f.write(deleted_content)
-            del deleted_content
+                f.write(header)
+                for article_id in sorted(replace_dict):
+                    data = replace_dict[article_id]
+                    if data.strip():  # there are some files that contain only '\n'
+                        f.write(data)
+            del replace_dict
     except Exception as e:
         logger.exception('{}'.format(part_str))
 
