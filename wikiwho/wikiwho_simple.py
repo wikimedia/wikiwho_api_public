@@ -200,30 +200,51 @@ class Wikiwho:
         # Containers for unmatched paragraphs and sentences in both revisions.
         unmatched_sentences_curr = []
         unmatched_sentences_prev = []
+        matched_paragraphs_prev = []
         matched_sentences_prev = []
         matched_words_prev = []
         possible_vandalism = False
         vandalism = False
 
-        # Analysis of the paragraphs in the current revision.
-        unmatched_paragraphs_curr, unmatched_paragraphs_prev, matched_paragraphs_prev = \
-            self.analyse_paragraphs_in_revision()
+        try:
+            # Analysis of the paragraphs in the current revision.
+            unmatched_paragraphs_curr, unmatched_paragraphs_prev, matched_paragraphs_prev = \
+                self.analyse_paragraphs_in_revision()
 
-        # Analysis of the sentences in the unmatched paragraphs of the current revision.
-        if unmatched_paragraphs_curr:
-            unmatched_sentences_curr, unmatched_sentences_prev, matched_sentences_prev, total_sentences = \
-                self.analyse_sentences_in_paragraphs(unmatched_paragraphs_curr, unmatched_paragraphs_prev)
+            # Analysis of the sentences in the unmatched paragraphs of the current revision.
+            if unmatched_paragraphs_curr:
+                unmatched_sentences_curr, unmatched_sentences_prev, matched_sentences_prev, total_sentences = \
+                    self.analyse_sentences_in_paragraphs(unmatched_paragraphs_curr, unmatched_paragraphs_prev)
 
-            # TODO: spam detection
-            if len(unmatched_paragraphs_curr) / len(self.revision_curr.ordered_paragraphs) > UNMATCHED_PARAGRAPH:
-                # will be used to detect copy-paste vandalism - token density
-                possible_vandalism = True
+                # TODO: spam detection
+                if len(unmatched_paragraphs_curr) / len(self.revision_curr.ordered_paragraphs) > UNMATCHED_PARAGRAPH:
+                    # will be used to detect copy-paste vandalism - token density
+                    possible_vandalism = True
 
-            # Analysis of words in unmatched sentences (diff of both texts).
-            if unmatched_sentences_curr:
-                matched_words_prev, vandalism = self.analyse_words_in_sentences(unmatched_sentences_curr,
-                                                                                unmatched_sentences_prev,
-                                                                                possible_vandalism)
+                # Analysis of words in unmatched sentences (diff of both texts).
+                if unmatched_sentences_curr:
+                    matched_words_prev, vandalism = self.analyse_words_in_sentences(unmatched_sentences_curr,
+                                                                                    unmatched_sentences_prev,
+                                                                                    possible_vandalism)
+        except Exception:
+            # Error occurred during analysing the current revision
+            # Hold the last successfully processed revision.
+            self.revision_curr = self.revision_prev
+            # Reset matched structures from old revisions.
+            for matched_paragraph in matched_paragraphs_prev:
+                matched_paragraph.matched = False
+                for sentence_hash in matched_paragraph.sentences:
+                    for sentence in matched_paragraph.sentences[sentence_hash]:
+                        sentence.matched = False
+                        for word_prev in sentence.words:
+                            word_prev.matched = False
+            for matched_sentence in matched_sentences_prev:
+                matched_sentence.matched = False
+                for word_prev in matched_sentence.words:
+                    word_prev.matched = False
+            for matched_word in matched_words_prev:
+                matched_word.matched = False
+            raise
 
         if not vandalism:
             # Add the information of 'deletion' to words
@@ -240,7 +261,7 @@ class Wikiwho:
                                 if not word_prev.matched:
                                     word_prev.outbound.append(self.revision_curr.id)
 
-        # Reset matched structures from old revisions.
+        # Reset matched structures from old revisions. And update inbound and last used info of matched words.
         for matched_paragraph in matched_paragraphs_prev:
             matched_paragraph.matched = False
             for sentence_hash in matched_paragraph.sentences:
@@ -255,7 +276,6 @@ class Wikiwho:
                             word_prev.last_rev_id = self.revision_curr.id
                         # reset
                         word_prev.matched = False
-
         for matched_sentence in matched_sentences_prev:
             matched_sentence.matched = False
             for word_prev in matched_sentence.words:
@@ -267,7 +287,6 @@ class Wikiwho:
                     word_prev.last_rev_id = self.revision_curr.id
                 # reset
                 word_prev.matched = False
-
         for matched_word in matched_words_prev:
             # first update last used info of matched prev words
             # there is no inbound chance because we only diff with words of previous revision
@@ -607,7 +626,8 @@ class Wikiwho:
             for word in sentence_curr.splitted:
                 curr_matched = False
                 pos = 0
-                while pos < len(diff):
+                diff_len = len(diff)
+                while pos < diff_len:
                     word_diff = diff[pos]
                     if word == word_diff[2:]:
                         if word_diff[0] == ' ':
@@ -620,7 +640,7 @@ class Wikiwho:
                                     sentence_curr.words.append(word_prev)
                                     matched_words_prev.append(word_prev)
                                     diff[pos] = ''
-                                    pos = len(diff) + 1
+                                    pos = diff_len + 1
                                     break
                         elif word_diff[0] == '-':
                             # deleted
@@ -645,7 +665,7 @@ class Wikiwho:
                             self.revision_curr.original_adds += 1
                             self.tokens.append(word_curr)
                             diff[pos] = ''
-                            pos = len(diff) + 1
+                            pos = diff_len + 1
                     pos += 1
 
                 if not curr_matched:

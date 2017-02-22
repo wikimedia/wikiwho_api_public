@@ -103,6 +103,7 @@ class WPHandler(object):
             else:
                 self.wikiwho.analyse_article_xml(page)
         except TimeoutError:
+            # if timeout, nothing is saved
             raise
         except Exception:
             if self.wikiwho.revision_curr.timestamp == 0:
@@ -191,8 +192,6 @@ class WPHandler(object):
                     # pass first item in pages dict
                     _, page = result['query']['pages'].popitem()
                     self.wikiwho.analyse_article(page.get('revisions', []))
-                    # self.wikiwho.analyse_article(six.next(six.itervalues(result['query']['pages'])).
-                    #                              get('revisions', []))
                 except Exception:
                     if self.wikiwho.revision_curr.timestamp == 0:
                         # if all revisions were detected as spam
@@ -204,7 +203,7 @@ class WPHandler(object):
                         self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
                                                   + "|" \
                                                   + str(self.wikiwho.revision_prev.id + 1)
-                        raise
+                    raise
             if 'continue' not in result:
                 # hackish: create a rvcontinue with last revision id of this article
                 if self.wikiwho.revision_curr.timestamp == 0:
