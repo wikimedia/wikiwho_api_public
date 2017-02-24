@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from datetime import datetime, timedelta
 import os
+import sys
 # import logging
 # from time import time
 # from builtins import open
@@ -15,6 +16,8 @@ from .utils import get_latest_revision_data, create_wp_session, Timeout
 from .utils_pickles import pickle_dump, pickle_load
 from wikiwho.utils_db import wikiwho_to_db
 
+sys.setrecursionlimit(5000)  # default is 1000
+# http://neopythonic.blogspot.de/2009/04/tail-recursion-elimination.html
 # session = create_wp_session()
 
 
