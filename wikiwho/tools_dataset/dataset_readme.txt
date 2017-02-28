@@ -1,7 +1,7 @@
 # Primary Data Set
 
 ## Folder and file name conventions:
- - Folder: `<xml_dump_date>-<output type>-parts-<first_partition_id_in_folder>-<last_partition_id_in_folder>`
+ - Folder: `<xml_dump_date>-<output type>-parts-<first_partition_id>-<last_partition_id>-pageids-<first_page_id>-<last_page_id>`
  - File: `<xml_dump_date>-<output type>-part<partition_id>-<first_page_id_in_sequence>-<last_page_id_in_sequence>.csv`
  - Each file contains the content for several articles in ordered sequence of their page_ids.
  - Xml dump date is 01.11.2016.
