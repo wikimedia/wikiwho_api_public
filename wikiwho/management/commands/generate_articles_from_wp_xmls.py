@@ -131,6 +131,8 @@ class Command(BaseCommand):
         elif not json_folder:
             # if there is no json inputs, process all pages in each xml dump
             xml_files = [['{}/{}'.format(xml_folder, x), []] for x in listdir(xml_folder) if x.endswith('.7z')]
+        xml_files = {int(x[0].split('xml-p')[1].split('p')[0]): x for x in xml_files}
+        xml_files = [xml_files[x] for x in sorted(xml_files)]
 
         if not xml_files:
             raise CommandError('In given folder ({}), there are no 7z files.'.format(xml_folder))
