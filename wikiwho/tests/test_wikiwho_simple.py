@@ -27,8 +27,8 @@ from mwtypes.files import reader
 
 from api.handler import WPHandler
 from wikiwho.tests.utils import article_zips
-from wikiwho.utils import split_into_tokens
-from api.views import WikiwhoApiView, WikiwhoView
+from wikiwho.utils import split_into_tokens, iter_rev_tokens
+from api.views import WikiwhoView
 from django.utils.dateparse import parse_datetime
 
 # TODO use django's default test tool: https://docs.djangoproject.com/en/1.10/topics/testing/
@@ -84,44 +84,39 @@ def pytest_generate_tests(metafunc):
                 metafunc.addcall(funcargs=funcargs)
 
 
-def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
-    test_json_folder = 'test_jsons/after_newer_splitting'
+def _test_json(wp, temp_folder, article_name, extended_test=True, from_db=False):
+    test_json_folder = 'test_jsons/after_new_splitting'
 
     v = WikiwhoView()
     # create json with rev and editor ids
-    revision_json_without_tokenid = v.get_revision_json(wp, {'str', 'rev_id', 'editor'}, from_db=from_db, with_token_ids=False)
-    json_file_path_without_tokenid = '{}/{}_db_ri_ai.json'.format(temp_folder, article_name)
-    with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
-        f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
-                           sort_keys=True, ensure_ascii=False))
+    revision_json = v.get_revision_json(wp, {'str', 'rev_id', 'editor'}, from_db=from_db, with_token_ids=False)
     # compare jsons with rev and editor ids
-    test_json_file_path = '{}/{}_db_ri_ai.json'.format(test_json_folder, article_name)
-    is_content_same_1 = filecmp.cmp(json_file_path_without_tokenid, test_json_file_path)
+    json_file_path = '{}/{}_ri_ai.json'.format(temp_folder, article_name)
+    with io.open(json_file_path, 'w', encoding='utf-8') as f:
+        f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+    is_content_same_1 = filecmp.cmp(json_file_path, '{}/{}_ri_ai.json'.format(test_json_folder, article_name))
 
     # create json with token ids
     revision_json = v.get_revision_json(wp, {'str', 'token_id'}, from_db=from_db, with_token_ids=True)
     # check if all token ids are unique
     for _, rev in revision_json['revisions'][0].items():
         token_ids = [t['token_id'] for t in rev['tokens']]
-        assert len(token_ids) == len(set(token_ids)), "{}: there are duplicated token ids".format(
-            article_name)
+        assert len(token_ids) == len(set(token_ids)), "{}: there are duplicated token ids".format(article_name)
         break
     # compare jsons with token ids
-    json_file_path = '{}/{}_db_ti.json'.format(temp_folder, article_name)
-    test_json_file_path = '{}/{}_db_ti.json'.format(test_json_folder, article_name)
+    json_file_path = '{}/{}_ti.json'.format(temp_folder, article_name)
     with io.open(json_file_path, 'w', encoding='utf-8') as f:
-        f.write(
-            json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
-    is_content_same_2 = filecmp.cmp(json_file_path, test_json_file_path)
+        f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+    is_content_same_2 = filecmp.cmp(json_file_path, '{}/{}_ti.json'.format(test_json_folder, article_name))
 
     # create json with in/outbounds
     in_out_test_len = True
     in_out_test_spam = True
     in_out_test_ts = True
     # last_used_test_spam = True
-    revision_json_with_io = v.get_revision_json(wp, {'str', 'inbound', 'outbound'}, from_db=from_db, with_token_ids=False)
+    revision_json = v.get_revision_json(wp, {'str', 'inbound', 'outbound'}, from_db=from_db, with_token_ids=False)
     for i, ri in enumerate(wp.revision_ids):
-        for t in revision_json_with_io['revisions'][i][ri]['tokens']:
+        for t in revision_json['revisions'][i][ri]['tokens']:
             in_out_test_len = 0 <= len(t['outbound']) - len(t['inbound']) <= 1
             for r in t['outbound']:
                 if r in wp.wikiwho.spam_ids:
@@ -129,8 +124,8 @@ def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
             for r in t['inbound']:
                 if r in wp.wikiwho.spam_ids:
                     in_out_test_spam = False
-            for o, i in zip(t['outbound'], t['inbound']):
-                ts_diff = (parse_datetime(wp.wikiwho.revisions[i].timestamp) -
+            for o, i_ in zip(t['outbound'], t['inbound']):
+                ts_diff = (parse_datetime(wp.wikiwho.revisions[i_].timestamp) -
                            parse_datetime(wp.wikiwho.revisions[o].timestamp)).total_seconds()
                 if ts_diff < 0:
                     in_out_test_ts = True
@@ -143,32 +138,84 @@ def _test_json(wp, temp_folder, article_name, test_io=True, from_db=False):
             if not in_out_test_len or not in_out_test_spam or not in_out_test_ts:
                 # print(t['str'], len(t['outbound']), len(t['inbound']), t['outbound'], t['inbound'])
                 break
-    json_file_path_with_io = '{}/{}_db_io.json'.format(temp_folder, article_name)
-    with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
-        f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
-                           sort_keys=True, ensure_ascii=False))
-    # compare jsons with in/outbounds
-    test_json_file_path = '{}/{}_db_io.json'.format(test_json_folder, article_name)
-    is_content_same_3 = filecmp.cmp(json_file_path_with_io, test_json_file_path)
 
-    # test spams: api and xml dumps don't contain same revisions, so it is not possible to compare them
-    # file_path_spams = '{}/{}_spams.txt'.format(temp_folder, article_name)
-    # with io.open(file_path_spams, 'w', encoding='utf-8') as f:
-    #     for spam_id in wp.wikiwho.spam_ids:
-    #         f.write('{}\n'.format(spam_id))
-    # test_file_path_spams = '{}/{}_spams.txt'.format(test_json_folder, article_name)
-    # is_content_same_4 = filecmp.cmp(file_path_spams, test_file_path_spams)
+    # test spams
+    file_path_spams = '{}/{}_spams.txt'.format(temp_folder, article_name)
+    with io.open(file_path_spams, 'w', encoding='utf-8') as f:
+        for spam_id in wp.wikiwho.spam_ids:
+            f.write('{}\n'.format(spam_id))
+    with open('{}/{}_spams.txt'.format(test_json_folder, article_name), 'r') as f:
+        correct_spam_ids = f.read().splitlines()
+    # pickles from xml dumps has longer rev ids and spams. so we have to compare them until what is last from api.
+    spam_ids_same = True
+    for i, j in zip(correct_spam_ids, wp.wikiwho.spam_ids):
+        if str(i) != str(j):
+            spam_ids_same = False
+            break
 
-    # TODO rev_ids.txt + deleted_content.json with threshold=0
+    # create article rev ids json
+    rev_ids_json = v.get_revision_ids(wp, {'rev_id', 'editor', 'timestamp'}, from_db=from_db)
+    json_file_path = '{}/{}_rev_ids.json'.format(temp_folder, article_name)
+    with io.open(json_file_path, 'w', encoding='utf-8') as f:
+        f.write(json.dumps(rev_ids_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+    # compare article rev ids jsons
+    with open('{}/{}_rev_ids.json'.format(test_json_folder, article_name), 'r') as f:
+        correct_rev_ids = json.load(f)
+    # pickles from xml dumps has longer rev ids and spams. so we have to compare them until what is last from api.
+    rev_ids_same = True
+    for i, j in zip(correct_rev_ids['revisions'], rev_ids_json['revisions']):
+        if i != j:
+            rev_ids_same = False
+            break
+
+    if extended_test:
+        # compare jsons with in/outbounds
+        json_file_path = '{}/{}_io.json'.format(temp_folder, article_name)
+        with io.open(json_file_path, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        is_content_same_3 = filecmp.cmp(json_file_path, '{}/{}_io.json'.format(test_json_folder, article_name))
+
+        # create deleted content json with threshold 0
+        # TODO get deleted content of a specific revision, so that we can test it for xml dumps
+        deleted_tokens_json = v.get_deleted_tokens(wp, ['str', 'rev_id', 'editor', 'token_id', 'inbound', 'outbound', 0], from_db=from_db)
+        json_file_path = '{}/{}_deleted_content.json'.format(temp_folder, article_name)
+        with io.open(json_file_path, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(deleted_tokens_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        # compare deleted content jsons
+        is_content_same_4 = filecmp.cmp(json_file_path, '{}/{}_deleted_content.json'.format(test_json_folder, article_name))
 
     # print(wp.wikiwho.spam_ids)
     assert is_content_same_1, "{}: 'json with ri and ai doesn't match".format(article_name)
     assert is_content_same_2, "{}: json with ti doesn't match".format(article_name)
     assert in_out_test_len and in_out_test_spam and in_out_test_ts, "len: {}, spam: {}, ts: {}".format(
         in_out_test_len,  in_out_test_spam, in_out_test_ts)
-    assert not test_io or is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_name)
-    # assert is_content_same_4, "{}: spam ids don't match".format(article_name)
+    if extended_test:
+        assert is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_name)
+        assert is_content_same_4, "{}: 'deleted content json doesn't match".format(article_name)
     # assert last_used_test_spam, 'last used in spam'
+    assert rev_ids_same, "{}: 'article rev ids json doesn't match".format(article_name)
+    assert spam_ids_same, "{}: spam ids don't match".format(article_name)
+
+
+def _test_json_from_xml(temp_folder, article_name, revision_id, save_tables=()):
+    # read from xml dumps (7z)
+    xml_file_path = 'test_jsons/{}'.format(article_zips[article_name])
+    if not os.path.exists(xml_file_path):
+        # server
+        xml_file_path = '/home/nuser/pdisk/xmls_7z/batch_all/{}'.format(article_zips[article_name])
+    dump = Dump.from_file(reader(xml_file_path))
+    title_matched = False
+    for page in dump:
+        if page.title.replace(' ', '_') == article_name:
+            title_matched = True
+            with WPHandler(article_name, page.id, pickle_folder=temp_folder['pickle_folder'], is_xml=True,
+                           save_tables=save_tables) as wp:
+                wp.handle_from_xml(page)
+                wp.revision_ids = [revision_id]
+            break
+
+    assert title_matched, '{}--{}'.format(article_name, page.title)
+    _test_json(wp, temp_folder['test_json_output_xml'], article_name, extended_test=False)
 
 
 class TestWikiwho:
@@ -187,170 +234,117 @@ class TestWikiwho:
         :param tmpdir_factory:
         :return:
         """
+        temp_folder_dict = {}
         if int(sys.version[0]) > 2:
             tmp = 'tmp_test_3'
         else:
             tmp = 'tmp_test'
         if not os.path.exists(tmp):
             os.mkdir(tmp)
+        temp_folder_dict['pickle_folder'] = tmp
         tmp_test_authorship = '{}/test_authorship'.format(tmp)
         if not os.path.exists(tmp_test_authorship):
             os.mkdir(tmp_test_authorship)
         tmp_test_json_output = '{}/test_json_output'.format(tmp)
+        temp_folder_dict['tmp_test_json_output'] = tmp_test_json_output
         if not os.path.exists(tmp_test_json_output):
             os.mkdir(tmp_test_json_output)
         test_json_output_xml = '{}/test_json_output_xml'.format(tmp)
         if not os.path.exists(test_json_output_xml):
             os.mkdir(test_json_output_xml)
+        temp_folder_dict['test_json_output_xml'] = test_json_output_xml
         tmp_test_continue_logic = '{}/test_continue_logic'.format(tmp)
         if not os.path.exists(tmp_test_continue_logic):
             os.mkdir(tmp_test_continue_logic)
-        return tmp
-        # in os' tmp dir
-        # return tmpdir_factory.getbasetemp()
+        temp_folder_dict['tmp_test_continue_logic'] = tmp_test_continue_logic
+        return temp_folder_dict
 
     def test_json_output(self, temp_folder, article_name, revision_id):
         """
-        Tests json outputs of articles in given revisions in gold standard. If there are expected differences in
-        jsons, authorship of each token in gold standard should be checked manually.
+        Tests json outputs of articles in given revisions in gold standard. Revision data is taken from wp api and
+        processed data is stored in pickles.
+        If there are unexpected differences in jsons, authorship of each token in gold standard should be
+        checked by running test_authorship or manually.
         :param revision_id: Revision id where authorship of token in gold standard is tested.
         """
-        pickle_folder = temp_folder
-        temp_folder = '{}/test_json_output'.format(temp_folder)
-        with WPHandler(article_name, pickle_folder=pickle_folder) as wp:
+        with WPHandler(article_name, pickle_folder=temp_folder['pickle_folder']) as wp:
             wp.handle([revision_id], is_api_call=False)
-        _test_json(wp, temp_folder, article_name)
+        _test_json(wp, temp_folder['tmp_test_json_output'], article_name)
 
     @pytest.mark.django_db
     def test_json_output_db(self, temp_folder, article_name, revision_id):
         """
-        Tests json outputs of articles in given revisions in gold standard. If there are expected differences in
-        jsons, authorship of each token in gold standard should be checked manually.
+        Tests json outputs of articles in given revisions in gold standard. Revision data is taken from wp api and
+        processed data is stored in database.
+        If there are unexpected differences in jsons, authorship of each token in gold standard should be
+        checked by running test_authorship or manually.
         :param revision_id: Revision id where authorship of token in gold standard is tested.
         """
         # TODO test
-        pickle_folder = temp_folder
-        temp_folder = '{}/test_json_output'.format(temp_folder)
-        with WPHandler(article_name, pickle_folder=pickle_folder, save_tables=('article', 'revision', 'token', )) as wp:
+        with WPHandler(article_name, pickle_folder=temp_folder['pickle_folder'],
+                       save_tables=('article', 'revision', 'token', )) as wp:
             wp.handle([revision_id], is_api_call=False)
-        _test_json(wp, temp_folder, article_name, from_db=True)
+        _test_json(wp, temp_folder['tmp_test_json_output'], article_name, from_db=True)
 
     def test_json_output_xml(self, temp_folder, article_name, revision_id):
         """
-        Tests json outputs of articles in given revisions in gold standard from xml dump.
-        If there are expected differences in jsons, authorship of each token in gold standard should be
-        checked manually.
+        Tests json outputs of articles in given revisions in gold standard. Revision data is taken from wp xml dumps and
+        processed data is stored in pickles.
+        If there are unexpected differences in jsons, authorship of each token in gold standard should be
+        checked by running test_authorship or manually.
         The xml file dumps taken from here: https://dumps.wikimedia.org/enwiki/20161101/
         :param revision_id: Revision id where authorship of token in gold standard is tested.
         """
-        pickle_folder = temp_folder
-        temp_folder = '{}/test_json_output_xml'.format(temp_folder)
-        # read from xml dumps (7z)
-        xml_file_path = 'test_jsons/{}'.format(article_zips[article_name])
-        if not os.path.exists(xml_file_path):
-            # server
-            xml_file_path = '/home/nuser/pdisk/xmls_7z/batch_all/{}'.format(article_zips[article_name])
-        dump = Dump.from_file(reader(xml_file_path))
-        article_name = article_name.replace(' ', '_')
-        title_matched = False
-        for page in dump:
-            if page.title.replace(' ', '_') == article_name:
-                title_matched = True
-                with WPHandler(article_name, page.id, pickle_folder=pickle_folder, is_xml=True) as wp:
-                    wp.handle_from_xml(page)
-                    wp.revision_ids = [revision_id]
-                break
+        _test_json_from_xml(temp_folder, article_name, revision_id, save_tables=())
 
-        assert title_matched, '{}--{}'.format(article_name, page.title)
-
-        _test_json(wp, temp_folder, article_name, test_io=False)
-
+    @pytest.mark.django_db
     def test_json_output_xml_db(self, temp_folder, article_name, revision_id):
         """
-        Tests json outputs of articles in given revisions in gold standard from xml dump.
-        If there are expected differences in jsons, authorship of each token in gold standard should be
-        checked manually.
+        Tests json outputs of articles in given revisions in gold standard. Revision data is taken from wp xml dumps and
+        processed data is stored in database.
+        If there are unexpected differences in jsons, authorship of each token in gold standard should be
+        checked by running test_authorship or manually.
         The xml file dumps taken from here: https://dumps.wikimedia.org/enwiki/20161101/
         :param revision_id: Revision id where authorship of token in gold standard is tested.
         """
         # TODO test
-        pickle_folder = temp_folder
-        temp_folder = '{}/test_json_output_xml'.format(temp_folder)
-        # read from xml dumps (7z)
-        xml_file_path = 'test_jsons/{}'.format(article_zips[article_name])
-        if not os.path.exists(xml_file_path):
-            # server
-            xml_file_path = '/home/nuser/pdisk/xmls_7z/batch_all/{}'.format(article_zips[article_name])
-        dump = Dump.from_file(reader(xml_file_path))
-        article_name = article_name.replace(' ', '_')
-        title_matched = False
-        for page in dump:
-            if page.title.replace(' ', '_') == article_name:
-                title_matched = True
-                with WPHandler(article_name, page.id, pickle_folder=pickle_folder,
-                               is_xml=True, save_tables=('article', 'revision', 'token', )) as wp:
-                    wp.handle_from_xml(page)
-                    wp.revision_ids = [revision_id]
-                break
-
-        assert title_matched, '{}--{}'.format(article_name, page.title)
-
-        _test_json(wp, temp_folder, article_name, test_io=False, from_db=True)
+        _test_json_from_xml(temp_folder, article_name, revision_id, save_tables=('article', 'revision', 'token', ))
 
     def test_continue_logic(self, temp_folder, article_name, revision_id_start, revision_id_end):
         """
         :param revision_id_start: Correct revision id of first token of article in gold standard.
         :param revision_id_end: Revision id where authorship of token in gold standard is tested.
         """
-        temp_folder = '{}/test_continue_logic'.format(temp_folder)
-        test_json_folder = 'test_jsons'
-
         # first create article and revisions until revision_id_start
-        with WPHandler(article_name) as wp:
+        with WPHandler(article_name, pickle_folder=temp_folder['pickle_folder']) as wp:
             wp.handle([revision_id_start], is_api_call=False)
-
-        assert wp.article_obj is not None
+        assert wp.already_exists is False
 
         # continue creating revisions of this article until revision_id_end
-        with WPHandler(article_name) as wp:
+        with WPHandler(article_name, pickle_folder=temp_folder['pickle_folder']) as wp:
             wp.handle([revision_id_end], is_api_call=False)
+        _test_json(wp, temp_folder['tmp_test_continue_logic'], article_name)
+        assert wp.already_exists is True
 
-        v = WikiwhoApiView()
-        v.article = wp.article_obj
+    @pytest.mark.django_db
+    def test_continue_logic_db(self, temp_folder, article_name, revision_id_start, revision_id_end):
+        """
+        :param revision_id_start: Correct revision id of first token of article in gold standard.
+        :param revision_id_end: Revision id where authorship of token in gold standard is tested.
+        """
+        # TODO test
+        # first create article and revisions until revision_id_start
+        with WPHandler(article_name, pickle_folder=temp_folder['pickle_folder'],
+                       save_tables=('article', 'revision', 'token', )) as wp:
+            wp.handle([revision_id_start], is_api_call=False)
+        assert wp.already_exists is False
 
-        # compare jsons without token ids
-        revision_json_without_tokenid = v.get_revision_json(wp.revision_ids, {'str', 'rev_id', 'editor'})
-        json_file_path_without_tokenid = '{}/{}_db_ri_ai.json'.format(temp_folder, article_name)
-        with io.open(json_file_path_without_tokenid, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(revision_json_without_tokenid, indent=4, separators=(',', ': '),
-                               sort_keys=True, ensure_ascii=False))
-        test_json_file_path = '{}/{}_db_ri_ai.json'.format(test_json_folder, article_name)
-        is_content_same = filecmp.cmp(json_file_path_without_tokenid, test_json_file_path)
-        assert is_content_same, "{}: 'json without token ids' doesn't match".format(article_name)
-
-        # compare jsons with token ids
-        revision_json = v.get_revision_json(wp.revision_ids, {'str', 'token_id'})
-        # TODO check if all token ids are unique
-        # for _, rev in revision_json['revisions'][0].items():
-        #     token_ids = [t['token_id'] for t in rev['tokens']]
-        #     assert len(token_ids) == len(set(token_ids)), "{}: there are duplicated token ids".format(article_name)
-        #     break
-        json_file_path = '{}/{}_db_ti.json'.format(temp_folder, article_name)
-        with io.open(json_file_path, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
-        test_json_file_path = '{}/{}_db_ti.json'.format(test_json_folder, article_name)
-        is_content_same = filecmp.cmp(json_file_path, test_json_file_path)
-        assert is_content_same, "{}: json doesn't match".format(article_name)
-
-        # compare jsons with in/outbounds
-        revision_json_with_io = v.get_revision_json(wp.revision_ids, {'str', 'inbound', 'outbound'})
-        json_file_path_with_io = '{}/{}_db_io.json'.format(temp_folder, article_name)
-        with io.open(json_file_path_with_io, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(revision_json_with_io, indent=4, separators=(',', ': '),
-                               sort_keys=True, ensure_ascii=False))
-        test_json_file_path = '{}/{}_db_io.json'.format(test_json_folder, article_name)
-        is_content_same = filecmp.cmp(json_file_path_with_io, test_json_file_path)
-        assert is_content_same, "{}: 'json with in/outbounds' doesn't match".format(article_name)
+        # continue creating revisions of this article until revision_id_end
+        with WPHandler(article_name, pickle_folder=temp_folder['pickle_folder'],
+                       save_tables=('article', 'revision', 'token', )) as wp:
+            wp.handle([revision_id_end], is_api_call=False)
+        _test_json(wp, temp_folder['tmp_test_continue_logic'], article_name)
+        assert wp.already_exists is True
 
     def test_finger_lakes(self, temp_folder):
         """
@@ -400,45 +394,25 @@ class TestWikiwho:
         }
         article_name = 'Finger_Lakes'
         tests = os.path.dirname(os.path.realpath(__file__))
-        from copy import deepcopy
         from django.core import management
         management.call_command('xml_to_pickle', *['--output', tests])
 
-        with WPHandler(article_name, pickle_folder=tests, save_into_pickle=True, save_into_db=False) as wp:
-            for rev_id, rev in wp.wikiwho.revisions.items():
+        with WPHandler(article_name, pickle_folder=tests, save_tables=('article', 'revision', 'token', )) as wp:
+            for rev_id in wp.wikiwho.ordered_revisions:
                 if rev_id not in data.keys():
                     continue
                 i = 0
-                ps_copy = deepcopy(rev.paragraphs)
-                for hash_paragraph in rev.ordered_paragraphs:
-                    paragraph = ps_copy[hash_paragraph].pop(0)
-                    for hash_sentence in paragraph.ordered_sentences:
-                        sentence = paragraph.sentences[hash_sentence].pop(0)
-                        for word in sentence.words:
-                            # used = [x for x in word.used if x <= rev_id]
-                            inbound = [x for x in word.inbound if x <= rev_id]
-                            outbound = [x for x in word.outbound if x <= rev_id]
-                            # assert used == data[rev_id]['used'][i], 'used does not match, rev id: {} - {}'.format(rev_id, i)
-                            assert inbound == data[rev_id]['inbound'][i], 'inbound does not match, rev id: {} - {}'.format(rev_id, i)
-                            assert outbound == data[rev_id]['outbound'][i], 'outbound does not match, rev id: {} - {}'.format(rev_id, i)
-                            i += 1
+                rev = wp.wikiwho.revisions[rev_id]
 
-            wp._save_article_into_db()
-            for rev in wp.article_obj.revisions.all().order_by('id'):
-                rev_id = rev.id
-                if rev_id not in data.keys():
-                    continue
-                i = 0
-                for p in rev.paragraphs.order_by('position'):
-                    for s in p.paragraph.sentences.order_by('position'):
-                        for t in s.sentence.tokens.order_by('position'):
-                            used = [x for x in t.token.used if x <= rev_id]
-                            inbound = [x for x in t.token.inbound if x <= rev_id]
-                            outbound = [x for x in t.token.outbound if x <= rev_id]
-                            assert used == data[rev_id]['used'][i], 'used does not match, rev id: {} - {} - db'.format(rev_id, i)
-                            assert inbound == data[rev_id]['inbound'][i], 'inbound does not match, rev id: {} - {} - db'.format(rev_id, i)
-                            assert outbound == data[rev_id]['outbound'][i], 'outbound does not match, rev id: {} - {} - db'.format(rev_id, i)
-                            i += 1
+                for word in iter_rev_tokens(rev):
+                    last_rev_id = [x for x in word.last_rev_id if x <= rev_id]
+                    inbound = [x for x in word.inbound if x <= rev_id]
+                    outbound = [x for x in word.outbound if x <= rev_id]
+                    assert last_rev_id == data[rev_id]['used'][i], 'last_rev_id does not match, rev id: {} - {}'.format(rev_id, i)
+                    assert inbound == data[rev_id]['inbound'][i], 'inbound does not match, rev id: {} - {}'.format(rev_id, i)
+                    assert outbound == data[rev_id]['outbound'][i], 'outbound does not match, rev id: {} - {}'.format(rev_id, i)
+                    i += 1
+            # TODO compare from db too
 
     def test_authorship(self, temp_folder, article_name, revision_id, token, context, correct_rev_id):
         sub_token_list = split_into_tokens(context)
