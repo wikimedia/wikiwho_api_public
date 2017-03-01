@@ -102,7 +102,8 @@ class Wikiwho:
 
                 # Get editor information
                 if revision.user:
-                    contributor_name = revision.user.text or ''  # Not Available
+                    user_text = revision.user.text
+                    contributor_name = '' if not user_text or user_text == 'None' else user_text
                     if revision.user.id is None and contributor_name or revision.user.id == 0:
                         contributor_id = 0
                     else:
