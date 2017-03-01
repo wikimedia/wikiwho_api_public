@@ -20805,6 +20805,7 @@ SwaggerUi.Views.OperationView = Backbone.View.extend({
             }
         } else if (integer_input.hasClass('required')) {
             integer_input.addClass('error');
+            /*
             integer_input.wiggle({
                 callback: (function(_this) {
                     return function() {
@@ -20812,6 +20813,7 @@ SwaggerUi.Views.OperationView = Backbone.View.extend({
                     };
                 })
             });
+            */
             error_free = false;
         }
     });
