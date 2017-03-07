@@ -1,5 +1,3 @@
-import hashlib
-import json
 from simplejson import JSONDecodeError
 # import time
 
@@ -10,10 +8,10 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework.schemas import SchemaGenerator  # , as_query_fields
 from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
-from rest_framework_extensions.cache.decorators import cache_response, CacheResponse
+# from rest_framework_extensions.cache.decorators import cache_response, CacheResponse
 # from rest_framework.compat import coreapi, urlparse
 
-from django.utils.translation import get_language
+# from django.utils.translation import get_language
 from django.conf import settings
 # from django.core.signals import request_started, request_finished
 # from django.http import HttpResponse
@@ -251,6 +249,7 @@ class WikiwhoView(object):
         return json_data
 
     def get_deleted_tokens(self, wp, parameters, minimal=False, last_rev_id=None, from_db=False):
+        # TODO get deleted content for a specific revision
         if not from_db:
             return wp.wikiwho.get_deleted_tokens(parameters)
         if not self.article:
@@ -299,10 +298,26 @@ class WikiwhoView(object):
 
 
 class WikiwhoApiView(WikiwhoView, ViewSet):
+    """
+    import requests
+    session = requests.session()
+
+    from requests.auth import HTTPBasicAuth
+    r1 = session.get(url, auth=HTTPBasicAuth('username', 'password'))
+    OR
+    session.auth = ('username', 'pass')
+
+    r2 = session.get('http://127.0.0.1:8000/api/v1.0.0-beta/content/thomas_Bellut/?rev_id=true&author=true&token_id=true&inbound=true&outbound=true')
+    r2.json()
+    """
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     # TODO http://www.django-rest-framework.org/topics/third-party-resources/#authentication to account activation,
     # password reset ...
     authentication_classes = (authentication.SessionAuthentication, authentication.BasicAuthentication)
+    # authentication_classes = (authentication.TokenAuthentication, )
+    # TODO Note: If you use BasicAuthentication in production you must ensure that your API is only available over https.
+    # You should also ensure that your API clients will always re-request the username and password at login, and will
+    # never store those details to persistent storage.
     throttle_classes = (throttling.UserRateThrottle, throttling.AnonRateThrottle, BurstRateThrottle)
     # serializer_class = WikiWhoSerializer
     # filter_fields = ('query_option_1', 'query_option_2',)
@@ -355,10 +370,10 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
         # return HttpResponse(json.dumps(response), content_type='application/json; charset=utf-8')
         return Response(response, status=status_)
 
-    # TODO http://www.django-rest-framework.org/api-guide/renderers/
-    @detail_route(renderer_classes=(StaticHTMLRenderer,))
+    # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_slice(self, request, version, article_name, start_revision_id, end_revision_id):
         # TODO do we need pagination with page=5?
+        # maybe this is helpful: http://www.django-rest-framework.org/api-guide/pagination/
         start_revision_id = int(start_revision_id)
         end_revision_id = int(end_revision_id)
         if start_revision_id >= end_revision_id:
@@ -367,35 +382,22 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
         parameters = self.get_parameters('content')
         return self.get_response(article_name, parameters, [start_revision_id, end_revision_id])
 
-    @detail_route(renderer_classes=(StaticHTMLRenderer,))
+    # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_article_revision(self, request, version, article_name, revision_id):
-        # TODO cache this if only rev id is the last rev id
         parameters = self.get_parameters('content')
         return self.get_response(article_name, parameters, [int(revision_id)])
 
-    # TODO update to cache only specific articles from rest_framework_extensions.cache.decorators import CacheResponse
-    # @cache_response(key_func='calculate_cache_key')
-    @detail_route(renderer_classes=(StaticHTMLRenderer,))
+    # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_article_by_name(self, request, version, article_name):
-        # TODO when models are created, delete cache.delete(this_key) if last_rev_id is changed or obj is deleted!
         parameters = self.get_parameters('content')
         return self.get_response(article_name, parameters)
 
-    def calculate_cache_key(self, view_instance, view_method, request, args, kwargs):
-        # FIXME for different query parameters
-        l = list(kwargs.values())
-        l.remove(request.version)
-        l.append(request.accepted_renderer.format)
-        l.append(get_language())
-        key = hashlib.sha256(json.dumps(l, sort_keys=True).encode('utf-8')).hexdigest()
-        return key
-
-    @detail_route(renderer_classes=(StaticHTMLRenderer,))
+    # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_deleted_content_by_name(self, request, version, article_name):
         parameters = self.get_parameters('deleted_content')
         return self.get_response(article_name, parameters, deleted=True)
 
-    @detail_route(renderer_classes=(StaticHTMLRenderer,))
+    # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_revision_ids_by_name(self, request, version, article_name):
         parameters = self.get_parameters('rev_ids')
         return self.get_response(article_name, parameters, ids=True)

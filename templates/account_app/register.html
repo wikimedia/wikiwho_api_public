@@ -1,0 +1,26 @@
+{% extends 'home/home.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    <h2>
+        Register
+    </h2>
+{% endblock %}
+
+{% block content %}
+    {% if user_form and account_form %}
+        <form action="" method="post" novalidate>  {# TODO you can remove novalidate later to have html5 validation #}
+            {% csrf_token %}
+            {{ user_form|crispy }}
+            {{ account_form|crispy }}
+            <button class="btn btn-inverse" type="submit">Register</button>
+        </form>
+        <div>
+            <a href="{% url 'account:password_reset' %}">Did you forget your password?</a>
+        </div>
+    {% else %}
+        <div>
+            Please first <a href="{% url 'account:logout' %}?next={{ request.path }}">logout</a> to create a new account.
+        </div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'home/home.html' %}
+
+{% block title %}
+    <h2>
+        Activation failed
+    </h2>
+{% endblock %}
+
+{% block content %}
+    <p>
+        Probably this account is already activated or activation link is expired ({{ activation_days }} days).
+    </p>
+{% endblock %}

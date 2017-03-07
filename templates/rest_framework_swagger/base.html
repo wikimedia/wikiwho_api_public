@@ -43,7 +43,7 @@
 <div id='header'>
   <div class="swagger-ui-wrap">
     {#  TODO wikiwho logo#}
-    <a id="logo" href="{% url 'home' %}"><img class="logo__img" alt="swagger" height="30" width="30" src="{% static 'images/logo_small.png' %}" /><span class="logo__title">wikiwho</span></a>
+    <a id="logo" href="{% url 'home' %}"><img class="logo__img" alt="wikiwho" height="30" width="30" src="{% static 'images/logo_small.png' %}" /><span class="logo__title">wikiwho</span></a>
     <form id='api_selector'>
       <input id="input_baseUrl" name="baseUrl" type="hidden"/>
       {% if USE_SESSION_AUTH %}
@@ -58,6 +58,11 @@
         {% endif %}
         {% block extra_nav %}
           {# Override this block to add more buttons, content to nav bar. #}
+            {% if request.user.is_authenticated %}
+                <div class='input'><a id="auth" class="header__btn" href="{% url 'account:detail' %}" data-sw-translate>My Account</a></div>
+            {% else %}
+                <div class='input'><a id="auth" class="header__btn" href="{% url 'account:register' %}" data-sw-translate>Register</a></div>
+            {% endif %}
         {% endblock %}
       {% endif %}
 
@@ -69,7 +74,7 @@
         {% endif %}
       {% endif %}
       {# TODO how to use this? or comment it out #}
-      <div id='auth_container'></div>
+{#      <div id='auth_container'></div>#}
     </form>
   </div>
 </div>

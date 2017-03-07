@@ -1,0 +1,49 @@
+{% extends 'home/home.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    <h2>
+    {% comment %}
+    {% if user.get_full_name %}
+        {{ user.get_full_name }}
+    {% else %}
+        {{ user.username }}
+    {% endif %}
+    {% endcomment %}
+    Account details
+    </h2>
+{% endblock %}
+
+{% block content %}
+    <form action="" method="post" novalidate>  {# TODO you can remove novalidate later to have html5 validation #}
+        {% csrf_token %}
+        {{ user_form|crispy }}
+        {{ account_form|crispy }}
+
+        {% comment %}
+        {#https://docs.djangoproject.com/en/1.10/topics/forms/#rendering-fields-manually#}
+        {{ form.non_field_errors }}
+        <p>
+            <label for="{{ user_form.first_name.id_for_label }}">{{ user_form.first_name.label_tag }}</label>
+            <input id="{{ user_form.first_name.id_for_label }}" maxlength="30" name="{{ user_form.first_name.html_name }}" type="text" value="{{ user_form.first_name.value }}">
+        </p>
+        <p>
+            <label for="{{ user_form.email.id_for_label }}">{{ user_form.email.label_tag }}</label>
+            <input id="{{ user_form.email.id_for_label }}" maxlength="30" name="{{ user_form.email.html_name }}" type="text" value="{{ user_form.email.value }}">
+        </p>
+        {% endcomment %}
+        <button class="btn btn-inverse" type="submit">Update</button>
+    </form>
+
+    <div>
+        <h4>API rates</h4>
+        Allowed: {{ throttle_data.user.allowed }}<br>
+        Used: {{ throttle_data.user.used|default_if_none:0 }}<br>
+        Burst allowed: {{ throttle_data.burst.allowed }}<br>
+    </div>
+
+    <div>
+        <br>
+        <a href="{% url 'account:password_change' %}">Change password</a>
+    </div>
+{% endblock %}

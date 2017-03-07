@@ -1,0 +1,23 @@
+{% extends 'home/home.html' %}
+
+{% block title %}
+    <h2>Registration complete</h2>
+{% endblock %}
+
+{% block content %}
+    {% comment %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endcomment %}
+    <p>
+        The activation email is sent. The activation link in the email will be valid for {{ activation_days }} days.
+    </p>
+    <p>
+        <a href="{% url 'account:send_activation_email' %}">Click to get a new activation email.</a>
+    </p>
+{% endblock %}

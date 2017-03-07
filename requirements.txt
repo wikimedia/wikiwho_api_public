@@ -29,6 +29,9 @@ drf-extensions
 django-extensions
 psycopg2
 
+django-registration
+django-crispy-forms
+
 #mediawiki-utilities
 mwxml
 mwreverts

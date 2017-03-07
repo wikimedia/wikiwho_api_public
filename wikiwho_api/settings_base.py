@@ -12,12 +12,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'rest_framework',
     'rest_framework_swagger',
     'api',
     'base',
     'django_extensions',
     'wikiwho',
+    'account_app',
+    'crispy_forms',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -52,7 +55,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'wikiwho_api.wsgi.application'
 
-
 # Password validation
 # https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
 
@@ -70,6 +72,17 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# Auth
+# https://docs.djangoproject.com/en/1.10/ref/settings/#std:setting-LOGIN_URL
+LOGIN_URL = 'account:login'  # default is '/accounts/login/'
+LOGIN_REDIRECT_URL = 'account:detail'  # default is '/accounts/profile/'
+LOGOUT_REDIRECT_URL = 'home'  # default is None
+# AUTH_USER_MODEL = 'account_app.User'  # default is 'auth.User'
+
+# Sessions
+# When SESSION_SAVE_EVERY_REQUEST is set to True, Django will save the session to the database on every single request.
+# SESSION_SAVE_EVERY_REQUEST = True
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
@@ -137,11 +150,14 @@ REST_FRAMEWORK = {
         'burst': '100/minute'
     },
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+    # 'DEFAULT_AUTHENTICATION_CLASSES': (
+    #     'rest_framework.authentication.BasicAuthentication',
+    # ),
 }
 
 SWAGGER_SETTINGS = {
-    'LOGIN_URL': 'rest_framework:login',
-    'LOGOUT_URL': 'rest_framework:logout',
+    'LOGIN_URL': 'account:login',
+    'LOGOUT_URL': 'account:logout',
     'USE_SESSION_AUTH': True,
     'SECURITY_DEFINITIONS': {
         'basic': {
@@ -159,9 +175,9 @@ SWAGGER_SETTINGS = {
     # 'VALIDATOR_URL': 'https://online.swagger.io/validator/',
 }
 
-REST_FRAMEWORK_EXTENSIONS = {
-    'DEFAULT_CACHE_ERRORS': False
-}
+# REST_FRAMEWORK_EXTENSIONS = {
+#     'DEFAULT_CACHE_ERRORS': False
+# }
 
 # where pickles are saved
 PICKLE_FOLDER = 'pickles_api'
@@ -171,21 +187,19 @@ REVISION_COUNT_CACHE_LIMIT = 100
 DELETED_CONTENT_THRESHOLD_LIMIT = 5
 ONLY_READ_ALLOWED = False
 
-# TODO Use this in generate_articles_from_wp_xmls command
-XML_DUPLICATE_ARTICLES = {
-    '20161101': {
-        '48069178': 52156697,  # old: new
-        'all_revisions': [684319694, 684387440, 684695194, 694151122, 694151282, 694151399, 694154986, 694322902,
-                          694336443, 705163139, 705755211, 713387877, 713388125, 713388298, 713388763, 713391728,
-                          714701778, 720938764, 723502904, 740700325, 747243525, 747243653, 747244885, 747245204,
-                          747245485, 747266414, 747326606, 747326713, 747327536, 747327842]
-    }
-}
-
 # Wikipedia
 # WP_HEADERS_USER_AGENT = 'wikiwho-api'
 WP_HEADERS_USER_AGENT = 'Wikiwho API'
 WP_HEADERS_FROM = 'fabian.floeck@gesis.org and kenan.erdogan@gesis.org'
 
+# registration
+ACCOUNT_ACTIVATION_DAYS = 7
+REGISTRATION_SALT = 'ww_registration'
+DEFAULT_FROM_EMAIL = ''  # TODO
+
+SITE_ID = 1
+
 # Admins
 ADMINS = [('Kenan', 'kenan.erdogan@gesis.org')]  # ('Fabian', 'fabian.floeck@gesis.org')]
+
+CRISPY_TEMPLATE_PACK = 'bootstrap'  # default is bootstrap2: http://getbootstrap.com/2.3.2/getting-started.html

@@ -1,0 +1,16 @@
+{% extends 'home/home.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    <h2>
+        Send activation email
+    </h2>
+{% endblock %}
+
+{% block content %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button class="btn btn-inverse" type="submit">Send email</button>
+    </form>
+{% endblock %}

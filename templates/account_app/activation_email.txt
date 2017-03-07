@@ -1,0 +1,10 @@
+{% autoescape off %}Dear {{ user.username }},
+
+Please click on the activation link below to activate you account.
+
+Activation link: http://{{ site.domain }}{% url 'account:registration_activate' activation_key %}
+
+The link will be expired in {{ expiration_days }} days. Not activated accounts are deleted regularly.
+
+Thank you,
+{{ site.name }}{% endautoescape %}

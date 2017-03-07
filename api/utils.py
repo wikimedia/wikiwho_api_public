@@ -10,6 +10,7 @@ from lxml import etree
 import requests
 
 from django.conf import settings
+from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
 
 
 def get_latest_revision_data(page_id=None, article_title=None):
@@ -79,6 +80,26 @@ class Timeout:
 
     def __exit__(self, type, value, traceback):
         signal.alarm(0)
+
+
+def get_throttle_data(request):
+    throttle_dict = {}
+    if request.user.is_authenticated:
+        user_rate = UserRateThrottle()
+        cache_key = user_rate.get_cache_key(request, None)
+        history = user_rate.cache.get(cache_key)
+        throttle_dict[user_rate.scope] = {'allowed': user_rate.rate, 'used': len(history) if history else None}
+        user_rate.scope = 'burst'
+        throttle_dict[user_rate.scope] = {'allowed': user_rate.get_rate()}
+    else:
+        pass
+        # anon_rate = AnonRateThrottle()
+        # cache_key = anon_rate.get_cache_key(request, None)
+        # history = anon_rate.cache.get(cache_key)
+        # throttle_dict[anon_rate.scope] = {'allowed': anon_rate.rate, 'used': len(history) if history else None}
+        # anon_rate.scope = 'burst'
+        # throttle_dict[anon_rate.scope] = {'allowed': anon_rate.get_rate()}
+    return throttle_dict
 
 
 def get_article_xml(article_name):

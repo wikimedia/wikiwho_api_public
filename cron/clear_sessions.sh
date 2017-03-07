@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 source `which virtualenvwrapper.sh`
-workon wwa
+workon iwwa
 python ../manage.py clearsessions
 echo 'clearsessions is finished'
