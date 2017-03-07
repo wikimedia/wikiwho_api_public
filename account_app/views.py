@@ -36,9 +36,9 @@ def account_detail(request):
         if user_form.is_valid() and account_form.is_valid():
             # process the data in form.cleaned_data as required
             user_update_fields = []
-            if user.email != user_form.cleaned_data['email']:
-                user_update_fields.append('email')
-                user.email = user_form.cleaned_data['email']
+            # if user.email != user_form.cleaned_data['email']:
+            #     user_update_fields.append('email')
+            #     user.email = user_form.cleaned_data['email']
             if user.first_name != user_form.cleaned_data['first_name']:
                 user_update_fields.append('first_name')
                 user.first_name = user_form.cleaned_data['first_name']
@@ -49,9 +49,12 @@ def account_detail(request):
                 user.save(update_fields=user_update_fields)
 
             account_update_fields = []
-            if account.company != account_form.cleaned_data['company']:
-                account_update_fields.append('company')
-                account.company = account_form.cleaned_data['company']
+            if account.affiliation != account_form.cleaned_data['affiliation']:
+                account_update_fields.append('affiliation')
+                account.affiliation = account_form.cleaned_data['affiliation']
+            if account.reason != account_form.cleaned_data['reason']:
+                account_update_fields.append('reason')
+                account.reason = account_form.cleaned_data['reason']
             if account_update_fields:
                 account.save(update_fields=account_update_fields)
 
@@ -87,21 +90,28 @@ def register(request):
         account_form = AccountForm(request.POST, prefix='account')
 
         if user_form.is_valid() and account_form.is_valid():
-            extra_fields = {'is_active': False,  # will set to True after activation
+            # extra_fields = {'is_active': False,  # will set to True after activation
+            extra_fields = {'is_active': True,
                             'first_name': user_form.cleaned_data['first_name'],
                             'last_name': user_form.cleaned_data['last_name']}
-            user = User.objects.create_user(user_form.cleaned_data['username'],
-                                            user_form.cleaned_data['email'],
-                                            user_form.cleaned_data['password2'],
+            user = User.objects.create_user(username=user_form.cleaned_data['username'],
+                                            # user_form.cleaned_data['email'],
+                                            password=user_form.cleaned_data['password2'],
                                             **extra_fields)
-            account = Account.objects.create(user=user, company=account_form.cleaned_data['company'])
-            _send_activation_email(request, user)
+            account = Account.objects.create(user=user,
+                                             affiliation=account_form.cleaned_data['affiliation'],
+                                             reason=account_form.cleaned_data['reason'])
+            # _send_activation_email(request, user)
+
             # from django.contrib import messages
             # messages.add_message(request, messages.INFO, 'Hello world.{}-{}'.format(user.email, settings.ACCOUNT_ACTIVATION_DAYS))
             # context = {'email': user.email,
             #            'activation_days': settings.ACCOUNT_ACTIVATION_DAYS}
             # return render(request, 'account_app/registration_complete.html', context)
-            return HttpResponseRedirect(reverse('account:registration_complete'))
+
+            # return HttpResponseRedirect(reverse('account:registration_complete'))
+            login(request, user=user)
+            return HttpResponseRedirect(reverse('account:detail'))
     else:
         user_form = UserPasswordForm(prefix='user')
         account_form = AccountForm(prefix='account')

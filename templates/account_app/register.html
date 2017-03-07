@@ -15,9 +15,9 @@
             {{ account_form|crispy }}
             <button class="btn btn-inverse" type="submit">Register</button>
         </form>
-        <div>
-            <a href="{% url 'account:password_reset' %}">Did you forget your password?</a>
-        </div>
+{#        <div>#}
+{#            <a href="{% url 'account:password_reset' %}">Did you forget your password?</a>#}
+{#        </div>#}
     {% else %}
         <div>
             Please first <a href="{% url 'account:logout' %}?next={{ request.path }}">logout</a> to create a new account.

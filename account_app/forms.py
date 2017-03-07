@@ -1,6 +1,7 @@
-from registration import validators
-from registration.forms import RegistrationFormUniqueEmail
+# from registration import validators
+# from registration.forms import RegistrationFormUniqueEmail
 
+from django.contrib.auth.forms import UserCreationForm
 from django.forms import ModelForm, EmailField, Form, forms, CharField, HiddenInput
 
 from account_app.models import Account, User
@@ -11,7 +12,7 @@ class AccountForm(ModelForm):
 
     class Meta:
         model = Account
-        fields = ('company', )
+        fields = ('affiliation', 'reason', )
 
 
 class UserForm(ModelForm):
@@ -19,7 +20,7 @@ class UserForm(ModelForm):
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', )
+        fields = ('username', 'first_name', 'last_name', )
 
     def __init__(self, *args, **kwargs):
         username_disabled = kwargs.pop('username_disabled', False)
@@ -30,22 +31,25 @@ class UserForm(ModelForm):
             self.fields['username'].required = False
             self.fields['username'].widget.attrs['disabled'] = True
             self.fields['username'].help_text = ''
-            self.fields['email'].required = True
             # self.fields['username'].help_text = 'Cannot be changed.'
+            # self.fields['email'].required = True
 
-    def clean_email(self):
-        if User.objects.exclude(username=self.username_value).\
-                filter(email__iexact=self.cleaned_data['email']):
-            raise forms.ValidationError(validators.DUPLICATE_EMAIL)
-        return self.cleaned_data['email']
+    # def clean_email(self):
+    #     if User.objects.exclude(username=self.username_value).\
+    #             filter(email__iexact=self.cleaned_data['email']):
+    #         raise forms.ValidationError(validators.DUPLICATE_EMAIL)
+    #     return self.cleaned_data['email']
 
 
-class UserPasswordForm(UserForm, RegistrationFormUniqueEmail):
+class UserPasswordForm(UserForm, UserCreationForm):
+    pass
 
-    def __init__(self, *args, **kwargs):
-        super(UserPasswordForm, self).__init__(*args, **kwargs)
-        self.fields['email'].help_text = ''
-        self.fields['email'].label = 'Email address'
+# class UserPasswordForm(UserForm, RegistrationFormUniqueEmail):
+
+    # def __init__(self, *args, **kwargs):
+    #     super(UserPasswordForm, self).__init__(*args, **kwargs)
+    #     self.fields['email'].help_text = ''
+    #     self.fields['email'].label = 'Email address'
 
 
 class EmailForm(Form):

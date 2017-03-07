@@ -6,9 +6,9 @@ from .models import Account
 
 
 class AccountAdmin(admin.ModelAdmin):
-    search_fields = ('company', )
-    list_display = ('user', 'company', )
-    # list_filter = ('company', )
+    search_fields = ('affiliation', )
+    list_display = ('user', 'affiliation', )
+    # list_filter = ('affiliation', )
 
 
 class AccountInline(admin.StackedInline):
@@ -18,7 +18,7 @@ class AccountInline(admin.StackedInline):
 
 
 class UserAdmin(BaseUserAdmin):
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_active', 'is_staff', )
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_active', 'is_staff', 'account', )
     list_editable = ('is_active', )
     inlines = (AccountInline, )
 

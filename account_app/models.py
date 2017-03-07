@@ -5,4 +5,8 @@ from django.contrib.auth.models import User
 
 class Account(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    company = models.CharField(max_length=100)
+    affiliation = models.CharField(max_length=255, blank=False, null=False)
+    reason = models.TextField(max_length=1000, default='', blank=True)
+
+    def __str__(self):
+        return '{} - {}'.format(self.user, self.affiliation)
