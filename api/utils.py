@@ -94,8 +94,8 @@ def get_article_xml(article_name):
     params = {'titles': article_name, 'action': 'query', 'prop': 'revisions',
               'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
               'rvlimit': 'max', 'format': 'xml', 'continue': '', 'rvdir': 'newer'}
-    headers = {'User-Agent': 'Wikiwho API',
-               'From': 'philipp.singer@gesis.org and fabian.floeck@gesis.org'}
+    headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
+               'From': settings.WP_HEADERS_FROM}
     url = 'https://en.wikipedia.org/w/api.php'
 
     rvcontinue = True

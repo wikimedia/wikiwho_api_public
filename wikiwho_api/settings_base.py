@@ -71,7 +71,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 
@@ -186,4 +185,7 @@ XML_DUPLICATE_ARTICLES = {
 # Wikipedia
 # WP_HEADERS_USER_AGENT = 'wikiwho-api'
 WP_HEADERS_USER_AGENT = 'Wikiwho API'
-WP_HEADERS_FROM = 'philipp.singer@gesis.org, fabian.floeck@gesis.org and kenan.erdogan@gesis.org'
+WP_HEADERS_FROM = 'fabian.floeck@gesis.org and kenan.erdogan@gesis.org'
+
+# Admins
+ADMINS = [('Kenan', 'kenan.erdogan@gesis.org')]  # ('Fabian', 'fabian.floeck@gesis.org')]
