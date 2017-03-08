@@ -12,11 +12,15 @@
             body {
                 padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
             }
+            .navbar .brand {
+                padding: 5px 20px 5px;
+                margin-left: -20px;
+            }
         </style>
     {% endblock style %}
     {% block extra_style %}
     {% endblock extra_style %}
-    <link href="{% static 'bootstrap/css/bootstrap-responsive.min.css' %}" rel="stylesheet" media="screen">
+    <link href="{% static 'bootstrap/css/bootstrap-responsive.min.css' %}" rel="stylesheet">
     <link rel="icon" type="image/png" href="{% static 'images/favicon-32x32.png' %}" sizes="32x32" />
     <link rel="icon" type="image/png" href="{% static 'images/favicon-16x16.png' %}" sizes="16x16" />
 
@@ -41,11 +45,16 @@
                     <img alt="wikiwho" height="60" width="60" src="{% static 'images/logo_white.png' %}" />
                 </a>
                 <div class="nav-collapse collapse">
+{#                    <ul class="nav pull-left">#}
+{#                        <li><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
+{#                    </ul>#}
                     <ul class="nav pull-right">
 {#                        <li class="active"><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
                         <li><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>
+                        <li><a href="{% url 'contact' %}">Contact</a></li>
                         {% if request.user.is_authenticated %}
-                        <li><a href="{% url 'account:detail' %}">My account</a></li>
+{#                        <li>Hello {{ request.user }}</li>#}
+                        <li><a href="{% url 'account:detail' %}">My Account</a></li>
                         <li><a href="{% url 'account:logout' %}">Logout</a></li>
                         {% else %}
                         <li><a href="{% url 'account:login' %}">Login</a></li>
