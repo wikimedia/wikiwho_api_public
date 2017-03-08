@@ -28,6 +28,7 @@ urlpatterns = [
     url(r'^api/(?P<version>(v1.0.0-beta|v1.0.0))/', include('api.urls', namespace='api')),
     # url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^account/', include('account_app.urls', namespace='account')),
+    url(r'^contact/$', TemplateView.as_view(template_name='contact/contact.html'), name='contact'),
     # url(r'^docs/', include('rest_framework_docs.urls')),
     url(r'^$', TemplateView.as_view(template_name='home/home.html'), name='home'),
 ]
