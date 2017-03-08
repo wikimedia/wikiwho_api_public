@@ -15,6 +15,15 @@
 {% endblock %}
 
 {% block content %}
+    {% if messages %}
+        <div class="alert alert-block alert-success">
+            <ul>
+                {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
     <form action="" method="post" novalidate>  {# TODO you can remove novalidate later to have html5 validation #}
         {% csrf_token %}
         {{ user_form|crispy }}

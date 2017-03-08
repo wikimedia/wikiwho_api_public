@@ -13,6 +13,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.debug import sensitive_post_parameters
 from django.contrib.auth.views import password_reset as base_password_reset
+from django.contrib import messages
 
 from account_app.models import Account
 from api.utils import get_throttle_data
@@ -102,15 +103,10 @@ def register(request):
                                              affiliation=account_form.cleaned_data['affiliation'],
                                              reason=account_form.cleaned_data['reason'])
             # _send_activation_email(request, user)
-
-            # from django.contrib import messages
-            # messages.add_message(request, messages.INFO, 'Hello world.{}-{}'.format(user.email, settings.ACCOUNT_ACTIVATION_DAYS))
-            # context = {'email': user.email,
-            #            'activation_days': settings.ACCOUNT_ACTIVATION_DAYS}
-            # return render(request, 'account_app/registration_complete.html', context)
-
             # return HttpResponseRedirect(reverse('account:registration_complete'))
             login(request, user=user)
+            messages.add_message(request, messages.SUCCESS, 'Hi {}, you are successfully registered. '
+                                                            'Here is your account details.'.format(user.username))
             return HttpResponseRedirect(reverse('account:detail'))
     else:
         user_form = UserPasswordForm(prefix='user')
