@@ -15,7 +15,7 @@ import json
 
 def _get_sorted_file_list(folder_path, first_sep='-part'):
     files = glob.glob(folder_path + '/*.csv')
-    d = {}
+    d = {}  # {part_id: part_file_path, }
     for file_ in files:
         d[file_.split('/')[-1].split(first_sep)[1].split('-')[0]] = file_
     assert len(files) == len(d)
@@ -56,23 +56,27 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     reverts_part = 'None'
+
     d = {}
     try:
-        # reverts-part7-8785-10139.csv
-        reverts_files = _get_sorted_file_list(reverts_folder)
+        reverts_files = _get_sorted_file_list(reverts_folder)  # reverts-part7-8785-10139.csv
+        # collect reverts data
         reverts_dict = {}
         for reverts_file in _get_sub_revert_files(reverts_files, start, end):
             reverts_part = reverts_file.split('.csv')[0].split('-')[1]
             with open(reverts_file) as f_reverts:
-                next(f_reverts)  # skip header
-                for line in f_reverts:
-                    line = line.split(',')
+                reader = csv.reader(f_reverts, delimiter=',')
+                next(reader)  # skip header
+                for line in reader:
+                    # line = line.split(',')
                     # reverted_add_actions + reverted_del_actions by source
                     reverted_actions = int(line[3]) + int(line[4])
                     # total_actions by target
                     total_actions = int(line[5])
                     # True for full revert, False for partial revert
-                    reverts_dict['{}-{}'.format(line[1], line[2])] = reverted_actions == total_actions
+                    source_target = '{}-{}'.format(line[1], line[2])
+                    reverts_dict[source_target] = reverted_actions == total_actions
+        # compute sha reverts data in reverts
         count_source_target = 0
         count_source_target_in_reverts = 0
         count_source_target_in_reverts_full = 0
@@ -102,13 +106,11 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='Compute sha reverts.')
+    parser = argparse.ArgumentParser(description='Analyse/compare sha reverts in reverts.')
     parser.add_argument('-f', '--base_path', required=True,
                         help='Base folder where sha reverts and reverts files take place')
     parser.add_argument('-m', '--max_workers', type=int, help='Default is 10')
-
     args = parser.parse_args()
-
     return args
 
 
@@ -148,10 +150,11 @@ def main():
     max_workers = args.max_workers or 10
     print(max_workers)
     print("Start: ", strftime("%Y-%m-%d-%H:%M:%S"))
-    final_data = {'count_source_target': 0,
-                  'count_source_target_in_reverts': 0,
-                  'count_source_target_in_reverts_full': 0,
-                  'count_source_target_in_reverts_partial': 0}
+    final_data = {'count_source_target': 0,  # count of source-target pairs in sha reverts outputs
+                  'count_source_target_in_reverts': 0,  # how many of those pairs are also in reverts output
+                  'count_source_target_in_reverts_full': 0,  # how many of them are full revert
+                  'count_source_target_in_reverts_partial': 0  # how many of them are partial revert
+                  }
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         jobs = {}
         files_left = len(input_files)
