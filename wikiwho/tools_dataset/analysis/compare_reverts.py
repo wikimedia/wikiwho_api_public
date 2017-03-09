@@ -58,6 +58,9 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
     reverts_part = 'None'
 
     d = {}
+    matches = []
+    partial_matches = []
+    no_matches = []
     try:
         reverts_files = _get_sorted_file_list(reverts_folder)  # reverts-part7-8785-10139.csv
         # collect reverts data
@@ -95,11 +98,15 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
                     count_source_target += 1
                     st = '{}-{}'.format(source, target)
                     if st in reverts_dict:
+                        matches.append([line[0], source, target])
                         count_source_target_in_reverts += 1
                         if reverts_dict.get(st):
                             count_source_target_in_reverts_full += 1
                         else:
+                            partial_matches.append([line[0], source, target])
                             count_source_target_in_reverts_partial += 1
+                    else:
+                        no_matches.append([line[0], source, target])
         d = {'count_source_target': count_source_target,
              'count_source_target_in_reverts': count_source_target_in_reverts,
              'count_source_target_in_reverts_full': count_source_target_in_reverts_full,
@@ -110,7 +117,7 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
              'count_distinct_targets': len(set(targets))}
     except Exception as e:
         logger.exception(reverts_part)
-    return d
+    return d, matches, partial_matches, no_matches
 
 
 def get_args():
@@ -188,11 +195,24 @@ def main():
                 files_left -= 1
                 part_ = jobs[job]
                 try:
-                    data = job.result()
+                    data, matches, partial_matches, no_matches = job.result()
                     for k, v in data.items():
                         final_data[k] += v
-                    with open('{}/{}.json'.format(output_folder, part_), 'w') as fp:
-                        json.dump(data, fp)
+                    with open('{}/{}.json'.format(output_folder, part_), 'w') as fout:
+                        json.dump(data, fout)
+                    header = 'article_id,source,target\n'
+                    with open('{}/{}_matches.csv'.format(output_folder, part_), 'w') as fout:
+                        fout.write(header)
+                        for match in matches:
+                            fout.write(','.join(match) + '\n')
+                    with open('{}/{}_partial_matches.csv'.format(output_folder, part_), 'w') as fout:
+                        fout.write(header)
+                        for partial_match in partial_matches:
+                            fout.write(','.join(partial_match) + '\n')
+                    with open('{}/{}_no_matches.csv'.format(output_folder, part_), 'w') as fout:
+                        fout.write(header)
+                        for no_match in no_matches:
+                            fout.write(','.join(no_match) + '\n')
                 except Exception as exc:
                     logger.exception(part_)
 
