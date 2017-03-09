@@ -70,6 +70,7 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
             with open(reverts_file) as f_reverts:
                 reader = csv.reader(f_reverts, delimiter=',')
                 next(reader)  # skip header
+                # article,source,target,reverted_add_actions,reverted_del_actions,total_actions,source_editor,target_editor
                 for line in reader:
                     # line = line.split(',')
                     # reverted_add_actions + reverted_del_actions by source
@@ -77,7 +78,8 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
                     # total_actions by target
                     total_actions = int(line[5])
                     # True for full revert, False for partial revert
-                    source_target = '{}-{}'.format(line[1], line[2])
+                    source_target = '{}-{}'.format(line[1].strip().rstrip(),
+                                                   line[2].strip().rstrip())
                     reverts_dict[source_target] = reverted_actions == total_actions
         # compute sha reverts data in reverts
         count_source_target = 0
@@ -89,11 +91,14 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
         with open(sha_reverts_file) as f_sha:
             reader = csv.reader(f_sha, delimiter=',')
             next(reader)  # skip header
+            # article_id,source,target,source_editor,target_editor
             for line in reader:
                 source = line[1]
+                source = source.strip().rstrip()
                 sources.append(source)
                 source_targets = line[2][1:-1].split(',')
                 for target in source_targets:
+                    target = target.strip().rstrip()
                     targets.append(target)
                     count_source_target += 1
                     st = '{}-{}'.format(source, target)
