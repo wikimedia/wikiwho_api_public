@@ -81,11 +81,13 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
         count_source_target_in_reverts = 0
         count_source_target_in_reverts_full = 0
         count_source_target_in_reverts_partial = 0
+        sources = []
         with open(sha_reverts_file) as f_sha:
             reader = csv.reader(f_sha, delimiter=',')
             next(reader)  # skip header
             for line in reader:
                 source = line[1]
+                sources.append(source)
                 targets = line[2][1:-1].split(',')
                 for target in targets:
                     count_source_target += 1
@@ -99,7 +101,9 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
         d = {'count_source_target': count_source_target,
              'count_source_target_in_reverts': count_source_target_in_reverts,
              'count_source_target_in_reverts_full': count_source_target_in_reverts_full,
-             'count_source_target_in_reverts_partial': count_source_target_in_reverts_partial}
+             'count_source_target_in_reverts_partial': count_source_target_in_reverts_partial,
+             'count_sources': len(sources),
+             'count_distinct_sources': len(set(sources))}
     except Exception as e:
         logger.exception(reverts_part)
     return d
@@ -153,7 +157,9 @@ def main():
     final_data = {'count_source_target': 0,  # count of source-target pairs in sha reverts outputs
                   'count_source_target_in_reverts': 0,  # how many of those pairs are also in reverts output
                   'count_source_target_in_reverts_full': 0,  # how many of them are full revert
-                  'count_source_target_in_reverts_partial': 0  # how many of them are partial revert
+                  'count_source_target_in_reverts_partial': 0,  # how many of them are partial revert
+                  'count_sources': 0,
+                  'count_distinct_sources': 0
                   }
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         jobs = {}
