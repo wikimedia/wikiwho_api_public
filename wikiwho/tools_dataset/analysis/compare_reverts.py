@@ -65,6 +65,7 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
         reverts_files = _get_sorted_file_list(reverts_folder)  # reverts-part7-8785-10139.csv
         # collect reverts data
         reverts_dict = {}
+        reverts_sources = []
         for reverts_file in _get_sub_revert_files(reverts_files, start, end):
             reverts_part = reverts_file.split('.csv')[0].split('-')[1]
             with open(reverts_file) as f_reverts:
@@ -78,7 +79,9 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
                     # total_actions by target
                     total_actions = int(line[5])
                     # True for full revert, False for partial revert
-                    source_target = '{}-{}'.format(line[1].strip().rstrip(),
+                    source = line[1].strip().rstrip()
+                    reverts_sources.append(source)
+                    source_target = '{}-{}'.format(source,
                                                    line[2].strip().rstrip())
                     reverts_dict[source_target] = reverted_actions == total_actions
         # compute sha reverts data in reverts
@@ -122,7 +125,7 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
              'count_distinct_targets': len(set(targets))}
     except Exception as e:
         logger.exception(reverts_part)
-    return d, matches, partial_matches, no_matches
+    return d, matches, partial_matches, no_matches, reverts_sources, sources
 
 
 def get_args():
@@ -177,8 +180,11 @@ def main():
                   'count_sources': 0,
                   'count_distinct_sources': 0,
                   'count_targets': 0,
-                  'count_distinct_targets': 0
+                  'count_distinct_targets': 0,
+                  'intersection_distinct_sources': 0
                   }
+    reverts_sources = []
+    sha_reverts_sources = []
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         jobs = {}
         files_left = len(input_files)
@@ -200,7 +206,9 @@ def main():
                 files_left -= 1
                 part_ = jobs[job]
                 try:
-                    data, matches, partial_matches, no_matches = job.result()
+                    data, matches, partial_matches, no_matches, reverts_sources_, sources_ = job.result()
+                    reverts_sources.extend(reverts_sources_)
+                    sha_reverts_sources.extend(sources_)
                     for k, v in data.items():
                         final_data[k] += v
                     with open('{}/{}.json'.format(output_folder, part_), 'w') as fout:
@@ -224,6 +232,7 @@ def main():
                 del jobs[job]
                 sys.stdout.write('\r{}-{:.3f}%'.format(files_left, ((files_all - files_left) * 100) / files_all))
                 break  # to add a new job, if there is any
+    final_data['intersection_distinct_sources'] = len(set(reverts_sources).intersection(set(sha_reverts_sources)))
     with open('{}/all.json'.format(output_folder), 'w') as fp:
         json.dump(final_data, fp)
     print("Done: ", strftime("%Y-%m-%d-%H:%M:%S"))
