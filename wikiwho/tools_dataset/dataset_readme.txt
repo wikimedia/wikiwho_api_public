@@ -72,8 +72,8 @@
    - article_id (integer scalar): The page ID of the article (as extracted from the XML dumps).
    - source (integer scalar): Id of revision where revert action is done.
    - target (integer scalar): Id of revision whose action is reverted.
-   - reverted_add_actions (integer scalar): Total number of re-introductions of deleted tokens by the target.
-   - reverted_del_actions (integer scalar): Total number of deletions of originally added or by re-introduced tokens of the target.
+   - reverted_add_actions (integer scalar): Total number of re-introductions of deleted tokens that were deleted in the target. These actions are done in the source.
+   - reverted_del_actions (integer scalar): Total number of deletions of originally added or re-introduced tokens of the target. These actions are done in the source.
    - total_actions (integer scalar): Total number of actions (originally addition, deletion, re-introduction) of the target.
    - source_editor (string value): Id of editor who did the revert action.
    - target_editor (string value): Id of editor whose action is reverted.
