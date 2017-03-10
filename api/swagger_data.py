@@ -19,9 +19,29 @@ allowed_params = {
     'rev_ids': ['editor', 'timestamp']
 }
 
+headers = {
+    "X-Rate-Limit-Limit": {
+        "description": "The number of allowed requests in the current period",
+        "type": "integer"
+    },
+    "X-Rate-Limit-Remaining": {
+        "description": "The number of remaining requests in the current period",
+        "type": "integer"
+    },
+    "X-Rate-Limit-Reset": {
+        "description": "The number of seconds left in the current period",
+        "type": "integer"
+    }
+}
+
+version = '1.0.0-beta'
 custom_data = {
+    'swagger': '2.0',
     'info': {
-            'version': '1.0.0-beta',
+            'title': 'wikiwho API',
+            # 'termsOfService': '',
+            'version': version,
+            'license': {'name': 'TODO licence?', 'url': 'www.google.com'},
             'description': 'TODO A short description of the application. GFM syntax can be used for rich text '
                            'representation. \n\nSpecification: http://swagger.io/specification \n\n'
                            'Example api: http://petstore.swagger.io/',
@@ -30,19 +50,38 @@ custom_data = {
                 # 'email': 'xx@gmail.com?cc:kenan.erdogan@gesis.org',  TODO subject, cc ..
                 'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/computational-social-science/'},
         },
+    'basePath': '/api/v{}'.format(version),
+    # 'host': 'wikiwho.net?',
+    # 'schemes': 'https',
+    'produces': ['application/json'],
+    'externalDocs': {
+        'description': 'A short description of the target documentation. '
+                       'GFM syntax can be used for rich text representation.',
+        'url': 'TODO link of external documentation\n'
+    },
     'paths':
         {'/content/page_id/{page_id}/':
          # {'get': {'description': '# Some description \n **with** *markdown* \n\n [Markdown Cheatsheet]
          # (https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)',
              {'get': {'description': 'Outputs the content of the last revision of an article. \n\n'
                                      'Check `GET /content/{article_name}/` for explanations of query parameters.',
+                      # 'produces': ['application/json'],
                       'parameters': [{'description': 'Page id of the article from wikipedia',
                                       'in': 'path',
                                       'name': 'page_id',
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
-                      # 'responses': {'200': {'description': ''}},
+                      # 'responses': {
+                      #     '200': {
+                      #         'description': 'some description',
+                      #         'headers': headers,
+                      #         # 'examples': {},
+                      #     },
+                      #     '400': {
+                      #         'description': '',
+                      #     },
+                      # },
                       'tags': ['Revision content'],
                       'summary': 'Get the content of the last revision of an article'
                       }
@@ -132,7 +171,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'string'},
                                      ] + query_params,
-                      'responses': {'200': {'description': ''}},
+                      # 'responses': {'200': {'description': ''}},
                       'tags': ['Revision content'],
                       'summary': 'Get the content of multiple revisions of an article'
                       }
@@ -181,7 +220,7 @@ custom_data = {
                                       'required': False,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': {'200': {'description': ''}},
+                      # 'responses': {'200': {'description': ''}},
                       'tags': ['Deleted content'],
                       'summary': 'Get the deleted content an article'
                       }
@@ -238,10 +277,11 @@ custom_data = {
                                       'required': True,
                                       'type': 'boolean'}
                                      ],
-                      'responses': {'200': {'description': ''}},
+                      # 'responses': {'200': {'description': ''}},
                       'tags': ['Revision ids'],
                       'summary': 'Get revision ids of an article'
                       }
               },
          },
 }
+
