@@ -122,10 +122,12 @@ def compare_reverts(reverts_folder, sha_reverts_file, part, start, end, output_f
              'count_sources': len(sources),
              'count_distinct_sources': len(set(sources)),
              'count_targets': len(targets),
-             'count_distinct_targets': len(set(targets))}
+             'count_distinct_targets': len(set(targets)),
+             'intersection_distinct_sources': len(set(reverts_sources).intersection(set(sources)))
+             }
     except Exception as e:
         logger.exception(reverts_part)
-    return d, matches, partial_matches, no_matches, reverts_sources, sources
+    return d, matches, partial_matches, no_matches
 
 
 def get_args():
@@ -183,8 +185,6 @@ def main():
                   'count_distinct_targets': 0,
                   'intersection_distinct_sources': 0
                   }
-    reverts_sources = []
-    sha_reverts_sources = []
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         jobs = {}
         files_left = len(input_files)
@@ -206,9 +206,7 @@ def main():
                 files_left -= 1
                 part_ = jobs[job]
                 try:
-                    data, matches, partial_matches, no_matches, reverts_sources_, sources_ = job.result()
-                    reverts_sources.extend(reverts_sources_)
-                    sha_reverts_sources.extend(sources_)
+                    data, matches, partial_matches, no_matches = job.result()
                     for k, v in data.items():
                         final_data[k] += v
                     with open('{}/{}.json'.format(output_folder, part_), 'w') as fout:
@@ -232,7 +230,6 @@ def main():
                 del jobs[job]
                 sys.stdout.write('\r{}-{:.3f}%'.format(files_left, ((files_all - files_left) * 100) / files_all))
                 break  # to add a new job, if there is any
-    final_data['intersection_distinct_sources'] = len(set(reverts_sources).intersection(set(sha_reverts_sources)))
     with open('{}/all.json'.format(output_folder), 'w') as fp:
         json.dump(final_data, fp)
     print("Done: ", strftime("%Y-%m-%d-%H:%M:%S"))
