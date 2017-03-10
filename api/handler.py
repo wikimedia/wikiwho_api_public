@@ -31,7 +31,7 @@ class WPHandlerException(Exception):
 
 class WPHandler(object):
     def __init__(self, article_title, page_id=None, pickle_folder='', save_tables=(),
-                 check_exists=True, is_xml=False, *args, **kwargs):
+                 check_exists=True, is_xml=False, revision_id=None, *args, **kwargs):
         # super(WPHandler, self).__init__(article_title, pickle_folder=pickle_folder, *args, **kwargs)
         self.article_title = article_title
         self.saved_article_title = ''
@@ -42,6 +42,7 @@ class WPHandler(object):
         self.saved_rvcontinue = ''
         self.latest_revision_id = None
         self.page_id = page_id
+        self.revision_id = revision_id
         self.save_tables = save_tables
         self.check_exists = check_exists
         self.already_exists = False
@@ -58,7 +59,7 @@ class WPHandler(object):
             # self.page_id = self.page_id
         else:
             # get db title from wp api
-            d = get_latest_revision_data(self.page_id, self.article_title)
+            d = get_latest_revision_data(self.page_id, self.article_title, self.revision_id)
             self.latest_revision_id = d['latest_revision_id']
             self.page_id = d['page_id']
             self.saved_article_title = d['article_db_title']
@@ -134,7 +135,8 @@ class WPHandler(object):
         # time1 = time()
         # check if article exists
         if self.latest_revision_id is None:
-            raise WPHandlerException('The article ({}) you are trying to request does not exist'.format(self.article_title))
+            raise WPHandlerException('The article ({}) you are trying to request does not exist'.
+                                     format(self.article_title or self.page_id))
         elif self.namespace != 0:
             raise WPHandlerException('Only articles! Namespace {} is not accepted.'.format(self.namespace))
         self.revision_ids = revision_ids or [self.latest_revision_id]
@@ -188,7 +190,8 @@ class WPHandler(object):
             if 'query' in result:
                 pages = result['query']['pages']
                 if "-1" in pages:
-                    raise WPHandlerException('The article ({}) you are trying to request does not exist!'.format(self.article_title))
+                    raise WPHandlerException('The article ({}) you are trying to request does not exist!'.
+                                             format(self.article_title or self.page_id))
                 # elif not pages.get('revision'):
                 #     raise WPHandlerException(message="End revision ID does not exist!")
                 try:

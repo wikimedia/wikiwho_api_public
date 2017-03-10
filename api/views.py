@@ -17,121 +17,7 @@ from django.conf import settings
 # from django.http import HttpResponse
 from wikiwho.models import Revision, Article
 from .handler import WPHandler, WPHandlerException
-
-# TODO add descriptions
-query_params = [
-    {'description': 'Add some description', 'in': 'query', 'name': 'rev_id', 'required': True, 'type': 'boolean'},  # 'default': 'false',
-    {'description': 'Add some description', 'in': 'query', 'name': 'editor', 'required': True, 'type': 'boolean'},
-    {'description': 'Add some description', 'in': 'query', 'name': 'token_id', 'required': True, 'type': 'boolean'},
-    {'description': 'Add some description', 'in': 'query', 'name': 'inbound', 'required': True, 'type': 'boolean'},
-    {'description': 'Add some description', 'in': 'query', 'name': 'outbound', 'required': True, 'type': 'boolean'}
-]
-
-allowed_params = {
-    'deleted_content': ['rev_id', 'editor', 'token_id', 'inbound', 'outbound', 'threshold'],
-    'content': ['rev_id', 'editor', 'token_id', 'inbound', 'outbound'],
-    'rev_ids': ['editor', 'timestamp']
-}
-
-custom_data = {
-    # 'info': {'title': 'WikiWho API', 'version': ''},
-    'paths':
-        {'/content/{article_name}/':
-             {'get': {'description': '# Some description \n **with** *markdown* \n\n '
-                                     '[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)',
-                      'parameters': [{'description': 'Add some description',
-                                      'in': 'path',
-                                      'name': 'article_name',
-                                      'required': True,
-                                      'type': 'string'},
-                                     ] + query_params,
-                      'responses': {'200': {'description': ''}},
-                      'tags': ['Revision content'],
-                      'summary': 'Get content of last revision of article'
-                      }
-              },
-         '/content/{article_name}/{revision_id}/':
-             {'get': {'description': '',
-                      'parameters': [{'description': '',
-                                      'in': 'path',
-                                      'name': 'revision_id',
-                                      'required': True,
-                                      'type': 'integer'},
-                                     {'description': '',
-                                      'in': 'path',
-                                      'name': 'article_name',
-                                      'required': True,
-                                      'type': 'string'},
-                                     ] + query_params,
-                      'responses': {'200': {'description': ''}},
-                      'tags': ['Revision content'],
-                      'summary': 'Get content of given revision of article'
-                      }
-              },
-         '/content/{article_name}/{start_revision_id}/{end_revision_id}/':
-             {'get': {'description': '',
-                      'parameters': [{'description': '',
-                                      'in': 'path',
-                                      'name': 'end_revision_id',
-                                      'required': True,
-                                      'type': 'integer'},
-                                     {'description': '',
-                                      'in': 'path',
-                                      'name': 'start_revision_id',
-                                      'required': True,
-                                      'type': 'integer'},
-                                     {'description': '',
-                                      'in': 'path',
-                                      'name': 'article_name',
-                                      'required': True,
-                                      'type': 'string'},
-                                     ] + query_params,
-                      'responses': {'200': {'description': ''}},
-                      'tags': ['Revision content'],
-                      'summary': 'Get content of given revisions of article'
-                      }
-              },
-         '/deleted/{article_name}/':
-             {'get': {'description': '',
-                      'parameters': [{'description': 'Add some description',
-                                      'in': 'path',
-                                      'name': 'article_name',
-                                      'required': True,
-                                      'type': 'string'},
-                                     {'description': 'Default is {}'.format(settings.DELETED_CONTENT_THRESHOLD_LIMIT),
-                                      'in': 'query',
-                                      'name': 'threshold',
-                                      'required': False,
-                                      'type': 'integer'},
-                                     ] + query_params,
-                      'responses': {'200': {'description': ''}},
-                      'tags': ['Deleted content'],
-                      'summary': 'Get deleted content of last revision of article'
-                      }
-              },
-         '/revision_ids/{article_name}/':
-             {'get': {'description': '',
-                      'parameters': [{'description': 'Add some description',
-                                      'in': 'path',
-                                      'name': 'article_name',
-                                      'required': True,
-                                      'type': 'string'},
-                                     ] +
-                                    [
-                                        query_params[1],
-                                        {'description': 'Add some description',
-                                         'in': 'query',
-                                         'name': 'timestamp',
-                                         'required': True,
-                                         'type': 'boolean'}
-                                    ],
-                      'responses': {'200': {'description': ''}},
-                      'tags': ['Revision ids'],
-                      'summary': 'Get all revision ids of article'
-                      }
-              },
-         },
-}
+from .swagger_data import custom_data, allowed_params, query_params
 
 
 class MyOpenAPIRenderer(OpenAPIRenderer):
@@ -144,20 +30,9 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
         """
         data = super(MyOpenAPIRenderer, self).get_customizations()
         # print(type(data), data)
-        # TODO update
         data['paths'] = custom_data['paths']
-        version = '1.0.0-beta'
-        data['info'] = {
-            'version': version,
-            'description': 'A short description of the application. GFM syntax can be used for rich text '
-                           'representation. \n\nSpecification: http://swagger.io/specification \n\n'
-                           'Example api: http://petstore.swagger.io/',
-            'contact': {
-                'name': 'GESIS - Leibniz Institute for the Social Sciences',
-                # 'email': 'kenan.erdogan@gesis.org',
-                'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/computational-social-science/'},
-        }
-        data['basePath'] = '/api/v{}'.format(version)
+        data['info'] = custom_data['info']
+        data['basePath'] = '/api/v{}'.format(custom_data['info']['version'])
         # print(type(data), data)
         return data
 
@@ -337,7 +212,7 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
                 parameters.append(parameter)
         return parameters
 
-    def get_response(self, article_name, parameters, revision_ids=list(), deleted=False, ids=False):
+    def get_response(self, article_name, parameters, revision_ids=list(), deleted=False, ids=False, page_id=None):
         # if not parameters:
         #     return Response({'Error': 'At least one query parameter should be selected.'},
         #                     status=status.HTTP_400_BAD_REQUEST)
@@ -345,7 +220,8 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
         # global handler_time
         # handler_start = time.time()
         try:
-            with WPHandler(article_name) as wp:
+            revision_id = revision_ids[0] if revision_ids else None
+            with WPHandler(article_name, page_id=page_id, revision_id=revision_id) as wp:
                 wp.handle(revision_ids, 'json')
         except WPHandlerException as e:
             response = {'Error': e.message}
@@ -370,12 +246,17 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
         # return HttpResponse(json.dumps(response), content_type='application/json; charset=utf-8')
         return Response(response, status=status_)
 
+    def get_content_by_revision_id(self, request, version, revision_id):
+        parameters = self.get_parameters('content')
+        return self.get_response(None, parameters, [int(revision_id)])
+
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_slice(self, request, version, article_name, start_revision_id, end_revision_id):
         # TODO do we need pagination with page=5?
         # maybe this is helpful: http://www.django-rest-framework.org/api-guide/pagination/
         start_revision_id = int(start_revision_id)
         end_revision_id = int(end_revision_id)
+        # FIXME we have to compare timestamps
         if start_revision_id >= end_revision_id:
             return Response({'Error': 'Second revision id has to be larger than first revision id!'},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -392,15 +273,27 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
         parameters = self.get_parameters('content')
         return self.get_response(article_name, parameters)
 
+    def get_article_by_page_id(self, request, version, page_id):
+        parameters = self.get_parameters('content')
+        return self.get_response(None, parameters, page_id=page_id)
+
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_deleted_content_by_name(self, request, version, article_name):
         parameters = self.get_parameters('deleted_content')
         return self.get_response(article_name, parameters, deleted=True)
 
+    def get_deleted_content_by_page_id(self, request, version, page_id):
+        parameters = self.get_parameters('deleted_content')
+        return self.get_response(None, parameters, deleted=True, page_id=page_id)
+
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_revision_ids_by_name(self, request, version, article_name):
         parameters = self.get_parameters('rev_ids')
         return self.get_response(article_name, parameters, ids=True)
+
+    def get_revision_ids_by_page_id(self, request, version, page_id):
+        parameters = self.get_parameters('rev_ids')
+        return self.get_response(None, parameters, ids=True, page_id=page_id)
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     # def get_article_by_revision(self, request, revision_id):

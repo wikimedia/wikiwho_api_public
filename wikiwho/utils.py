@@ -66,7 +66,6 @@ def split_into_sentences(text):
 
 
 def split_into_tokens(text):
-    # TODO is æ okay?
     text = text.replace('|', '||ææææ||')  # use | as delimiter
 
     text = text.replace('\n', '||').replace(' ', '||')

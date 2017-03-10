@@ -13,17 +13,19 @@ from django.conf import settings
 from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
 
 
-def get_latest_revision_data(page_id=None, article_title=None):
+def get_latest_revision_data(page_id=None, article_title=None, revision_id=None):
     if page_id:
         params = {'pageids': page_id}
     elif article_title:
         params = {'titles': article_title}
+    elif revision_id:
+        params = {'revids': revision_id}
     else:
         return ''
     # set up request for Wikipedia API.
     server = "en.wikipedia.org"
     wp_api_url = 'https://{}/w/api.php'.format(server)
-    params.update({'action': "query", 'prop': 'revisions', 'format': 'json', 'rvlimit': '1'})
+    params.update({'action': "query", 'prop': 'info', 'format': 'json'})
     # params = {'action': "query", 'titles': article_name, 'format': 'json'}
     # headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
     headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
@@ -43,7 +45,7 @@ def get_latest_revision_data(page_id=None, article_title=None):
                 'namespace': None}
     return {'page_id': page['pageid'],
             'article_db_title': page['title'].replace(' ', '_'),
-            'latest_revision_id': page["revisions"][0]["revid"],
+            'latest_revision_id': page["lastrevid"],
             'namespace': page["ns"]}
 
 
