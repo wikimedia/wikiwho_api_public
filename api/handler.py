@@ -142,10 +142,11 @@ class WPHandler(object):
         self.revision_ids = revision_ids or [self.latest_revision_id]
 
         if settings.ONLY_READ_ALLOWED:
-            if self.already_exists:
-                return
-            else:
-                raise WPHandlerException('Only read is allowed for now.')
+            # if self.already_exists:
+            #     return
+            # else:
+            #     raise WPHandlerException('Only read is allowed for now.')
+            raise WPHandlerException('Only read is allowed for now.')
 
         # holds the last revision id which is saved. 0 for new article
         rvcontinue = self.saved_rvcontinue
