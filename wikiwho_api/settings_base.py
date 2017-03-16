@@ -134,7 +134,8 @@ CACHES = {
     #         '172.19.26.240:11211',
     #         '172.19.26.242:11211',
     #     ]
-        'TIMEOUT': None,  # default is 300 in seconds
+    #     'TIMEOUT': None,  # default is 300 in seconds
+        'TIMEOUT': 300,
         'KEY_PREFIX': '',
         'VERSION': '',
         'KEY_FUNCTION': 'wikiwho_api.settings_base.make_key',
