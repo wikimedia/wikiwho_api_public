@@ -37,3 +37,4 @@ mwxml
 mwreverts
 
 # django-postgres-copy
+gunicorn
