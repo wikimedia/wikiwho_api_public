@@ -187,7 +187,7 @@ LOGGING = {
             'class': 'django.utils.log.AdminEmailHandler'
         },
         'file': {
-            'level': 'ERROR',
+            'level': 'WARNING',
             'filters': ['require_debug_false'],
             'class': 'logging.handlers.TimedRotatingFileHandler',
             'formatter': 'verbose',
