@@ -41,8 +41,7 @@ class WPHandler(object):
         self.pickle_path = ''
         self.saved_rvcontinue = ''
         self.latest_revision_id = None
-        self.given_page_id = page_id
-        self.page_id = page_id  # saved page id
+        self.page_id = page_id
         self.revision_id = revision_id
         self.save_tables = save_tables
         self.check_exists = check_exists
@@ -58,24 +57,23 @@ class WPHandler(object):
         if self.page_id:
             self.page_id = int(self.page_id)
             if not 0 < self.page_id < 2147483647:
-                raise WPHandlerException('Please enter a valid page id ({}).'.format(self.given_page_id))
-            
-        pickle_folder = self.pickle_folder or settings.PICKLE_FOLDER
-        self.pickle_path = "{}/{}.p".format(pickle_folder, self.page_id)
-        self.already_exists = os.path.exists(self.pickle_path)
+                raise WPHandlerException('Please enter a valid page id ({}).'.format(self.page_id))
 
         if self.is_xml:
             self.saved_article_title = self.article_title.replace(' ', '_')
             # self.page_id = self.page_id
         else:
             # get db title from wp api
-            d = get_latest_revision_data(self.already_exists, self.page_id, self.article_title, self.revision_id)
+            d = get_latest_revision_data(self.page_id, self.article_title, self.revision_id)
             self.latest_revision_id = d['latest_revision_id']
             self.page_id = d['page_id']
             self.saved_article_title = d['article_db_title']
             self.namespace = d['namespace']
 
         # logging.debug("trying to load pickle")
+        pickle_folder = self.pickle_folder or settings.PICKLE_FOLDER
+        self.pickle_path = "{}/{}.p".format(pickle_folder, self.page_id)
+        self.already_exists = os.path.exists(self.pickle_path)
         if not self.already_exists:
             # a new pickle will be created
             self.wikiwho = Wikiwho(self.saved_article_title)
@@ -143,7 +141,7 @@ class WPHandler(object):
         # check if article exists
         if self.latest_revision_id is None:
             raise WPHandlerException('The article ({}) you are trying to request does not exist'.
-                                     format(self.article_title or self.given_page_id))
+                                     format(self.article_title or self.page_id))
         elif self.namespace != 0:
             raise WPHandlerException('Only articles! Namespace {} is not accepted.'.format(self.namespace))
         self.revision_ids = revision_ids or [self.latest_revision_id]
@@ -198,7 +196,7 @@ class WPHandler(object):
                 pages = result['query']['pages']
                 if "-1" in pages:
                     raise WPHandlerException('The article ({}) you are trying to request does not exist!'.
-                                             format(self.article_title or self.given_page_id))
+                                             format(self.article_title or self.page_id))
                 # elif not pages.get('revision'):
                 #     raise WPHandlerException(message="End revision ID does not exist!")
                 try:
