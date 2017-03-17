@@ -90,7 +90,16 @@ def get_throttle_data(request):
         user_rate = UserRateThrottle()
         cache_key = user_rate.get_cache_key(request, None)
         history = user_rate.cache.get(cache_key)
-        throttle_dict[user_rate.scope] = {'allowed': user_rate.rate, 'used': len(history) if history else None}
+        if history:
+            throttle_dict[user_rate.scope] = {
+                'allowed': user_rate.rate,
+                'used': len(history),
+                'remaining_duration': user_rate.duration - (user_rate.timer() - history[-1])}
+        else:
+            throttle_dict[user_rate.scope] = {
+                'allowed': user_rate.rate,
+                'used': None,
+                'remaining_duration': user_rate.duration}
         user_rate.scope = 'burst'
         throttle_dict[user_rate.scope] = {'allowed': user_rate.get_rate()}
     else:

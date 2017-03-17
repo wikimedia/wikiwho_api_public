@@ -198,6 +198,7 @@ LOGGING = {
         },
     },
     'loggers': {
+        # print(logging.Logger.manager.loggerDict) to list all loggers
         'django': {
             # 'handlers': ['console', 'mail_admins'],
             'handlers': ['console', 'file'],
