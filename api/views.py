@@ -16,6 +16,7 @@ from django.conf import settings
 # from django.core.signals import request_started, request_finished
 # from django.http import HttpResponse
 from wikiwho.models import Revision, Article
+from rest_framework_tracking.mixins import LoggingMixin
 from .handler import WPHandler, WPHandlerException
 from .swagger_data import custom_data, allowed_params, query_params
 
@@ -59,8 +60,9 @@ class BurstRateThrottle(throttling.UserRateThrottle):
 
 class WikiwhoView(object):
 
-    def __init__(self, article=None):
+    def __init__(self, article=None, page_id=None):
         self.article = article
+        self.page_id = page_id
 
     @staticmethod
     def _set_default_type_parameters(query_type, parameters):
@@ -176,7 +178,7 @@ class WikiwhoView(object):
         return json_data
 
 
-class WikiwhoApiView(WikiwhoView, ViewSet):
+class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
     """
     import requests
     session = requests.session()
@@ -226,6 +228,7 @@ class WikiwhoApiView(WikiwhoView, ViewSet):
         try:
             revision_id = revision_ids[0] if revision_ids else None
             with WPHandler(article_name, page_id=page_id, revision_id=revision_id) as wp:
+                self.page_id = wp.page_id
                 wp.handle(revision_ids, 'json')
         except WPHandlerException as e:
             response = {'Error': e.message}

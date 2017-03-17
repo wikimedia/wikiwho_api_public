@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'wikiwho',
     'account_app',
     'crispy_forms',
+    'rest_framework_tracking',
 ]
 
 MIDDLEWARE_CLASSES = [
