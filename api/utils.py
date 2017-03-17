@@ -13,7 +13,7 @@ from django.conf import settings
 from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
 
 
-def get_latest_revision_data(page_id=None, article_title=None, revision_id=None):
+def get_latest_revision_data(already_exists, page_id=None, article_title=None, revision_id=None):
     if page_id:
         params = {'pageids': page_id}
     elif article_title:
@@ -36,10 +36,14 @@ def get_latest_revision_data(page_id=None, article_title=None, revision_id=None)
     # convert response into dict
     # print(resp_)
     response = resp_.json()
-    _, page = response["query"]["pages"].popitem()
-    if 'missing' in page or _ == '-1':
+    pages = response["query"].get('pages')
+    is_pages = False
+    if pages:
+        is_pages = True
+        _, page = pages.popitem()
+    if not is_pages or 'missing' in page or _ == '-1':
         # article title does not exist or contains invalid character
-        return {'page_id': page_id,  # only return page id. because maybe article is deleted on wp but we still have it.
+        return {'page_id': page_id if already_exists else None,  # only return page id. because maybe article is deleted on wp but we still have it.
                 'article_db_title': None,
                 'latest_revision_id': None,
                 'namespace': None}

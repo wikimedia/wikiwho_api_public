@@ -42,15 +42,15 @@ class LoggingMixin(object):
             view_method = request.method.lower()
 
         # save to log
-        self.request.log = APIRequestLog.objects.create(
+        self.request.log = APIRequestLog(
             requested_at=now(),
-            path=request.path,
+            # path=request.path,
             # view=view_name,
             view_method=view_method,
             remote_addr=ipaddr,
             host=request.get_host(),
             # method=request.method,
-            query_params=request.query_params.dict(),
+            query_params=request.query_params.dict().__str__()[:256],
         )
 
         # regular initial, including auth check
@@ -109,7 +109,8 @@ class LoggingMixin(object):
         self.request.log.status_code = response.status_code
         self.request.log.response_ms = response_ms
         self.request.log.page_id = self.page_id
-        self.request.log.save(update_fields=['user', 'status_code', 'response_ms', 'page_id'])
+        # self.request.log.save(update_fields=['user', 'status_code', 'response_ms', 'page_id'])
+        self.request.log.save()
 
         # return
         return response

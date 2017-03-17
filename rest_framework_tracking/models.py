@@ -17,7 +17,7 @@ class BaseAPIRequestLog(models.Model):
 
     # request path
     # path = models.CharField(max_length=200, db_index=True)
-    path = models.CharField(max_length=200)
+    # path = models.CharField(max_length=200)
 
     # view called by the path
     # view = models.CharField(max_length=200, db_index=True)
@@ -36,7 +36,7 @@ class BaseAPIRequestLog(models.Model):
 
     # query params
     # query_params = models.TextField(null=True, blank=True)
-    query_params = models.CharField(max_length=255, default='', blank=True)
+    query_params = models.CharField(max_length=256, default='', blank=True)
 
     # POST body data
     # data = models.TextField(null=True, blank=True)
