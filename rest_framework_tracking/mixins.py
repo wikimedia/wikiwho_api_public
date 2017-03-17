@@ -109,7 +109,7 @@ class LoggingMixin(object):
         self.request.log.status_code = response.status_code
         self.request.log.response_ms = response_ms
         self.request.log.page_id = self.page_id
-        self.request.log.save()
+        self.request.log.save(update_fields=['user', 'status_code', 'response_ms', 'page_id'])
 
         # return
         return response
