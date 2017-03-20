@@ -26,7 +26,7 @@ def get_latest_revision_data(page_id=None, article_title=None, revision_id=None)
     server = "en.wikipedia.org"
     wp_api_url = 'https://{}/w/api.php'.format(server)
     params.update({'action': "query", 'prop': 'info', 'format': 'json'})
-    # params = {'action': "query", 'titles': article_name, 'format': 'json'}
+    # params = {'action': "query", 'titles': article_title, 'format': 'json'}
     # headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
     headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
                'From': settings.WP_HEADERS_FROM,

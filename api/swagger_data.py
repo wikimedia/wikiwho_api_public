@@ -75,7 +75,7 @@ custom_data = {
          # {'get': {'description': '# Some description \n **with** *markdown* \n\n [Markdown Cheatsheet]
          # (https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)',
              {'get': {'description': 'Outputs the content of the last revision of an article. \n\n'
-                                     'Check `GET /content/{article_name}/` for explanations of query parameters.',
+                                     'Check `GET /content/{article_title}/` for explanations of query parameters.',
                       # 'produces': ['application/json'],
                       'parameters': [{'description': 'Page id of the article from wikipedia',
                                       'in': 'path',
@@ -90,7 +90,7 @@ custom_data = {
               },
          '/content/revision_id/{revision_id}/':
              {'get': {'description': 'Outputs the content of the given revision.\n\n'
-                                     'Check `GET /content/{article_name}/` for explanations of query parameters.',
+                                     'Check `GET /content/{article_title}/` for explanations of query parameters.',
                       'parameters': [{'description': 'Revision ID',
                                       'in': 'path',
                                       'name': 'revision_id',
@@ -102,7 +102,7 @@ custom_data = {
                       'summary': 'Get the content of a revision'
                       }
               },
-         '/content/{article_name}/':
+         '/content/{article_title}/':
              {'get': {'description': 'Outputs the content of the last revision of the given article.\n\n'
                                      '#### Query parameter explanations:\n\n'
                                      '**Revision id:** The ID of the revision where the token was added originally '
@@ -125,7 +125,7 @@ custom_data = {
                                      'sequentially by time. If empty, the token has never been deleted.',
                       'parameters': [{'description': 'Article title',
                                       'in': 'path',
-                                      'name': 'article_name',
+                                      'name': 'article_title',
                                       'required': True,
                                       'type': 'string'},
                                      ] + query_params,
@@ -134,9 +134,9 @@ custom_data = {
                       'summary': 'Get the content of the last revision of an article'
                       }
               },
-         '/content/{article_name}/{revision_id}/':
+         '/content/{article_title}/{revision_id}/':
              {'get': {'description': 'Outputs the content of the given revision of the given article.\n\n'
-                                     'Check `GET /content/{article_name}/` for explanations of query parameters.',
+                                     'Check `GET /content/{article_title}/` for explanations of query parameters.',
                       'parameters': [{'description': 'Revision ID to get content',
                                       'in': 'path',
                                       'name': 'revision_id',
@@ -144,7 +144,7 @@ custom_data = {
                                       'type': 'integer'},
                                      {'description': 'Article title',
                                       'in': 'path',
-                                      'name': 'article_name',
+                                      'name': 'article_title',
                                       'required': True,
                                       'type': 'string'},
                                      ] + query_params,
@@ -153,10 +153,10 @@ custom_data = {
                       'summary': 'Get the content of the revision of an article'
                       }
               },
-         '/content/{article_name}/{start_revision_id}/{end_revision_id}/':
+         '/content/{article_title}/{start_revision_id}/{end_revision_id}/':
              {'get': {'description': 'Outputs the content of revisions from start revision to end revision ordered '
                                      'by timestamp.\n\n'
-                                     'Check `GET /content/{article_name}/` for explanations of query parameters.',
+                                     'Check `GET /content/{article_title}/` for explanations of query parameters.',
                       'parameters': [{'description': 'Start revision id',
                                       'in': 'path',
                                       'name': 'end_revision_id',
@@ -169,7 +169,7 @@ custom_data = {
                                       'type': 'integer'},
                                      {'description': 'Article title',
                                       'in': 'path',
-                                      'name': 'article_name',
+                                      'name': 'article_title',
                                       'required': True,
                                       'type': 'string'},
                                      ] + query_params,
@@ -183,7 +183,7 @@ custom_data = {
                                      'Deleted content means all tokens of an article that have ever been present in '
                                      'the article in at least one revision, but are not present in the last revision.'
                                      '\n\n'
-                                     'Check `GET /deleted/{article_name}/` for explanations of query parameters.',
+                                     'Check `GET /deleted/{article_title}/` for explanations of query parameters.',
                       'parameters': [{'description': 'Page id of the article from wikipedia',
                                       'in': 'path',
                                       'name': 'page_id',
@@ -201,7 +201,7 @@ custom_data = {
                       'summary': 'Get the deleted content an article'
                       }
               },
-         '/deleted/{article_name}/':
+         '/deleted/{article_title}/':
              {'get': {'description': 'Outputs the deleted content of the given article.\n\n'
                                      'Deleted content means all tokens of an article that have ever been present in '
                                      'the article in at least one revision, but are not present in the last revision.'
@@ -212,7 +212,7 @@ custom_data = {
                                      'more out than in.\n',
                       'parameters': [{'description': 'Article title',
                                       'in': 'path',
-                                      'name': 'article_name',
+                                      'name': 'article_title',
                                       'required': True,
                                       'type': 'string'},
                                      {'description': 'Output tokens that are deleted more times than threshold. '
@@ -229,7 +229,7 @@ custom_data = {
               },
          '/revision_ids/page_id/{page_id}/':
              {'get': {'description': 'Outputs revision ids of the given article.\n\n'
-                                     'Check `GET /revision_ids/{article_name}/` for explanations of query parameters.',
+                                     'Check `GET /revision_ids/{article_title}/` for explanations of query parameters.',
                       'parameters': [{'description': 'Page id of the article from wikipedia',
                                       'in': 'path',
                                       'name': 'page_id',
@@ -252,7 +252,7 @@ custom_data = {
                       'summary': 'Get revision ids of an article'
                       }
               },
-         '/revision_ids/{article_name}/':
+         '/revision_ids/{article_title}/':
              {'get': {'description': 'Outputs revision ids of the given article.\n\n'
                                      '#### Query parameter explanations:\n\n'
                                      '**editor:** The user ID of the editor. User '
@@ -264,7 +264,7 @@ custom_data = {
                                      '**timestamp:** The creation timestamp of the revision.',
                       'parameters': [{'description': 'Article title',
                                       'in': 'path',
-                                      'name': 'article_name',
+                                      'name': 'article_title',
                                       'required': True,
                                       'type': 'string'},
                                      ] +
