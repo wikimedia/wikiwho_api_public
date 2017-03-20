@@ -33,6 +33,17 @@ headers = {
         "type": "integer"
     }
 }
+responses = {
+    '200': {
+        'description': 'OK',
+        # TODO http://swagger.io/specification/#responsesObject
+        # 'headers': headers,
+        # 'examples': {},
+        },
+    '400': {
+        'description': 'BAD REQUEST',
+    },
+}
 
 version = '1.0.0-beta'
 custom_data = {
@@ -41,23 +52,23 @@ custom_data = {
             'title': 'wikiwho API',
             # 'termsOfService': '',
             'version': version,
-            'license': {'name': 'TODO licence?', 'url': 'www.google.com'},
+            # 'license': {'name': 'TODO licence?', 'url': ''},
             'description': 'TODO A short description of the application. GFM syntax can be used for rich text '
                            'representation. \n\nSpecification: http://swagger.io/specification \n\n'
                            'Example api: http://petstore.swagger.io/',
             'contact': {
                 'name': 'GESIS - Leibniz Institute for the Social Sciences',
-                # 'email': 'xx@gmail.com?cc:kenan.erdogan@gesis.org',  TODO subject, cc ..
+                # 'email': 'kenan.erdogan@gesis.org?cc=fabian.floeck@gesis.org&subject=wikiwho API',
                 'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/computational-social-science/'},
         },
     'basePath': '/api/v{}'.format(version),
-    # 'host': 'wikiwho.net?',
-    # 'schemes': 'https',
+    'host': 'api.wikiwho.net',
+    'schemes': 'https',
     'produces': ['application/json'],
     'externalDocs': {
-        'description': 'A short description of the target documentation. '
-                       'GFM syntax can be used for rich text representation.',
-        'url': 'TODO link of external documentation\n'
+        # 'description': 'A short description of the target documentation. '
+        #                'GFM syntax can be used for rich text representation.',
+        # 'url': ''
     },
     'paths':
         {'/content/page_id/{page_id}/':
@@ -72,16 +83,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
-                      # 'responses': {
-                      #     '200': {
-                      #         'description': 'some description',
-                      #         'headers': headers,
-                      #         # 'examples': {},
-                      #     },
-                      #     '400': {
-                      #         'description': '',
-                      #     },
-                      # },
+                      'responses': responses,
                       'tags': ['Revision content'],
                       'summary': 'Get the content of the last revision of an article'
                       }
@@ -95,7 +97,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
-                      # 'responses': {'200': {'description': ''}},
+                      'responses': responses,
                       'tags': ['Revision content'],
                       'summary': 'Get the content of a revision'
                       }
@@ -127,7 +129,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'string'},
                                      ] + query_params,
-                      # 'responses': {'200': {'description': ''}},
+                      'responses': responses,
                       'tags': ['Revision content'],
                       'summary': 'Get the content of the last revision of an article'
                       }
@@ -146,7 +148,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'string'},
                                      ] + query_params,
-                      # 'responses': {'200': {'description': ''}},
+                      'responses': responses,
                       'tags': ['Revision content'],
                       'summary': 'Get the content of the revision of an article'
                       }
@@ -171,7 +173,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'string'},
                                      ] + query_params,
-                      # 'responses': {'200': {'description': ''}},
+                      'responses': responses,
                       'tags': ['Revision content'],
                       'summary': 'Get the content of multiple revisions of an article'
                       }
@@ -194,7 +196,7 @@ custom_data = {
                                       'required': False,
                                       'type': 'integer'},
                                      ] + query_params,
-                      # 'responses': {'200': {'description': ''}},
+                      'responses': responses,
                       'tags': ['Deleted content'],
                       'summary': 'Get the deleted content an article'
                       }
@@ -220,7 +222,7 @@ custom_data = {
                                       'required': False,
                                       'type': 'integer'},
                                      ] + query_params,
-                      # 'responses': {'200': {'description': ''}},
+                      'responses': responses,
                       'tags': ['Deleted content'],
                       'summary': 'Get the deleted content an article'
                       }
@@ -245,7 +247,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'boolean'}
                                      ],
-                      # 'responses': {'200': {'description': ''}},
+                      'responses': responses,
                       'tags': ['Revision ids'],
                       'summary': 'Get revision ids of an article'
                       }
@@ -277,7 +279,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'boolean'}
                                      ],
-                      # 'responses': {'200': {'description': ''}},
+                      'responses': responses,
                       'tags': ['Revision ids'],
                       'summary': 'Get revision ids of an article'
                       }

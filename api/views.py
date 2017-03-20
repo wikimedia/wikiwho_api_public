@@ -191,20 +191,11 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
     r2 = session.get('http://127.0.0.1:8000/api/v1.0.0-beta/content/thomas_Bellut/?rev_id=true&author=true&token_id=true&inbound=true&outbound=true')
     r2.json()
     """
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    # TODO http://www.django-rest-framework.org/topics/third-party-resources/#authentication to account activation,
-    # password reset ...
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly, )  # TODO attention here!
     authentication_classes = (authentication.SessionAuthentication, authentication.BasicAuthentication)
     # authentication_classes = (authentication.TokenAuthentication, )
-    # TODO Note: If you use BasicAuthentication in production you must ensure that your API is only available over https.
-    # You should also ensure that your API clients will always re-request the username and password at login, and will
-    # never store those details to persistent storage.
     throttle_classes = (throttling.UserRateThrottle, throttling.AnonRateThrottle, BurstRateThrottle)
-    # serializer_class = WikiWhoSerializer
-    # filter_fields = ('query_option_1', 'query_option_2',)
-    # query_fields = ('rev_id', 'editor', 'token_id', )
     renderer_classes = [JSONRenderer]  # to disable browsable api
-    # article = None
 
     def get_parameters(self, query_type):
         all_parameters = super(WikiwhoApiView, self).get_parameters(query_type)
@@ -302,10 +293,6 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
         parameters = self.get_parameters('rev_ids')
         return self.get_response(None, parameters, ids=True, page_id=page_id)
 
-    # @detail_route(renderer_classes=(StaticHTMLRenderer,))
-    # def get_article_by_revision(self, request, revision_id):
-    #     return Response({'test': 'get_article_by_revision'})
-
     # def dispatch(self, request, *args, **kwargs):
     #     global dispatch_time
     #     global render_time
@@ -339,41 +326,3 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
     #
     # request_started.connect(started)
     # request_finished.connect(finished)
-
-
-# class MySchemaGenerator(SchemaGenerator):
-#     """
-#     Custom SchemaGenerator to enable adding query fields.
-#     """
-#     def get_query_fields(self, view):
-#         """
-#         Return query fields of given views.
-#         """
-#         query_fields = getattr(view, 'query_fields', [])
-#         fields = as_query_fields(query_fields)
-#         return fields
-#
-#     def get_link(self, path, method, callback):
-#         """
-#         Return a `coreapi.Link` instance for the given endpoint.
-#         """
-#         view = callback.cls()
-#
-#         fields = self.get_path_fields(path, method, callback, view)
-#         fields += self.get_serializer_fields(path, method, callback, view)
-#         fields += self.get_pagination_fields(path, method, callback, view)
-#         fields += self.get_filter_fields(path, method, callback, view)
-#         # add query fields
-#         fields += self.get_query_fields(view)
-#
-#         if fields and any([field.location in ('form', 'body') for field in fields]):
-#             encoding = self.get_encoding(path, method, callback, view)
-#         else:
-#             encoding = None
-#
-#         return coreapi.Link(
-#             url=urlparse.urljoin(self.url, path),
-#             action=method.lower(),
-#             encoding=encoding,
-#             fields=fields
-#         )
