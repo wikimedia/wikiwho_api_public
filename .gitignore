@@ -20,3 +20,4 @@ notebooks/ignore
 Wikiwho_simple.py
 structuresML
 wikiwho/migrations/bak/
+.well-known
