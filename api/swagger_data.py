@@ -84,7 +84,7 @@ custom_data = {
                                       'type': 'integer'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['Revision content'],
+                      'tags': ['1 - Revision content'],
                       'summary': 'Get the content of the last revision of an article'
                       }
               },
@@ -98,7 +98,7 @@ custom_data = {
                                       'type': 'integer'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['Revision content'],
+                      'tags': ['1 - Revision content'],
                       'summary': 'Get the content of a revision'
                       }
               },
@@ -130,7 +130,7 @@ custom_data = {
                                       'type': 'string'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['Revision content'],
+                      'tags': ['1 - Revision content'],
                       'summary': 'Get the content of the last revision of an article'
                       }
               },
@@ -149,7 +149,7 @@ custom_data = {
                                       'type': 'string'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['Revision content'],
+                      'tags': ['1 - Revision content'],
                       'summary': 'Get the content of the revision of an article'
                       }
               },
@@ -174,7 +174,7 @@ custom_data = {
                                       'type': 'string'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['Revision content'],
+                      'tags': ['1 - Revision content'],
                       'summary': 'Get the content of multiple revisions of an article'
                       }
               },
@@ -197,7 +197,7 @@ custom_data = {
                                       'type': 'integer'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['Deleted content'],
+                      'tags': ['2 - Deleted content'],
                       'summary': 'Get the deleted content an article'
                       }
               },
@@ -223,7 +223,7 @@ custom_data = {
                                       'type': 'integer'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['Deleted content'],
+                      'tags': ['2 - Deleted content'],
                       'summary': 'Get the deleted content an article'
                       }
               },
@@ -248,7 +248,7 @@ custom_data = {
                                       'type': 'boolean'}
                                      ],
                       'responses': responses,
-                      'tags': ['Revision ids'],
+                      'tags': ['3 - Revision ids'],
                       'summary': 'Get revision ids of an article'
                       }
               },
@@ -280,7 +280,7 @@ custom_data = {
                                       'type': 'boolean'}
                                      ],
                       'responses': responses,
-                      'tags': ['Revision ids'],
+                      'tags': ['3 - Revision ids'],
                       'summary': 'Get revision ids of an article'
                       }
               },
