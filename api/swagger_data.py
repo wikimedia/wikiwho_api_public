@@ -89,7 +89,9 @@ custom_data = {
                       }
               },
          '/content/revision_id/{revision_id}/':
-             {'get': {'description': 'Outputs the content of the given revision.\n\n'
+             {'get': {'description': 'Outputs the content of the given revision. This works almost same as '
+                                     '`GET /content/{article_title}/{revision_id}/`, there is no performance '
+                                     'difference.\n\n'
                                      'Check `GET /content/{article_title}/` for explanations of query parameters.',
                       'parameters': [{'description': 'Revision ID',
                                       'in': 'path',
