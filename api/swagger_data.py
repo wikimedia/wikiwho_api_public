@@ -65,11 +65,11 @@ custom_data = {
     'host': 'api.wikiwho.net',
     'schemes': 'https',
     'produces': ['application/json'],
-    'externalDocs': {
-        # 'description': 'A short description of the target documentation. '
-        #                'GFM syntax can be used for rich text representation.',
-        # 'url': ''
-    },
+    # 'externalDocs': {
+    #     'description': 'A short description of the target documentation. '
+    #                    'GFM syntax can be used for rich text representation.',
+    #     'url': ''
+    # },
     'paths':
         {'/content/page_id/{page_id}/':
          # {'get': {'description': '# Some description \n **with** *markdown* \n\n [Markdown Cheatsheet]

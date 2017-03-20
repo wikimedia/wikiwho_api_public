@@ -34,7 +34,7 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
         data['paths'] = custom_data['paths']
         data['info'] = custom_data['info']
         data['basePath'] = custom_data['basePath']
-        data['externalDocs'] = custom_data['externalDocs']
+        # data['externalDocs'] = custom_data['externalDocs']
         # import pprint
         # pp = pprint.PrettyPrinter(indent=4)
         # print(type(data))
