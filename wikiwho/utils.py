@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Feb 20, 2013
 
-@author: maribelacosta
+:Authors:
+    Maribel Acosta,
+    Fabian Floeck,
+    Kenan Erdogan
 """
 from __future__ import division
 from __future__ import unicode_literals
@@ -110,12 +112,10 @@ def compute_avg_word_freq(token_list):
 
 
 def iter_rev_tokens(revision):
-    """
-    Yields tokens of the revision in order.
-    """
+    """Yield tokens of the revision in order."""
     # from copy import deepcopy
     # ps_copy = deepcopy(revision.paragraphs)
-    tmp = {'p': [], 's': []}  # ~250 times faster than deepcopy
+    tmp = {'p': [], 's': []}
     for hash_paragraph in revision.ordered_paragraphs:
         # paragraph = ps_copy[hash_paragraph].pop(0)
         if len(revision.paragraphs[hash_paragraph]) > 1:
@@ -137,9 +137,7 @@ def iter_rev_tokens(revision):
 
 
 def iter_wikiwho_tokens(wikiwho):
-    """
-    Yields tokens of the article in order.
-    """
+    """Yield tokens of the article in order."""
     article_token_ids = set()
     for rev_id in wikiwho.ordered_revisions:
         for word in iter_rev_tokens(wikiwho.revisions[rev_id]):

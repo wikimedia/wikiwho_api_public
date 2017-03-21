@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Created on Feb 20, 2013
 
-@author: maribelacosta
-@author: Andriy Rodchenko
+:Authors:
+    Maribel Acosta,
+    Fabian Floeck,
+    Andriy Rodchenko,
+    Kenan Erdogan
 """
 
 
 class Word(object):
-    """
-    Implementation of the structure "Word (Token)", which includes the authorship information.
-    """
+    """Implementation of the structure "Word (Token)", which includes the authorship information."""
     def __init__(self):
         self.token_id = 0  # Sequential id (position) in article. Unique per article.
         self.value = ''  # The word (simple text).
@@ -29,9 +29,6 @@ class Word(object):
 
 
 class Sentence(object):
-    """
-    classdocs
-    """
     def __init__(self):
         self.hash_value = ''  # The hash value of the sentence.
         self.value = ''  # The sentence (simple text).
@@ -55,9 +52,6 @@ class Sentence(object):
 
 
 class Paragraph(object):
-    """
-    classdocs
-    """
     def __init__(self):
         self.hash_value = ''  # The hash value of the paragraph.
         self.value = ''  # The text of the paragraph.
@@ -88,10 +82,6 @@ class Paragraph(object):
 
 
 class Revision(object):
-    """
-    classdocs
-    """
-
     def __init__(self):
         self.id = 0  # Wikipedia revision id.
         self.editor = ''  # id if id != 0 else '0|{}'.format(name)

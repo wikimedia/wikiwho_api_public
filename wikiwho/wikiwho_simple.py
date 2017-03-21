@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Feb 20, 2013
 
-@author: Maribel Acosta
-@author: Fabian Floeck
-@author: Andriy Rodchenko
+:Authors:
+    Maribel Acosta,
+    Fabian Floeck,
+    Andriy Rodchenko,
+    Kenan Erdogan
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -53,8 +54,6 @@ class Wikiwho:
     def clean_attributes(self):
         """
         Empty attributes that are usually not needed after analyzing an article.
-
-        Making them empty reduces pickle size too.
         """
         self.revision_prev = None
         self.text_curr = ''
@@ -686,6 +685,8 @@ class Wikiwho:
 
     def get_revision_content(self, revision_ids, parameters):
         """
+        Return content of revision(s).
+
         :param revision_ids: List of revision ids. 2 revision ids mean a range.
         :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound') to decide
         content of revision(s).
@@ -729,17 +730,13 @@ class Wikiwho:
                 if 'outbound' in parameters:
                     token['outbound'] = word.outbound
                 tokens.append(token)
-
-        # import json
-        # with open('tmp_pickles/{}.json'.format(self.page_id), 'w') as f:
-        #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
     def get_revision_min_content(self, revision_ids):
         """
-        Calculates the revision content in minimum form (list of values).
-
+        Return the revision content in minimum form (list of values).
         It behaves as all parameters are given.
+
         :param revision_ids: List of revision ids. 2 revision ids mean a range.
         :return: Content of the article in json format in min form.
         """
@@ -785,18 +782,13 @@ class Wikiwho:
                 token_ids.append(word.token_id)
                 outs.append(word.outbound)
                 ins.append(word.inbound)
-
-        # import json
-        # with open('tmp_pickles/{}.json'.format(self.page_id), 'w') as f:
-        #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
     def get_deleted_content(self, parameters):
         """
-        Calculates and returns deleted content of this article.
+        Return deleted content of this article.
+        Deleted content is all tokens that are not present in last revision.
 
-        Deleted content is all tokens that are not present
-        in last revision.
         :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound', 'threshold').
         :return: Deleted content of the article in json format.
         """
@@ -827,14 +819,11 @@ class Wikiwho:
                 if 'outbound' in parameters:
                     token['outbound'] = word.outbound
                 deleted_tokens.append(token)
-        # import json
-        # with open('tmp_pickles/{}_deleted_tokens.json'.format(self.title), 'w') as f:
-        #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
     def get_all_content(self, parameters):
         """
-        Calculates and returns content (all tokens) of this article.
+        Return content (all tokens) of this article.
 
         :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound').
         :return: Content of the article in json format.
@@ -846,7 +835,6 @@ class Wikiwho:
 
         threshold = parameters[-1]
         json_data["threshold"] = threshold
-        # json_data["revision_id"] = self.ordered_revisions[-1]
 
         all_tokens = []
         json_data["all_tokens"] = all_tokens
@@ -881,16 +869,13 @@ class Wikiwho:
                     if 'outbound' in parameters:
                         token['outbound'] = word.outbound
                     all_tokens.append(token)
-        # import json
-        # with open('tmp_pickles/{}_all_tokens.json'.format(self.title), 'w') as f:
-        #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
     def get_all_min_content(self, parameters):
         """
-        Calculates and returns content (all tokens) of this article.
-
+        Return content (all tokens) of this article in minimum form (list of values).
         It behaves as all parameters are given.
+
         :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound', 'threshold').
         :return: Content of the article in json format.
         """
@@ -910,6 +895,9 @@ class Wikiwho:
 
     def get_revision_ids(self, parameters):
         """
+        Return list of list of revision ids with optionally appending editor and timestamp information.
+
+        :param parameters: List of parameters ('editor', 'timestamp').
         :return: List of revision ids of this article in json format.
         """
         json_data = dict()
@@ -932,7 +920,7 @@ class Wikiwho:
     def get_revision_text(self, revision_id):
         """
         :param revision_id:
-        :return: List of token values and list of origin of rev id respectively.
+        :return: List of token values and list of origin rev ids respectively.
         """
         revision = self.revisions[revision_id]
         text = []
