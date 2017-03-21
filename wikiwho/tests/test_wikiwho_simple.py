@@ -89,7 +89,7 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
 
     v = WikiwhoView()
     # create json with rev and editor ids
-    revision_json = v.get_revision_json(wp, {'str', 'rev_id', 'editor'}, from_db=from_db, with_token_ids=False)
+    revision_json = v.get_revision_content(wp, {'str', 'origin_rev_id', 'editor'}, from_db=from_db, with_token_ids=False)
     # compare jsons with rev and editor ids
     json_file_path = '{}/{}_ri_ai.json'.format(temp_folder, article_title)
     with io.open(json_file_path, 'w', encoding='utf-8') as f:
@@ -97,7 +97,7 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
     is_content_same_1 = filecmp.cmp(json_file_path, '{}/{}_ri_ai.json'.format(test_json_folder, article_title))
 
     # create json with token ids
-    revision_json = v.get_revision_json(wp, {'str', 'token_id'}, from_db=from_db, with_token_ids=True)
+    revision_json = v.get_revision_content(wp, {'str', 'token_id'}, from_db=from_db, with_token_ids=True)
     # check if all token ids are unique
     for _, rev in revision_json['revisions'][0].items():
         token_ids = [t['token_id'] for t in rev['tokens']]
@@ -114,7 +114,7 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
     in_out_test_spam = True
     in_out_test_ts = True
     # last_used_test_spam = True
-    revision_json = v.get_revision_json(wp, {'str', 'inbound', 'outbound'}, from_db=from_db, with_token_ids=False)
+    revision_json = v.get_revision_content(wp, {'str', 'inbound', 'outbound'}, from_db=from_db, with_token_ids=False)
     for i, ri in enumerate(wp.revision_ids):
         for t in revision_json['revisions'][i][ri]['tokens']:
             in_out_test_len = 0 <= len(t['outbound']) - len(t['inbound']) <= 1
@@ -177,7 +177,7 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
 
         # create deleted content json with threshold 0
         # TODO get deleted content of a specific revision, so that we can test it for xml dumps
-        deleted_tokens_json = v.get_deleted_tokens(wp, ['str', 'rev_id', 'editor', 'token_id', 'inbound', 'outbound', 0], from_db=from_db)
+        deleted_tokens_json = v.get_deleted_content(wp, ['str', 'origin_rev_id', 'editor', 'token_id', 'inbound', 'outbound', 0], from_db=from_db)
         json_file_path = '{}/{}_deleted_content.json'.format(temp_folder, article_title)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(deleted_tokens_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))

@@ -684,7 +684,7 @@ class Wikiwho:
 
         return matched_words_prev, possible_vandalism
 
-    def get_revision_json(self, revision_ids, parameters):
+    def get_revision_content(self, revision_ids, parameters):
         """
         :param revision_ids: List of revision ids. 2 revision ids mean a range.
         :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound') to decide
@@ -718,7 +718,7 @@ class Wikiwho:
             for word in iter_rev_tokens(revision):
                 token = dict()
                 token['str'] = word.value
-                if 'rev_id' in parameters:
+                if 'origin_rev_id' in parameters:
                     token['rev_id'] = word.origin_rev_id
                 if 'editor' in parameters:
                     token['editor'] = self.revisions[word.origin_rev_id].editor
@@ -735,13 +735,13 @@ class Wikiwho:
         #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
-    def get_revision_min_json(self, revision_ids):
+    def get_revision_min_content(self, revision_ids):
         """
         Calculates the revision content in minimum form (list of values).
 
         It behaves as all parameters are given.
         :param revision_ids: List of revision ids. 2 revision ids mean a range.
-        :return: Content of revision in json format in min form.
+        :return: Content of the article in json format in min form.
         """
         json_data = dict()
         json_data["article"] = self.title
@@ -791,15 +791,14 @@ class Wikiwho:
         #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
-    def get_deleted_tokens(self, parameters):
+    def get_deleted_content(self, parameters):
         """
         Calculates and returns deleted content of this article.
 
         Deleted content is all tokens that are not present
         in last revision.
-        :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound') to decide
-        content of revision(s).
-        :return: Deleted content of revision in json format.
+        :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound', 'threshold').
+        :return: Deleted content of the article in json format.
         """
         json_data = dict()
         json_data["article"] = self.title
@@ -817,7 +816,7 @@ class Wikiwho:
             if len(word.outbound) > threshold and word.last_rev_id != last_rev_id:
                 token = dict()
                 token['str'] = word.value
-                if 'rev_id' in parameters:
+                if 'origin_rev_id' in parameters:
                     token['rev_id'] = word.origin_rev_id
                 if 'editor' in parameters:
                     token['editor'] = self.revisions[word.origin_rev_id].editor
@@ -830,7 +829,83 @@ class Wikiwho:
                 deleted_tokens.append(token)
         # import json
         # with open('tmp_pickles/{}_deleted_tokens.json'.format(self.title), 'w') as f:
-        #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        return json_data
+
+    def get_all_content(self, parameters):
+        """
+        Calculates and returns content (all tokens) of this article.
+
+        :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound').
+        :return: Content of the article in json format.
+        """
+        json_data = dict()
+        json_data["article"] = self.title
+        json_data["success"] = True
+        json_data["message"] = None
+
+        threshold = parameters[-1]
+        json_data["threshold"] = threshold
+        # json_data["revision_id"] = self.ordered_revisions[-1]
+
+        all_tokens = []
+        json_data["all_tokens"] = all_tokens
+        if threshold == 0:
+            for word in self.tokens:
+                token = dict()
+                token['str'] = word.value
+                if 'origin_rev_id' in parameters:
+                    token['rev_id'] = word.origin_rev_id
+                if 'editor' in parameters:
+                    token['editor'] = self.revisions[word.origin_rev_id].editor
+                if 'token_id' in parameters:
+                    token['token_id'] = word.token_id
+                if 'inbound' in parameters:
+                    token['inbound'] = word.inbound
+                if 'outbound' in parameters:
+                    token['outbound'] = word.outbound
+                all_tokens.append(token)
+        else:
+            for word in self.tokens:
+                if len(word.outbound) > threshold:
+                    token = dict()
+                    token['str'] = word.value
+                    if 'rev_id' in parameters:
+                        token['rev_id'] = word.origin_rev_id
+                    if 'editor' in parameters:
+                        token['editor'] = self.revisions[word.origin_rev_id].editor
+                    if 'token_id' in parameters:
+                        token['token_id'] = word.token_id
+                    if 'inbound' in parameters:
+                        token['inbound'] = word.inbound
+                    if 'outbound' in parameters:
+                        token['outbound'] = word.outbound
+                    all_tokens.append(token)
+        # import json
+        # with open('tmp_pickles/{}_all_tokens.json'.format(self.title), 'w') as f:
+        #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        return json_data
+
+    def get_all_min_content(self, parameters):
+        """
+        Calculates and returns content (all tokens) of this article.
+
+        It behaves as all parameters are given.
+        :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound', 'threshold').
+        :return: Content of the article in json format.
+        """
+        json_data = dict()
+        json_data["article"] = self.title
+        json_data["success"] = True
+        json_data["message"] = None
+
+        threshold = parameters[-1]
+        json_data["threshold"] = threshold
+        # json_data["revision_id"] = self.ordered_revisions[-1]
+
+        all_tokens = []
+        json_data["all_tokens"] = all_tokens
+        # TODO finish
         return json_data
 
     def get_revision_ids(self, parameters):

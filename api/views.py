@@ -66,7 +66,7 @@ class WikiwhoView(object):
 
     @staticmethod
     def _set_default_type_parameters(query_type, parameters):
-        if query_type == 'content' or query_type == 'deleted_content':
+        if query_type == 'rev_content' or query_type == 'all_content' or query_type == 'deleted_content':
             parameters.append('str')
         if query_type == 'rev_ids':
             parameters.append('rev_id')
@@ -84,15 +84,19 @@ class WikiwhoView(object):
         if 'timestamp' in allowed_parameters:
             parameters.append('timestamp')
         if 'threshold' in allowed_parameters:
-            parameters.append(settings.DELETED_CONTENT_THRESHOLD_LIMIT)
+            if query_type == 'all_content':
+                parameters.append(settings.ALL_CONTENT_THRESHOLD_LIMIT)
+            else:
+                parameters.append(settings.DELETED_CONTENT_THRESHOLD_LIMIT)
         return parameters
 
-    def get_revision_json(self, wp, parameters, only_last_valid_revision=False, minimal=False, from_db=False, with_token_ids=True):
+    def get_revision_content(self, wp, parameters, only_last_valid_revision=False, minimal=False,
+                             from_db=False, with_token_ids=True):
         if not from_db:
             if minimal:
-                return wp.wikiwho.get_revision_min_json(wp.revision_ids)
+                return wp.wikiwho.get_revision_min_content(wp.revision_ids)
             else:
-                return wp.wikiwho.get_revision_json(wp.revision_ids, parameters)
+                return wp.wikiwho.get_revision_content(wp.revision_ids, parameters)
 
         # TODO minimal
         revision_ids = wp.revision_ids
@@ -130,10 +134,22 @@ class WikiwhoView(object):
         #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return json_data
 
-    def get_deleted_tokens(self, wp, parameters, minimal=False, last_rev_id=None, from_db=False):
+    def get_all_content(self, wp, parameters, minimal=False, from_db=False):
+        if not from_db:
+            return wp.wikiwho.get_all_content(parameters)
+            if minimal:
+                # TODO
+                return wp.wikiwho.get_all_min_content()
+            else:
+                return wp.wikiwho.get_all_content(parameters)
+        # TODO from_db
+        json_data = dict()
+        return json_data
+
+    def get_deleted_content(self, wp, parameters, minimal=False, last_rev_id=None, from_db=False):
         # TODO get deleted content for a specific revision
         if not from_db:
-            return wp.wikiwho.get_deleted_tokens(parameters)
+            return wp.wikiwho.get_deleted_content(parameters)
         if not self.article:
             self.article = Article.objects.get(id=wp.page_id)
         json_data = dict()
@@ -189,7 +205,7 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
     OR
     session.auth = ('username', 'pass')
 
-    r2 = session.get('http://127.0.0.1:8000/api/v1.0.0-beta/content/thomas_Bellut/?rev_id=true&author=true&token_id=true&inbound=true&outbound=true')
+    r2 = session.get('http://127.0.0.1:8000/api/v1.0.0-beta/rev_content/thomas_Bellut/?origin_rev_id=true&editor=true&token_id=true&inbound=true&outbound=true')
     r2.json()
     """
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, )  # TODO attention here!
@@ -204,13 +220,17 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
         self._set_default_type_parameters(query_type, parameters)
         for parameter in all_parameters:
             if type(parameter) == int:
-                threshold = int(self.request.GET.get('threshold', settings.DELETED_CONTENT_THRESHOLD_LIMIT))
+                if query_type == 'all_content':
+                    threshold = int(self.request.GET.get('threshold', settings.ALL_CONTENT_THRESHOLD_LIMIT))
+                else:
+                    threshold = int(self.request.GET.get('threshold', settings.DELETED_CONTENT_THRESHOLD_LIMIT))
                 parameters.append(0 if threshold < 0 else threshold)
             elif self.request.GET.get(parameter) == 'true':
                 parameters.append(parameter)
         return parameters
 
-    def get_response(self, article_title, parameters, revision_ids=list(), deleted=False, ids=False, page_id=None):
+    def get_response(self, parameters, article_title=None, page_id=None, revision_ids=list(),
+                     all_content=False, deleted=False, rev_ids=False):
         # if not parameters:
         #     return Response({'Error': 'At least one query parameter should be selected.'},
         #                     status=status.HTTP_400_BAD_REQUEST)
@@ -229,14 +249,17 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
             response = {'Error': 'HTTP Response error from Wikipedia! Please try again later.'}
             status_ = status.HTTP_400_BAD_REQUEST
         else:
-            if deleted:
-                response = self.get_deleted_tokens(wp, parameters)
+            if all_content:
+                response = self.get_all_content(wp, parameters)
                 status_ = status.HTTP_200_OK
-            elif ids:
+            elif deleted:
+                response = self.get_deleted_content(wp, parameters)
+                status_ = status.HTTP_200_OK
+            elif rev_ids:
                 response = self.get_revision_ids(wp, parameters)
                 status_ = status.HTTP_200_OK
             else:
-                response = self.get_revision_json(wp, parameters, from_db=False)
+                response = self.get_revision_content(wp, parameters, from_db=False)
                 if 'Error' in response:
                     status_ = status.HTTP_400_BAD_REQUEST
                 else:
@@ -245,54 +268,62 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
         # return HttpResponse(json.dumps(response), content_type='application/json; charset=utf-8')
         return Response(response, status=status_)
 
-    def get_content_by_revision_id(self, request, version, revision_id):
-        parameters = self.get_parameters('content')
-        return self.get_response(None, parameters, [int(revision_id)])
+    def get_rev_content_by_rev_id(self, request, version, rev_id):
+        parameters = self.get_parameters('rev_content')
+        return self.get_response(parameters, revision_ids=[int(rev_id)])
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
-    def get_slice(self, request, version, article_title, start_revision_id, end_revision_id):
+    def get_rev_content_slice(self, request, version, article_title, start_rev_id, end_rev_id):
         # TODO do we need pagination with page=5?
         # maybe this is helpful: http://www.django-rest-framework.org/api-guide/pagination/
-        start_revision_id = int(start_revision_id)
-        end_revision_id = int(end_revision_id)
+        start_revision_id = int(start_rev_id)
+        end_revision_id = int(end_rev_id)
         # FIXME we have to compare timestamps
         if start_revision_id >= end_revision_id:
             return Response({'Error': 'Second revision id has to be larger than first revision id!'},
                             status=status.HTTP_400_BAD_REQUEST)
-        parameters = self.get_parameters('content')
-        return self.get_response(article_title, parameters, [start_revision_id, end_revision_id])
+        parameters = self.get_parameters('rev_content')
+        return self.get_response(parameters, article_title, revision_ids=[start_revision_id, end_revision_id])
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
-    def get_article_revision(self, request, version, article_title, revision_id):
-        parameters = self.get_parameters('content')
-        return self.get_response(article_title, parameters, [int(revision_id)])
+    def get_article_rev_content(self, request, version, article_title, rev_id):
+        parameters = self.get_parameters('rev_content')
+        return self.get_response(parameters, article_title, revision_ids=[int(rev_id)])
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
-    def get_article_by_name(self, request, version, article_title):
-        parameters = self.get_parameters('content')
-        return self.get_response(article_title, parameters)
+    def get_rev_content_by_title(self, request, version, article_title):
+        parameters = self.get_parameters('rev_content')
+        return self.get_response(parameters, article_title)
 
-    def get_article_by_page_id(self, request, version, page_id):
-        parameters = self.get_parameters('content')
-        return self.get_response(None, parameters, page_id=page_id)
+    def get_rev_content_by_page_id(self, request, version, page_id):
+        parameters = self.get_parameters('rev_content')
+        return self.get_response(parameters, page_id=page_id)
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
-    def get_deleted_content_by_name(self, request, version, article_title):
+    def get_deleted_content_by_title(self, request, version, article_title):
         parameters = self.get_parameters('deleted_content')
-        return self.get_response(article_title, parameters, deleted=True)
+        return self.get_response(parameters, article_title, deleted=True)
 
     def get_deleted_content_by_page_id(self, request, version, page_id):
         parameters = self.get_parameters('deleted_content')
-        return self.get_response(None, parameters, deleted=True, page_id=page_id)
+        return self.get_response(parameters, page_id=page_id, deleted=True)
+
+    def get_all_content_by_title(self, request, version, article_title):
+        parameters = self.get_parameters('all_content')
+        return self.get_response(parameters, article_title, all_content=True)
+
+    def get_all_content_by_page_id(self, request, version, page_id):
+        parameters = self.get_parameters('all_content')
+        return self.get_response(parameters, page_id=page_id, all_content=True)
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
-    def get_revision_ids_by_name(self, request, version, article_title):
+    def get_rev_ids_by_title(self, request, version, article_title):
         parameters = self.get_parameters('rev_ids')
-        return self.get_response(article_title, parameters, ids=True)
+        return self.get_response(parameters, article_title, rev_ids=True)
 
-    def get_revision_ids_by_page_id(self, request, version, page_id):
+    def get_rev_ids_by_page_id(self, request, version, page_id):
         parameters = self.get_parameters('rev_ids')
-        return self.get_response(None, parameters, ids=True, page_id=page_id)
+        return self.get_response(parameters, page_id=page_id, rev_ids=True)
 
     # def dispatch(self, request, *args, **kwargs):
     #     global dispatch_time
