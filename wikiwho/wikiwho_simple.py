@@ -59,7 +59,11 @@ class Wikiwho:
         self.text_curr = ''
         self.temp = []
 
-    def analyse_article_xml(self, page):
+    def analyse_article_from_xml_dump(self, page):
+        """
+        Analyse page from XML Dump Iterator.
+        :param page: Page meta data and a Revision iterator. Each revision contains metadata and text.
+        """
         # Iterate over revisions of the article.
         for revision in page:
             text = revision.text or ''
@@ -132,9 +136,13 @@ class Wikiwho:
                     self.ordered_revisions.append(self.revision_curr.id)
             self.temp = []
 
-    def analyse_article(self, revisions):
+    def analyse_article(self, page):
+        """
+        Analyse page in json form.
+        :param page: List of revisions. Each revision is a dict and contains metadata and text.
+        """
         # Iterate over revisions of the article.
-        for revision in revisions:
+        for revision in page:
             if 'texthidden' in revision or 'textmissing' in revision:
                 continue
 

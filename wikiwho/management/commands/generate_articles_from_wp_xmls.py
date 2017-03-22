@@ -55,7 +55,7 @@ def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables,
                     with WPHandler(page.title, page_id=page.id, save_tables=save_tables,
                                    check_exists=check_exists, is_xml=True) as wp:
                         # print(wp.article_title)
-                        wp.handle_from_xml(page, timeout)
+                        wp.handle_from_xml_dump(page, timeout)
                         if is_write_into_csv:
                             wikiwho_to_csv(wp.wikiwho, log_folder + '/csv')
                             # TODO write article ids into a csv
@@ -74,7 +74,7 @@ def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables,
 
 
 class Command(BaseCommand):
-    help = 'Generates articles in xml file in given path from data in xml. Skips redirect articles and ' \
+    help = 'Generates articles from xml dumps in given path. Skips redirect articles and ' \
            'pages which does not have namespace as 0. This command processes files concurrently.'
 
     def add_arguments(self, parser):

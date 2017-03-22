@@ -210,7 +210,7 @@ def _test_json_from_xml(temp_folder, article_title, revision_id, save_tables=())
             title_matched = True
             with WPHandler(article_title, page.id, pickle_folder=temp_folder['pickle_folder'], is_xml=True,
                            save_tables=save_tables) as wp:
-                wp.handle_from_xml(page)
+                wp.handle_from_xml_dump(page)
                 wp.revision_ids = [revision_id]
             break
 

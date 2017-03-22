@@ -97,7 +97,7 @@ class WPHandler(object):
         # print("Execution time enter: {}".format(time2-time1))
         return self
 
-    def handle_from_xml(self, page, timeout=None):
+    def handle_from_xml_dump(self, page, timeout=None):
         # this handle is used only to fill the db so if already exists, skip this article
         # here we don't have rvcontinue check to analyse article as we have in handle method
         if self.check_exists and self.already_exists:
@@ -107,10 +107,11 @@ class WPHandler(object):
 
         try:
             if timeout:
-                with Timeout(seconds=timeout, error_message='Timeout in analyse_article_xml ({} seconds)'.format(timeout)):
-                    self.wikiwho.analyse_article_xml(page)
+                with Timeout(seconds=timeout,
+                             error_message='Timeout in analyse_article_from_xml_dump ({} seconds)'.format(timeout)):
+                    self.wikiwho.analyse_article_from_xml_dump(page)
             else:
-                self.wikiwho.analyse_article_xml(page)
+                self.wikiwho.analyse_article_from_xml_dump(page)
         except TimeoutError:
             # if timeout, nothing is saved
             raise
@@ -161,10 +162,9 @@ class WPHandler(object):
             session = create_wp_session()
             headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
                        'From': settings.WP_HEADERS_FROM}
-            # Login request
             url = 'https://en.wikipedia.org/w/api.php'
             # revisions: Returns revisions for a given page
-            params = {'titles': self.saved_article_title, 'action': 'query', 'prop': 'revisions',
+            params = {'pageids': self.page_id, 'action': 'query', 'prop': 'revisions',
                       'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
                       'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer'}
 
