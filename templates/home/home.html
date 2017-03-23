@@ -73,10 +73,13 @@
 
         {% block content %}
             <p>
-                Wikiwho ....<br>
-                Link to wikiwho public github repo (we should update it)<br>
-                Explanation how wikiwho works?<br>
+                <a href="https://github.com/wikiwho/WikiWho" target="_blank">WikiWho algorithm</a>
+                <br>
+                <a href="{% url 'api:swagger' 'v1.0.0-beta' %}">WikiWho API</a>
+            {% comment %}TODO
+                Explanation how wikiwho works?
                 Documentation how to use wikiwho algorithm?
+            {% endcomment %}
             </p>
         {% endblock content %}
 
