@@ -54,9 +54,38 @@ custom_data = {
             # 'termsOfService': '',
             'version': version,
             # 'license': {'name': 'TODO licence?', 'url': ''},
-            'description': 'TODO A short description of the application. GFM syntax can be used for rich text '
-                           'representation. \n\nSpecification: http://swagger.io/specification \n\n'
-                           'Example api: http://petstore.swagger.io/',
+            # 'description': 'A short description of the application. GFM syntax can be used for rich text '
+            #                'representation. \n\nSpecification: http://swagger.io/specification \n\n'
+            #                'Example api: http://petstore.swagger.io/',
+            'description': 'This API provides provenance and change information about the tokens a Wikipedia article '
+                           'consists of.\n\n'
+                           'For each article page it mirrors its current state on the English Wikipedia.\n\n'
+                           'The accuracy is around 96%, evaluated against a gold standard dataset. '
+                           'It\'s based on the [WikiWho algorithm](https://github.com/wikiwho).\n\n'
+                           'Terminology used here:\n\n'
+                           '- *Wikipedia*: For now, the English Wikipedia - to be extended in the future.\n'
+                           '- *article (page)*: Any Wikipedia page in '
+                           '[namespace = 0](https://en.wikipedia.org/wiki/Wikipedia:Namespace).\n'
+                           '- *(article) content*: The tokenized Wiki Markup text content of a (range of) revision(s) '
+                           'of an article page, *not* the front-end HTML (if you want that, you have to "untokenize" '
+                           'and appropriately parse it; the original order of tokens is retained).\n'
+                           '- *token*/*tokenized*: The Wiki Markup text is split at (i) white spaces and (ii) certain '
+                           'special characters (special chars also act as tokens). E.g., tokens in '
+                           '`"A [[house]], a boat."` are `"a", "[[", "house", "]]", ",", "a", "boat", "."` '
+                           'I.e., all tokens are converted into lower-case and certain character combinations that '
+                           'have a specific function in Wiki Markup, such as double-square brackets, get treated '
+                           'as single tokens.\n'
+                           '- *revisions*: The article revisions and their IDs as retrieved from Wikipedia, with one '
+                           'exception: The WikiWho algorithm implements a (very lenient)  filter to avoid spending '
+                           'time DIFFing blatant vandalism which gets immediately reverted after. About 0.5% of the '
+                           'revisions from Wikipedia are hence not available here as we consider those changes to '
+                           'have dissappeared immediately. This is a temporary constraint to be soon removed.\n\n'
+                           '**[>> Toy example for how the token metadata is generated]'
+                           '(https://gist.github.com/faflo/8bd212e81e594676f8d002b175b79de8)**\n\n'
+                           'See the description of the different query types for more information.\n\n'
+                           'A dataset with this data (until Nov. 2016, no redirects) is available for download at '
+                           'https://doi.org/10.5281/zenodo.345571 .'
+                           'Please cite it as well if you use data from this API.\n\n',
             'contact': {
                 'name': 'GESIS - Leibniz Institute for the Social Sciences',
                 # 'email': 'kenan.erdogan@gesis.org?cc=fabian.floeck@gesis.org&subject=wikiwho API',
