@@ -1,9 +1,10 @@
 from django.contrib import admin
 
 from django.utils.html import format_html
-from .models import Article, Revision, Token
+
 from base.admin import BaseAdmin
 
+from .models import Article, Revision, Token
 # TODO make everything read only + base admin class + check list_filters, show_change_link + test searching
 
 

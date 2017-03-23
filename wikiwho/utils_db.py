@@ -3,7 +3,7 @@ import uuid
 from django.db import connection
 from django.utils.dateparse import parse_datetime
 
-from .utils import iter_rev_tokens, iter_wikiwho_tokens
+from WikiWho.utils import iter_rev_tokens  # , iter_wikiwho_tokens
 
 
 def wikiwho_to_db(wikiwho, save_tables=('article', 'revision', 'token', )):

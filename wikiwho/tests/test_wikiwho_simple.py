@@ -85,7 +85,7 @@ def pytest_generate_tests(metafunc):
 
 
 def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False):
-    test_json_folder = 'test_jsons/after_new_splitting'
+    test_json_folder = '../../tests_ignore/jsons/after_shorted_api_parameters'
 
     v = WikiwhoView()
     # create json with rev and editor ids
@@ -199,7 +199,7 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
 
 def _test_json_from_xml(temp_folder, article_title, revision_id, save_tables=()):
     # read from xml dumps (7z)
-    xml_file_path = 'test_jsons/{}'.format(article_zips[article_title])
+    xml_file_path = '../../tests_ignore/xml_dumps/{}'.format(article_zips[article_title])
     if not os.path.exists(xml_file_path):
         # server
         xml_file_path = '/home/nuser/pdisk/xmls_7z/batch_all/{}'.format(article_zips[article_title])

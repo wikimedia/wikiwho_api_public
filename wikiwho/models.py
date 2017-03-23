@@ -5,7 +5,8 @@ from django.conf import settings
 # from django.utils.functional import cached_property
 
 from base.models import BaseModel
-from wikiwho.utils_db import tokens_custom
+
+from .utils_db import tokens_custom
 
 
 class Article(BaseModel):

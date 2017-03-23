@@ -1,3 +1,4 @@
+git+git://github.com/wikiwho/WikiWho.git@master#egg=WikiWho
 Django
 future
 six
@@ -10,7 +11,11 @@ openpyxl
 lxml
 futures
 pytz
-# TODO add wikiwho_simple as a package
+#django-admin-tools
+#django-admin-tools-stats
+django-extensions
+django-registration
+django-crispy-forms
 
 djangorestframework
 #coreapi
@@ -20,22 +25,14 @@ markdown
 #django-guardian
 django-rest-swagger
 #drfdocs
-python-memcached
 drf-extensions
 # drf-tracking
-
-#django-admin-tools
-#django-admin-tools-stats
-
-django-extensions
-psycopg2
-
-django-registration
-django-crispy-forms
 
 #mediawiki-utilities
 mwxml
 mwreverts
 
+psycopg2
 # django-postgres-copy
+python-memcached
 gunicorn
