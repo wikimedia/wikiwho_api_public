@@ -27,7 +27,7 @@ from mwtypes.files import reader
 
 from api.handler import WPHandler
 from wikiwho.tests.utils import article_zips
-from wikiwho.utils import split_into_tokens, iter_rev_tokens
+from WikiWho.utils import split_into_tokens, iter_rev_tokens
 from api.views import WikiwhoView
 from django.utils.dateparse import parse_datetime
 
