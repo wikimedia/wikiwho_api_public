@@ -8,6 +8,7 @@ import signal
 # from six.moves import urllib
 from lxml import etree
 import requests
+from requests.exceptions import ReadTimeout
 
 from django.conf import settings
 from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
@@ -51,6 +52,30 @@ def get_latest_revision_data(page_id=None, article_title=None, revision_id=None)
             'article_db_title': page['title'].replace(' ', '_'),
             'latest_revision_id': page["lastrevid"],
             'namespace': page["ns"]}
+
+
+def get_revision_timestamp(revision_ids):
+    # set up request for Wikipedia API.
+    server = "en.wikipedia.org"
+    wp_api_url = 'https://{}/w/api.php'.format(server)
+    params = {'action': "query", 'prop': 'revisions', 'format': 'json',
+              'rvprop': 'timestamp|ids', 'revids': '|'.join(revision_ids)}
+    headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
+               'From': settings.WP_HEADERS_FROM,
+               "Accept": "*/*", "Host": server}
+    # make get request
+    try:
+        resp_ = requests.get(wp_api_url, params, headers=headers, timeout=3)
+    except ReadTimeout:
+        return {'error': 'Bad revision id.'}
+    # convert response into dict
+    response = resp_.json()
+    pages = response["query"].get('pages', [])
+    if len(pages) != 1 or 'badrevids' in response['query']:
+        return {'error': 'Bad revision id.'}
+    _, page = pages.popitem()
+    timestamps = {str(rev['revid']): rev['timestamp'] for rev in page['revisions']}
+    return [timestamps[rev_id] for rev_id in revision_ids]
 
 
 def create_wp_session():

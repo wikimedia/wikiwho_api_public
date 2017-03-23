@@ -19,6 +19,7 @@ from wikiwho.models import Revision, Article
 from rest_framework_tracking.mixins import LoggingMixin
 from .handler import WPHandler, WPHandlerException
 from .swagger_data import custom_data, allowed_params, query_params
+from .utils import get_revision_timestamp
 
 
 class MyOpenAPIRenderer(OpenAPIRenderer):
@@ -274,16 +275,15 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_rev_content_slice(self, request, version, article_title, start_rev_id, end_rev_id):
-        # TODO do we need pagination with page=5?
-        # maybe this is helpful: http://www.django-rest-framework.org/api-guide/pagination/
-        start_revision_id = int(start_rev_id)
-        end_revision_id = int(end_rev_id)
-        # FIXME we have to compare timestamps
-        if start_revision_id >= end_revision_id:
-            return Response({'Error': 'Second revision id has to be larger than first revision id!'},
+        timestamps = get_revision_timestamp([start_rev_id, end_rev_id])
+        if 'error' in timestamps:
+            return Response({'Error': timestamps['error']},
+                            status=status.HTTP_400_BAD_REQUEST)
+        elif timestamps[0] > timestamps[1]:
+            return Response({'Error': 'End revision id has to be older than start revision id!'},
                             status=status.HTTP_400_BAD_REQUEST)
         parameters = self.get_parameters('rev_content')
-        return self.get_response(parameters, article_title, revision_ids=[start_revision_id, end_revision_id])
+        return self.get_response(parameters, article_title, revision_ids=[int(start_rev_id), int(end_rev_id)])
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_article_rev_content(self, request, version, article_title, rev_id):
