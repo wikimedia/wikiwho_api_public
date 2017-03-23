@@ -1,22 +1,22 @@
 from django.conf import settings
 
 query_params = [
-    {'description': 'Output origin revision id per token', 'in': 'query', 'name': 'origin_rev_id', 'required': True,
+    {'description': 'Origin revision ID per token', 'in': 'query', 'name': 'o_rev_id', 'required': True,
      'type': 'boolean'},  # 'default': 'false',
-    {'description': 'Output editor id per token', 'in': 'query', 'name': 'editor', 'required': True,
+    {'description': 'Editor ID/Name per token', 'in': 'query', 'name': 'editor', 'required': True,
      'type': 'boolean'},
-    {'description': 'Output token id per token', 'in': 'query', 'name': 'token_id', 'required': True,
+    {'description': 'Token ID per token', 'in': 'query', 'name': 'token_id', 'required': True,
      'type': 'boolean'},
-    {'description': 'Output inbound revision ids per token', 'in': 'query', 'name': 'inbound', 'required': True,
+    {'description': 'Inbound revision IDs per token', 'in': 'query', 'name': 'in', 'required': True,
      'type': 'boolean'},
-    {'description': 'Output outbound revision ids per token', 'in': 'query', 'name': 'outbound', 'required': True,
+    {'description': 'Outbound revision IDs per token', 'in': 'query', 'name': 'out', 'required': True,
      'type': 'boolean'}
 ]
 
 allowed_params = {
-    'rev_content': ['origin_rev_id', 'editor', 'token_id', 'inbound', 'outbound'],
-    'deleted_content': ['origin_rev_id', 'editor', 'token_id', 'inbound', 'outbound', 'threshold'],
-    'all_content': ['origin_rev_id', 'editor', 'token_id', 'inbound', 'outbound', 'threshold'],
+    'rev_content': ['o_rev_id', 'editor', 'token_id', 'in', 'out'],
+    'deleted_content': ['o_rev_id', 'editor', 'token_id', 'in', 'out', 'threshold'],
+    'all_content': ['o_rev_id', 'editor', 'token_id', 'in', 'out', 'threshold'],
     'rev_ids': ['editor', 'timestamp']
 }
 
@@ -50,7 +50,7 @@ version = '1.0.0-beta'
 custom_data = {
     'swagger': '2.0',
     'info': {
-            'title': 'wikiwho API',
+            'title': 'WikiWho API',
             # 'termsOfService': '',
             'version': version,
             # 'license': {'name': 'TODO licence?', 'url': ''},
@@ -107,14 +107,14 @@ custom_data = {
              {'get': {'description': 'Outputs the content of the last revision of an article. \n\n'
                                      'Check `GET /rev_content/{article_title}/` for explanations of query parameters.',
                       # 'produces': ['application/json'],
-                      'parameters': [{'description': 'Page id of the article from wikipedia',
+                      'parameters': [{'description': 'Page ID of the article from Wikipedia',
                                       'in': 'path',
                                       'name': 'page_id',
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['1 - Revision content'],
+                      'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of the last revision of an article'
                       }
               },
@@ -130,14 +130,14 @@ custom_data = {
                                       'type': 'integer'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['1 - Revision content'],
+                      'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of a revision'
                       }
               },
          '/rev_content/{article_title}/':
              {'get': {'description': 'Outputs the content of the last revision of the given article.\n\n'
                                      '#### Query parameter explanations:\n\n'
-                                     '**origin_rev_id:** The ID of the revision where the token was added originally '
+                                     '**o_rev_id:** The ID of the revision where the token was added originally '
                                      'in the article.\n\n'
                                      '**editor:** The user ID of the editor. User '
                                      'IDs are integers, are unique for the whole Wikipedia and can be used to fetch '
@@ -145,81 +145,84 @@ custom_data = {
                                      'all unregistered accounts. To still allow for distinction between unregistered '
                                      'users, the string identifiers (e.g., IPs, MAC-addresses) of unregistered users '
                                      'are included in this field, prefixed by "0|".\n\n'
-                                     '**token_id:** The token ID assigned internally by the WikiWho algorithm, unique'
+                                     '**token_id:** The token ID assigned internally by the WikiWho algorithm, unique '
                                      'per article. Token IDs are assigned increasing from 1 for each new token added '
                                      'to an article.\n\n'
-                                     '**inbound:** List of all revisions where the token was REinserted after'
+                                     '**in:** List of all revisions where the token was REinserted after '
                                      'being deleted previously, ordered sequentially by time. If empty, the token has '
                                      'never been reintroduced after deletion. Each "in" has to be preceded by one '
                                      'equivalent "out" in sequence.\n\n'
-                                     '**outbound:** List of all revisions in which the token was deleted, ordered '
+                                     '**out:** List of all revisions in which the token was deleted, ordered '
                                      'sequentially by time. If empty, the token has never been deleted.',
-                      'parameters': [{'description': 'Article title',
+                      'parameters': [{'description': 'The title of the requested title',
                                       'in': 'path',
                                       'name': 'article_title',
                                       'required': True,
                                       'type': 'string'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['1 - Revision content'],
+                      'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of the last revision of an article'
                       }
               },
          '/rev_content/{article_title}/{rev_id}/':
              {'get': {'description': 'Outputs the content of the given revision of the given article.\n\n'
                                      'Check `GET /rev_content/{article_title}/` for explanations of query parameters.',
-                      'parameters': [{'description': 'Revision ID to get content',
-                                      'in': 'path',
-                                      'name': 'rev_id',
-                                      'required': True,
-                                      'type': 'integer'},
-                                     {'description': 'Article title',
+                      'parameters': [{'description': 'The title of the requested title',
                                       'in': 'path',
                                       'name': 'article_title',
                                       'required': True,
                                       'type': 'string'},
+                                     {'description': 'Revision ID to get content for',
+                                      'in': 'path',
+                                      'name': 'rev_id',
+                                      'required': True,
+                                      'type': 'integer'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['1 - Revision content'],
-                      'summary': 'Get the content of the revision of an article'
+                      'tags': ['1 - Content per revision'],
+                      'summary': 'Get the content of a specific revision of an article'
                       }
               },
          '/rev_content/{article_title}/{start_rev_id}/{end_rev_id}/':
              {'get': {'description': 'Outputs the content of revisions from start revision to end revision ordered '
                                      'by timestamp.\n\n'
+                                     'Note: We only consider the **timestamp** of a revision ID for its '
+                                     'ordinal position, **not** its integer value. These two can very rarely be '
+                                     'conflicted.\n\n'
                                      'Check `GET /rev_content/{article_title}/` for explanations of query parameters.',
-                      'parameters': [{'description': 'End revision id',
-                                      'in': 'path',
-                                      'name': 'end_rev_id',
-                                      'required': True,
-                                      'type': 'integer'},
-                                     {'description': 'Start revision id',
-                                      'in': 'path',
-                                      'name': 'start_rev_id',
-                                      'required': True,
-                                      'type': 'integer'},
-                                     {'description': 'Article title',
+                      'parameters': [{'description': 'The title of the requested title',
                                       'in': 'path',
                                       'name': 'article_title',
                                       'required': True,
                                       'type': 'string'},
+                                     {'description': 'Start revision ID',
+                                      'in': 'path',
+                                      'name': 'start_rev_id',
+                                      'required': True,
+                                      'type': 'integer'},
+                                     {'description': 'End revision ID',
+                                      'in': 'path',
+                                      'name': 'end_rev_id',
+                                      'required': True,
+                                      'type': 'integer'},
                                      ] + query_params,
                       'responses': responses,
-                      'tags': ['1 - Revision content'],
-                      'summary': 'Get the content of range of revisions of an article'
+                      'tags': ['1 - Content per revision'],
+                      'summary': 'Get the content of a range of revisions of an article'
                       }
               },
          '/all_content/page_id/{page_id}/':
              {'get': {'description': 'Outputs the complete content (all tokens) of the given article.\n\n'
                                      '\n\n'
                                      'Check `GET /all_content/{article_title}/` for explanations of query parameters.',
-                      'parameters': [{'description': 'Page id of the article from wikipedia',
+                      'parameters': [{'description': 'Page ID of the article from Wikipedia',
                                       'in': 'path',
                                       'name': 'page_id',
                                       'required': True,
                                       'type': 'integer'},
-                                     {'description': 'Output tokens that are deleted more times than threshold. '
-                                                     'Default is {}'.format(settings.ALL_CONTENT_THRESHOLD_LIMIT),
+                                     {'description': 'Only tokens that are deleted more times than threshold. '
+                                                     'Default is {}.'.format(settings.ALL_CONTENT_THRESHOLD_LIMIT),
                                       'in': 'query',
                                       'name': 'threshold',
                                       'required': False,
@@ -236,13 +239,13 @@ custom_data = {
                                      '#### Query parameter explanations:\n\n'
                                      'Query parameters are equivalent to revision content queries. '
                                      'There is only an extra `threshold` parameter.',
-                      'parameters': [{'description': 'Article title',
+                      'parameters': [{'description': 'The title of the requested title',
                                       'in': 'path',
                                       'name': 'article_title',
                                       'required': True,
                                       'type': 'string'},
-                                     {'description': 'Output tokens that are deleted more times than threshold. '
-                                                     'Default is {}'.format(settings.ALL_CONTENT_THRESHOLD_LIMIT),
+                                     {'description': 'Only tokens that are deleted more times than threshold. '
+                                                     'Default is {}.'.format(settings.ALL_CONTENT_THRESHOLD_LIMIT),
                                       'in': 'query',
                                       'name': 'threshold',
                                       'required': False,
@@ -259,7 +262,7 @@ custom_data = {
          #                             'the article in at least one revision, but are not present in the last revision.'
          #                             '\n\n'
          #                             'Check `GET /deleted/{article_title}/` for explanations of query parameters.',
-         #              'parameters': [{'description': 'Page id of the article from wikipedia',
+         #              'parameters': [{'description': 'Page ID of the article from Wikipedia',
          #                              'in': 'path',
          #                              'name': 'page_id',
          #                              'required': True,
@@ -285,7 +288,7 @@ custom_data = {
          #                             'Query parameters are equivalent to revision content queries except that '
          #                             'at least one entry exists in the out list of each token and at least one '
          #                             'more out than in.\n',
-         #              'parameters': [{'description': 'Article title',
+         #              'parameters': [{'description': 'The title of the requested title',
          #                              'in': 'path',
          #                              'name': 'article_title',
          #                              'required': True,
@@ -303,15 +306,15 @@ custom_data = {
          #              }
          #      },
          '/rev_ids/page_id/{page_id}/':
-             {'get': {'description': 'Outputs revision ids of the given article.\n\n'
+             {'get': {'description': 'Outputs revision IDs of the given article as processed by WikiWho.\n\n'
                                      'Check `GET /rev_ids/{article_title}/` for explanations of query parameters.',
-                      'parameters': [{'description': 'Page id of the article from wikipedia',
+                      'parameters': [{'description': 'Page ID of the article from Wikipedia',
                                       'in': 'path',
                                       'name': 'page_id',
                                       'required': True,
                                       'type': 'integer'},
                                      ] +
-                                    [{'description': 'Output editor id of each revision',
+                                    [{'description': 'Output editor ID of each revision',
                                       'in': 'query',
                                       'name': 'editor',
                                       'required': True,
@@ -323,28 +326,22 @@ custom_data = {
                                       'type': 'boolean'}
                                      ],
                       'responses': responses,
-                      'tags': ['3 - Revision ids'],
-                      'summary': 'Get revision ids of an article'
+                      'tags': ['3 - Revision IDs'],
+                      'summary': 'Get revision IDs of an article'
                       }
               },
          '/rev_ids/{article_title}/':
-             {'get': {'description': 'Outputs revision ids of the given article.\n\n'
+             {'get': {'description': 'Outputs revision IDs of the given article as processed by WikiWho.\n\n'
                                      '#### Query parameter explanations:\n\n'
-                                     '**editor:** The user ID of the editor. User '
-                                     'IDs are integers, are unique for the whole Wikipedia and can be used to fetch '
-                                     'the current name of a user. The only exemption is user ID = 0, which identifies '
-                                     'all unregistered accounts. To still allow for distinction between unregistered '
-                                     'users, the string identifiers (e.g., IPs, MAC-addresses) of unregistered users '
-                                     'are included in this field, prefixed by "0|".\n\n'
-                                     '**timestamp:** The creation timestamp of the revision as extracted from the '
-                                     'XML dumps',
-                      'parameters': [{'description': 'Article title',
+                                     '**editor:** See other query explanations.\n\n'
+                                     '**timestamp:** The creation timestamp of the revision as provided by Wikipedia',
+                      'parameters': [{'description': 'The title of the requested title',
                                       'in': 'path',
                                       'name': 'article_title',
                                       'required': True,
                                       'type': 'string'},
                                      ] +
-                                    [{'description': 'Output editor id of each revision',
+                                    [{'description': 'Output editor ID of each revision',
                                       'in': 'query',
                                       'name': 'editor',
                                       'required': True,
@@ -356,8 +353,8 @@ custom_data = {
                                       'type': 'boolean'}
                                      ],
                       'responses': responses,
-                      'tags': ['3 - Revision ids'],
-                      'summary': 'Get revision ids of an article'
+                      'tags': ['3 - Revision IDs'],
+                      'summary': 'Get revision IDs of an article'
                       }
               },
          },

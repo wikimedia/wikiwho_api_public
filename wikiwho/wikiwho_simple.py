@@ -696,12 +696,13 @@ class Wikiwho:
         Return content of revision(s).
 
         :param revision_ids: List of revision ids. 2 revision ids mean a range.
-        :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound') to decide
+        :param parameters: List of parameters ('o_rev_id', 'editor', 'token_id', 'in', 'out') to decide
         content of revision(s).
         :return: Content of revision in json format.
         """
         json_data = dict()
-        json_data["article"] = self.title
+        json_data["article_title"] = self.title
+        json_data["page_id"] = self.page_id
         json_data["success"] = True
         json_data["message"] = None
 
@@ -727,16 +728,16 @@ class Wikiwho:
             for word in iter_rev_tokens(revision):
                 token = dict()
                 token['str'] = word.value
-                if 'origin_rev_id' in parameters:
-                    token['rev_id'] = word.origin_rev_id
+                if 'o_rev_id' in parameters:
+                    token['o_rev_id'] = word.origin_rev_id
                 if 'editor' in parameters:
                     token['editor'] = self.revisions[word.origin_rev_id].editor
                 if 'token_id' in parameters:
                     token['token_id'] = word.token_id
-                if 'inbound' in parameters:
-                    token['inbound'] = word.inbound
-                if 'outbound' in parameters:
-                    token['outbound'] = word.outbound
+                if 'in' in parameters:
+                    token['in'] = word.inbound
+                if 'out' in parameters:
+                    token['out'] = word.outbound
                 tokens.append(token)
         return json_data
 
@@ -749,7 +750,8 @@ class Wikiwho:
         :return: Content of the article in json format in min form.
         """
         json_data = dict()
-        json_data["article"] = self.title
+        json_data["article_title"] = self.title
+        json_data["page_id"] = self.page_id
         json_data["success"] = True
         json_data["message"] = None
 
@@ -777,7 +779,7 @@ class Wikiwho:
             json_data['revisions'].append({rev_id: {"editor": revision.editor,
                                                     "time": revision.timestamp,
                                                     "str": values,
-                                                    "rev_ids": rev_ids,
+                                                    "o_rev_ids": rev_ids,
                                                     "editors": editors,
                                                     "token_ids": token_ids,
                                                     "outs": outs,
@@ -797,11 +799,12 @@ class Wikiwho:
         Return deleted content of this article.
         Deleted content is all tokens that are not present in last revision.
 
-        :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound', 'threshold').
+        :param parameters: List of parameters ('o_rev_id', 'editor', 'token_id', 'in', 'out', 'threshold').
         :return: Deleted content of the article in json format.
         """
         json_data = dict()
-        json_data["article"] = self.title
+        json_data["article_title"] = self.title
+        json_data["page_id"] = self.page_id
         json_data["success"] = True
         json_data["message"] = None
 
@@ -816,16 +819,16 @@ class Wikiwho:
             if len(word.outbound) > threshold and word.last_rev_id != last_rev_id:
                 token = dict()
                 token['str'] = word.value
-                if 'origin_rev_id' in parameters:
-                    token['rev_id'] = word.origin_rev_id
+                if 'o_rev_id' in parameters:
+                    token['o_rev_id'] = word.origin_rev_id
                 if 'editor' in parameters:
                     token['editor'] = self.revisions[word.origin_rev_id].editor
                 if 'token_id' in parameters:
                     token['token_id'] = word.token_id
-                if 'inbound' in parameters:
-                    token['inbound'] = word.inbound
-                if 'outbound' in parameters:
-                    token['outbound'] = word.outbound
+                if 'in' in parameters:
+                    token['in'] = word.inbound
+                if 'out' in parameters:
+                    token['out'] = word.outbound
                 deleted_tokens.append(token)
         return json_data
 
@@ -833,11 +836,12 @@ class Wikiwho:
         """
         Return content (all tokens) of this article.
 
-        :param parameters: List of parameters ('rev_id', 'editor', 'token_id', 'inbound', 'outbound').
+        :param parameters: List of parameters ('o_rev_id', 'editor', 'token_id', 'in', 'out').
         :return: Content of the article in json format.
         """
         json_data = dict()
-        json_data["article"] = self.title
+        json_data["article_title"] = self.title
+        json_data["page_id"] = self.page_id
         json_data["success"] = True
         json_data["message"] = None
 
@@ -850,32 +854,32 @@ class Wikiwho:
             for word in self.tokens:
                 token = dict()
                 token['str'] = word.value
-                if 'origin_rev_id' in parameters:
-                    token['rev_id'] = word.origin_rev_id
+                if 'o_rev_id' in parameters:
+                    token['o_rev_id'] = word.origin_rev_id
                 if 'editor' in parameters:
                     token['editor'] = self.revisions[word.origin_rev_id].editor
                 if 'token_id' in parameters:
                     token['token_id'] = word.token_id
-                if 'inbound' in parameters:
-                    token['inbound'] = word.inbound
-                if 'outbound' in parameters:
-                    token['outbound'] = word.outbound
+                if 'in' in parameters:
+                    token['in'] = word.inbound
+                if 'out' in parameters:
+                    token['out'] = word.outbound
                 all_tokens.append(token)
         else:
             for word in self.tokens:
                 if len(word.outbound) > threshold:
                     token = dict()
                     token['str'] = word.value
-                    if 'rev_id' in parameters:
-                        token['rev_id'] = word.origin_rev_id
+                    if 'o_rev_id' in parameters:
+                        token['o_rev_id'] = word.origin_rev_id
                     if 'editor' in parameters:
                         token['editor'] = self.revisions[word.origin_rev_id].editor
                     if 'token_id' in parameters:
                         token['token_id'] = word.token_id
-                    if 'inbound' in parameters:
-                        token['inbound'] = word.inbound
-                    if 'outbound' in parameters:
-                        token['outbound'] = word.outbound
+                    if 'in' in parameters:
+                        token['in'] = word.inbound
+                    if 'out' in parameters:
+                        token['out'] = word.outbound
                     all_tokens.append(token)
         return json_data
 
@@ -888,7 +892,8 @@ class Wikiwho:
         :return: Content of the article in json format.
         """
         json_data = dict()
-        json_data["article"] = self.title
+        json_data["article_title"] = self.title
+        json_data["page_id"] = self.page_id
         json_data["success"] = True
         json_data["message"] = None
 
@@ -909,7 +914,8 @@ class Wikiwho:
         :return: List of revision ids of this article in json format.
         """
         json_data = dict()
-        json_data["article"] = self.title
+        json_data["article_title"] = self.title
+        json_data["page_id"] = self.page_id
         json_data["success"] = True
         json_data["message"] = None
 

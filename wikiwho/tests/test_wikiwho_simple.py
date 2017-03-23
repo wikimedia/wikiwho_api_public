@@ -89,7 +89,7 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
 
     v = WikiwhoView()
     # create json with rev and editor ids
-    revision_json = v.get_revision_content(wp, {'str', 'origin_rev_id', 'editor'}, from_db=from_db, with_token_ids=False)
+    revision_json = v.get_revision_content(wp, {'str', 'o_rev_id', 'editor'}, from_db=from_db, with_token_ids=False)
     # compare jsons with rev and editor ids
     json_file_path = '{}/{}_ri_ai.json'.format(temp_folder, article_title)
     with io.open(json_file_path, 'w', encoding='utf-8') as f:
@@ -114,29 +114,29 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
     in_out_test_spam = True
     in_out_test_ts = True
     # last_used_test_spam = True
-    revision_json = v.get_revision_content(wp, {'str', 'inbound', 'outbound'}, from_db=from_db, with_token_ids=False)
+    revision_json = v.get_revision_content(wp, {'str', 'in', 'out'}, from_db=from_db, with_token_ids=False)
     for i, ri in enumerate(wp.revision_ids):
         for t in revision_json['revisions'][i][ri]['tokens']:
-            in_out_test_len = 0 <= len(t['outbound']) - len(t['inbound']) <= 1
-            for r in t['outbound']:
+            in_out_test_len = 0 <= len(t['out']) - len(t['in']) <= 1
+            for r in t['out']:
                 if r in wp.wikiwho.spam_ids:
                     in_out_test_spam = False
-            for r in t['inbound']:
+            for r in t['in']:
                 if r in wp.wikiwho.spam_ids:
                     in_out_test_spam = False
-            for o, i_ in zip(t['outbound'], t['inbound']):
+            for o, i_ in zip(t['out'], t['in']):
                 ts_diff = (parse_datetime(wp.wikiwho.revisions[i_].timestamp) -
                            parse_datetime(wp.wikiwho.revisions[o].timestamp)).total_seconds()
                 if ts_diff < 0:
                     in_out_test_ts = True
-            if len(t['outbound']) > len(t['inbound']) and t['inbound']:
-                ts_diff = (parse_datetime(wp.wikiwho.revisions[t['outbound'][-1]].timestamp) -
-                           parse_datetime(wp.wikiwho.revisions[t['inbound'][-1]].timestamp)).total_seconds()
+            if len(t['out']) > len(t['in']) and t['in']:
+                ts_diff = (parse_datetime(wp.wikiwho.revisions[t['out'][-1]].timestamp) -
+                           parse_datetime(wp.wikiwho.revisions[t['in'][-1]].timestamp)).total_seconds()
                 if ts_diff < 0:
                     in_out_test_ts = True
             # last_used_test_spam = not (t['last_used'] in wp.wikiwho.spam_ids)
             if not in_out_test_len or not in_out_test_spam or not in_out_test_ts:
-                # print(t['str'], len(t['outbound']), len(t['inbound']), t['outbound'], t['inbound'])
+                # print(t['str'], len(t['out']), len(t['in']), t['out'], t['in'])
                 break
 
     # test spams
@@ -177,7 +177,7 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
 
         # create deleted content json with threshold 0
         # TODO get deleted content of a specific revision, so that we can test it for xml dumps
-        deleted_tokens_json = v.get_deleted_content(wp, ['str', 'origin_rev_id', 'editor', 'token_id', 'inbound', 'outbound', 0], from_db=from_db)
+        deleted_tokens_json = v.get_deleted_content(wp, ['str', 'o_rev_id', 'editor', 'token_id', 'in', 'out', 0], from_db=from_db)
         json_file_path = '{}/{}_deleted_content.json'.format(temp_folder, article_title)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(deleted_tokens_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
@@ -353,43 +353,43 @@ class TestWikiwho:
         data = {
             0: {
                 'used': [[0], [0], [0], [0], [0], [0], [0], [0]],
-                'inbound': [[], [], [], [], [], [], [], []],
-                'outbound': [[], [], [], [], [], [], [], []],
+                'in': [[], [], [], [], [], [], [], []],
+                'out': [[], [], [], [], [], [], [], []],
             },
             1: {
                 'used': [[0, 1], [1], [0, 1], [0, 1], [0, 1], [1], [0, 1], [0, 1], [1], [1], [1], [1], [1], [1]],
-                'inbound': [[], [], [], [], [], [], [], [], [], [], [], [], [], []],
-                'outbound': [[], [], [], [], [], [], [], [], [], [], [], [], [], []],
+                'in': [[], [], [], [], [], [], [], [], [], [], [], [], [], []],
+                'out': [[], [], [], [], [], [], [], [], [], [], [], [], [], []],
             },
             2: {
                 'used': [[0, 1, 2], [1, 2], [0, 1, 2], [0, 1, 2], [0, 1, 2], [1, 2], [0, 1, 2], [0, 1, 2]],
-                'inbound': [[], [], [], [], [], [], [], []],
-                'outbound': [[], [], [], [], [], [], [], []],
+                'in': [[], [], [], [], [], [], [], []],
+                'out': [[], [], [], [], [], [], [], []],
             },
             3: {
                 'used': [[0, 1, 2, 3], [1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [1, 3], [1, 3], [1, 3], [1, 3], [1, 3], [1, 3]],
-                'inbound': [[], [], [], [], [], [], [], [], [3], [3], [3], [3], [3], [3]],
-                'outbound': [[], [], [], [], [], [], [], [], [2], [2], [2], [2], [2], [2]],
+                'in': [[], [], [], [], [], [], [], [], [3], [3], [3], [3], [3], [3]],
+                'out': [[], [], [], [], [], [], [], [], [2], [2], [2], [2], [2], [2]],
             },
             4: {
                 'used': [[0, 1, 2, 3, 4], [1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [1, 3, 4], [1, 3, 4], [1, 3, 4], [1, 3, 4], [4], [4]],
-                'inbound': [[], [], [], [], [], [], [], [], [3], [3], [3], [3], [], []],
-                'outbound': [[], [], [], [], [], [], [], [], [2], [2], [2], [2], [], []],
+                'in': [[], [], [], [], [], [], [], [], [3], [3], [3], [3], [], []],
+                'out': [[], [], [], [], [], [], [], [], [2], [2], [2], [2], [], []],
             },
             5: {
                 'used': [[0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [5], [5], [0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 5], [1, 3, 4, 5], [1, 3, 4, 5], [1, 3, 4, 5], [1, 3, 4, 5], [4, 5], [4, 5]],
-                'inbound': [[], [], [], [], [], [], [], [], [3], [3], [3], [3], [], []],
-                'outbound': [[], [], [], [], [], [], [], [], [2], [2], [2], [2], [], []],
+                'in': [[], [], [], [], [], [], [], [], [3], [3], [3], [3], [], []],
+                'out': [[], [], [], [], [], [], [], [], [2], [2], [2], [2], [], []],
             },
             6: {
                 'used': [[0, 1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 6], [0, 1, 2, 3, 4, 6], [0, 1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6], [0, 1, 2, 3, 4, 5, 6], [1, 3, 4, 5, 6], [1, 3, 4, 5, 6], [1, 3, 4, 5, 6], [1, 3, 4, 5, 6], [4, 5, 6], [4, 5, 6]],
-                'inbound': [[], [], [6], [6], [], [], [], [], [3], [3], [3], [3], [], []],
-                'outbound': [[], [], [5], [5], [], [], [], [], [2], [2], [2], [2], [], []],
+                'in': [[], [], [6], [6], [], [], [], [], [3], [3], [3], [3], [], []],
+                'out': [[], [], [5], [5], [], [], [], [], [2], [2], [2], [2], [], []],
             },
             27: {
                 'used': [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 15, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [26, 27], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27], [1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [25, 26, 27], [25, 26, 27], [25, 26, 27], [4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [7, 8, 9, 10, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [7, 8, 9, 10, 12, 13, 15, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27], [8, 9, 10, 12, 13, 15, 17, 18, 19, 22, 23, 24, 25, 26, 27], [9, 10, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [8, 9, 10, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27], [27], [10, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]],
-                'inbound': [[12, 15, 17], [12, 15, 17], [6, 12, 15, 17], [6, 12, 15, 17, 19], [12, 15, 17, 21], [12, 15, 17], [ ], [12, 15, 17], [12, 15, 17], [3, 12, 15, 17], [3, 12, 15, 17, 19], [3, 12, 15, 17], [3, 12, 15, 17], [], [], [], [12, 15, 17], [12, 15, 17], [12, 15, 17, 19], [12, 15, 17, 22], [12, 15, 17], [12, 15, 17], [], [12, 15, 17]],
-                'outbound': [[11, 13, 16], [11, 13, 16], [5, 11, 13, 16], [5, 11, 13, 16, 18], [11, 13, 16, 20], [11, 13, 16], [ ], [11, 13, 16], [11, 13, 16], [2, 11, 13, 16], [2, 11, 13, 16, 18], [2, 11, 13, 16], [2, 11, 13, 16], [], [], [], [11, 13, 16], [11, 14, 16], [11, 14, 16, 18], [11, 14, 16, 20], [11, 14, 16], [11, 14, 16], [], [11, 14, 16]],
+                'in': [[12, 15, 17], [12, 15, 17], [6, 12, 15, 17], [6, 12, 15, 17, 19], [12, 15, 17, 21], [12, 15, 17], [ ], [12, 15, 17], [12, 15, 17], [3, 12, 15, 17], [3, 12, 15, 17, 19], [3, 12, 15, 17], [3, 12, 15, 17], [], [], [], [12, 15, 17], [12, 15, 17], [12, 15, 17, 19], [12, 15, 17, 22], [12, 15, 17], [12, 15, 17], [], [12, 15, 17]],
+                'out': [[11, 13, 16], [11, 13, 16], [5, 11, 13, 16], [5, 11, 13, 16, 18], [11, 13, 16, 20], [11, 13, 16], [ ], [11, 13, 16], [11, 13, 16], [2, 11, 13, 16], [2, 11, 13, 16, 18], [2, 11, 13, 16], [2, 11, 13, 16], [], [], [], [11, 13, 16], [11, 14, 16], [11, 14, 16, 18], [11, 14, 16, 20], [11, 14, 16], [11, 14, 16], [], [11, 14, 16]],
             }
         }
         article_title = 'Finger_Lakes'
@@ -409,8 +409,8 @@ class TestWikiwho:
                     inbound = [x for x in word.inbound if x <= rev_id]
                     outbound = [x for x in word.outbound if x <= rev_id]
                     assert last_rev_id == data[rev_id]['used'][i], 'last_rev_id does not match, rev id: {} - {}'.format(rev_id, i)
-                    assert inbound == data[rev_id]['inbound'][i], 'inbound does not match, rev id: {} - {}'.format(rev_id, i)
-                    assert outbound == data[rev_id]['outbound'][i], 'outbound does not match, rev id: {} - {}'.format(rev_id, i)
+                    assert inbound == data[rev_id]['in'][i], 'inbound does not match, rev id: {} - {}'.format(rev_id, i)
+                    assert outbound == data[rev_id]['out'][i], 'outbound does not match, rev id: {} - {}'.format(rev_id, i)
                     i += 1
             # TODO compare from db too
 
