@@ -31,6 +31,8 @@ drf-extensions
 #mediawiki-utilities
 mwxml
 mwreverts
+sseclient-py
+urllib3
 
 psycopg2
 # django-postgres-copy
