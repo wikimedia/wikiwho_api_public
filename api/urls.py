@@ -9,7 +9,7 @@ urlpatterns = [
     url(r'^rev_content/rev_id/(?P<rev_id>[0-9]+)/$',
         WikiwhoApiView.as_view(actions={'get': 'get_rev_content_by_rev_id'}), name='rev_content_rev_id'),
     url(r'^rev_content/(?P<article_title>.+)/(?P<start_rev_id>[0-9]+)/(?P<end_rev_id>[0-9]+)/$',
-        WikiwhoApiView.as_view(actions={'get': 'get_rev_content_slice'}), name='rev_content_slice'),
+        WikiwhoApiView.as_view(actions={'get': 'get_range_rev_content'}), name='rev_content_slice'),
     url(r'^rev_content/(?P<article_title>.+)/(?P<rev_id>[0-9]+)/$',
         WikiwhoApiView.as_view(actions={'get': 'get_article_rev_content'}), name='rev_content_title_rev_id'),
     url(r'^rev_content/(?P<article_title>.+)/$',

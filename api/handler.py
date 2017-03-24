@@ -162,8 +162,6 @@ class WPHandler(object):
             session = create_wp_session()
             headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
                        'From': settings.WP_HEADERS_FROM}
-            url = 'https://en.wikipedia.org/w/api.php'
-            # revisions: Returns revisions for a given page
             params = {'pageids': self.page_id, 'action': 'query', 'prop': 'revisions',
                       'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
                       'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer'}
@@ -180,7 +178,8 @@ class WPHandler(object):
             try:
                 # TODO ? get revisions until revision_ids[-1], check line: elif not pages.get('revision')
                 # params.update({'rvendid': self.revision_ids[-1]})  # gets from beginning
-                result = session.get(url=url, headers=headers, params=params).json()
+                result = session.get(url=settings.WP_API_URL, headers=headers, params=params,
+                                     timeout=settings.WP_REQUEST_TIMEOUT).json()
             except Exception as e:
                 if is_api_call:
                     raise WPHandlerException('HTTP Response error from Wikipedia! Please try again later.')

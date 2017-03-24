@@ -7,8 +7,8 @@ wikiwho_api/settings.py
 
 master_old_test/
 tests_ignore/
-wikiwho_app/tests/tmp_test_3/
-wikiwho_app/tests/tmp_test/
+wikiwho/tests/tmp_test_3/
+wikiwho/tests/tmp_test/
 assets/images/fav/
 tmp_pickles/
 static/

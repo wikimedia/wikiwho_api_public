@@ -274,7 +274,7 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
         return self.get_response(parameters, revision_ids=[int(rev_id)])
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
-    def get_rev_content_slice(self, request, version, article_title, start_rev_id, end_rev_id):
+    def get_range_rev_content(self, request, version, article_title, start_rev_id, end_rev_id):
         timestamps = get_revision_timestamp([start_rev_id, end_rev_id])
         if 'error' in timestamps:
             return Response({'Error': timestamps['error']},

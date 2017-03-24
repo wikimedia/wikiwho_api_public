@@ -24,19 +24,14 @@ def get_latest_revision_data(page_id=None, article_title=None, revision_id=None)
     else:
         return ''
     # set up request for Wikipedia API.
-    server = "en.wikipedia.org"
-    wp_api_url = 'https://{}/w/api.php'.format(server)
     params.update({'action': "query", 'prop': 'info', 'format': 'json'})
     # params = {'action': "query", 'titles': article_title, 'format': 'json'}
-    # headers = {"User-Agent": "WikiWhoClient/0.1", "Accept": "*/*", "Host": server}
     headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
                'From': settings.WP_HEADERS_FROM,
-               "Accept": "*/*", "Host": server}
+               "Accept": "*/*", "Host": settings.WP_SERVER}
     # make get request
-    resp_ = requests.get(wp_api_url, params, headers=headers)
-    # convert response into dict
-    # print(resp_)
-    response = resp_.json()
+    resp_ = requests.get(settings.WP_API_URL, params, headers=headers)
+    response = resp_.json()  # convert response into dict
     pages = response["query"].get('pages')
     is_pages = False
     if pages:
@@ -56,23 +51,21 @@ def get_latest_revision_data(page_id=None, article_title=None, revision_id=None)
 
 def get_revision_timestamp(revision_ids):
     # set up request for Wikipedia API.
-    server = "en.wikipedia.org"
-    wp_api_url = 'https://{}/w/api.php'.format(server)
     params = {'action': "query", 'prop': 'revisions', 'format': 'json',
               'rvprop': 'timestamp|ids', 'revids': '|'.join(revision_ids)}
     headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
                'From': settings.WP_HEADERS_FROM,
-               "Accept": "*/*", "Host": server}
+               "Accept": "*/*", "Host": settings.WP_SERVER}
     # make get request
     try:
-        resp_ = requests.get(wp_api_url, params, headers=headers, timeout=3)
+        resp_ = requests.get(settings.WP_API_URL, params, headers=headers, timeout=3)
     except ReadTimeout:
-        return {'error': 'Bad revision id.'}
-    # convert response into dict
-    response = resp_.json()
+        return {'error': 'Bad revision ids.'}
+    response = resp_.json()  # convert response into dict
     pages = response["query"].get('pages', [])
     if len(pages) != 1 or 'badrevids' in response['query']:
-        return {'error': 'Bad revision id.'}
+        # given rev ids must belong to 1 article
+        return {'error': 'Bad revision ids.'}
     _, page = pages.popitem()
     timestamps = {str(rev['revid']): rev['timestamp'] for rev in page['revisions']}
     return [timestamps[rev_id] for rev_id in revision_ids]
@@ -85,15 +78,14 @@ def create_wp_session():
     headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
                'From': settings.WP_HEADERS_FROM}
     session.headers.update(headers)
-    # Login request
-    url = 'https://en.wikipedia.org/w/api.php'
-    # get token
-    r1 = session.post(url, data={'action': 'query', 'meta': 'tokens', 'type': 'login', 'format': 'json'})
+    # get token to log in
+    r1 = session.post(settings.WP_API_URL, data={'action': 'query', 'meta': 'tokens',
+                                                 'type': 'login', 'format': 'json'})
     token = r1.json()["query"]["tokens"]["logintoken"]
     # token = urllib.parse.quote(token)
     # log in
-    r2 = session.post(url, data={'action': 'login', 'format': 'json', 'lgname': settings.WP_USER,
-                                 'lgpassword': settings.WP_PASSWORD, 'lgtoken': token})
+    r2 = session.post(settings.WP_API_URL, data={'action': 'login', 'format': 'json', 'lgname': settings.WP_USER,
+                                                 'lgpassword': settings.WP_PASSWORD, 'lgtoken': token})
     return session
 
 
@@ -157,7 +149,6 @@ def get_article_xml(article_name):
               'rvlimit': 'max', 'format': 'xml', 'continue': '', 'rvdir': 'newer'}
     headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
                'From': settings.WP_HEADERS_FROM}
-    url = 'https://en.wikipedia.org/w/api.php'
 
     rvcontinue = True
     # document = None
@@ -171,7 +162,7 @@ def get_article_xml(article_name):
             params['rvcontinue'] = rvcontinue
             print(rvcontinue)
         try:
-            result = session.get(url=url, headers=headers, params=params)
+            result = session.get(url=settings.WP_API_URL, headers=headers, params=params)
         except:
             print("HTTP Response error! Try again later!")
         p = etree.XMLParser(huge_tree=True, encoding='utf-8')
