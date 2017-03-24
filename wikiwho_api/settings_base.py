@@ -281,3 +281,16 @@ ADMINS = [('Kenan', 'kenan.erdogan@gesis.org')]  # ('Fabian', 'fabian.floeck@ges
 MANAGERS = [('Kenan', 'kenan.erdogan@gesis.org')]  # ('Fabian', 'fabian.floeck@gesis.org')]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap'  # default is bootstrap2: http://getbootstrap.com/2.3.2/getting-started.html
+
+
+# Celery settings
+
+# CELERY_BROKER_URL = 'amqp://guest:guest@localhost//'
+# CELERY_BROKER_URL = 'pyamqp://guest@localhost//'
+CELERY_BROKER_URL = 'amqp://localhost'  # RabbitMQ
+
+#: Only add pickle to this list if your broker is secured
+#: from unwanted access (see userguide/security.html)
+CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_RESULT_BACKEND = 'db+sqlite:///results.sqlite'
+CELERY_TASK_SERIALIZER = 'json'
