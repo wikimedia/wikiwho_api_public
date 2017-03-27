@@ -13,8 +13,11 @@ from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
 
 # from django.utils.translation import get_language
 from django.conf import settings
+from django.views.generic.base import RedirectView
+from django.urls import reverse
 # from django.core.signals import request_started, request_finished
 # from django.http import HttpResponse
+
 from wikiwho.models import Revision, Article
 from rest_framework_tracking.mixins import LoggingMixin
 from .handler import WPHandler, WPHandlerException
@@ -358,3 +361,11 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
     #
     # request_started.connect(started)
     # request_finished.connect(finished)
+
+
+class ApiRedirectView(RedirectView):
+    permanent = False  # 302
+    # pattern_name = 'api:swagger'
+
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('api:swagger', kwargs={'version': 'v1.0.0-beta'})
