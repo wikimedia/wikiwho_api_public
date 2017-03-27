@@ -60,7 +60,6 @@ custom_data = {
             'description': 'This API provides provenance and change information about the tokens a Wikipedia article '
                            'consists of.\n\n'
                            'For each article page it mirrors its current state on the English Wikipedia.\n\n'
-                           'The accuracy is around 96%, evaluated against a gold standard dataset. '
                            'It\'s based on the [WikiWho algorithm](https://github.com/wikiwho) - the most accurate '
                            'algorithm for this task, evaluated against a [gold standard dataset]'
                            '(http://f-squared.org/wikiwho/#paper) (~95% acc.).\n\n'
@@ -93,7 +92,7 @@ custom_data = {
                            '**Please cite it** as well if you use data from this API in your research.\n\n'
                            '(note that the dataset excludes redirect articles and tokenization can slightly differ '
                            'from the API version)\n\n'
-                           '**Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
+                           '### **Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
                            '(http://www.gesis.org/en/institute/gesis-scientific-departments/'
                            'computational-social-science/)',
             # 'contact': {
