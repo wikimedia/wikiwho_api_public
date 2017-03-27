@@ -13,7 +13,7 @@ ALLOWED_HOSTS = ['193.175.238.88',
                  'www.wikiwho.net',
                  'wikiwho.net']
 
-ONLY_READ_ALLOWED = True
+ONLY_READ_ALLOWED = False
 
 # def custom_show_toolbar(request):
 #     return True  # show toolbar always for staging
