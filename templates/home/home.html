@@ -49,6 +49,9 @@
 {#                        <li><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
 {#                    </ul>#}
                     <ul class="nav pull-right">
+                        {% if request.user.is_superuser %}
+                        <li><a href="{% url 'admin:index' %}">Admin</a></li>
+                        {% endif %}
 {#                        <li class="active"><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
                         <li><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>
                         <li><a href="{% url 'contact' %}">Contact</a></li>
