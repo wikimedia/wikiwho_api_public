@@ -252,6 +252,7 @@ SWAGGER_SETTINGS = {
 
 # where pickles are saved
 PICKLE_FOLDER = 'pickles_api'
+PICKLE_OPEN_TIMEOUT = 3 * 60
 
 LOG_PARSING_PATTERN = '#######*******#######'
 REVISION_COUNT_CACHE_LIMIT = 100
