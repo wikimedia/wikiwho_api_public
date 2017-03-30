@@ -174,8 +174,9 @@ class WPHandler(object):
             if cache.get(self.cache_key, '0') != '1':
                 cache.set(self.cache_key, '1', gunicorn_timeout)
             else:
-                raise WPHandlerException('Article is under process now. '
-                                         'Content of the requested revision will be available soon.')
+                raise WPHandlerException('Article ({}) is under process now. '
+                                         'Content of the requested revision will be available soon.'.
+                                         format(self.article_title or self.page_id))
                                          # 'Content of the requested revision will be available soon (Max {} seconds).'
                                          # .format(cache_timeout))
 
