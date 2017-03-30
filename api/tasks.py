@@ -1,19 +1,24 @@
-
 from __future__ import absolute_import, unicode_literals
 
+from django.core.cache import cache
 from celery import shared_task
+# from celery.exceptions import SoftTimeLimitExceeded
+from celery_config import default_task_soft_time_limit
 
-from .handler import WPHandler
-from .events_stream import iter_changed_page_ids
+from .handler import WPHandler, WPHandlerException
 
-@shared_task
+
+def process_article_task(page_id):
+        if cache.get('page_{}'.format(page_id)) == '1':
+            return False
+        try:
+            with WPHandler(None, page_id=page_id) as wp:
+                wp.handle(revision_ids=[], is_api_call=False, cache_key_timeout=default_task_soft_time_limit)
+        except WPHandlerException:
+            return False
+        return True
+
+
+@shared_task(soft_time_limit=default_task_soft_time_limit)
 def process_article(page_id):
-    print(page_id)
-    # with WPHandler(None, page_id=page_id) as wp:
-    #     wp.handle(revision_ids=[], is_api_call=False)
-    return True
-
-
-def process_changed_articles():
-    for page_id in iter_changed_page_ids():
-        process_article.delay(page_id)
+    return process_article_task(page_id)

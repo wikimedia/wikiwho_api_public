@@ -142,7 +142,7 @@ class WPHandler(object):
                                       + "|" \
                                       + str(self.wikiwho.revision_curr.id + 1)
 
-    def handle(self, revision_ids, is_api_call=True):
+    def handle(self, revision_ids, is_api_call=True, cache_key_timeout=None):
         # time1 = time()
         # check if article exists
         if self.latest_revision_id is None:
@@ -172,7 +172,7 @@ class WPHandler(object):
                       'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer'}
             # TODO use is_api call?
             if cache.get(self.cache_key, '0') != '1':
-                cache.set(self.cache_key, '1', gunicorn_timeout)
+                cache.set(self.cache_key, '1', cache_key_timeout or gunicorn_timeout)
             else:
                 raise WPHandlerException('Revision {} of the article ({}) is under process now. '
                                          'Content of the requested revision will be available soon.'.

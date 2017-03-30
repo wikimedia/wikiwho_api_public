@@ -18,6 +18,7 @@ django-registration
 django-crispy-forms
 
 celery
+flower
 
 djangorestframework
 #coreapi
