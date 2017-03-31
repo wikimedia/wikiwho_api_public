@@ -24,9 +24,9 @@ sys.setrecursionlimit(5000)  # default is 1000
 
 
 class WPHandlerException(Exception):
-    def __init__(self, message):
+    def __init__(self, message, code):
         self.message = message
-        # TODO self.code
+        self.code = code
 
     def __str__(self):
         return repr(self.message)
@@ -61,7 +61,7 @@ class WPHandler(object):
         if self.page_id:
             self.page_id = int(self.page_id)
             if not 0 < self.page_id < 2147483647:
-                raise WPHandlerException('Please enter a valid page id ({}).'.format(self.page_id))
+                raise WPHandlerException('Please enter a valid page id ({}).'.format(self.page_id), '01')
 
         if self.is_xml:
             self.saved_article_title = self.article_title.replace(' ', '_')
@@ -108,7 +108,7 @@ class WPHandler(object):
         if self.check_exists and self.already_exists:
             # no continue logic for xml processing
             # return
-            raise WPHandlerException('Article ({}) already exists.'.format(self.page_id))
+            raise WPHandlerException('Article ({}) already exists.'.format(self.page_id), '20')
 
         try:
             if timeout:
@@ -147,16 +147,16 @@ class WPHandler(object):
         # check if article exists
         if self.latest_revision_id is None:
             raise WPHandlerException('The article ({}) you are trying to request does not exist'.
-                                     format(self.article_title or self.page_id))
+                                     format(self.article_title or self.page_id), '00')
         elif self.namespace != 0:
-            raise WPHandlerException('Only articles! Namespace {} is not accepted.'.format(self.namespace))
+            raise WPHandlerException('Only articles! Namespace {} is not accepted.'.format(self.namespace), '02')
         self.revision_ids = revision_ids or [self.latest_revision_id]
 
         if settings.ONLY_READ_ALLOWED:
             if self.already_exists:
                 return
             else:
-                raise WPHandlerException('Only read is allowed for now.')
+                raise WPHandlerException('Only read is allowed for now.', '21')
 
         # holds the last revision id which is saved. 0 for new article
         rvcontinue = self.saved_rvcontinue
@@ -176,7 +176,7 @@ class WPHandler(object):
             else:
                 raise WPHandlerException('Article ({}) is under process now. '
                                          'Content of the requested revision will be available soon.'.
-                                         format(self.article_title or self.page_id))
+                                         format(self.article_title or self.page_id), '03')
                                          # 'Content of the requested revision will be available soon (Max {} seconds).'
                                          # .format(cache_timeout))
 
@@ -196,20 +196,20 @@ class WPHandler(object):
                                      timeout=settings.WP_REQUEST_TIMEOUT).json()
             except Exception as e:
                 if is_api_call:
-                    raise WPHandlerException('HTTP Response error from Wikipedia! Please try again later.')
+                    raise WPHandlerException('HTTP Response error from Wikipedia! Please try again later.', '10')
                 else:
                     # if not api query, raise the original exception
                     raise e
 
             if 'error' in result:
-                raise WPHandlerException('Wikipedia API returned the following error:' + str(result['error']))
+                raise WPHandlerException('Wikipedia API returned the following error:' + str(result['error']), '11')
             # if 'warnings' in result:
             #   raise WPHandlerException('Wikipedia API returned the following warning:" + result['warnings']))
             if 'query' in result:
                 pages = result['query']['pages']
                 if "-1" in pages:
                     raise WPHandlerException('The article ({}) you are trying to request does not exist!'.
-                                             format(self.article_title or self.page_id))
+                                             format(self.article_title or self.page_id), '00')
                 # elif not pages.get('revision'):
                 #     raise WPHandlerException(message="End revision ID does not exist!")
                 try:

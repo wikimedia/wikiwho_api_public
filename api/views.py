@@ -247,7 +247,10 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
                 self.page_id = wp.page_id
                 wp.handle(revision_ids, 'json')
         except WPHandlerException as e:
-            response = {'Error': e.message}
+            if e.code == '03':
+                response = {'Info': e.message}
+            else:
+                response = {'Error': e.message}
             status_ = status.HTTP_400_BAD_REQUEST
         except JSONDecodeError as e:
             response = {'Error': 'HTTP Response error from Wikipedia! Please try again later.'}
