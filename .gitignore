@@ -16,3 +16,4 @@ notebooks/ipython_log.py
 notebooks/ignore
 .ipynb_checkpoints/
 .well-known
+flower.db
