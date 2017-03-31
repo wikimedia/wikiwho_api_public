@@ -1,9 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
-
 from wikiwho_api.celery import app
 
-from .events_stream import iter_changed_page_ids
+from .events_stream import iter_changed_pages
 from .tasks import process_article
 
 worker_name = app.control.inspect().ping().popitem()[0]
@@ -16,33 +15,33 @@ inspector = app.control.inspect([worker_name])
 # scheduled: List of currently scheduled ETA/countdown tasks.
 
 
-def get_active_task_page_ids():
-    """Return page ids of tasks that are running right now."""
-    page_ids = []
+def get_active_task_pages():
+    """Return pages of tasks that are running right now."""
+    tasks = inspector.active()[worker_name]
     """
+    task:
     [{'worker1.example.com':
     [{'name': 'tasks.sleeptask',
       'id': '32666e9b-809c-41fa-8e93-5ae0c80afbbf',
-      'args': '(8,)',
+      'args': '(8/"title",)',
       'kwargs': '{}'}]}]
     """
-    for task in inspector.active()[worker_name]:
-        page_ids.append(int(task['args'].split(',')[0][1:]))
-    return page_ids
+    # return [int(task['args'].split(',')[0][1:]) for task in tasks]  # ids
+    return [task['args'][2:-3] for task in tasks]  # titles
 
 
-def get_inactive_task_page_ids():
-    """Return page ids of tasks that are registered to Celery. This does not contain tasks in queue"""
-    page_ids = []
+def get_inactive_task_pages():
+    """Return pages of tasks that are registered to Celery. This does not contain tasks in queue."""
+    # TODO how to get list of tasks from RabbitMQ?
     # inspector.scheduled()[worker_name] - we have no scheduled tasks
     tasks = inspector.reserved()[worker_name]
-    for task in tasks:
-        page_ids.append(int(task['args'].split(',')[0][1:]))
-    return page_ids
+    # return [int(task['args'].split(',')[0][1:]) for task in tasks]  # ids
+    return [task['args'][2:-3] for task in tasks]  # titles
 
 
 def process_changed_articles():
-    for page_id in iter_changed_page_ids():
-        if page_id not in get_inactive_task_page_ids():
+    for page_title in iter_changed_pages():
+        # print(len(get_inactive_task_pages()))
+        if page_title not in get_inactive_task_pages():
             # if already not registered to celery
-            process_article.delay(page_id)
+            process_article.delay(page_title)

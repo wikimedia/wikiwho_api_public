@@ -146,7 +146,7 @@ class WPHandler(object):
         # time1 = time()
         # check if article exists
         if self.latest_revision_id is None:
-            raise WPHandlerException('The article ({}) you are trying to request does not exist'.
+            raise WPHandlerException('The article ({}) you are trying to request does not exist.'.
                                      format(self.article_title or self.page_id), '00')
         elif self.namespace != 0:
             raise WPHandlerException('Only articles! Namespace {} is not accepted.'.format(self.namespace), '02')
@@ -170,7 +170,7 @@ class WPHandler(object):
             params = {'pageids': self.page_id, 'action': 'query', 'prop': 'revisions',
                       'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
                       'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer'}
-            # TODO use is_api call?
+            # TODO use is_api call? for example celery is not api call! dont forget to do the same for deleting key.
             if cache.get(self.cache_key, '0') != '1':
                 cache.set(self.cache_key, '1', cache_key_timeout or gunicorn_timeout)
             else:

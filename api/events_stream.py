@@ -1,4 +1,4 @@
-import json
+# import json
 import urllib3
 from sseclient import SSEClient
 
@@ -39,18 +39,19 @@ def stream_response_with_requests(url):
     return requests.get(url, stream=True)
 
 
-def iter_changed_page_ids():
+def iter_changed_pages():
     # page_ids = []
     url = 'https://stream.wikimedia.org/v2/stream/recentchange'
     event_source = stream_response(url)
     # event_source = stream_response_with_requests(url)
     for event in EventSource(event_source).events():
         # print(event.data)  # "id":926316704,"
-        page_id = event.data.split('"id":')[1].split(',"')[0]
+        # page_id = event.data.split('"id":')[1].split(',"')[0] --> this is event id!
+        page_title = event.data.split('"title":')[1].split(',"')[0][1:-1]
         namespace = event.data.split('"namespace":')[1].split(',"')[0]
         wiki = event.data.split('"wiki":"')[1].split('"')[0]
-        if wiki == 'enwiki' and namespace == '0' and page_id and page_id != 'null':
-            yield int(page_id)
+        if wiki == 'enwiki' and namespace == '0' and page_title and page_title != 'null':
+            yield page_title
             # page_ids.append(page_id)
             # print(len(page_ids), len(set(page_ids)))
         # change = json.loads(event.data)

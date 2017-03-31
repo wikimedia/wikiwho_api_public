@@ -20,7 +20,7 @@ enable_utc = False
 
 
 # task_soft_time_limit = 4  # seconds
-default_task_soft_time_limit = 3
+default_task_soft_time_limit = 1800  # 30 minutes
 
 worker_concurrency = int(multiprocessing.cpu_count() / 3) + 1
 # class Autoscaler(BaseAutoscaler):
