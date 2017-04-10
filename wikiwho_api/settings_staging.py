@@ -1,7 +1,7 @@
 from .settings_base import *
 
 DEBUG = False
-TEMPLATE_DEBUG = DEBUG
+TEMPLATES[0]['OPTIONS']['debug'] = DEBUG
 
 # INSTALLED_APPS += ['debug_toolbar']
 # MIDDLEWARE_CLASSES += ['debug_toolbar.middleware.DebugToolbarMiddleware']

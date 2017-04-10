@@ -2,7 +2,7 @@ from .settings_base import *
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+TEMPLATES[0]['OPTIONS']['debug'] = DEBUG
 
 ALLOWED_HOSTS = ['local_host', '127.0.0.1']
 INTERNAL_IPS = ['127.0.0.1']
