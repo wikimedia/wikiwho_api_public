@@ -12,7 +12,7 @@ import sys
 from django.conf import settings
 from django.core.cache import cache
 
-from gunicorn_config import timeout as gunicorn_timeout
+from deployment.gunicorn_config import timeout as gunicorn_timeout
 from wikiwho.wikiwho_simple import Wikiwho
 from .utils import get_latest_revision_data, create_wp_session, Timeout
 from .utils_pickles import pickle_dump, pickle_load

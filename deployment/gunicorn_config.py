@@ -69,7 +69,8 @@ backlog = 2048  # default
 workers = multiprocessing.cpu_count() * 2 + 1
 worker_class = 'sync'  # default
 worker_connections = 1000  # default
-timeout = 3600  # 1 hour TODO better we should return a message 'update' and start a async task to process article?
+# TODO better we should return a info message to user and start a async task to process article?
+timeout = 3600  # 1 hour, default is 30
 keepalive = 2  # default
 
 #

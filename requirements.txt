@@ -36,3 +36,5 @@ psycopg2
 # django-postgres-copy
 python-memcached
 gunicorn
+fabric3
+#fabric
