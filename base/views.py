@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.core.cache import cache
 from django.core.management import call_command
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
@@ -8,7 +7,7 @@ from django.http import HttpResponseRedirect
 
 @staff_member_required
 def clear_cache(request):
-    cache.clear()
+    call_command('clear_cache')
     messages.add_message(request, messages.SUCCESS, 'Cache is cleared!')
     return HttpResponseRedirect(reverse('admin:index'))
 
