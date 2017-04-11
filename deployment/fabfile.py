@@ -40,6 +40,7 @@ def prepare_deploy(n=6, lines='all'):
 @task
 def deploy(branch='master', mode='base'):
     # fab production deploy
+    # fab production deploy:branch=dev,mode=full
     remote_project_root = '/home/nuser/wikiwho_api'
     with cd(remote_project_root):
         # with prefix('workon iwwa'):  # FIXME
