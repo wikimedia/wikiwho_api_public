@@ -40,22 +40,26 @@ def stream_response_with_requests(url):
 
 
 def iter_changed_pages():
-    # page_ids = []
     url = 'https://stream.wikimedia.org/v2/stream/recentchange'
     event_source = stream_response(url)
     # event_source = stream_response_with_requests(url)
+    # import time
+    # start = time.time()
+    # counter = 0
     for event in EventSource(event_source).events():
-        # print(event.data)  # "id":926316704,"
         # page_id = event.data.split('"id":')[1].split(',"')[0] --> this is event id!
-        page_title = event.data.split('"title":')[1].split(',"')[0][1:-1]
-        namespace = event.data.split('"namespace":')[1].split(',"')[0]
-        wiki = event.data.split('"wiki":"')[1].split('"')[0]
-        if wiki == 'enwiki' and namespace == '0' and page_title and page_title != 'null':
-            yield page_title
-            # page_ids.append(page_id)
-            # print(len(page_ids), len(set(page_ids)))
+        data = event.data
+        page_title = data.split('"title":')[1].split(',"')[0][1:-1]
+        if data.split('"wiki":"')[1].split('"')[0] == 'enwiki' and \
+           data.split('"namespace":')[1].split(',"')[0] == '0' and \
+           page_title and page_title != 'null' and \
+           data.split('"type":"')[1].split('"')[0] in ['edit', 'new']:
+            # counter += 1
+            yield page_title  # , time.time() - start, counter
+        # # import json
         # change = json.loads(event.data)
-        # if change['wiki'] == 'enwiki' and change['namespace'] == 0:
+        # if change['wiki'] == 'enwiki' and change['namespace'] == 0 and change['type'] == 'edit':
+        #     # yield change
         #     page_id = change['id']
         #     if page_id:
         #         yield page_id

@@ -3,8 +3,8 @@ from __future__ import absolute_import, unicode_literals
 # from django.core.cache import cache
 from celery import shared_task
 # from celery.exceptions import SoftTimeLimitExceeded
-from celery_config import default_task_soft_time_limit
 
+from deployment.celery_config import default_task_soft_time_limit
 from .handler import WPHandler, WPHandlerException
 
 
@@ -19,6 +19,8 @@ def process_article_task(page_title):
             # if e.code == '03':
                 # TODO if underprocess, start a new task??! i dont think is is necessary for now.
             raise e
+        # except SoftTimeLimitExceeded:
+        #     cache.delete(wp.cache_key)
         return True
 
 

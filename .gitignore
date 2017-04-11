@@ -17,3 +17,6 @@ notebooks/ignore
 .ipynb_checkpoints/
 .well-known
 flower.db
+flower.bak
+flower.dat
+flower.dir
