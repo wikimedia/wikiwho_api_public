@@ -47,6 +47,7 @@ responses = {
 }
 
 version = '1.0.0-beta'
+version_url = 'v{}'.format(version)
 custom_data = {
     'swagger': '2.0',
     'info': {

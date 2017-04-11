@@ -18,8 +18,10 @@ from django.contrib import admin
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns, static
 from django.views.generic import TemplateView
+from django.contrib.sitemaps.views import sitemap
 
 from base.views import clear_cache, clear_sessions
+from base.sitemaps import BaseStaticViewSitemap, ApiStaticViewSitemap
 from api.views import ApiRedirectView
 
 urlpatterns = [
@@ -33,7 +35,8 @@ urlpatterns = [
     url(r'^contact/$', TemplateView.as_view(template_name='contact/contact.html'), name='contact'),
     # url(r'^docs/', include('rest_framework_docs.urls')),
     url(r'^$', TemplateView.as_view(template_name='home/home.html'), name='home'),
-]
+    url(r'^sitemap\.xml$', sitemap, {'sitemaps': {'api': ApiStaticViewSitemap, 'base': BaseStaticViewSitemap}},
+        name='django.contrib.sitemaps.views.sitemap')]
 
 
 if settings.DEBUG:

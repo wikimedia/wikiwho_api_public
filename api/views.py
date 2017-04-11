@@ -21,7 +21,7 @@ from django.urls import reverse
 from wikiwho.models import Revision, Article
 from rest_framework_tracking.mixins import LoggingMixin
 from .handler import WPHandler, WPHandlerException
-from .swagger_data import custom_data, allowed_params, query_params
+from .swagger_data import custom_data, allowed_params, query_params, version_url
 from .utils import get_revision_timestamp
 
 
@@ -371,4 +371,4 @@ class ApiRedirectView(RedirectView):
     # pattern_name = 'api:swagger'
 
     def get_redirect_url(self, *args, **kwargs):
-        return reverse('api:swagger', kwargs={'version': 'v1.0.0-beta'})
+        return reverse('api:swagger', kwargs={'version': version_url})
