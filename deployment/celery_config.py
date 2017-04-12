@@ -18,7 +18,7 @@ task_serializer = 'json'  # CELERY_TASK_SERIALIZER
 timezone = settings.TIME_ZONE
 enable_utc = False
 
-
+worker_name = 'worker1@ww_host'  # check /etc/default/celeryd
 # task_soft_time_limit = 4  # seconds
 default_task_soft_time_limit = 1800  # 30 minutes
 long_task_soft_time_limit = 3600  # 1 hour

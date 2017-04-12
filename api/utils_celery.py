@@ -1,12 +1,13 @@
 from __future__ import absolute_import, unicode_literals
 
 from wikiwho_api.celery import app
+from deployment.celery_config import worker_name
 
 from .events_stream import iter_changed_pages
 from .tasks import process_article
 # from .utils_pickles import get_pickle_size
 
-worker_name = app.control.inspect().ping().popitem()[0]
+# worker_name = app.control.inspect().ping().popitem()[0]
 # give name of the worker to speed up
 inspector = app.control.inspect([worker_name])
 # active: List of tasks currently being executed.
