@@ -142,7 +142,7 @@ class WPHandler(object):
                                       + "|" \
                                       + str(self.wikiwho.revision_curr.id + 1)
 
-    def handle(self, revision_ids, is_api_call=True, cache_key_timeout=None):
+    def handle(self, revision_ids, is_api_call=True, timeout=None):
         # time1 = time()
         # check if article exists
         if self.latest_revision_id is None:
@@ -172,13 +172,13 @@ class WPHandler(object):
                       'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer'}
             # TODO use is_api call? for example celery is not api call! dont forget to do the same for deleting key.
             if cache.get(self.cache_key, '0') != '1':
-                cache.set(self.cache_key, '1', cache_key_timeout or gunicorn_timeout)
+                cache.set(self.cache_key, '1', timeout or gunicorn_timeout)
             else:
                 raise WPHandlerException('Revision {} of the article ({}) is under process now. '
                                          'Content of the requested revision will be available soon.'.
                                          format(self.revision_ids[-1], self.article_title or self.page_id), '03')
                                          # 'Content of the requested revision will be available soon (Max {} seconds).'
-                                         # .format(cache_timeout))
+                                         # .format(timeout))
 
         while self.revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
             # continue downloading as long as we reach to the given rev_id limit
@@ -216,6 +216,16 @@ class WPHandler(object):
                     # pass first item in pages dict
                     _, page = result['query']['pages'].popitem()
                     self.wikiwho.analyse_article(page.get('revisions', []))
+                #     if timeout:
+                #         with Timeout(seconds=timeout,
+                #                      error_message='Timeout occurred. '
+                #                                    'Content of the requested revision will be available soon.'):
+                #             self.wikiwho.analyse_article(page.get('revisions', []))
+                #     else:
+                #         self.wikiwho.analyse_article(page.get('revisions', []))
+                # except TimeoutError:
+                #     # TODO save processed data until now and start a task into user queue
+                #     raise
                 except Exception:
                     if self.wikiwho.revision_curr.timestamp == 0:
                         # if all revisions were detected as spam

@@ -245,6 +245,7 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
             revision_id = revision_ids[0] if revision_ids else None
             with WPHandler(article_title, page_id=page_id, revision_id=revision_id) as wp:
                 self.page_id = wp.page_id
+                # timeout = gunicorn_timeout - settings.PICKLE_OPEN_TIMEOUT * 2
                 wp.handle(revision_ids, 'json')
         except WPHandlerException as e:
             if e.code == '03':

@@ -4,6 +4,7 @@ import time
 import io
 import fcntl
 import errno
+from os.path import getsize
 
 from six.moves import cPickle as pickle
 
@@ -67,3 +68,12 @@ def pickle_load(pickle_path):
     with OpenFileLock(pickle_path, 'rb', timeout=settings.PICKLE_OPEN_TIMEOUT) as f:
         obj = pickle.load(f)
     return obj
+
+
+def get_pickle_size(page_id):
+    pickle_path = "{}/{}.p".format(settings.PICKLE_FOLDER, page_id)
+    try:
+        size = getsize(pickle_path)  # [byte]
+    except FileNotFoundError:
+        size = 0
+    return size

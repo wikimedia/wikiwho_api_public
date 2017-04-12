@@ -21,6 +21,27 @@ enable_utc = False
 
 # task_soft_time_limit = 4  # seconds
 default_task_soft_time_limit = 1800  # 30 minutes
+long_task_soft_time_limit = 3600  # 1 hour
+user_task_soft_time_limit = long_task_soft_time_limit
+
+# task_queues = (
+#     Queue('default', queue_arguments={'x-max-priority': 1, }, ),
+#     Queue('long', Exchange('long'), routing_key='long', queue_arguments={'x-max-priority': 3}, ),
+#     Queue('user', Exchange('user'), routing_key='user', queue_arguments={'x-max-priority': 2}, ),
+# )
+# task_routes = {
+#         'api.tasks.process_article': {
+#             'queue': 'default',
+#         },
+#         'api.tasks.process_article_long': {
+#             'queue': 'long',
+#             'routing_key': 'long',
+#         },
+#         'api.tasks.process_article_user': {
+#             'queue': 'user',
+#             'routing_key': 'user',
+#         },
+# }
 
 worker_concurrency = int(multiprocessing.cpu_count() / 3) + 1
 # class Autoscaler(BaseAutoscaler):

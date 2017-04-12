@@ -253,7 +253,7 @@ SWAGGER_SETTINGS = {
 
 # where pickles are saved
 PICKLE_FOLDER = 'pickles_api'
-PICKLE_OPEN_TIMEOUT = 3 * 60
+PICKLE_OPEN_TIMEOUT = 180  # 3 mins
 
 LOG_PARSING_PATTERN = '#######*******#######'
 REVISION_COUNT_CACHE_LIMIT = 100
@@ -264,7 +264,7 @@ ONLY_READ_ALLOWED = False
 # Wikipedia
 WP_SERVER = "en.wikipedia.org"
 WP_API_URL = 'https://{}/w/api.php'.format(WP_SERVER)
-WP_REQUEST_TIMEOUT = 30
+WP_REQUEST_TIMEOUT = 30  # [seconds]
 # WP_HEADERS_USER_AGENT = 'wikiwho-api'
 WP_HEADERS_USER_AGENT = 'Wikiwho API'
 WP_HEADERS_FROM = 'fabian.floeck@gesis.org and kenan.erdogan@gesis.org'
