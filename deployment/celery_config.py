@@ -42,8 +42,10 @@ user_task_soft_time_limit = long_task_soft_time_limit
 #             'routing_key': 'user',
 #         },
 # }
-
-worker_concurrency = int(multiprocessing.cpu_count() / 3) + 1
+if settings.DEBUG:
+    worker_concurrency = int(multiprocessing.cpu_count() / 3) + 1
+else:
+    worker_concurrency = 12
 # class Autoscaler(BaseAutoscaler):
 #     def __init__(self, pool, max_concurrency,
 #                  min_concurrency=0, worker=None,
