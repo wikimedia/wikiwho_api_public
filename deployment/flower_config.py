@@ -11,6 +11,6 @@ default is flowerconfig.py
 #     task.result = humanize(task.result, length=20)
 #     return task
 
-persistent = True  # default False
+persistent = False  # default False
 max_tasks = 10000  # default 10000
 # tasks_columns = 'name'
