@@ -17,13 +17,14 @@ def process_article_task(page_title, timeout, raise_soft_error=False):
                 # cache_key = wp.cache_key
                 wp.handle(revision_ids=[], is_api_call=False, timeout=timeout)
         except WPHandlerException as e:
-            # if e.code == '03':
-                # TODO if underprocess, start a new task??! i dont think is is necessary for now.
+            if e.code == '03':
+                # if article is already under process, simply skip it. TODO wait and start a new task?
+                return False
             raise e
         # except SoftTimeLimitExceeded as e:
         #     cache.delete(cache_key)
         #     if raise_soft_error:
-        #         # TODO write into csv?
+        #         # TODO write into csv? but sentry logs them anyway.
         #         raise e
         #     else:
         #         process_article_long.delay(page_title)
