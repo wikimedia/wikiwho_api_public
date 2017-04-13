@@ -219,14 +219,14 @@ def worker_abort(worker):
 """
 
 
-def worker_abort(worker):
-    """
-    Called when a worker received the SIGABRT signal.
-    This call generally happens on timeout.
-    The callable needs to accept one instance variable for the initialized Worker.
-    """
-    # FIXME this is not called on gunicorn timeout. or later we can log this error in user task!
-    worker.log.info("worker received SIGABRT signal")
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.error("Gunicorn worker received SIGABRT signal. This call generally happens on timeout.")
+# def worker_abort(worker):
+#     """
+#     Called when a worker received the SIGABRT signal.
+#     This call generally happens on timeout.
+#     The callable needs to accept one instance variable for the initialized Worker.
+#     """
+#     # FIXME this is not called on gunicorn timeout. or later we can log this error in user task!
+#     worker.log.info("worker received SIGABRT signal")
+#     import logging
+#     logger = logging.getLogger(__name__)
+#     logger.error("Gunicorn worker received SIGABRT signal. This call generally happens on timeout.")
