@@ -1,8 +1,5 @@
 """Gunicorn configuration file."""
 import multiprocessing
-import logging
-
-logger = logging.getLogger(__name__)
 #
 # Server socket
 #
@@ -230,4 +227,6 @@ def worker_abort(worker):
     """
     # FIXME this is not called on gunicorn timeout. or later we can log this error in user task!
     worker.log.info("worker received SIGABRT signal")
+    import logging
+    logger = logging.getLogger(__name__)
     logger.error("Gunicorn worker received SIGABRT signal. This call generally happens on timeout.")
