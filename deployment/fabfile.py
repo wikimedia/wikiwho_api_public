@@ -39,6 +39,7 @@ def prepare_deploy(n=6, lines='all'):
 
 @task
 def deploy(branch='master', mode='base'):
+    # TODO pip install yok!
     # fab production deploy
     # fab production deploy:branch=dev,mode=full
     remote_project_root = '/home/nuser/wikiwho_api'
@@ -51,6 +52,8 @@ def deploy(branch='master', mode='base'):
             run('git pull')
 
             if mode == 'full':
+                run('pip install -U -r requirements.txt')
+                run('pip install -U -r requirements_live.txt')
                 run('python manage.py migrate')
                 run('python manage.py collectstatic -c --noinput')
                 run('python manage.py clean_pyc')
