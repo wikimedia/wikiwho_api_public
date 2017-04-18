@@ -49,6 +49,8 @@ def iter_changed_pages():
     for event in EventSource(event_source).events():
         # page_id = event.data.split('"id":')[1].split(',"')[0] --> this is event id!
         data = event.data
+        if not data:
+            continue
         page_title = data.split('"title":')[1].split(',"')[0][1:-1]
         if data.split('"wiki":"')[1].split('"')[0] == 'enwiki' and \
            data.split('"namespace":')[1].split(',"')[0] == '0' and \
