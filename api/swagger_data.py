@@ -95,7 +95,9 @@ custom_data = {
                            'from the API version)\n\n'
                            '### **Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
                            '(http://www.gesis.org/en/institute/gesis-scientific-departments/'
-                           'computational-social-science/)',
+                           'computational-social-science/)\n\n'
+                           'Data from this API is published under the CC-BY-SA 4.0 license. Original revision data '
+                           'is retrieved from Wikimedia servers and the terms for reuse put forth by Wikimedia apply.',
             # 'contact': {
             #     'name': 'GESIS - Leibniz Institute for the Social Sciences, CSS group',
             #     # 'email': 'kenan.erdogan@gesis.org?cc=fabian.floeck@gesis.org&subject=wikiwho API',
