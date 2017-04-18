@@ -63,7 +63,8 @@ def iter_changed_pages():
             change = loads(event.data)
         except JSONDecodeError:
             continue
-        if change['wiki'] == 'enwiki' and change['namespace'] == 0 and \
-                change['title'] and change['type'] in ['edit', 'new']:
+        page_title = change.get('title')
+        if change.get('wiki') == 'enwiki' and change.get('namespace') == 0 and \
+                page_title and change.get('type') in ['edit', 'new']:
             # yield change
-            yield change['title']
+            yield page_title
