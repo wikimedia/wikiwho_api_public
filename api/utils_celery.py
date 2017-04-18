@@ -19,7 +19,8 @@ inspector = app.control.inspect([worker_name])
 
 def get_active_task_pages():
     """Return pages of tasks that are running right now."""
-    tasks = inspector.active()[worker_name]
+    active_tasks = inspector.active()  # {'worker_name': [active tasks]}
+    tasks = active_tasks[worker_name] if active_tasks else []
     """
     task:
     [{'worker1.example.com':
@@ -36,7 +37,8 @@ def get_inactive_task_pages():
     """Return pages of tasks that are registered to Celery. This does not contain tasks in queue."""
     # TODO how to get list of tasks from RabbitMQ?
     # inspector.scheduled()[worker_name] - we have no scheduled tasks
-    tasks = inspector.reserved()[worker_name]
+    reserved_tasks = inspector.reserved()  # {'worker_name': [reserved tasks]}
+    tasks = reserved_tasks[worker_name] if reserved_tasks else []
     # return [int(task['args'].split(',')[0][1:]) for task in tasks]  # ids
     return [task['args'][2:-3] for task in tasks]  # titles
 
