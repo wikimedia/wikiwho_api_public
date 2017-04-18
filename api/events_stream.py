@@ -1,4 +1,4 @@
-# import json
+import json
 import urllib3
 from sseclient import SSEClient
 
@@ -51,17 +51,15 @@ def iter_changed_pages():
         data = event.data
         if not data:
             continue
-        page_title = data.split('"title":')[1].split(',"')[0][1:-1]
-        if data.split('"wiki":"')[1].split('"')[0] == 'enwiki' and \
-           data.split('"namespace":')[1].split(',"')[0] == '0' and \
-           page_title and page_title != 'null' and \
-           data.split('"type":"')[1].split('"')[0] in ['edit', 'new']:
-            # counter += 1
-            yield page_title  # , time.time() - start, counter
-        # # import json
-        # change = json.loads(event.data)
-        # if change['wiki'] == 'enwiki' and change['namespace'] == 0 and change['type'] == 'edit':
-        #     # yield change
-        #     page_id = change['id']
-        #     if page_id:
-        #         yield page_id
+        # page_title = data.split('"title":')[1].split(',"')[0][1:-1]
+        # if data.split('"wiki":"')[1].split('"')[0] == 'enwiki' and \
+        #    data.split('"namespace":')[1].split(',"')[0] == '0' and \
+        #    page_title and page_title != 'null' and \
+        #    data.split('"type":"')[1].split('"')[0] in ['edit', 'new']:
+        #     # counter += 1
+        #     yield page_title  # , time.time() - start, counter
+        change = json.loads(event.data)
+        if change['wiki'] == 'enwiki' and change['namespace'] == 0 and \
+                change['title'] and change['type'] in ['edit', 'new']:
+            # yield change
+            yield change['title']
