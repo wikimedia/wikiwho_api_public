@@ -32,16 +32,27 @@ def process_article_task(page_title, timeout, raise_soft_error=False):
         return True
 
 
-@shared_task(soft_time_limit=default_task_soft_time_limit)
-def process_article(page_title):
-    return process_article_task(page_title, default_task_soft_time_limit)
+# retry max 3 times (default value of max_retries) and
+# wait 180 seconds (default value of default_retry_delay) between each retry.
+@shared_task(bind=True, soft_time_limit=default_task_soft_time_limit)
+def process_article(self, page_title):
+    try:
+        result = process_article_task(page_title, default_task_soft_time_limit)
+    except WPHandlerException as e1:
+        if e1.code in ['00', '10', '11']:
+            # if article doesnt exist or wp errors
+            raise self.retry(exc=e1)
+        else:
+            raise e1
+    except (ValueError, ConnectionError) as e2:
+        raise self.retry(exc=e2)
 
 
 @shared_task(soft_time_limit=long_task_soft_time_limit)
 def process_article_long(page_title):
-    return process_article_task(page_title, long_task_soft_time_limit, raise_soft_error=True)
+    process_article_task(page_title, long_task_soft_time_limit, raise_soft_error=True)
 
 
 @shared_task(soft_time_limit=user_task_soft_time_limit)
 def process_article_user(page_title):
-    return process_article_task(page_title, user_task_soft_time_limit, raise_soft_error=True)
+    process_article_task(page_title, user_task_soft_time_limit, raise_soft_error=True)
