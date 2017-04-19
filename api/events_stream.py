@@ -1,4 +1,4 @@
-from json import loads, JSONDecodeError
+from json import loads
 
 import urllib3
 from sseclient import SSEClient
@@ -61,7 +61,7 @@ def iter_changed_pages():
         #     yield page_title  # , time.time() - start, counter
         try:
             change = loads(event.data)
-        except JSONDecodeError:
+        except ValueError:  # JSONDecodeError
             continue
         page_title = change.get('title')
         if change.get('wiki') == 'enwiki' and change.get('namespace') == 0 and \
