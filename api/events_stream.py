@@ -1,6 +1,7 @@
 from json import loads
 
 import urllib3
+from urllib3.exceptions import ProtocolError
 from sseclient import SSEClient
 
 
@@ -47,24 +48,29 @@ def iter_changed_pages():
     # import time
     # start = time.time()
     # counter = 0
-    for event in EventSource(event_source).events():
-        # page_id = event.data.split('"id":')[1].split(',"')[0] --> this is event id!
-        data = event.data
-        if not data:
-            continue
-        # page_title = data.split('"title":')[1].split(',"')[0][1:-1]
-        # if data.split('"wiki":"')[1].split('"')[0] == 'enwiki' and \
-        #    data.split('"namespace":')[1].split(',"')[0] == '0' and \
-        #    page_title and page_title != 'null' and \
-        #    data.split('"type":"')[1].split('"')[0] in ['edit', 'new']:
-        #     # counter += 1
-        #     yield page_title  # , time.time() - start, counter
+    while True:
         try:
-            change = loads(event.data)
-        except ValueError:  # JSONDecodeError
-            continue
-        page_title = change.get('title')
-        if change.get('wiki') == 'enwiki' and change.get('namespace') == 0 and \
-                page_title and change.get('type') in ['edit', 'new']:
-            # yield change
-            yield page_title
+            for event in EventSource(event_source).events():
+                # page_id = event.data.split('"id":')[1].split(',"')[0] --> this is event id!
+                data = event.data
+                if not data:
+                    continue
+                # page_title = data.split('"title":')[1].split(',"')[0][1:-1]
+                # if data.split('"wiki":"')[1].split('"')[0] == 'enwiki' and \
+                #    data.split('"namespace":')[1].split(',"')[0] == '0' and \
+                #    page_title and page_title != 'null' and \
+                #    data.split('"type":"')[1].split('"')[0] in ['edit', 'new']:
+                #     # counter += 1
+                #     yield page_title  # , time.time() - start, counter
+                try:
+                    change = loads(event.data)
+                except ValueError:  # JSONDecodeError
+                    continue
+                page_title = change.get('title')
+                if change.get('wiki') == 'enwiki' and change.get('namespace') == 0 and \
+                        page_title and change.get('type') in ['edit', 'new']:
+                    # yield change
+                    yield page_title
+        except ProtocolError as e:
+            # restart events stream
+            pass
