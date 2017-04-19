@@ -24,6 +24,8 @@ default_task_soft_time_limit = 1800  # 30 minutes
 long_task_soft_time_limit = 3600  # 1 hour
 user_task_soft_time_limit = long_task_soft_time_limit
 
+# http://docs.celeryproject.org/en/latest/userguide/optimizing.html#prefetch-limits
+worker_prefetch_multiplier = 32  # default is 4 per processor
 # task_queues = (
 #     Queue('default', queue_arguments={'x-max-priority': 1, }, ),
 #     Queue('long', Exchange('long'), routing_key='long', queue_arguments={'x-max-priority': 3}, ),
