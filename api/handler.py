@@ -277,7 +277,10 @@ class WPHandler(object):
         # print(exc_type, exc_val, exc_tb)
         # logging.debug(self.wikiwho.rvcontinue, self.saved_rvcontinue)
         # logging.debug(wikiwho.lastrev_date)
-        if self.wikiwho and self.wikiwho.rvcontinue != self.saved_rvcontinue:
+        if exc_type == SystemExit:
+            # Gunicorn Timeout is also a SystemExit
+            cache.delete(self.cache_key)
+        elif self.wikiwho and self.wikiwho.rvcontinue != self.saved_rvcontinue:
             # if there is a new revision or first revision of the article
             self.wikiwho.clean_attributes()
             pickle_dump(self.wikiwho, self.pickle_path)
