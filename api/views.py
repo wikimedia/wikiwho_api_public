@@ -20,9 +20,12 @@ from django.urls import reverse
 
 from wikiwho.models import Revision, Article
 from rest_framework_tracking.mixins import LoggingMixin
+from deployment.gunicorn_config import timeout as gunicorn_timeout
+from deployment.celery_config import user_task_soft_time_limit
 from .handler import WPHandler, WPHandlerException
 from .swagger_data import custom_data, allowed_params, query_params, version_url
-from .utils import get_revision_timestamp
+from .utils import get_revision_timestamp, Timeout
+from .tasks import process_article_user
 
 
 class MyOpenAPIRenderer(OpenAPIRenderer):
@@ -241,18 +244,37 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
 
         # global handler_time
         # handler_start = time.time()
+        timeout = gunicorn_timeout - 60  # 5 mins
+        timeout_message = 'Process took more than {} seconds. ' \
+                          'Requested data will be available soon (Max {} seconds). ' \
+                          'Please try again later.'.format(timeout, user_task_soft_time_limit)
         try:
             revision_id = revision_ids[0] if revision_ids else None
-            with WPHandler(article_title, page_id=page_id, revision_id=revision_id) as wp:
-                self.page_id = wp.page_id
-                # timeout = gunicorn_timeout - settings.PICKLE_OPEN_TIMEOUT * 2
-                wp.handle(revision_ids, 'json')
+            if settings.DEBUG:
+                # to run locally with Timeout: runserver --noreload --nothreading
+                with WPHandler(article_title, page_id=page_id, revision_id=revision_id) as wp:
+                    self.page_id = wp.page_id
+                    wp.handle(revision_ids, is_api_call=True)
+            else:
+                with Timeout(seconds=timeout, error_message=timeout_message):
+                    with WPHandler(article_title, page_id=page_id, revision_id=revision_id) as wp:
+                        self.page_id = wp.page_id
+                        wp.handle(revision_ids, is_api_call=True, timeout=timeout)
+        except TimeoutError as e:
+            process_article_user.delay(article_title, page_id, revision_id)
+            response = {'Info': timeout_message}
+            status_ = status.HTTP_408_REQUEST_TIMEOUT
         except WPHandlerException as e:
             if e.code == '03':
                 response = {'Info': e.message}
+                status_ = status.HTTP_200_OK
             else:
                 response = {'Error': e.message}
-            status_ = status.HTTP_400_BAD_REQUEST
+                if e.code in ['10', '11']:
+                    # WP errors
+                    status_ = status.HTTP_503_SERVICE_UNAVAILABLE
+                else:
+                    status_ = status.HTTP_400_BAD_REQUEST
         except JSONDecodeError as e:
             response = {'Error': 'HTTP Response error from Wikipedia! Please try again later.'}
             status_ = status.HTTP_400_BAD_REQUEST
@@ -274,6 +296,9 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
                     status_ = status.HTTP_200_OK
         # handler_time = time.time() - handler_start
         # return HttpResponse(json.dumps(response), content_type='application/json; charset=utf-8')
+        # import json
+        # with open('tmp_pickles/{}_ri.json'.format(article_title), 'w') as f:
+        #     f.write(json.dumps(response, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         return Response(response, status=status_)
 
     def get_rev_content_by_rev_id(self, request, version, rev_id):

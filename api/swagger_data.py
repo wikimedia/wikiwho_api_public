@@ -44,6 +44,12 @@ responses = {
     '400': {
         'description': 'BAD REQUEST',
     },
+    '408': {
+        'description': 'REQUEST TIMEOUT',
+    },
+    '503': {
+        'description': 'WP SERVICE UNAVAILABLE',
+    },
 }
 
 version = '1.0.0-beta'

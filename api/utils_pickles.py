@@ -65,7 +65,7 @@ def pickle_load(pickle_path):
     # try to lock file:
     # 1) if not already locked, then lock, read and then unlock
     # 2) if already locked, wait until unlocked (in timeout) and then lock, read and unlock
-    retries = 3
+    retries = 6
     while retries:
         retries -= 1
         try:

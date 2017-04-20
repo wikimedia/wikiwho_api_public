@@ -1,35 +1,36 @@
 from __future__ import absolute_import, unicode_literals
-
-# from django.core.cache import cache
 from celery import shared_task
 # from celery.exceptions import SoftTimeLimitExceeded
 
-from deployment.celery_config import default_task_soft_time_limit, long_task_soft_time_limit, user_task_soft_time_limit
+from django.core.cache import cache
+
+from deployment.celery_config import default_task_soft_time_limit, user_task_soft_time_limit
 from .handler import WPHandler, WPHandlerException
 
 
-def process_article_task(page_title, timeout, raise_soft_error=False):
-        # if cache.get('page_{}'.format(page_id)) == '1':
-        #     return False
-        try:
-            # with WPHandler(None, page_id=page_id) as wp:
-            with WPHandler(page_title) as wp:
-                # cache_key = wp.cache_key
-                wp.handle(revision_ids=[], is_api_call=False, timeout=timeout)
-        except WPHandlerException as e:
-            if e.code == '03':
-                # if article is already under process, simply skip it. TODO wait and start a new task?
-                return False
-            raise e
-        # except SoftTimeLimitExceeded as e:
-        #     cache.delete(cache_key)
-        #     if raise_soft_error:
-        #         # TODO write into csv? but sentry logs them anyway.
-        #         raise e
-        #     else:
-        #         process_article_long.delay(page_title)
-        #         process_article_long.apply_async([page_title], queue='long_lasting')
-        return True
+def process_article_task(page_title, page_id=None, revision_id=None, timeout=0):
+    # if cache.get('page_{}'.format(page_id)) == '1':
+    #     return False
+    cache_key = None
+    try:
+        with WPHandler(page_title, page_id=page_id, revision_id=revision_id) as wp:
+            cache_key = wp.cache_key
+            wp.handle(revision_ids=[], is_api_call=False, timeout=timeout)
+    except WPHandlerException as e:
+        if cache_key:
+            cache.delete(cache_key)
+        if e.code == '03':
+            # if article is already under process, simply skip it. TODO wait and start a new task?
+            return False
+        raise e
+    # except SoftTimeLimitExceeded as e:
+    #     cache.delete(cache_key)
+    #     if raise_error:
+    #         raise e
+    #     else:
+    #         process_article_long.delay(page_title)
+    #         process_article_long.apply_async([page_title], queue='long_lasting')
+    return True
 
 
 # retry max 3 times (default value of max_retries) and
@@ -37,22 +38,23 @@ def process_article_task(page_title, timeout, raise_soft_error=False):
 @shared_task(bind=True, soft_time_limit=default_task_soft_time_limit)
 def process_article(self, page_title):
     try:
-        result = process_article_task(page_title, default_task_soft_time_limit)
-    except WPHandlerException as e1:
-        if e1.code in ['00', '10', '11']:
+        process_article_task(page_title, timeout=default_task_soft_time_limit)
+    except WPHandlerException as e:
+        if e.code in ['00', '10', '11']:
             # if article doesnt exist or wp errors
-            raise self.retry(exc=e1)
+            # NOTE: actually 01 should not occur because we set is_api_call=False in the process_article_task!
+            raise self.retry(exc=e)
         else:
-            raise e1
-    except (ValueError, ConnectionError) as e2:
-        raise self.retry(exc=e2)
+            raise e
+    except (ValueError, ConnectionError) as e:
+        raise self.retry(exc=e)
 
 
-@shared_task(soft_time_limit=long_task_soft_time_limit)
-def process_article_long(page_title):
-    process_article_task(page_title, long_task_soft_time_limit, raise_soft_error=True)
+# @shared_task(soft_time_limit=long_task_soft_time_limit)
+# def process_article_long(page_title):
+#     process_article_task(page_title, timeout=long_task_soft_time_limit, raise_error=True)
 
 
 @shared_task(soft_time_limit=user_task_soft_time_limit)
-def process_article_user(page_title):
-    process_article_task(page_title, user_task_soft_time_limit, raise_soft_error=True)
+def process_article_user(page_title, page_id=None, revision_id=None):
+    process_article_task(page_title, page_id, revision_id, timeout=user_task_soft_time_limit)

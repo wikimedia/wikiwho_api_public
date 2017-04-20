@@ -68,7 +68,7 @@ backlog = 2048  # default
 workers = multiprocessing.cpu_count() * 2 + 1
 worker_class = 'sync'  # default
 worker_connections = 1000  # default
-timeout = 3600  # 1 hour, default is 30
+timeout = 360  # 6 mins, default is 30
 keepalive = 2  # default
 
 #

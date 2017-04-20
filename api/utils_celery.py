@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from wikiwho_api.celery import app
-from deployment.celery_config import worker_name
+from deployment.celery_config import worker_name_default, worker_name_user
 
 from .events_stream import iter_changed_pages
 from .tasks import process_article
@@ -9,7 +9,7 @@ from .tasks import process_article
 
 # worker_name = app.control.inspect().ping().popitem()[0]
 # give name of the worker to speed up
-inspector = app.control.inspect([worker_name])
+inspector = app.control.inspect([worker_name_default, worker_name_user])
 # active: List of tasks currently being executed.
 # active_queues: List the task queues a worker are currently consuming from.
 # registered: List of registered tasks.
@@ -19,8 +19,7 @@ inspector = app.control.inspect([worker_name])
 
 def get_active_task_pages():
     """Return pages of tasks that are running right now."""
-    active_tasks = inspector.active()  # {'worker_name': [active tasks]}
-    tasks = active_tasks[worker_name] if active_tasks else []
+    active_tasks = inspector.active()  # {'worker_name': [active tasks], 'worker_name2': [..], ..}
     """
     task:
     [{'worker1.example.com':
@@ -29,18 +28,14 @@ def get_active_task_pages():
       'args': '(8/"title",)',
       'kwargs': '{}'}]}]
     """
-    # return [int(task['args'].split(',')[0][1:]) for task in tasks]  # ids
-    return [task['args'][2:-3] for task in tasks]  # titles
+    return [task['args'][2:-3] for worker_name in active_tasks for task in active_tasks[worker_name]]  # titles
 
 
 def get_inactive_task_pages():
     """Return pages of tasks that are registered to Celery. This does not contain tasks in queue."""
-    # TODO how to get list of tasks from RabbitMQ?
     # inspector.scheduled()[worker_name] - we have no scheduled tasks
     reserved_tasks = inspector.reserved()  # {'worker_name': [reserved tasks]}
-    tasks = reserved_tasks[worker_name] if reserved_tasks else []
-    # return [int(task['args'].split(',')[0][1:]) for task in tasks]  # ids
-    return [task['args'][2:-3] for task in tasks]  # titles
+    return [task['args'][2:-3] for worker_name in reserved_tasks for task in reserved_tasks[worker_name]]  # titles
 
 
 def process_changed_articles():

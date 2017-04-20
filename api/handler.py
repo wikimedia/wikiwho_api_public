@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import os
 import sys
 from datetime import datetime, timedelta
+from requests.exceptions import ConnectionError
 
 # import logging
 # from time import time
@@ -13,6 +14,7 @@ from django.conf import settings
 from django.core.cache import cache
 
 from deployment.gunicorn_config import timeout as gunicorn_timeout
+from deployment.celery_config import user_task_soft_time_limit
 from wikiwho.utils_db import wikiwho_to_db
 from wikiwho.wikiwho_simple import Wikiwho
 from .utils import get_latest_revision_data, create_wp_session, Timeout
@@ -175,10 +177,9 @@ class WPHandler(object):
                 cache.set(self.cache_key, '1', timeout or gunicorn_timeout)
             else:
                 raise WPHandlerException('Revision {} of the article ({}) is under process now. '
-                                         'Content of the requested revision will be available soon.'.
-                                         format(self.revision_ids[-1], self.article_title or self.page_id), '03')
-                                         # 'Content of the requested revision will be available soon (Max {} seconds).'
-                                         # .format(timeout))
+                                         'Content of the requested revision will be available soon (Max {} seconds).'.
+                                         format(self.revision_ids[-1], self.article_title or self.page_id,
+                                                user_task_soft_time_limit), '03')
 
         while self.revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
             # continue downloading as long as we reach to the given rev_id limit
@@ -194,6 +195,18 @@ class WPHandler(object):
                 # params.update({'rvendid': self.revision_ids[-1]})  # gets from beginning
                 result = session.get(url=settings.WP_API_URL, headers=headers, params=params,
                                      timeout=settings.WP_REQUEST_TIMEOUT).json()
+            except ConnectionError as e:
+                try:
+                    sub_error = e.args[0].args[1]
+                except Exception as e:
+                    sub_error = None
+                if isinstance(sub_error, TimeoutError):
+                    raise TimeoutError
+                if is_api_call:
+                    raise WPHandlerException('HTTP Response error from Wikipedia! Please try again later.', '10')
+                else:
+                    # if not api query, raise the original exception
+                    raise e
             except Exception as e:
                 if is_api_call:
                     raise WPHandlerException('HTTP Response error from Wikipedia! Please try again later.', '10')
@@ -216,17 +229,8 @@ class WPHandler(object):
                     # pass first item in pages dict
                     _, page = result['query']['pages'].popitem()
                     self.wikiwho.analyse_article(page.get('revisions', []))
-                #     if timeout:
-                #         with Timeout(seconds=timeout,
-                #                      error_message='Timeout occurred. '
-                #                                    'Content of the requested revision will be available soon.'):
-                #             self.wikiwho.analyse_article(page.get('revisions', []))
-                #     else:
-                #         self.wikiwho.analyse_article(page.get('revisions', []))
-                # except TimeoutError:
-                #     # TODO save processed data until now and start a task into user queue
-                #     raise
                 except Exception:
+                    # user request Timeout is also caught here, so first data is saved and then info to user
                     if self.wikiwho.revision_curr.timestamp == 0:
                         # if all revisions were detected as spam
                         # wikiwho object holds no information (it is in initial status, rvcontinue=0)
@@ -277,8 +281,9 @@ class WPHandler(object):
         # print(exc_type, exc_val, exc_tb)
         # logging.debug(self.wikiwho.rvcontinue, self.saved_rvcontinue)
         # logging.debug(wikiwho.lastrev_date)
-        if exc_type == SystemExit:
-            # Gunicorn Timeout is also a SystemExit
+        if exc_type in [SystemExit, SystemError, TimeoutError]:
+            # Gunicorn Timeout throws SystemExit and SystemExit cannot be catched by Exception
+            # https://docs.python.org/3/library/exceptions.html#SystemExit
             cache.delete(self.cache_key)
         elif self.wikiwho and self.wikiwho.rvcontinue != self.saved_rvcontinue:
             # if there is a new revision or first revision of the article

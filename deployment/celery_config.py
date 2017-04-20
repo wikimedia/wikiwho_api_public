@@ -1,8 +1,8 @@
 """Celery configuration file."""
-import multiprocessing
+# import multiprocessing
 from django.conf import settings
 # from celery.worker.autoscale import Autoscaler as BaseAutoscaler, AUTOSCALE_KEEPALIVE
-# from kombu import Exchange, Queue
+from kombu import Exchange, Queue
 
 # CELERY_BROKER_URL = 'amqp://guest:guest@localhost//'
 # CELERY_BROKER_URL = 'pyamqp://guest@localhost//'
@@ -18,36 +18,40 @@ task_serializer = 'json'  # CELERY_TASK_SERIALIZER
 timezone = settings.TIME_ZONE
 enable_utc = False
 
-worker_name = 'worker1@ww_host'  # check /etc/default/celeryd
+worker_name_default = 'worker_default@ww_host'  # check /etc/default/celeryd
+worker_name_user = 'worker_user@ww_host'
 # task_soft_time_limit = 4  # seconds
-default_task_soft_time_limit = 1800  # 30 minutes
-long_task_soft_time_limit = 3600  # 1 hour
-user_task_soft_time_limit = long_task_soft_time_limit
+default_task_soft_time_limit = 3600  # 60 minutes
+# long_task_soft_time_limit = 3600  # 1 hour
+user_task_soft_time_limit = default_task_soft_time_limit
 
+task_queues = (
+    Queue('default', queue_arguments={'x-max-priority': 2, }, ),
+    # Queue('long', Exchange('long'), routing_key='long', queue_arguments={'x-max-priority': 3}, ),
+    Queue('user', Exchange('user'), routing_key='user', queue_arguments={'x-max-priority': 1}, ),
+)
+task_routes = {
+        'api.tasks.process_article': {
+            'queue': 'default',
+        },
+        # 'api.tasks.process_article_long': {
+        #     'queue': 'long',
+        #     'routing_key': 'long',
+        # },
+        'api.tasks.process_article_user': {
+            'queue': 'user',
+            'routing_key': 'user',
+        },
+}
+
+# How many messages to prefetch at a time multiplied by the number of concurrent processes.
 # http://docs.celeryproject.org/en/latest/userguide/optimizing.html#prefetch-limits
 worker_prefetch_multiplier = 32  # default is 4 per processor
-# task_queues = (
-#     Queue('default', queue_arguments={'x-max-priority': 1, }, ),
-#     Queue('long', Exchange('long'), routing_key='long', queue_arguments={'x-max-priority': 3}, ),
-#     Queue('user', Exchange('user'), routing_key='user', queue_arguments={'x-max-priority': 2}, ),
-# )
-# task_routes = {
-#         'api.tasks.process_article': {
-#             'queue': 'default',
-#         },
-#         'api.tasks.process_article_long': {
-#             'queue': 'long',
-#             'routing_key': 'long',
-#         },
-#         'api.tasks.process_article_user': {
-#             'queue': 'user',
-#             'routing_key': 'user',
-#         },
-# }
-if settings.DEBUG:
-    worker_concurrency = int(multiprocessing.cpu_count() / 3) + 1
-else:
-    worker_concurrency = 12
+# to check concurrency: /etc/default/celeryd
+# if settings.DEBUG:
+#     worker_concurrency = int(multiprocessing.cpu_count() / 3) + 1
+# else:
+#     worker_concurrency = 12
 # class Autoscaler(BaseAutoscaler):
 #     def __init__(self, pool, max_concurrency,
 #                  min_concurrency=0, worker=None,
