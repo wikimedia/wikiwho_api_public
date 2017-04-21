@@ -18,8 +18,8 @@ inspector = app.control.inspect([worker_name_default, worker_name_user])
 
 
 def get_active_task_pages():
-    """Return pages of tasks that are running right now."""
-    active_tasks = inspector.active()  # {'worker_name': [active tasks], 'worker_name2': [..], ..}
+    """Return page titles of tasks that are running right now."""
+    active_tasks = inspector.active() or []  # {'worker_name': [active tasks], 'worker_name2': [..], ..}
     """
     task:
     [{'worker1.example.com':
@@ -28,14 +28,14 @@ def get_active_task_pages():
       'args': '(8/"title",)',
       'kwargs': '{}'}]}]
     """
-    return [task['args'][2:-3] for worker_name in active_tasks for task in active_tasks[worker_name]]  # titles
+    return [task['args'][2:-3] for worker_name in active_tasks for task in active_tasks[worker_name] or []]
 
 
 def get_inactive_task_pages():
-    """Return pages of tasks that are registered to Celery. This does not contain tasks in queue."""
+    """Return page titles of tasks that are registered to Celery. This does not contain tasks in queue."""
     # inspector.scheduled()[worker_name] - we have no scheduled tasks
-    reserved_tasks = inspector.reserved()  # {'worker_name': [reserved tasks]}
-    return [task['args'][2:-3] for worker_name in reserved_tasks for task in reserved_tasks[worker_name]]  # titles
+    reserved_tasks = inspector.reserved() or []  # {'worker_name': [reserved tasks]}
+    return [task['args'][2:-3] for worker_name in reserved_tasks for task in reserved_tasks[worker_name] or []]
 
 
 def process_changed_articles():
