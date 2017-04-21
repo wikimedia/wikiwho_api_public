@@ -1,4 +1,4 @@
-git+git://github.com/wikiwho/WikiWho.git@master#egg=WikiWho
+git+git://github.com/wikiwho/WikiWho.git@dev#egg=WikiWho
 Django
 future
 six
