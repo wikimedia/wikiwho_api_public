@@ -9,6 +9,7 @@ import signal
 from lxml import etree
 import requests
 from requests.exceptions import ReadTimeout
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
@@ -58,7 +59,7 @@ def get_revision_timestamp(revision_ids):
                "Accept": "*/*", "Host": settings.WP_SERVER}
     # make get request
     try:
-        resp_ = requests.get(settings.WP_API_URL, params, headers=headers, timeout=3)
+        resp_ = requests.get(settings.WP_API_URL, params, headers=headers, timeout=settings.WP_REQUEST_TIMEOUT)
     except ReadTimeout:
         return {'error': 'Bad revision ids.'}
     response = resp_.json()  # convert response into dict
@@ -103,6 +104,30 @@ class Timeout:
 
     def __exit__(self, type, value, traceback):
         signal.alarm(0)
+
+
+def generate_rvcontinue(rev_id, rev_ts=None):
+    """
+    :param rev_id: Revision id, must be integer. 
+    :param rev_ts: revision timestamp, must be string representation.
+    :return: rvcontinue
+    """
+    return_ts = False
+    if rev_ts is None:
+        return_ts = True
+        try:
+            rev_ts_list = get_revision_timestamp([str(rev_id)])
+        except Exception:
+            return '0', '0'
+        if 'error' in rev_ts_list:
+            return '0', '0'
+        rev_ts = rev_ts_list[0]
+    timestamp = datetime.strptime(rev_ts, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
+    rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') + "|" + str(rev_id + 1)
+    if return_ts:
+        return rvcontinue, rev_ts
+    else:
+        return rvcontinue
 
 
 def get_throttle_data(request):

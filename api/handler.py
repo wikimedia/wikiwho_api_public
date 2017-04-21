@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 import os
 import sys
-from datetime import datetime, timedelta
 from requests.exceptions import ConnectionError
 
 # import logging
@@ -17,7 +16,7 @@ from deployment.gunicorn_config import timeout as gunicorn_timeout
 from deployment.celery_config import user_task_soft_time_limit
 from wikiwho.utils_db import wikiwho_to_db
 from wikiwho.wikiwho_simple import Wikiwho
-from .utils import get_latest_revision_data, create_wp_session, Timeout
+from .utils import get_latest_revision_data, create_wp_session, Timeout, generate_rvcontinue
 from .utils_pickles import pickle_dump, pickle_load
 
 sys.setrecursionlimit(5000)  # default is 1000
@@ -104,6 +103,20 @@ class WPHandler(object):
         # print("Execution time enter: {}".format(time2-time1))
         return self
 
+    def _set_wikiwho_rvcontinue(self):
+        # hackish: create a rvcontinue with last revision of this article
+        rev = self.wikiwho.revision_curr
+        if rev.timestamp == 0 or (self.wikiwho.spam_ids and self.wikiwho.spam_ids[-1] > rev.id):
+            # if all revisions were detected as spam,
+            # wikiwho object holds no information (it is in initial status, rvcontinue=0)
+            # or if last processed revision is a spam
+            self.wikiwho.rvcontinue, last_spam_ts = generate_rvcontinue(self.wikiwho.spam_ids[-1])
+            if rev.timestamp > last_spam_ts or last_spam_ts == '0':
+                # rev id comparison was wrong
+                self.wikiwho.rvcontinue = generate_rvcontinue(rev.id, rev.timestamp)
+        else:
+            self.wikiwho.rvcontinue = generate_rvcontinue(rev.id, rev.timestamp)
+
     def handle_from_xml_dump(self, page, timeout=None):
         # this handle is used only to fill the db so if already exists, skip this article
         # here we don't have rvcontinue check to analyse article as we have in handle method
@@ -112,37 +125,13 @@ class WPHandler(object):
             # return
             raise WPHandlerException('Article ({}) already exists.'.format(self.page_id), '20')
 
-        try:
-            if timeout:
-                with Timeout(seconds=timeout,
-                             error_message='Timeout in analyse_article_from_xml_dump ({} seconds)'.format(timeout)):
-                    self.wikiwho.analyse_article_from_xml_dump(page)
-            else:
+        if timeout:
+            with Timeout(seconds=timeout,
+                         error_message='Timeout in analyse_article_from_xml_dump ({} seconds)'.format(timeout)):
                 self.wikiwho.analyse_article_from_xml_dump(page)
-        except TimeoutError:
-            # if timeout, nothing is saved
-            raise
-        except Exception:
-            if self.wikiwho.revision_curr.timestamp == 0:
-                # if all revisions were detected as spam
-                # wikiwho object holds no information (it is in initial status, rvcontinue=0)
-                self.wikiwho.rvcontinue = '1'  # assign 1 to be able to save this article without any revisions
-            else:  # NOTE: revision_prev is used to determine rvcontinue
-                timestamp = datetime.strptime(self.wikiwho.revision_prev.timestamp, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
-                self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
-                                          + "|" \
-                                          + str(self.wikiwho.revision_prev.id + 1)
-            raise
-
-        if self.wikiwho.revision_curr.timestamp == 0:
-            # if all revisions were detected as spam
-            # wikiwho object holds no information (it is in initial status, rvcontinue=0)
-            self.wikiwho.rvcontinue = '1'  # assign 1 to be able to save this article without any revisions
-        else:  # NOTE: revision_curr is used to determine rvcontinue
-            timestamp = datetime.strptime(self.wikiwho.revision_curr.timestamp, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
-            self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
-                                      + "|" \
-                                      + str(self.wikiwho.revision_curr.id + 1)
+        else:
+            self.wikiwho.analyse_article_from_xml_dump(page)
+        self._set_wikiwho_rvcontinue()
 
     def handle(self, revision_ids, is_api_call=True, timeout=None):
         # time1 = time()
@@ -198,7 +187,7 @@ class WPHandler(object):
             except ConnectionError as e:
                 try:
                     sub_error = e.args[0].args[1]
-                except Exception as e:
+                except Exception:
                     sub_error = None
                 if isinstance(sub_error, TimeoutError):
                     raise TimeoutError
@@ -225,36 +214,11 @@ class WPHandler(object):
                                              format(self.article_title or self.page_id), '00')
                 # elif not pages.get('revision'):
                 #     raise WPHandlerException(message="End revision ID does not exist!")
-                try:
-                    # pass first item in pages dict
-                    _, page = result['query']['pages'].popitem()
-                    self.wikiwho.analyse_article(page.get('revisions', []))
-                except Exception:
-                    # user request Timeout is also caught here, so first data is saved and then info to user
-                    if self.wikiwho.revision_curr.timestamp == 0:
-                        # if all revisions were detected as spam
-                        # wikiwho object holds no information (it is in initial status, rvcontinue=0)
-                        self.wikiwho.rvcontinue = '1'  # assign 1 to be able to save this article without any revisions
-                    else:  # NOTE: revision_prev is used to determine rvcontinue
-                        timestamp = datetime.strptime(self.wikiwho.revision_prev.timestamp,
-                                                      '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
-                        self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
-                                                  + "|" \
-                                                  + str(self.wikiwho.revision_prev.id + 1)
-                    raise
+                # pass first item in pages dict
+                _, page = result['query']['pages'].popitem()
+                self.wikiwho.analyse_article(page.get('revisions', []))
             if 'continue' not in result:
-                # hackish: create a rvcontinue with last revision id of this article
-                if self.wikiwho.revision_curr.timestamp == 0:
-                    # if # revisions < 500 and all revisions were detected as spam
-                    # wikiwho object holds no information (it is in initial status, rvcontinue=0)
-                    self.wikiwho.rvcontinue = '1'  # assign 1 to be able to save this article without any revisions
-                else:  # NOTE: revision_curr is used to determine rvcontinue
-                    timestamp = datetime.strptime(self.wikiwho.revision_curr.timestamp, '%Y-%m-%dT%H:%M:%SZ') \
-                                + timedelta(seconds=1)
-                    self.wikiwho.rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') \
-                                              + "|" \
-                                              + str(self.wikiwho.revision_curr.id + 1)
-                # print wikiwho.rvcontinue
+                self._set_wikiwho_rvcontinue()
                 break
             rvcontinue = result['continue']['rvcontinue']
             self.wikiwho.rvcontinue = rvcontinue  # used at end to decide if there is new revisions to be saved
@@ -279,14 +243,10 @@ class WPHandler(object):
         """
         # time1 = time()
         # print(exc_type, exc_val, exc_tb)
-        # logging.debug(self.wikiwho.rvcontinue, self.saved_rvcontinue)
-        # logging.debug(wikiwho.lastrev_date)
-        if exc_type in [SystemExit, SystemError, TimeoutError]:
-            # Gunicorn Timeout throws SystemExit and SystemExit cannot be catched by Exception
-            # https://docs.python.org/3/library/exceptions.html#SystemExit
-            cache.delete(self.cache_key)
-        elif self.wikiwho and self.wikiwho.rvcontinue != self.saved_rvcontinue:
-            # if there is a new revision or first revision of the article
+        if not exc_type and not exc_val and not exc_tb and\
+           self.wikiwho and self.wikiwho.rvcontinue != self.saved_rvcontinue:
+            # if here is no error/exception
+            # and there is a new revision or first revision of the article
             self.wikiwho.clean_attributes()
             pickle_dump(self.wikiwho, self.pickle_path)
             if self.save_tables:
