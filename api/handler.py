@@ -111,7 +111,7 @@ class WPHandler(object):
             # wikiwho object holds no information (it is in initial status, rvcontinue=0)
             # or if last processed revision is a spam
             self.wikiwho.rvcontinue, last_spam_ts = generate_rvcontinue(self.wikiwho.spam_ids[-1])
-            if rev.timestamp > last_spam_ts or last_spam_ts == '0':
+            if rev.timestamp != 0 and (rev.timestamp > last_spam_ts or last_spam_ts == '0'):
                 # rev id comparison was wrong
                 self.wikiwho.rvcontinue = generate_rvcontinue(rev.id, rev.timestamp)
         else:
