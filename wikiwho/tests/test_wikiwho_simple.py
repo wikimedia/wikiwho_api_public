@@ -85,7 +85,7 @@ def pytest_generate_tests(metafunc):
 
 
 def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False):
-    test_json_folder = '../../tests_ignore/jsons/after_python_3_5'
+    test_json_folder = '../../tests_ignore/jsons/after_token_density_increase'
 
     v = WikiwhoView()
     # create json with rev and editor ids
@@ -418,7 +418,7 @@ class TestWikiwho:
         sub_token_list = split_into_tokens(context)
         n = len(sub_token_list)
 
-        pickle_folder = temp_folder
+        pickle_folder = temp_folder['pickle_folder']
         with WPHandler(article_title, pickle_folder=pickle_folder) as wp:
             wp.handle([revision_id], is_api_call=False)
 
