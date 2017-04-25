@@ -186,7 +186,7 @@ def load_bots(bot_file):
     return bots
 
 
-def compute_persistence_per_user(article_file, revision_file, token_file, bot_file, f1):
+def compute_persistence_per_user(article_file, revision_file, token_file, bot_file, output_file):
     """
     per user.
     """
@@ -194,8 +194,7 @@ def compute_persistence_per_user(article_file, revision_file, token_file, bot_fi
     art = load_articles_revisions(article_file, revision_file)
     # botList = load_bots(bot_file)
     periods = defaultdict(dict)  # {m-y: {editor: [oadds, not_survived], editor2: ..}, m-y2: ..}
-    # editors = defaultdict(int)
-    # editors_not_survived = defaultdict(int)
+    periods_deleted = defaultdict(dict)  # {m-y: {editor: [deleted, deleted_not_survived], editor2: ..}, m-y2: ..}
 
     # print("Load token meta-data.")
     seconds_limit = 48 * 3600  # hours
@@ -207,12 +206,11 @@ def compute_persistence_per_user(article_file, revision_file, token_file, bot_fi
             # Get line.
             page_id = int(line[0])
             label_revision_id = int(line[4])  # origin
-            # inbound = eval(line[5].replace("{", "[").replace("}", "]"))
             outbound = eval(line[6].replace("{", "[").replace("}", "]"))
 
             article_rev = art[page_id]["revs"]  # {rev_id: [editor, timestamp], }
             # editor and timestamp of origin
-            editor, t1 = article_rev[label_revision_id]
+            editor_origin, ts_origin = article_rev[label_revision_id]
             # Cleaning outbound.
             outbound_cleaned = []
             for rev in outbound:
@@ -220,31 +218,62 @@ def compute_persistence_per_user(article_file, revision_file, token_file, bot_fi
                     outbound_cleaned.append(rev)
             not_survived = 0
             if len(outbound_cleaned) > 0:
-                firstout = outbound_cleaned[0]
-                e2, t2 = article_rev[firstout]  # editor and timestamp of first out
-                secs = (t2 - t1).total_seconds()
+                first_out_rev = outbound_cleaned[0]
+                editor_first_out, ts_first_out = article_rev[first_out_rev]  # editor and timestamp of first out rev
+                secs = (ts_first_out - ts_origin).total_seconds()
                 if secs < seconds_limit:
                     # editors_not_survived[editor] += 1
                     not_survived = 1
-            period = (t1.year, t1.month)  # str(t1.year) +"-"+ str(t1.month)
-            if editor in periods[period]:
-                periods[period][editor][0] += 1
-                periods[period][editor][1] += not_survived
+
+                # deleted analysis start
+                inbound = eval(line[5].replace("{", "[").replace("}", "]"))
+                inbound_cleaned = []
+                for rev in inbound:
+                    if rev in article_rev:
+                        inbound_cleaned.append(rev)
+                period_deleted = (ts_first_out.year, ts_first_out.month)
+                deleted_not_survived = 0
+                if len(inbound_cleaned) > 0:
+                    first_in_rev = inbound_cleaned[0]
+                    editor_first_in, ts_first_in = article_rev[first_in_rev]  # editor and timestamp of first in rev
+                    secs = (ts_first_in - ts_first_out).total_seconds()
+                    if secs < seconds_limit:
+                        # deletion did not survive (re-inserted in) 48 hours
+                        deleted_not_survived = 1
+                if editor_first_out in periods_deleted[period_deleted]:
+                    periods_deleted[period_deleted][editor_first_out][0] += 1
+                    periods_deleted[period_deleted][editor_first_out][1] += deleted_not_survived
+                else:
+                    periods_deleted[period_deleted][editor_first_out] = [1, deleted_not_survived]
+                # deleted analysis end
+
+            period = (ts_origin.year, ts_origin.month)  # str(t1.year) +"-"+ str(t1.month)
+            if editor_origin in periods[period]:
+                periods[period][editor_origin][0] += 1
+                periods[period][editor_origin][1] += not_survived
             else:
-                periods[period][editor] = [1, not_survived]
+                periods[period][editor_origin] = [1, not_survived]
 
     # print("Printing persistence.")
-    out2 = open(f1, 'w')
-    out2.write("year,month,editor,not_survived_48h,oadds\n")
-    # for t in set(periods):
-    for year_month in month_year_iter(1, 2001, 12, 2016):
-        (year, month) = year_month
-        if year_month in periods:
-            for editor, data in periods[year_month].items():
-                out2.write(str(year) + "," + str(month) + ',' + editor + ',' + str(data[1]) + "," + str(data[0]) + "\n")
-        else:
-            out2.write(str(year) + "," + str(month) + ',0,0,0' + "\n")
-    out2.close()
+    with open(output_file, 'w') as f_out:
+        f_out.write("year,month,editor,not_survived_48h,oadds\n")
+        for year_month in month_year_iter(1, 2001, 12, 2016):
+            (year, month) = year_month
+            if year_month in periods:
+                for editor, data in periods[year_month].items():
+                    f_out.write(str(year) + "," + str(month) + ',' + editor + ',' + str(data[1]) + "," + str(data[0]) + "\n")
+            else:
+                f_out.write(str(year) + "," + str(month) + ',0,0,0' + "\n")
+    # output deleted analysis
+    with open(output_file.split('.csv')[0] + '_deleted.csv', 'w') as f_out:
+        f_out.write("year,month,editor,not_survived_48h,deleted\n")
+        for year_month in month_year_iter(1, 2001, 12, 2016):
+            (year, month) = year_month
+            if year_month in periods_deleted:
+                for editor, data in periods_deleted[year_month].items():
+                    f_out.write(str(year) + "," + str(month) + ',' + editor + ',' + str(data[1]) + "," + str(data[0]) + "\n")
+            else:
+                f_out.write(str(year) + "," + str(month) + ',0,0,0' + "\n")
 
 
 def compute_persistence_base(article_file, revision_file, token_file, bot_file, output_file, part_id, log_folder,
