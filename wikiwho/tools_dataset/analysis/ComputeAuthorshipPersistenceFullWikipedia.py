@@ -8,8 +8,26 @@ from os.path import realpath, exists
 from os import listdir, mkdir
 from time import strftime
 from concurrent.futures import ProcessPoolExecutor, as_completed
-sys.path.append(realpath(__file__).split('/wikiwho/')[0])
-from base.utils_log import get_logger
+import logging
+
+
+def get_logger(name, log_folder, is_process=True, is_set=True):
+    logger = logging.getLogger(name)
+    file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
+                                                                name,
+                                                                strftime("%Y-%m-%d-%H:%M:%S")))
+    file_handler.setLevel(logging.ERROR)
+    if is_process:
+        format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
+    else:
+        format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'
+    formatter = logging.Formatter(format_)
+    file_handler.setFormatter(formatter)
+    if is_set:
+        logger.handlers = [file_handler]
+    else:
+        logger.addHandler(file_handler)
+    return logger
 
 
 def month_year_iter(start_month, start_year, end_month, end_year):
@@ -153,7 +171,7 @@ def computePersistence(article_file, revision_file, token_file, bot_file, f1):
 
 
 def load_articles_revisions(article_file, revision_file):
-    art = {}
+    art = {}  # {page_id: {'revs': {rev_id: ['editor', 'timestamp']}}, ..}
     # print("Load article id.")
     with open(article_file) as infile:
         next(infile, None)  # skip the header
@@ -194,7 +212,7 @@ def compute_persistence_per_user(article_file, revision_file, token_file, bot_fi
     art = load_articles_revisions(article_file, revision_file)
     # botList = load_bots(bot_file)
     periods = defaultdict(dict)  # {m-y: {editor: [oadds, not_survived], editor2: ..}, m-y2: ..}
-    periods_deleted = defaultdict(dict)  # {m-y: {editor: [deleted, deleted_not_survived], editor2: ..}, m-y2: ..}
+    # periods_deletion = defaultdict(dict)  # {m-y: {editor: [deletion, deletion_not_survived], editor2: ..}, m-y2: ..}
 
     # print("Load token meta-data.")
     seconds_limit = 48 * 3600  # hours
@@ -225,27 +243,27 @@ def compute_persistence_per_user(article_file, revision_file, token_file, bot_fi
                     # editors_not_survived[editor] += 1
                     not_survived = 1
 
-                # deleted analysis start
-                inbound = eval(line[5].replace("{", "[").replace("}", "]"))
-                inbound_cleaned = []
-                for rev in inbound:
-                    if rev in article_rev:
-                        inbound_cleaned.append(rev)
-                period_deleted = (ts_first_out.year, ts_first_out.month)
-                deleted_not_survived = 0
-                if len(inbound_cleaned) > 0:
-                    first_in_rev = inbound_cleaned[0]
-                    editor_first_in, ts_first_in = article_rev[first_in_rev]  # editor and timestamp of first in rev
-                    secs = (ts_first_in - ts_first_out).total_seconds()
-                    if secs < seconds_limit:
-                        # deletion did not survive (re-inserted in) 48 hours
-                        deleted_not_survived = 1
-                if editor_first_out in periods_deleted[period_deleted]:
-                    periods_deleted[period_deleted][editor_first_out][0] += 1
-                    periods_deleted[period_deleted][editor_first_out][1] += deleted_not_survived
-                else:
-                    periods_deleted[period_deleted][editor_first_out] = [1, deleted_not_survived]
-                # deleted analysis end
+                # # deletion analysis start
+                # inbound = eval(line[5].replace("{", "[").replace("}", "]"))
+                # inbound_cleaned = []
+                # for rev in inbound:
+                #     if rev in article_rev:
+                #         inbound_cleaned.append(rev)
+                # period_deletion = (ts_first_out.year, ts_first_out.month)
+                # deletion_not_survived = 0
+                # if len(inbound_cleaned) > 0:
+                #     first_in_rev = inbound_cleaned[0]
+                #     editor_first_in, ts_first_in = article_rev[first_in_rev]  # editor and timestamp of first in rev
+                #     secs = (ts_first_in - ts_first_out).total_seconds()
+                #     if 0 < secs < seconds_limit:
+                #         # deletion did not survive (re-inserted in) 48 hours
+                #         deletion_not_survived = 1
+                # if editor_first_out in periods_deletion[period_deletion]:
+                #     periods_deletion[period_deletion][editor_first_out][0] += 1
+                #     periods_deletion[period_deletion][editor_first_out][1] += deletion_not_survived
+                # else:
+                #     periods_deletion[period_deletion][editor_first_out] = [1, deletion_not_survived]
+                # # deletion analysis end
 
             period = (ts_origin.year, ts_origin.month)  # str(t1.year) +"-"+ str(t1.month)
             if editor_origin in periods[period]:
@@ -261,19 +279,21 @@ def compute_persistence_per_user(article_file, revision_file, token_file, bot_fi
             (year, month) = year_month
             if year_month in periods:
                 for editor, data in periods[year_month].items():
+                    editor = '"{}"'.format(editor) if ',' in editor else editor
                     f_out.write(str(year) + "," + str(month) + ',' + editor + ',' + str(data[1]) + "," + str(data[0]) + "\n")
             else:
                 f_out.write(str(year) + "," + str(month) + ',0,0,0' + "\n")
-    # output deleted analysis
-    with open(output_file.split('.csv')[0] + '_deleted.csv', 'w') as f_out:
-        f_out.write("year,month,editor,not_survived_48h,deleted\n")
-        for year_month in month_year_iter(1, 2001, 12, 2016):
-            (year, month) = year_month
-            if year_month in periods_deleted:
-                for editor, data in periods_deleted[year_month].items():
-                    f_out.write(str(year) + "," + str(month) + ',' + editor + ',' + str(data[1]) + "," + str(data[0]) + "\n")
-            else:
-                f_out.write(str(year) + "," + str(month) + ',0,0,0' + "\n")
+    # # output deletion analysis
+    # with open(output_file.split('.csv')[0] + '_deletion.csv', 'w') as f_out:
+    #     f_out.write("year,month,editor,not_survived_48h,deletions\n")
+    #     for year_month in month_year_iter(1, 2001, 12, 2016):
+    #         (year, month) = year_month
+    #         if year_month in periods_deletion:
+    #             for editor, data in periods_deletion[year_month].items():
+    #                 editor = '"{}"'.format(editor) if ',' in editor else editor
+    #                 f_out.write(str(year) + "," + str(month) + ',' + editor + ',' + str(data[1]) + "," + str(data[0]) + "\n")
+    #         else:
+    #             f_out.write(str(year) + "," + str(month) + ',0,0,0' + "\n")
 
 
 def compute_persistence_base(article_file, revision_file, token_file, bot_file, output_file, part_id, log_folder,
