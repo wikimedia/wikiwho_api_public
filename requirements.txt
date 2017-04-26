@@ -10,6 +10,7 @@ pytest-xdist
 openpyxl
 lxml
 futures
+python-dateutil
 #pytz
 #django-admin-tools
 #django-admin-tools-stats
