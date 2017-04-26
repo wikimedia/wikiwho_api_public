@@ -156,9 +156,9 @@ def compute_deletions_base(article_file, revision_file, token_file, bot_file, ou
 
 def get_args():
     """
-    python compute_deletions.py -a '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/articles' -r '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/revisions' -t '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/tokens' -b '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/botlist.csv' -o '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/output_deletions' -m=4
+python compute_deletions.py -a '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/articles' -r '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/revisions' -t '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/tokens' -b '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/botlist.csv' -o '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/output_deletions_48h_survivals' -m=4
     """
-    parser = argparse.ArgumentParser(description='Compute sha reverts.')
+    parser = argparse.ArgumentParser(description='Compute deletions of all tokens and their 48h survivals per user.')
     # parser.add_argument('input_file', help='File to analyze')
     parser.add_argument('-a', '--articles_folder', required=True, help='Where article partition csvs are.')
     parser.add_argument('-r', '--revisions_folder', required=True, help='Where revision partition csvs are.')
@@ -201,7 +201,7 @@ def main():
                                 '{}/{}'.format(tokens_folder, token_file),
                                 revisions_dict[part_id],
                                 articles_dict[part_id],
-                                '{}/deletion-part{}.csv'.format(output_folder, part_id)]
+                                '{}/deletions-part{}.csv'.format(output_folder, part_id)]
     input_files = []
     for k in sorted(inputs_dict, key=int):
         input_files.append(inputs_dict[k])

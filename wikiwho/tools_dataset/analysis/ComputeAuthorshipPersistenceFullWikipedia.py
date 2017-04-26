@@ -311,9 +311,9 @@ def compute_persistence_base(article_file, revision_file, token_file, bot_file, 
 
 def get_args():
     """
-    python ComputeAuthorshipPersistenceFullWikipedia.py -a '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/articles' -r '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/revisions' -t '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/tokens' -b '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/botlist.csv' -o '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/outputs' -m=4 --per_user
+    python ComputeAuthorshipPersistenceFullWikipedia.py -a '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/articles' -r '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/revisions' -t '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/tokens' -b '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/botlist.csv' -o '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/outputs_oadds_48h_survivals' -m=4 --per_user
     """
-    parser = argparse.ArgumentParser(description='Compute sha reverts.')
+    parser = argparse.ArgumentParser(description='Compute oadds and their 48h survivals.')
     # parser.add_argument('input_file', help='File to analyze')
     parser.add_argument('-a', '--articles_folder', required=True, help='Where article partition csvs are.')
     parser.add_argument('-r', '--revisions_folder', required=True, help='Where revision partition csvs are.')
@@ -359,7 +359,7 @@ def main():
                                 '{}/{}'.format(tokens_folder, token_file),
                                 revisions_dict[part_id],
                                 articles_dict[part_id],
-                                '{}/authorship-part{}.csv'.format(output_folder, part_id)]
+                                '{}/oadds-part{}.csv'.format(output_folder, part_id)]
     input_files = []
     for k in sorted(inputs_dict, key=int):
         input_files.append(inputs_dict[k])
