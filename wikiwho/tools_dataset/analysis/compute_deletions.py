@@ -93,17 +93,17 @@ def compute_deletions_per_user(article_file, revision_file, token_file, bot_file
             page_id = int(line[0])
             inbound = eval(line[5].replace("{", "[").replace("}", "]"))
             outbound = eval(line[6].replace("{", "[").replace("}", "]"))
-            article_rev = art[page_id]["revs"]  # {rev_id: [editor, timestamp], }
+            article_revs = art[page_id]["revs"]  # {rev_id: [editor, timestamp], }
             # Cleaning outbound and inbound.
             outbound_cleaned = []
             for rev in outbound:
-                if rev in article_rev:
-                    editor_out, ts_out = article_rev[rev]
+                if rev in article_revs:
+                    editor_out, ts_out = article_revs[rev]
                     outbound_cleaned.append((editor_out, ts_out))
             inbound_cleaned = []
             for rev in inbound:
-                if rev in article_rev:
-                    editor_in, ts_in = article_rev[rev]
+                if rev in article_revs:
+                    editor_in, ts_in = article_revs[rev]
                     inbound_cleaned.append((editor_in, ts_in))
             # analyse deletions
             for i, (editor_out, ts_out) in enumerate(outbound_cleaned):

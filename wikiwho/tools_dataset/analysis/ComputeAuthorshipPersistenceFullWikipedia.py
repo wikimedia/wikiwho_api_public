@@ -211,7 +211,7 @@ def compute_persistence_per_user(article_file, revision_file, token_file, bot_fi
     # Main structures.
     art = load_articles_revisions(article_file, revision_file)
     # botList = load_bots(bot_file)
-    periods = defaultdict(dict)  # {m-y: {editor: [oadds, not_survived], editor2: ..}, m-y2: ..}
+    periods = defaultdict(dict)  # {y-m: {editor: [oadds, not_survived], editor2: ..}, y-m: ..}
     # periods_deletion = defaultdict(dict)  # {m-y: {editor: [deletion, deletion_not_survived], editor2: ..}, m-y2: ..}
 
     # print("Load token meta-data.")
@@ -226,18 +226,18 @@ def compute_persistence_per_user(article_file, revision_file, token_file, bot_fi
             label_revision_id = int(line[4])  # origin
             outbound = eval(line[6].replace("{", "[").replace("}", "]"))
 
-            article_rev = art[page_id]["revs"]  # {rev_id: [editor, timestamp], }
+            article_revs = art[page_id]["revs"]  # {rev_id: [editor, timestamp], }
             # editor and timestamp of origin
-            editor_origin, ts_origin = article_rev[label_revision_id]
+            editor_origin, ts_origin = article_revs[label_revision_id]
             # Cleaning outbound.
             outbound_cleaned = []
             for rev in outbound:
-                if rev in article_rev:
+                if rev in article_revs:
                     outbound_cleaned.append(rev)
             not_survived = 0
             if len(outbound_cleaned) > 0:
                 first_out_rev = outbound_cleaned[0]
-                editor_first_out, ts_first_out = article_rev[first_out_rev]  # editor and timestamp of first out rev
+                editor_first_out, ts_first_out = article_revs[first_out_rev]  # editor and timestamp of first out rev
                 secs = (ts_first_out - ts_origin).total_seconds()
                 if secs < seconds_limit:
                     # editors_not_survived[editor] += 1
@@ -247,13 +247,13 @@ def compute_persistence_per_user(article_file, revision_file, token_file, bot_fi
                 # inbound = eval(line[5].replace("{", "[").replace("}", "]"))
                 # inbound_cleaned = []
                 # for rev in inbound:
-                #     if rev in article_rev:
+                #     if rev in article_revs:
                 #         inbound_cleaned.append(rev)
                 # period_deletion = (ts_first_out.year, ts_first_out.month)
                 # deletion_not_survived = 0
                 # if len(inbound_cleaned) > 0:
                 #     first_in_rev = inbound_cleaned[0]
-                #     editor_first_in, ts_first_in = article_rev[first_in_rev]  # editor and timestamp of first in rev
+                #     editor_first_in, ts_first_in = article_revs[first_in_rev]  # editor and timestamp of first in rev
                 #     secs = (ts_first_in - ts_first_out).total_seconds()
                 #     if 0 < secs < seconds_limit:
                 #         # deletion did not survive (re-inserted in) 48 hours
