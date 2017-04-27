@@ -42,14 +42,14 @@ def stream_response_with_requests(url):
 
 
 def iter_changed_pages():
-    url = 'https://stream.wikimedia.org/v2/stream/recentchange'
-    event_source = stream_response(url)
-    # event_source = stream_response_with_requests(url)
-    # import time
-    # start = time.time()
-    # counter = 0
     while True:
         try:
+            url = 'https://stream.wikimedia.org/v2/stream/recentchange'
+            event_source = stream_response(url)
+            # event_source = stream_response_with_requests(url)
+            # import time
+            # start = time.time()
+            # counter = 0
             for event in EventSource(event_source).events():
                 # page_id = event.data.split('"id":')[1].split(',"')[0] --> this is event id!
                 data = event.data
