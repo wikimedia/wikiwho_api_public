@@ -50,7 +50,7 @@ def get_args():
     """
     parser = argparse.ArgumentParser(description='Aggregate oadds/deletions and survivals over partitions.')
     parser.add_argument('-i', '--input_folder', required=True, help='Where all partitions take place.')
-    parser.add_argument('-o', '--oadds', action='store_true', default=True, help='Aggregate oadds, default is True.')
+    parser.add_argument('-o', '--oadds', action='store_true', default=False, help='Aggregate oadds, default is False.')
     parser.add_argument('-d', '--deletions', action='store_true', default=False,
                         help='Aggregate deletions, default is False.')
 
