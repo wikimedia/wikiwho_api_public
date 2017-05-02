@@ -33,14 +33,14 @@ def aggregate_over_user(partitions, output_file, header):
 
     with open(output_file, 'w') as f_out:
         f_out.write(header)
-        for year_month in month_year_iter(1, 2001, 12, 2016):
+        for year_month in month_year_iter(1, 2001, 11, 2016):
             (year, month) = year_month
-            if year_month in aggregation:
-                for editor, data in aggregation[year_month].items():
-                    editor = '"{}"'.format(editor) if ',' in editor else editor
-                    f_out.write(str(year) + "," + str(month) + ',' + editor + ',' + str(data[1]) + "," + str(data[0]) + "\n")
-            else:
-                f_out.write(str(year) + "," + str(month) + ',0,0,0' + "\n")
+            for editor, data in aggregation[year_month].items():
+                editor = '"{}"'.format(editor) if ',' in editor else editor
+                if len(aggregation[year_month]) == 1 or \
+                        not(editor == '0' and str(data[1]) == '0' and str(data[0]) == '0'):
+                    f_out.write(str(year) + "," + str(month) + ',' + editor + ',' +
+                                str(data[1]) + "," + str(data[0]) + "\n")
 
 
 def get_args():
