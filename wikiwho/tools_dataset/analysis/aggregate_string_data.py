@@ -13,9 +13,22 @@ def month_year_iter(start_month, start_year, end_month, end_year):
         yield y, m+1
 
 
+def add_str_into_aggr_dict(aggregation, string_):
+    for year_month in month_year_iter(1, 2001, 12, 2016):
+        aggregation[year_month][string_] = [0, 0, 0, 0, 0, 0]
+
+
 def aggregate_over_yms(partitions, output_file, header, is_separated, string_set, string_set_startswith):
     # {'y-m': {'string': ['oadds', 'oadds_48h', 'dels', 'dels_48h', 're_ins', 're_ins_48h'], }, {}}
     aggregation = defaultdict(dict)
+    # init aggregation dict
+    for s in string_set:
+        add_str_into_aggr_dict(aggregation, s)
+    if not is_separated:
+        for s in string_set_startswith:
+            add_str_into_aggr_dict(aggregation, s + '*')
+    string_set_startswith_separated = set()
+
     # Read each partition.
     for partition_file in partitions:
         print("Parsing ", partition_file)
@@ -33,16 +46,16 @@ def aggregate_over_yms(partitions, output_file, header, is_separated, string_set
                         if string_.startswith(w):
                             string_ = w + '*'
                             break
-                if string_ in aggregation[period]:
-                    aggregation[period][string_][0] += int(line[3])
-                    aggregation[period][string_][1] += int(line[4])
-                    aggregation[period][string_][2] += int(line[5])
-                    aggregation[period][string_][3] += int(line[6])
-                    aggregation[period][string_][4] += int(line[7])
-                    aggregation[period][string_][5] += int(line[8])
                 else:
-                    aggregation[period][string_] = [int(line[3]), int(line[4]), int(line[5]),
-                                                    int(line[6]), int(line[7]), int(line[8])]
+                    if string_ not in string_set_startswith_separated:
+                        string_set_startswith_separated.add(string_)
+                        add_str_into_aggr_dict(aggregation, string_)
+                aggregation[period][string_][0] += int(line[3])
+                aggregation[period][string_][1] += int(line[4])
+                aggregation[period][string_][2] += int(line[5])
+                aggregation[period][string_][3] += int(line[6])
+                aggregation[period][string_][4] += int(line[7])
+                aggregation[period][string_][5] += int(line[8])
 
     with open(output_file, 'w') as f_out:
         f_out.write(header)
@@ -52,7 +65,7 @@ def aggregate_over_yms(partitions, output_file, header, is_separated, string_set
                 f_out.write(str(year) + ',' + str(month) + ',' + string_ + ',' +
                             str(data[0]) + ',' + str(data[1]) + ',' +
                             str(data[2]) + ',' + str(data[3]) + ',' +
-                            str(data[4]) + ',' + str(data[5]) + ',' +
+                            str(data[4]) + ',' + str(data[5]) +
                             '\n')
 
 
