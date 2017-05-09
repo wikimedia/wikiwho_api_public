@@ -87,7 +87,10 @@ def main():
     input_folder = args.input_folder
     input_folder = input_folder if input_folder.endswith('/') else input_folder + '/'
     partitions = glob.glob(input_folder + "strings-part*.csv")
-    output = input_folder + "strings-all-parts.csv"
+    if is_separated:
+        output = input_folder + "strings-all-parts-separated.csv"
+    else:
+        output = input_folder + "strings-all-parts.csv"
     header = 'year,month,string,oadds,oadds_48h,dels,dels_48h,reins,reins_48h\n'
     print('string_set_startswith:', string_set_startswith)
     print('string_set:', string_set)
