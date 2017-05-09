@@ -58,7 +58,7 @@ def load_articles_revisions(revision_file):
 def compute_string_data(revision_file, token_file, string_set, string_set_startswith, output_file):
     # {page_id: {rev_id: timestamp}, ..}
     article_dict = load_articles_revisions(revision_file)
-    # {'y-m': {'string': ['oadds', 'oadds_48h', 'dels', 'dels_48h'], }, {}}
+    # {'y-m': {'string': ['oadds', 'oadds_48h', 'dels', 'dels_48h', 're_ins', 're_ins_48h'], }, {}}
     string_dict = defaultdict(dict)
 
     # print("Load token meta-data.")
@@ -112,9 +112,10 @@ def compute_string_data(revision_file, token_file, string_set, string_set_starts
                 string_dict[origin_period][string_][0] += 1
                 string_dict[origin_period][string_][1] += oadd_survived
             else:
-                string_dict[origin_period][string_] = [1, oadd_survived, 0, 0]
+                string_dict[origin_period][string_] = [1, oadd_survived, 0, 0, 0, 0]
 
             # analyse deletions
+            ts_in_prev = None
             for i, ts_out in enumerate(outs_ts):
                 out_period = (ts_out.year, ts_out.month)
                 deletion_survived = 1
@@ -126,11 +127,13 @@ def compute_string_data(revision_file, token_file, string_set, string_set_starts
                         string_dict[out_period][string_][2] += 1
                         string_dict[out_period][string_][3] += deletion_survived
                     else:
-                        string_dict[out_period][string_] = [0, 0, 1, deletion_survived]
+                        string_dict[out_period][string_] = [0, 0, 1, deletion_survived, 0, 0]
+                    ts_in_prev = None
                     break
                 seconds_deletion_survived = (ts_in - ts_out).total_seconds()
                 if seconds_deletion_survived < 0:
                     # sth is wrong with in and outs
+                    ts_in_prev = None
                     break
                 if seconds_deletion_survived < seconds_limit:
                     # deletion did not survive (re-inserted in) 48 hours
@@ -139,19 +142,49 @@ def compute_string_data(revision_file, token_file, string_set, string_set_starts
                     string_dict[out_period][string_][2] += 1
                     string_dict[out_period][string_][3] += deletion_survived
                 else:
-                    string_dict[out_period][string_] = [0, 0, 1, deletion_survived]
+                    string_dict[out_period][string_] = [0, 0, 1, deletion_survived, 0, 0]
+
+                if ts_in_prev is not None:
+                    re_insert_survived = 1
+                    seconds_re_insert_survived = (ts_out - ts_in_prev).total_seconds()
+                    if seconds_re_insert_survived < 0:
+                        # sth is wrong with in and outs
+                        ts_in_prev = None
+                        break
+                    if seconds_re_insert_survived < seconds_limit:
+                        # re insert did not survive (re-inserted in) 48 hours
+                        re_insert_survived = 0
+                    re_insert_period = (ts_in_prev.year, ts_in_prev.month)
+                    if string_ in string_dict[re_insert_period]:
+                        string_dict[re_insert_period][string_][4] += 1
+                        string_dict[re_insert_period][string_][5] += re_insert_survived
+                    else:
+                        string_dict[re_insert_period][string_] = [0, 0, 0, 0, 1, re_insert_survived]
+                ts_in_prev = ts_in
+                ts_out = None
+            if ts_in_prev is not None and ts_out is None:
+                # if there is 1 more ins than outs
+                re_insert_survived = 1
+                re_insert_period = (ts_in_prev.year, ts_in_prev.month)
+                if string_ in string_dict[re_insert_period]:
+                    string_dict[re_insert_period][string_][4] += 1
+                    string_dict[re_insert_period][string_][5] += re_insert_survived
+                else:
+                    string_dict[re_insert_period][string_] = [0, 0, 0, 0, 1, re_insert_survived]
 
     # output deletion analysis
     with open(output_file, 'w') as f_out:
-        f_out.write("year,month,string,oadds,oadds_48h,dels,dels_48h\n")
+        f_out.write("year,month,string,oadds,oadds_48h,dels,dels_48h,reins,reins_48h\n")
         for year_month in month_year_iter(1, 2001, 12, 2016):
             (year, month) = year_month
             if year_month in string_dict:
                 for string_, data in string_dict[year_month].items():
                     f_out.write(str(year) + ',' + str(month) + ',' + string_ + ',' +
-                                str(data[0]) + ',' + str(data[1]) + ',' + str(data[2]) + ',' + str(data[3]) + '\n')
+                                str(data[0]) + ',' + str(data[1]) + ',' +
+                                str(data[2]) + ',' + str(data[3]) + ',' +
+                                str(data[4]) + ',' + str(data[5]) + '\n')
             else:
-                f_out.write(str(year) + ',' + str(month) + ',,0,0,0,0' + '\n')
+                f_out.write(str(year) + ',' + str(month) + ',,0,0,0,0,0,0' + '\n')
 
 
 def compute_string_data_base(revision_file, token_file, string_set, string_set_startswith, output_file, part_id, log_folder):
@@ -256,7 +289,7 @@ def main():
                 sys.stdout.write('\rFiles left: {} - Done: {:.3f}%'.
                                  format(files_left, ((files_all - files_left) * 100) / files_all))
                 break  # to add a new job, if there is any
-    print("Done: ", strftime("%Y-%m-%d-%H:%M:%S"))
+    print("\nDone: ", strftime("%Y-%m-%d-%H:%M:%S"))
 
 
 if __name__ == '__main__':
