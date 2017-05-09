@@ -48,7 +48,8 @@ def get_args():
     python aggregate_oadds_or_deletions.py -i /home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/outputs_oadds_48h_survivals --oadds
     python aggregate_oadds_or_deletions.py -i /home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/output_deletions  --deletions
     """
-    parser = argparse.ArgumentParser(description='Aggregate oadds/deletions and survivals over partitions.')
+    parser = argparse.ArgumentParser(description='Aggregate oadds/deletions and survivals data in all partitions '
+                                                 'over year-month-editor.')
     parser.add_argument('-i', '--input_folder', required=True, help='Where all partitions take place.')
     parser.add_argument('-o', '--oadds', action='store_true', default=False, help='Aggregate oadds, default is False.')
     parser.add_argument('-d', '--deletions', action='store_true', default=False,
