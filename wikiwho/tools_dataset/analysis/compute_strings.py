@@ -217,7 +217,7 @@ def compute_string_data_base(revision_file, token_file, string_set, string_set_s
 def compute_string_conflict(revision_file, token_file, string_set, string_set_startswith, output_file):
     # {page_id: {rev_id: [editor, timestamp]}, ..}
     article_dict = load_articles_revisions_with_editor(revision_file)
-    # {'y-m': {'string': conflict_score, }, {}}
+    # {'y-m': {'string': {string_id: conflict_score}, }, {}}
     string_conflict_dict = defaultdict(dict)
 
     # print("Load token meta-data.")
@@ -237,6 +237,8 @@ def compute_string_conflict(revision_file, token_file, string_set, string_set_st
             if not is_in:
                 continue
             page_id = int(line[0])
+            token_id = int(line[2])
+            string_id = '{}-{}'.format(page_id, token_id)
             inbound = eval(line[5].replace("{", "[").replace("}", "]"))
             outbound = eval(line[6].replace("{", "[").replace("}", "]"))
             article_revs = article_dict[page_id]  # {rev_id: [editor, timestamp], .. }
@@ -264,9 +266,12 @@ def compute_string_conflict(revision_file, token_file, string_set, string_set_st
                     re_insert_conflict_score = 1.0 / (log(seconds_re_insert_survived + 2.0, log_base))
                     re_insert_period = (ts_in_prev.year, ts_in_prev.month)
                     if string_ in string_conflict_dict[re_insert_period]:
-                        string_conflict_dict[re_insert_period][string_] += re_insert_conflict_score
+                        if string_id in string_conflict_dict[re_insert_period][string_]:
+                            string_conflict_dict[re_insert_period][string_][string_id] += re_insert_conflict_score
+                        else:
+                            string_conflict_dict[re_insert_period][string_][string_id] = re_insert_conflict_score
                     else:
-                        string_conflict_dict[re_insert_period][string_] = re_insert_conflict_score
+                        string_conflict_dict[re_insert_period][string_] = {string_id: re_insert_conflict_score}
                 # deletion
                 try:
                     editor_in, ts_in = ins_editor_ts[i]
@@ -281,22 +286,27 @@ def compute_string_conflict(revision_file, token_file, string_set, string_set_st
                     deletion_conflict_score = 1.0 / (log(seconds_deletion_survived + 2.0, log_base))
                     out_period = (ts_out.year, ts_out.month)
                     if string_ in string_conflict_dict[out_period]:
-                        string_conflict_dict[out_period][string_] += deletion_conflict_score
+                        if string_id in string_conflict_dict[out_period][string_]:
+                            string_conflict_dict[out_period][string_][string_id] += deletion_conflict_score
+                        else:
+                            string_conflict_dict[out_period][string_][string_id] = deletion_conflict_score
                     else:
-                        string_conflict_dict[out_period][string_] = deletion_conflict_score
+                        string_conflict_dict[out_period][string_] = {string_id: deletion_conflict_score}
                 editor_in_prev = editor_in
                 ts_in_prev = ts_in
 
     # output deletion analysis
     with open(output_file, 'w') as f_out:
-        f_out.write("year,month,string,conflict_time\n")
+        f_out.write("year,month,string,string_id,conflict_time\n")
         for year_month in month_year_iter(1, 2001, 12, 2016):
             (year, month) = year_month
             if year_month in string_conflict_dict:
-                for string_, conflict_score in string_conflict_dict[year_month].items():
-                    f_out.write(str(year) + ',' + str(month) + ',' + string_ + ',' + str(conflict_score) + '\n')
+                for string_, conflict_data in string_conflict_dict[year_month].items():
+                    for string_id, conflict_score in conflict_data.items():
+                        f_out.write(str(year) + ',' + str(month) + ',' + string_ + ',' +
+                                    string_id + ',' + str(conflict_score) + '\n')
             else:
-                f_out.write(str(year) + ',' + str(month) + ',,0' + '\n')
+                f_out.write(str(year) + ',' + str(month) + ',,0,0' + '\n')
 
 
 def compute_string_conflict_base(revision_file, token_file, string_set, string_set_startswith, output_file, part_id, log_folder):
