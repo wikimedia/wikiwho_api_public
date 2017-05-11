@@ -3,6 +3,7 @@ import argparse
 import csv
 from collections import defaultdict
 from time import strftime
+from statistics import mean, median, pstdev
 
 
 def month_year_iter(start_month, start_year, end_month, end_year):
@@ -11,6 +12,51 @@ def month_year_iter(start_month, start_year, end_month, end_year):
     for ym in range(ym_start, ym_end):
         y, m = divmod(ym, 12)
         yield y, m+1
+
+
+def add_str_into_conflict_aggr_dict(aggregation, string_):
+    for year_month in month_year_iter(1, 2001, 12, 2016):
+        aggregation[year_month][string_] = []
+
+
+def aggregate_conflict_over_yms(partitions, output_file, header, string_set, string_set_startswith):
+    # {'y-m': {'string': [avg_ct, st_ct, med_ct], }, {}}
+    aggregation = defaultdict(dict)
+    # init aggregation dict
+    for s in string_set:
+        add_str_into_conflict_aggr_dict(aggregation, s)
+    for s in string_set_startswith:
+        add_str_into_conflict_aggr_dict(aggregation, s + '*')
+
+    # Read each partition.
+    for partition_file in partitions:
+        print("Parsing ", partition_file)
+        with open(partition_file) as f:
+            partition = csv.reader(f, delimiter=',')
+            next(partition, None)  # skip the headers
+            for line in partition:
+                # year,month,string,string_id,conflict_time
+                period = (int(line[0]), int(line[1]))
+                string_ = line[2]
+                if string_ == '':
+                    continue
+                for w in string_set_startswith:
+                    if string_.startswith(w):
+                        string_ = w + '*'
+                        break
+                aggregation[period][string_].append(float(line[4]))
+
+    with open(output_file, 'w') as f_out:
+        f_out.write(header)
+        for year_month in month_year_iter(1, 2001, 11, 2016):
+            (year, month) = year_month
+            for string_, conflict_scores in aggregation[year_month].items():
+                # year,month,string,avg_ct,st_ct,med_ct
+                f_out.write(str(year) + ',' + str(month) + ',' + string_ + ',' +
+                            str(mean(conflict_scores or [0])) + ',' +
+                            str(pstdev(conflict_scores or [0])) + ',' +
+                            str(median(conflict_scores or [0])) +
+                            '\n')
 
 
 def add_str_into_aggr_dict(aggregation, string_):
@@ -72,21 +118,23 @@ def aggregate_over_yms(partitions, output_file, header, is_separated, string_set
 def get_args():
     """
     python aggregate_string_data.py -i /home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/output_strings
+    python aggregate_string_data.py -i /home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/output_strings_conflict -c
     """
-    parser = argparse.ArgumentParser(description='Aggregate survival data of oadds and deletions in all partitions '
-                                                 'over year-month-string.')
+    parser = argparse.ArgumentParser(description='Aggregate survival data of oadds and deletions or conflict score'
+                                                 ' in all partitions over year-month-string.')
     parser.add_argument('-i', '--input_folder', required=True, help='Where all partitions take place.')
     parser.add_argument('-s', '--strings', help='Strings comma separated. There is a default list.')
     parser.add_argument('-d', '--separated', action='store_true', default=False,
                         help='Aggregate wildcards separately. Default is False')
-
+    parser.add_argument('-c', '--conflict', action='store_true', default=False,
+                        help='Compute conflict score for each script, default is False.')
     args = parser.parse_args()
-
     return args
 
 
 def main():
     args = get_args()
+    is_conflict_computation = args.conflict
     is_separated = args.separated
     string_set = args.strings
     if string_set:
@@ -99,16 +147,26 @@ def main():
     string_set = {s for s in string_set if not s.endswith('*')}  # will be checked for is equal
     input_folder = args.input_folder
     input_folder = input_folder if input_folder.endswith('/') else input_folder + '/'
-    partitions = glob.glob(input_folder + "strings-part*.csv")
-    if is_separated:
-        output = input_folder + "strings-all-parts-separated.csv"
+    if not is_conflict_computation:
+        partitions = glob.glob(input_folder + "strings-part*.csv")
+        if is_separated:
+            output = input_folder + "strings-all-parts-separated.csv"
+        else:
+            output = input_folder + "strings-all-parts.csv"
+        header = 'year,month,string,oadds,oadds_48h,dels,dels_48h,reins,reins_48h\n'
     else:
-        output = input_folder + "strings-all-parts.csv"
-    header = 'year,month,string,oadds,oadds_48h,dels,dels_48h,reins,reins_48h\n'
+        partitions = glob.glob(input_folder + "strings-conflict-part*.csv")
+        output = input_folder + "strings-conflict-all-parts.csv"
+        header = 'year,month,string,avg_ct,st_ct,med_ct\n'
+
+    print('is_conflict_computation:', is_conflict_computation)
     print('string_set_startswith:', string_set_startswith)
     print('string_set:', string_set)
     print("Start: ", strftime("%Y-%m-%d-%H:%M:%S"))
-    aggregate_over_yms(partitions, output, header, is_separated, string_set, string_set_startswith)
+    if not is_conflict_computation:
+        aggregate_over_yms(partitions, output, header, is_separated, string_set, string_set_startswith)
+    else:
+        aggregate_conflict_over_yms(partitions, output, header, string_set, string_set_startswith)
     print("End: ", strftime("%Y-%m-%d-%H:%M:%S"))
 
 if __name__ == '__main__':
