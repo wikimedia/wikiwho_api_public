@@ -68,7 +68,7 @@ def main():
     input_folder = args.input_folder
     input_folder = input_folder if input_folder.endswith('/') else input_folder + '/'
     partitions = glob.glob(input_folder + "editors-part*.csv")
-    output = input_folder + "editors-all-parts.csv"
+    output = input_folder + "editors-all-parts-filtered.csv"
     header = 'editor,edit_no,rev_id,rev_ts,page_id\n'
     print("Start: ", strftime("%Y-%m-%d-%H:%M:%S"))
     aggregate_over_editors(partitions, output, header, min_edits, first_edit_year)

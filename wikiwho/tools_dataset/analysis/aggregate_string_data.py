@@ -59,12 +59,15 @@ def aggregate_conflict_over_yms(partitions, output_file, header, string_set, str
                     stdev_ct = 'Na'
                 else:
                     stdev_ct = stdev(conflict_scores)
+                conflict_scores_str = ','.join(map(str, conflict_scores)) if conflict_scores else ''
+                conflict_scores_str = '"{{{}}}"'.format(conflict_scores_str) if ',' in conflict_scores_str else '{{{}}}'.format(conflict_scores_str)
                 f_out.write(str(year) + ',' + str(month) + ',' + string_ + ',' +
                             str(len_ct) + ',' +
                             str(mean(conflict_scores or [0])) + ',' +
                             str(pstdev(conflict_scores or [0])) + ',' +
                             str(stdev_ct) + ',' +
-                            str(median(conflict_scores or [0])) +
+                            str(median(conflict_scores or [0])) + ',' +
+                            conflict_scores_str +
                             '\n')
 
 
