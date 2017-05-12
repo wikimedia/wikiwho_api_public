@@ -169,7 +169,7 @@ def main():
     else:
         partitions = glob.glob(input_folder + "strings-conflict-part*.csv")
         output = input_folder + "strings-conflict-all-parts.csv"
-        header = 'year,month,string,len_ct,mean_ct,pstdev_ct,stdev_ct,median_ct\n'
+        header = 'year,month,string,len_ct,mean_ct,pstdev_ct,stdev_ct,median_ct,ct_list\n'
 
     print('is_conflict_computation:', is_conflict_computation)
     print('string_set_startswith:', string_set_startswith)
