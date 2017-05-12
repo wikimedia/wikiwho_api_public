@@ -3,7 +3,7 @@ import argparse
 import csv
 from collections import defaultdict
 from time import strftime
-from statistics import mean, median, pstdev
+from statistics import mean, median, pstdev, stdev
 
 
 def month_year_iter(start_month, start_year, end_month, end_year):
@@ -51,10 +51,19 @@ def aggregate_conflict_over_yms(partitions, output_file, header, string_set, str
         for year_month in month_year_iter(1, 2001, 11, 2016):
             (year, month) = year_month
             for string_, conflict_scores in aggregation[year_month].items():
-                # year,month,string,avg_ct,st_ct,med_ct
+                # year,month,string,len_ct,mean_ct,pstdev_ct,stdev_ct,median_ct
+                len_ct = len(conflict_scores)
+                if len_ct == 0:
+                    stdev_ct = 0
+                elif len_ct == 1:
+                    stdev_ct = 'Na'
+                else:
+                    stdev_ct = stdev(conflict_scores)
                 f_out.write(str(year) + ',' + str(month) + ',' + string_ + ',' +
+                            str(len_ct) + ',' +
                             str(mean(conflict_scores or [0])) + ',' +
                             str(pstdev(conflict_scores or [0])) + ',' +
+                            str(stdev_ct) + ',' +
                             str(median(conflict_scores or [0])) +
                             '\n')
 
@@ -157,7 +166,7 @@ def main():
     else:
         partitions = glob.glob(input_folder + "strings-conflict-part*.csv")
         output = input_folder + "strings-conflict-all-parts.csv"
-        header = 'year,month,string,avg_ct,st_ct,med_ct\n'
+        header = 'year,month,string,len_ct,mean_ct,pstdev_ct,stdev_ct,median_ct\n'
 
     print('is_conflict_computation:', is_conflict_computation)
     print('string_set_startswith:', string_set_startswith)
