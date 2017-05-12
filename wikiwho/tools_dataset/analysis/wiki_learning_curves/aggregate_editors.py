@@ -24,13 +24,21 @@ def aggregate_over_editors(partitions, output, header, min_edits, first_edit_yea
 
     # output aggregated editors data
     first_edit_date = datetime(first_edit_year, 1, 1, tzinfo=pytz.UTC)
+    last_date = datetime(2016, 10, 31, tzinfo=pytz.UTC)
     with open(output, 'w') as f_out:
         f_out.write(header)
         for editor, data in aggregation.items():
             if len(data) < min_edits:
+                # min 250 edits in total
                 continue
             sorted_timestamps = sorted(data)
             if sorted_timestamps[0] < first_edit_date:
+                # first edit after 2014
+                continue
+            weeks = (last_date - sorted_timestamps[0]).days / 7.0
+            if len(data) / weeks < 1:
+                # print(len(data), weeks, sorted_timestamps[0])
+                # min 1 edit per week on average
                 continue
             for i, rev_ts in enumerate(sorted_timestamps):
                 rev_id, page_id = data[rev_ts]
@@ -44,7 +52,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='Aggregate survival data of oadds and deletions in all partitions '
                                                  'over year-month-string.')
     parser.add_argument('-i', '--input_folder', required=True, help='Where all partitions take place.')
-    parser.add_argument('-e', '--edits', type=int, help='Min # edits that editor should have done. Default is 100')
+    parser.add_argument('-e', '--edits', type=int, help='Min # edits that editor should have done. Default is 250')
     # parser.add_argument('-s', '--size', type=int, help='Number of editors that each csv max contains. Default is 100')
     parser.add_argument('-y', '--year', type=int, help='Year that editor first made an edit. Default is 2014')
 
@@ -55,7 +63,7 @@ def get_args():
 
 def main():
     args = get_args()
-    min_edits = args.edits or 100
+    min_edits = args.edits or 250
     first_edit_year = args.year or 2014
     input_folder = args.input_folder
     input_folder = input_folder if input_folder.endswith('/') else input_folder + '/'
