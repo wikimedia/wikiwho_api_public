@@ -26,7 +26,6 @@ def aggregate_over_editors(partitions, output, header, min_edits, first_edit_yea
                 if rev_ts < first_edit_date:
                     before_editors.add(editor)
                     if editor in aggregation:
-                        print('allahu ekber')
                         del aggregation[editor]
                 elif editor not in before_editors:
                     aggregation[editor][rev_ts] = line[2]
