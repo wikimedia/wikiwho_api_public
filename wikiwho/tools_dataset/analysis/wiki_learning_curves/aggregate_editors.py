@@ -80,11 +80,20 @@ def main():
     input_folder = args.input_folder
     input_folder = input_folder if input_folder.endswith('/') else input_folder + '/'
     partitions = glob.glob(input_folder + "editors-part*.csv")
+    inputs_dict = {}
+    for partition in partitions:
+        if partition.endswith('.csv'):
+            # editors-part52.csv
+            part_id = partition.split('.csv')[-2].split('-')[-1][4:]
+            inputs_dict[part_id] = partition
+    input_files = []
+    for k in sorted(inputs_dict, key=int):
+        input_files.append(inputs_dict[k])
     output = input_folder + "editors-all-parts-filtered.csv"
     # header = 'editor,edit_no,rev_id,rev_ts,page_id\n'
     header = 'editor,edit_no,rev_id,rev_ts\n'
     print("Start: ", strftime("%Y-%m-%d-%H:%M:%S"))
-    aggregate_over_editors(partitions, output, header, min_edits, first_edit_year)
+    aggregate_over_editors(input_files, output, header, min_edits, first_edit_year)
     print("End: ", strftime("%Y-%m-%d-%H:%M:%S"))
 
 if __name__ == '__main__':
