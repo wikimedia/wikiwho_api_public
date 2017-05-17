@@ -93,10 +93,11 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
             next(csvfile, None)  # skip the headers
             # for line in csvfile.read().splitlines(): --> doesnt splitlines correctly
             for line in csvfile:
+                # page_id,last_rev_id,token_id,str,origin_rev_id,in,out
                 line = line.split(',')
-                if len(line) < 7:
-                    # print(line)
-                    continue
+                # if len(line) < 7:
+                #     # print(line)
+                #     continue
                 page_id = int(line[0])
                 if line[3].startswith('"') and line[4].endswith('"'):
                     string_ = line[3][1:] + ',' + line[4][:-1]
@@ -106,6 +107,9 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
                     string_ = line[3]
                     origin_rev_id = int(line[4])
                     ins_outs = line[5:]
+                if string_.startswith('"') and string_.endswith('"'):
+                    # string with " was written into csv correctly
+                    string_ = string_[1:-1].replace('""', '"')
                 # if len(ins_outs) == 2:
                 #     ins = eval(ins_outs[0].replace("{", "[").replace("}", "]").replace('\n', ''))
                 #     outs = eval(ins_outs[1].replace("{", "[").replace("}", "]").replace('\n', ''))
