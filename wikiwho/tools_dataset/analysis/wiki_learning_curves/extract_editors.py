@@ -29,30 +29,6 @@ def get_logger(name, log_folder, is_process=True, is_set=True):
     return logger
 
 
-# def month_year_iter(start_month, start_year, end_month, end_year):
-#     ym_start = 12 * start_year + start_month - 1
-#     ym_end = 12 * end_year + end_month - 1
-#     for ym in range(ym_start, ym_end):
-#         y, m = divmod(ym, 12)
-#         yield y, m + 1
-#
-#
-# def load_articles_revisions(revision_file):
-#     art = defaultdict(dict)  # {page_id: {rev_id: ['editor', 'timestamp']}, ..}
-#     # print("Load article-revision meta-data.")
-#     with open(revision_file) as csvfile:
-#         # Example of line: page_id,rev_id,timestamp,editor
-#         infile = csv.reader(csvfile, delimiter=',')
-#         next(infile, None)  # skip the headers
-#         for aux in infile:
-#             page_id = int(aux[0])  # article id
-#             rev_id = int(aux[1])
-#             timestamp = parser.parse(aux[2])
-#             editor = aux[3]
-#             art[page_id].update({rev_id: [editor, timestamp]})
-#     return art
-
-
 def load_bots(bot_file):
     bots = {}
     # print("Load bot list.")
@@ -112,8 +88,6 @@ python extract_editors.py -r '/home/kenan/PycharmProjects/wikiwho_api/tests_igno
     """
     parser = argparse.ArgumentParser(description='Extract')
     parser.add_argument('-r', '--revisions_folder', required=True, help='Where revision partition csvs are.')
-    # TODO should we use all_tokens (with if rev_id in art[revs]) or current+deleted
-    # parser.add_argument('-t', '--tokens_folder', required=True, help='Where token partition csvs are.')
     parser.add_argument('-b', '--bots_file', required=True, help='')
     parser.add_argument('-o', '--output_folder', required=True, help='')
     parser.add_argument('-m', '--max_workers', type=int, help='Default is 16')
