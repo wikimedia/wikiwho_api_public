@@ -110,17 +110,18 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
                 #     ins = eval(ins_outs[0].replace("{", "[").replace("}", "]").replace('\n', ''))
                 #     outs = eval(ins_outs[1].replace("{", "[").replace("}", "]").replace('\n', ''))
                 # else:
+                revisions = article_revs[page_id]
                 first = True
                 ins = []
                 outs = []
                 for in_or_out in ins_outs:
                     if first:
                         in_ = in_or_out.replace('}', '').replace('{', '').replace('"', '').replace('\n', '')
-                        if in_:
+                        if in_ and in_ in revisions:
                             ins.append(int(in_))
                     else:
                         out_ = in_or_out.replace('}', '').replace('{', '').replace('"', '').replace('\n', '')
-                        if out_:
+                        if out_ and out_ in revisions:
                             outs.append(int(out_))
                     if in_or_out.endswith('}"') or in_or_out.endswith('}'):
                         first = False
@@ -132,6 +133,7 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
             #     origin_rev_id = int(row[4])
             #     ins = eval(row[5].replace("{", "[").replace("}", "]"))
             #     outs = eval(row[6].replace("{", "[").replace("}", "]"))
+                is_token_problematic = False
                 # oadd
                 for editor, revs in editors_dict.items():
                     if origin_rev_id in revs:
@@ -139,14 +141,19 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
                         d = revs[origin_rev_id]
                         d[2] += 1
                         d[8].append(string_)
-                        origin_rev_ts = article_revs[page_id][origin_rev_id]
+                        origin_rev_ts = revisions[origin_rev_id]
                         if outs:
-                            first_out_ts = article_revs[page_id][outs[0]]
+                            first_out_ts = revisions[outs[0]]
                             seconds = (first_out_ts - origin_rev_ts).total_seconds()
-                            assert seconds >= 0
+                            if seconds < 0:
+                                is_token_problematic = True
+                                break
+                            # assert seconds >= 0
                             if seconds >= seconds_limit:
                                 d[3] += 1
                                 d[9].append(string_)
+                if is_token_problematic:
+                    continue
                 # rein and del
                 prev_in_rev_id = None
                 for i, out_rev_id in enumerate(outs):
@@ -158,14 +165,19 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
                                 d = revs[prev_in_rev_id]
                                 d[4] += 1
                                 d[10].append(string_)
-                                prev_in_rev_ts = article_revs[page_id][prev_in_rev_id]
-                                out_rev_ts = article_revs[page_id][out_rev_id]
+                                prev_in_rev_ts = revisions[prev_in_rev_id]
+                                out_rev_ts = revisions[out_rev_id]
                                 seconds = (out_rev_ts - prev_in_rev_ts).total_seconds()
-                                assert seconds >= 0
+                                # assert seconds >= 0
+                                if seconds < 0:
+                                    is_token_problematic = True
+                                    break
                                 if seconds >= seconds_limit:
                                     d[5] += 1
                                     d[11].append(string_)
                                 break
+                        if is_token_problematic:
+                            break
                     # del
                     try:
                         in_rev_id = ins[i]
@@ -192,16 +204,23 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
                                 d = revs[out_rev_id]
                                 d[6] += 1
                                 d[12].append(string_)
-                                out_rev_ts = article_revs[page_id][out_rev_id]
-                                in_rev_ts = article_revs[page_id][in_rev_id]
+                                out_rev_ts = revisions[out_rev_id]
+                                in_rev_ts = revisions[in_rev_id]
                                 seconds = (in_rev_ts - out_rev_ts).total_seconds()
-                                assert seconds >= 0
+                                # assert seconds >= 0
+                                if seconds < 0:
+                                    is_token_problematic = True
+                                    break
                                 if seconds >= seconds_limit:
                                     d[7] += 1
                                     d[13].append(string_)
                                 break
+                        if is_token_problematic:
+                            break
                     prev_in_rev_id = in_rev_id
                     out_rev_id = None
+                if is_token_problematic:
+                    continue
                 if prev_in_rev_id is not None and out_rev_id is None:
                     for editor, revs in editors_dict.items():
                         if prev_in_rev_id in revs:
