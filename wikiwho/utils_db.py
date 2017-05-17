@@ -125,7 +125,9 @@ def wikiwho_to_csv(wikiwho, output_folder):
                 outbound = '"{{{}}}"'.format(','.join(map(str, word.outbound)))
         else:
             outbound = '{}'
-        value = '"{}"'.format(word.value) if ',' in word.value else word.value
+        # test_strings = ['"', '"press', 'te""st', 'tes,t"', 'tes,t', 'test123']
+        value = word.value.replace('"', '""')
+        value = '"{}"'.format(value) if (',' in value or '"' in value) else value
         row = '{},{},{},{},{},{},{}\n'.format(wikiwho.page_id, word.last_rev_id, word.token_id, value,
                                               word.origin_rev_id, inbound, outbound)
         content += row
