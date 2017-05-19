@@ -44,7 +44,7 @@ def load_articles_revisions(revision_file):
     return art
 
 
-def compute_editors(editors, editors_file, tokens_folder, revisions_folder, output_folder):
+def compute_editors(editors, editors_file, tokens_folder, revisions_folder, output_folder, logger):
     # {editor: {rev_id: [len_edits, rev_ts, oadds, oadds_48h, reins, reins_48h, deletes, deletes_48h,
     # [tokens_added], [tokens_added_48h], [tokens_rein], [tokens_rein_48h], [tokens_deleted], [tokens_deleted_48h], edit_no]}}
     editors_dict = {}
@@ -82,7 +82,7 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
     # print('len content_files:', len(content_files))
 
     in_outs_still_wrong = set()  # page ids
-    seconds_limit = 48 * 3600  # 2 hours
+    seconds_limit = 48 * 3600  # 2 days
     for content_file in content_files:
         # 20161101-current_content-part49-108968-112997.csv
         part_id = content_file.split('-part')[-1].split('-')[0]
@@ -95,10 +95,8 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
             for line in csvfile:
                 # page_id,last_rev_id,token_id,str,origin_rev_id,in,out
                 line = line.split(',')
-                # if len(line) < 7:
-                #     # print(line)
-                #     continue
                 page_id = int(line[0])
+                token_id = int(line[2])
                 if line[3].startswith('"') and line[4].endswith('"'):
                     string_ = line[3][1:] + ',' + line[4][:-1]
                     origin_rev_id = int(line[5])
@@ -110,33 +108,27 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
                 if string_.startswith('"') and string_.endswith('"'):
                     # string with " was written into csv correctly
                     string_ = string_[1:-1].replace('""', '"')
-                # if len(ins_outs) == 2:
-                #     ins = eval(ins_outs[0].replace("{", "[").replace("}", "]").replace('\n', ''))
-                #     outs = eval(ins_outs[1].replace("{", "[").replace("}", "]").replace('\n', ''))
-                # else:
                 revisions = article_revs[page_id]
-                first = True
+                is_ins = True
                 ins = []
                 outs = []
                 for in_or_out in ins_outs:
-                    if first:
-                        in_ = in_or_out.replace('}', '').replace('{', '').replace('"', '').replace('\n', '')
-                        if in_ and in_ in revisions:
-                            ins.append(int(in_))
-                    else:
-                        out_ = in_or_out.replace('}', '').replace('{', '').replace('"', '').replace('\n', '')
-                        if out_ and out_ in revisions:
-                            outs.append(int(out_))
+                    in_or_out_ = in_or_out.replace('}', '').replace('{', '').replace('"', '').replace('\n', '')
+                    if in_or_out_ and int(in_or_out_) in revisions:
+                        if is_ins:
+                            ins.append(int(in_or_out_))
+                        else:
+                            outs.append(int(in_or_out_))
+                    elif in_or_out_ and int(in_or_out_) not in revisions and page_id not in in_outs_still_wrong:
+                        logger.error('{}: rev_id {} is not in revision file'.format(page_id, in_or_out_))
+                        in_outs_still_wrong.add(page_id)
                     if in_or_out.endswith('}"') or in_or_out.endswith('}'):
-                        first = False
-            # infile = csv.reader(csvfile, delimiter=',')
-            # next(infile, None)  # skip the headers
-            # for row in infile:
-            #     # page_id,last_rev_id,token_id,str,origin_rev_id,in,out
-            #     string_ = row[3]
-            #     origin_rev_id = int(row[4])
-            #     ins = eval(row[5].replace("{", "[").replace("}", "]"))
-            #     outs = eval(row[6].replace("{", "[").replace("}", "]"))
+                        is_ins = False
+                if not (0 <= len(outs) - len(ins) <= 1) and page_id not in in_outs_still_wrong:
+                    logger.error('{},{},{}: token problematic (not (0 <= len(outs) - len(ins) <= 1))'.
+                                 format(page_id, origin_rev_id, token_id))
+                    in_outs_still_wrong.add(page_id)
+
                 is_token_problematic = False
                 # oadd
                 for editor, revs in editors_dict.items():
@@ -146,16 +138,27 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
                         d[2] += 1
                         d[8].append(string_)
                         origin_rev_ts = revisions[origin_rev_id]
+                        # print(page_id, string_, origin_rev_id, origin_rev_ts, ins, outs)
+                        # print(list(revisions.keys()))
+                        # print(ins_outs)
+                        # print(d)
                         if outs:
                             first_out_ts = revisions[outs[0]]
                             seconds = (first_out_ts - origin_rev_ts).total_seconds()
+                            # print(first_out_ts, seconds, seconds >= seconds_limit)
                             if seconds < 0:
                                 is_token_problematic = True
+                                if page_id not in in_outs_still_wrong:
+                                    logger.error('{},{},{}: token problematic (seconds < 0)'.
+                                                 format(page_id, origin_rev_id, token_id))
+                                    in_outs_still_wrong.add(page_id)
                                 break
-                            # assert seconds >= 0
                             if seconds >= seconds_limit:
                                 d[3] += 1
                                 d[9].append(string_)
+                        else:
+                            d[3] += 1
+                            d[9].append(string_)
                 if is_token_problematic:
                     continue
                 # rein and del
@@ -165,16 +168,18 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
                     if prev_in_rev_id is not None:
                         for editor, revs in editors_dict.items():
                             if prev_in_rev_id in revs:
-                                # print('++')
                                 d = revs[prev_in_rev_id]
                                 d[4] += 1
                                 d[10].append(string_)
                                 prev_in_rev_ts = revisions[prev_in_rev_id]
                                 out_rev_ts = revisions[out_rev_id]
                                 seconds = (out_rev_ts - prev_in_rev_ts).total_seconds()
-                                # assert seconds >= 0
                                 if seconds < 0:
                                     is_token_problematic = True
+                                    if page_id not in in_outs_still_wrong:
+                                        logger.error('{},{},{}: token problematic (seconds < 0)'.
+                                                     format(page_id, origin_rev_id, token_id))
+                                        in_outs_still_wrong.add(page_id)
                                     break
                                 if seconds >= seconds_limit:
                                     d[5] += 1
@@ -189,31 +194,28 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
                         # no in for this out
                         for editor, revs in editors_dict.items():
                             if out_rev_id in revs:
-                                # print('+++')
                                 d = revs[out_rev_id]
                                 d[6] += 1
                                 d[7] += 1
                                 d[12].append(string_)
                                 d[13].append(string_)
                                 break
-                        if (len(outs) - len(ins)) != 1 and line[0] not in in_outs_still_wrong:
-                            print('(len(outs) - len(ins)) != 1', line[:3])
-                            in_outs_still_wrong.add(line[0])
-                        # assert (len(outs) - len(ins)) == 1
                         break
                     else:
                         for editor, revs in editors_dict.items():
                             if out_rev_id in revs:
-                                # print('++++')
                                 d = revs[out_rev_id]
                                 d[6] += 1
                                 d[12].append(string_)
                                 out_rev_ts = revisions[out_rev_id]
                                 in_rev_ts = revisions[in_rev_id]
                                 seconds = (in_rev_ts - out_rev_ts).total_seconds()
-                                # assert seconds >= 0
                                 if seconds < 0:
                                     is_token_problematic = True
+                                    if page_id not in in_outs_still_wrong:
+                                        logger.error('{},{},{}: token problematic (seconds < 0)'.
+                                                     format(page_id, origin_rev_id, token_id))
+                                        in_outs_still_wrong.add(page_id)
                                     break
                                 if seconds >= seconds_limit:
                                     d[7] += 1
@@ -228,7 +230,6 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
                 if prev_in_rev_id is not None and out_rev_id is None:
                     for editor, revs in editors_dict.items():
                         if prev_in_rev_id in revs:
-                            # print('+++++')
                             d = revs[prev_in_rev_id]
                             d[4] += 1
                             d[10].append(string_)
@@ -254,7 +255,7 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
 def compute_editors_base(batch_limits, editors, editors_file, tokens_folder, revisions_folder, log_folder, output_folder):
     logger = get_logger(batch_limits, log_folder, is_process=True, is_set=False)
     try:
-        compute_editors(editors, editors_file, tokens_folder, revisions_folder, output_folder)
+        compute_editors(editors, editors_file, tokens_folder, revisions_folder, output_folder, logger)
     except Exception as e:
         logger.exception('editor_{}'.format(str(editors)))
     return True
@@ -302,24 +303,25 @@ def main():
             # editor,len_edits,edit_no,rev_id,rev_ts
             editors.add(row[0])
 
-    print('max_workers:', max_workers, 'len editors:', len(editors))
+    print('max_workers:', max_workers, 'len editors:', len(editors), 'batch_size:', batch_size)
     print("Start: ", strftime("%Y-%m-%d-%H:%M:%S"))
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         jobs = {}
         editors_left = len(editors)
         editors_all = len(editors)
-        editors_iter = list(editors)
+        editors_list = list(editors)
+        editors_iter = iter(range(0, len(editors_list), batch_size))
         while editors_left > 0:
             # for editor in editors_iter:
-            for i in range(0, len(editors_iter), batch_size):
-                batch = editors_iter[i:i + batch_size]
+            for i in editors_iter:
+                batch = editors_list[i:i + batch_size]
                 batch_limits = '{}-{}'.format(batch[0], batch[-1])
-                # print(editor, editors_file, tokens_folder, revisions_folder, log_folder, output_folder)
-                # editors_left -= 1
+                # print(batch_limits, batch, editors_file, tokens_folder,
+                #       revisions_folder, log_folder, output_folder)
+                # editors_left -= batch_size
                 # continue
                 job = executor.submit(compute_editors_base, batch_limits, batch, editors_file, tokens_folder,
                                       revisions_folder, log_folder, output_folder)
-                # jobs[job] = str(batch)
                 jobs[job] = batch_limits
                 if len(jobs) == max_workers:  # limit # jobs with max_workers
                     break
