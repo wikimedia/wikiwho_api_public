@@ -20,7 +20,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns, static
 from django.views.generic import TemplateView
 from django.contrib.sitemaps.views import sitemap
 
-from base.views import clear_cache, clear_sessions
+from base.views import clear_cache, clear_sessions, download
 from base.sitemaps import BaseStaticViewSitemap, ApiStaticViewSitemap
 from api.views import ApiRedirectView
 
@@ -32,6 +32,7 @@ urlpatterns = [
     url(r'^api/', ApiRedirectView.as_view()),
     # url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^account/', include('account_app.urls', namespace='account')),
+    url(r'^download/(?P<file_name>.+)/$', download),
     url(r'^contact/$', TemplateView.as_view(template_name='contact/contact.html'), name='contact'),
     # url(r'^docs/', include('rest_framework_docs.urls')),
     url(r'^$', TemplateView.as_view(template_name='home/home.html'), name='home'),
