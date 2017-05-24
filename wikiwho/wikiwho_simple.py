@@ -232,6 +232,92 @@ class Wikiwho(BaseWikiwho):
         # TODO finish
         return json_data
 
+    def get_all_content_as_graph(self):
+        json_data = dict()
+        json_data['page_id'] = self.page_id
+        json_data['revisions'] = []
+        all_paragraphs_dict = dict()  # {ref_object: ref, }
+        all_sentences_dict = dict()  # {ref_object: ref, }
+        all_tokens_dict = dict()  # {toke_id: ref, }
+        for i, rev_id in enumerate(self.ordered_revisions):
+            paragraphs = []
+            rev_dict = {
+                'pos': i,
+                'rev_id': rev_id,
+                'paragraphs': paragraphs
+            }
+            json_data['revisions'].append(rev_dict)
+            rev = self.revisions[rev_id]
+            tmp = {'p': [], 's': []}
+            for j, hash_paragraph in enumerate(rev.ordered_paragraphs):
+                if len(rev.paragraphs[hash_paragraph]) > 1:
+                    tmp['p'].append(hash_paragraph)
+                    paragraph = rev.paragraphs[hash_paragraph][tmp['p'].count(hash_paragraph) - 1]
+                else:
+                    paragraph = rev.paragraphs[hash_paragraph][0]
+
+                ref_paragraph = paragraph.__str__()  # object reference of paragraph
+                if ref_paragraph in all_paragraphs_dict:
+                    p_dict = {
+                        'pos': j,
+                        'ref': all_paragraphs_dict[ref_paragraph]['ref']
+                    }
+                    paragraphs.append(p_dict)
+                    continue
+                all_paragraphs_dict[ref_paragraph] = {'ref': '{}:{}:{}'.format(rev_id, hash_paragraph, j)}
+                sentences = []
+                p_dict = {
+                    'pos': j,
+                    'hash': hash_paragraph,
+                    'sentences': sentences
+                    }
+                paragraphs.append(p_dict)
+
+                tmp['s'][:] = []
+                for k, hash_sentence in enumerate(paragraph.ordered_sentences):
+                    if len(paragraph.sentences[hash_sentence]) > 1:
+                        tmp['s'].append(hash_sentence)
+                        sentence = paragraph.sentences[hash_sentence][tmp['s'].count(hash_sentence) - 1]
+                    else:
+                        sentence = paragraph.sentences[hash_sentence][0]
+
+                    ref_sentence = sentence.__str__()  # object reference of sentence
+                    if ref_sentence in all_sentences_dict:
+                        s_dict = {
+                            'pos': k,
+                            'ref': all_sentences_dict[ref_sentence]['ref']
+                        }
+                        sentences.append(s_dict)
+                        continue
+                    all_sentences_dict[ref_sentence] = {
+                        'ref': '{}:{}:{}:{}:{}'.format(rev_id, hash_paragraph, j, hash_sentence, k)
+                    }
+                    tokens = []
+                    s_dict = {
+                        'pos': k,
+                        'hash': hash_sentence,
+                        'tokens': tokens
+                    }
+                    sentences.append(s_dict)
+                    for m, word in enumerate(sentence.words):
+                        if word.token_id in all_tokens_dict:
+                            t_dict = {
+                                'pos': m,
+                                'ref': all_tokens_dict[word.token_id]['ref']
+                            }
+                        else:
+                            t_dict = {
+                                'pos': m,
+                                'token_id': word.token_id,
+                                'str': word.value
+                            }
+                            all_tokens_dict[word.token_id] = {
+                                'ref': '{}:{}:{}:{}:{}:{}'.format(rev_id, hash_paragraph, j, hash_sentence, k,
+                                                                  word.token_id)
+                            }
+                        tokens.append(t_dict)
+        return json_data
+
     def get_revision_ids(self, parameters):
         """
         Return list of list of revision ids with optionally appending editor and timestamp information.
