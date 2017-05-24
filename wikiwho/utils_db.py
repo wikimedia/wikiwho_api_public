@@ -1,4 +1,5 @@
 import uuid
+import json
 
 from django.db import connection
 from django.utils.dateparse import parse_datetime
@@ -142,6 +143,12 @@ def wikiwho_to_csv(wikiwho, output_folder):
     with open('{}/{}_deleted_content.csv'.format(output_folder, wikiwho.page_id), 'w') as f:
         f.write(deleted_content[:-1])
     # TODO write into revisions csv
+
+
+def wikiwho_to_graph_json(wikiwho, folder_path):
+    json_data = wikiwho.get_all_content_as_graph()
+    with open('{}/{}_graph_content.json'.format(folder_path, wikiwho.page_id), 'w') as f:
+        f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
 
 
 def tokens_custom(rev_id, values_list, ordered=True, explain=False, return_dict=True):

@@ -81,6 +81,11 @@ def pickle_load(pickle_path):
                 raise
 
 
+def pickle_find_path(page_id):
+    pickle_path = "{}/{}.p".format(settings.PICKLE_FOLDER, page_id)
+    return pickle_load(pickle_path)
+
+
 def get_pickle_size(page_id):
     pickle_path = "{}/{}.p".format(settings.PICKLE_FOLDER, page_id)
     try:
