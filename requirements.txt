@@ -37,6 +37,7 @@ mwxml
 mwreverts
 sseclient-py
 urllib3
+mwpersistence
 
 psycopg2
 # django-postgres-copy
