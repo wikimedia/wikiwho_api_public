@@ -89,6 +89,7 @@ def compute_editors(editors, editors_file, tokens_folder, revisions_folder, outp
         revision_file = revisions_dict[part_id]
         article_revs = load_articles_revisions(revision_file)
         # print(revision_file, content_file)
+        # TODO use toktrack_parse.py module
         with open(content_file) as csvfile:
             next(csvfile, None)  # skip the headers
             # for line in csvfile.read().splitlines(): --> doesnt splitlines correctly
@@ -262,13 +263,14 @@ def compute_editors_base(batch_limits, editors, editors_file, tokens_folder, rev
 
 
 def get_args():
-    """
-python compute_editor_data.py -r '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/revisions' -e '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/output_editors/editors-all-parts-filtered-2.csv' -t '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions' -o '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/output_editors' -m=4
-    """
-    parser = argparse.ArgumentParser(description='')
+    parser = argparse.ArgumentParser(description='Parse all content files and for each token '
+                                                 'find out by which editor (from given editors file) '
+                                                 'it is o added, re-inserted and deleted.')
     parser.add_argument('-r', '--revisions_folder', required=True, help='Where revision partition csvs are.')
-    parser.add_argument('-e', '--editors_file', required=True, help='Where editors file is.')
-    parser.add_argument('-t', '--tokens_folder', required=True, help='Where current and deleted content files are.')
+    parser.add_argument('-e', '--editors_file', required=True, help='Path of editors file (output of '
+                                                                    'pick_editors.py script).')
+    parser.add_argument('-t', '--tokens_folder', required=True, help='Where current and deleted content '
+                                                                     'folders/files are.')
     parser.add_argument('-o', '--output_folder', required=True, help='')
     parser.add_argument('-m', '--max_workers', type=int, help='Default is 16')
     parser.add_argument('-b', '--batch_size', type=int, help='Default is 10')
@@ -288,6 +290,7 @@ def main():
     max_workers = args.max_workers or 16
 
     csv.field_size_limit(sys.maxsize)
+
     # logging
     log_folder = '{}/{}'.format(output_folder, 'logs')
     if not exists(log_folder):
@@ -338,7 +341,7 @@ def main():
                 sys.stdout.write('\rEditors left: {} - Done: {:.3f}%'.
                                  format(editors_left, ((editors_all - editors_left) * 100) / editors_all))
                 break  # to add a new job, if there is any
-    print("Done: ", strftime("%Y-%m-%d-%H:%M:%S"))
+    print("\nDone: ", strftime("%Y-%m-%d-%H:%M:%S"))
 
 
 if __name__ == '__main__':

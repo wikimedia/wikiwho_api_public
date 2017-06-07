@@ -4,6 +4,10 @@ from collections import defaultdict
 
 
 def main():
+    """
+    Pick 1000 editors randomly.
+    """
+    # output of aggregate_editors.py script
     p = '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/output_editors/editors-all-parts-filtered.csv'
     editors = defaultdict(list)
     with open(p) as f:

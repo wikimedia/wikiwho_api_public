@@ -57,16 +57,13 @@ def aggregate_over_editors(partitions, output, header, min_edits, first_edit_yea
 
 
 def get_args():
-    """
-    python aggregate_editors.py -i /home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/output_editors
-    """
-    parser = argparse.ArgumentParser(description='Aggregate survival data of oadds and deletions in all partitions '
-                                                 'over year-month-string.')
-    parser.add_argument('-i', '--input_folder', required=True, help='Where all partitions take place.')
+    parser = argparse.ArgumentParser(description='Aggregate editors data in all partitions over editor id. '
+                                                 'Filters out editors according to min # edits, first edit year and '
+                                                 'min 1 edit per week conditions.')
+    parser.add_argument('-i', '--input_folder', required=True, help='Where all partitions (output of '
+                                                                    'extract_editors.py script) take place.')
     parser.add_argument('-e', '--edits', type=int, help='Min # edits that editor should have done. Default is 250')
-    # parser.add_argument('-s', '--size', type=int, help='Number of editors that each csv max contains. Default is 100')
     parser.add_argument('-y', '--year', type=int, help='Year that editor first made an edit. Default is 2014')
-    # parser.add_argument('-b', '--batch_size', type=int, help='')
 
     args = parser.parse_args()
 

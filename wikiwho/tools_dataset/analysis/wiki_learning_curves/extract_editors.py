@@ -4,13 +4,14 @@ import argparse
 import logging
 from collections import defaultdict
 from dateutil import parser
-from os.path import realpath, exists
+from os.path import realpath, exists, dirname
 from os import listdir, mkdir
 from time import strftime
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 def get_logger(name, log_folder, is_process=True, is_set=True):
+    # TODO move this method into analysis/utils.py and import from there
     logger = logging.getLogger(name)
     file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
                                                                 name,
@@ -41,8 +42,6 @@ def load_bots(bot_file):
 
 
 def extract_editors(revision_file, bot_file, output_file):
-    # Main structures.
-    # article_dict = load_articles_revisions(revision_file)
     bots_dict = load_bots(bot_file)
 
     # {'editor': {ts: (rev_id, page_id), ..}, ..}
@@ -54,7 +53,7 @@ def extract_editors(revision_file, bot_file, output_file):
             # page_id,rev_id,timestamp,editor
             editor = line[3]
             # if editor in bots_dict:
-                # print(editor in bots_dict, type(editor))
+            #     print(editor in bots_dict, type(editor))
             if editor in bots_dict or editor.startswith('0|'):
                 # skip bots and non-registered editors
                 continue
@@ -83,14 +82,13 @@ def extract_editors_base(revision_file, bot_file, output_file, part_id, log_fold
 
 
 def get_args():
-    """
-python extract_editors.py -r '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/revisions' -b '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/botlist.csv' -o '/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/partitions/output_editors' -m=4
-    """
-    parser = argparse.ArgumentParser(description='Extract')
+    parser = argparse.ArgumentParser(description='Extract registered editor data out of toktrack revision csv files. '
+                                                 'Each output csv file contains data in form of '
+                                                 '"editor,edit_no,rev_id,rev_ts,page_id"')
     parser.add_argument('-r', '--revisions_folder', required=True, help='Where revision partition csvs are.')
-    parser.add_argument('-b', '--bots_file', required=True, help='')
-    parser.add_argument('-o', '--output_folder', required=True, help='')
-    parser.add_argument('-m', '--max_workers', type=int, help='Default is 16')
+    parser.add_argument('-b', '--bots_file', required=True, help='To skip bot editors.')
+    parser.add_argument('-o', '--output_folder', required=True, help='Where to output editor data and logs.')
+    parser.add_argument('-m', '--max_workers', type=int, help='Default is 16.')
 
     args = parser.parse_args()
     return args
@@ -99,7 +97,6 @@ python extract_editors.py -r '/home/kenan/PycharmProjects/wikiwho_api/tests_igno
 def main():
     args = get_args()
     revisions_folder = args.revisions_folder
-    # tokens_folder = args.tokens_folder
     bots_file = args.bots_file
     output_folder = args.output_folder
     if not exists(output_folder):
@@ -107,17 +104,18 @@ def main():
     max_workers = args.max_workers or 16
 
     csv.field_size_limit(sys.maxsize)
+
     # group and order input files.
     revisions_dict = {}
     for revision_file in listdir(revisions_folder):
         # 20161101-revisions-part7-8785-10139.csv
         revisions_dict[revision_file.split('-')[2][4:]] = '{}/{}'.format(revisions_folder, revision_file)
-    input_files = []
+    input_files = []  # [[part_id, revision_file_full_path, output_file_full_path], ...]
     for part_id in sorted(revisions_dict, key=int):
-        input_files.append([
-            part_id,
-            revisions_dict[part_id],
-            '{}/editors-part{}.csv'.format(output_folder, part_id)])
+        input_files.append([part_id,
+                            revisions_dict[part_id],
+                            '{}/editors-part{}.csv'.format(output_folder, part_id)])
+
     # logging
     log_folder = '{}/{}'.format(output_folder, 'logs')
     if not exists(log_folder):
@@ -154,7 +152,7 @@ def main():
                 sys.stdout.write('\rFiles left: {} - Done: {:.3f}%'.
                                  format(files_left, ((files_all - files_left) * 100) / files_all))
                 break  # to add a new job, if there is any
-    print("Done: ", strftime("%Y-%m-%d-%H:%M:%S"))
+    print("\nDone: ", strftime("%Y-%m-%d-%H:%M:%S"))
 
 
 if __name__ == '__main__':
