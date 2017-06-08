@@ -45,7 +45,7 @@ def pytest_generate_tests(metafunc):
     articles = set()
     lines = metafunc.config.option.lines
     lines = [] if lines == 'all' else [int(l) for l in lines.split(',')]
-    if "article_title" in metafunc.fixturenames:
+    if 'article_title' in metafunc.fixturenames:
         input_file = '{}/{}'.format(os.path.dirname(os.path.realpath(__file__)), 'test_wikiwho_simple.xlsx')
         wb = load_workbook(filename=input_file, data_only=True, read_only=True)
         ws = wb[wb.sheetnames[0]]
@@ -128,12 +128,12 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
                 ts_diff = (parse_datetime(wp.wikiwho.revisions[i_].timestamp) -
                            parse_datetime(wp.wikiwho.revisions[o].timestamp)).total_seconds()
                 if ts_diff < 0:
-                    in_out_test_ts = True
+                    in_out_test_ts = False
             if len(t['out']) > len(t['in']) and t['in']:
                 ts_diff = (parse_datetime(wp.wikiwho.revisions[t['out'][-1]].timestamp) -
                            parse_datetime(wp.wikiwho.revisions[t['in'][-1]].timestamp)).total_seconds()
                 if ts_diff < 0:
-                    in_out_test_ts = True
+                    in_out_test_ts = False
             # last_used_test_spam = not (t['last_used'] in wp.wikiwho.spam_ids)
             if not in_out_test_len or not in_out_test_spam or not in_out_test_ts:
                 # print(t['str'], len(t['out']), len(t['in']), t['out'], t['in'])
@@ -175,14 +175,15 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
             f.write(json.dumps(revision_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         is_content_same_3 = filecmp.cmp(json_file_path, '{}/{}_io.json'.format(test_json_folder, article_title))
 
+        # TODO get deleted and all content of a specific revision, so that we can test it for xml dumps
         # create deleted content json with threshold 0
-        # TODO get deleted content of a specific revision, so that we can test it for xml dumps
         deleted_tokens_json = v.get_deleted_content(wp, ['str', 'o_rev_id', 'editor', 'token_id', 'in', 'out', 0], from_db=from_db)
         json_file_path = '{}/{}_deleted_content.json'.format(temp_folder, article_title)
         with io.open(json_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(deleted_tokens_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         # compare deleted content jsons
         is_content_same_4 = filecmp.cmp(json_file_path, '{}/{}_deleted_content.json'.format(test_json_folder, article_title))
+        # TODO compare all content
 
     # print(wp.wikiwho.spam_ids)
     assert is_content_same_1, "{}: 'json with ri and ai doesn't match".format(article_title)
@@ -261,7 +262,7 @@ class TestWikiwho:
 
     def test_json_output(self, temp_folder, article_title, revision_id):
         """
-        Tests json outputs of articles in given revisions in gold standard. Revision data is taken from wp api and
+        Tests json outputs of given revisions of articles in gold standard. Revision data is taken from wp api and
         processed data is stored in pickles.
         If there are unexpected differences in jsons, authorship of each token in gold standard should be
         checked by running test_authorship or manually.
@@ -274,7 +275,7 @@ class TestWikiwho:
     @pytest.mark.django_db
     def test_json_output_db(self, temp_folder, article_title, revision_id):
         """
-        Tests json outputs of articles in given revisions in gold standard. Revision data is taken from wp api and
+        Tests json outputs of given revisions of articles in gold standard. Revision data is taken from wp api and
         processed data is stored in database.
         If there are unexpected differences in jsons, authorship of each token in gold standard should be
         checked by running test_authorship or manually.
@@ -288,7 +289,7 @@ class TestWikiwho:
 
     def test_json_output_xml(self, temp_folder, article_title, revision_id):
         """
-        Tests json outputs of articles in given revisions in gold standard. Revision data is taken from wp xml dumps and
+        Tests json outputs of given revisions of articles in gold standard. Revision data is taken from wp xml dumps and
         processed data is stored in pickles.
         If there are unexpected differences in jsons, authorship of each token in gold standard should be
         checked by running test_authorship or manually.
@@ -300,7 +301,7 @@ class TestWikiwho:
     @pytest.mark.django_db
     def test_json_output_xml_db(self, temp_folder, article_title, revision_id):
         """
-        Tests json outputs of articles in given revisions in gold standard. Revision data is taken from wp xml dumps and
+        Tests json outputs of given revisions of articles in gold standard. Revision data is taken from wp xml dumps and
         processed data is stored in database.
         If there are unexpected differences in jsons, authorship of each token in gold standard should be
         checked by running test_authorship or manually.
