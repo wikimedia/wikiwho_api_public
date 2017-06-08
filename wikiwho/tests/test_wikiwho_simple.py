@@ -185,7 +185,13 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
             f.write(json.dumps(deleted_tokens_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         # compare deleted content jsons
         is_content_same_4 = filecmp.cmp(json_file_path, '{}/{}_deleted_content.json'.format(test_json_folder, article_title))
-        # TODO compare all content
+        # create all content json with threshold 0
+        all_tokens_json = v.get_all_content(wp, ['str', 'o_rev_id', 'editor', 'token_id', 'in', 'out', 0], from_db=from_db)
+        json_file_path = '{}/{}_all_content.json'.format(temp_folder, article_title)
+        with io.open(json_file_path, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(all_tokens_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+        # compare all content jsons
+        is_content_same_5 = filecmp.cmp(json_file_path, '{}/{}_all_content.json'.format(test_json_folder, article_title))
 
     # print(wp.wikiwho.spam_ids)
     assert is_content_same_1, "{}: 'json with ri and ai doesn't match".format(article_title)
@@ -195,6 +201,7 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
     if extended_test:
         assert is_content_same_3, "{}: 'json with in/outbounds doesn't match".format(article_title)
         assert is_content_same_4, "{}: 'deleted content json doesn't match".format(article_title)
+        assert is_content_same_5, "{}: 'all content json doesn't match".format(article_title)
     # assert last_used_test_spam, 'last used in spam'
     assert rev_ids_same, "{}: 'article rev ids json doesn't match".format(article_title)
     assert spam_ids_same, "{}: spam ids don't match".format(article_title)
