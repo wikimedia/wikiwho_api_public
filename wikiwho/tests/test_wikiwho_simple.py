@@ -13,13 +13,14 @@ py.test test_wikiwho_simple.py::TestWikiwho::test_authorship --lines=3,9
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import os
 import sys
 import pytest
 import json
 import filecmp
 import io
 from builtins import range
+from os import mkdir
+from os.path import realpath, exists, dirname, join
 
 from openpyxl import load_workbook
 from mwxml import Dump
@@ -46,7 +47,7 @@ def pytest_generate_tests(metafunc):
     lines = metafunc.config.option.lines
     lines = [] if lines == 'all' else [int(l) for l in lines.split(',')]
     if 'article_title' in metafunc.fixturenames:
-        input_file = '{}/{}'.format(os.path.dirname(os.path.realpath(__file__)), 'test_wikiwho_simple.xlsx')
+        input_file = '{}/{}'.format(dirname(realpath(__file__)), 'test_wikiwho_simple.xlsx')
         wb = load_workbook(filename=input_file, data_only=True, read_only=True)
         ws = wb[wb.sheetnames[0]]
         for i, row in enumerate(ws.iter_rows()):
@@ -85,7 +86,8 @@ def pytest_generate_tests(metafunc):
 
 
 def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False):
-    test_json_folder = '../../tests_ignore/jsons/after_token_density_increase'
+    test_json_folder = '{}/tests_ignore/jsons/after_token_density_increase'.\
+        format(dirname(dirname(dirname(realpath(__file__)))))
 
     v = WikiwhoView()
     # create json with rev and editor ids
@@ -200,8 +202,9 @@ def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False
 
 def _test_json_from_xml(temp_folder, article_title, revision_id, save_tables=()):
     # read from xml dumps (7z)
-    xml_file_path = '../../tests_ignore/xml_dumps/{}'.format(article_zips[article_title])
-    if not os.path.exists(xml_file_path):
+    xml_file_path = '{}/tests_ignore/xml_dumps/{}'.format(dirname(dirname(dirname(realpath(__file__)))),
+                                                          article_zips[article_title])
+    if not exists(xml_file_path):
         # server
         xml_file_path = '/home/nuser/pdisk/xmls_7z/batch_all/{}'.format(article_zips[article_title])
     dump = Dump.from_file(reader(xml_file_path))
@@ -226,7 +229,7 @@ class TestWikiwho:
         """ setup any state specific to the execution of the given class (which
         usually contains tests).
         """
-        # sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+        # sys.path.append(dirname(realpath(__file__)))
 
     @pytest.fixture(scope='session')
     def temp_folder(self, tmpdir_factory):
@@ -240,23 +243,24 @@ class TestWikiwho:
             tmp = 'tmp_test_3'
         else:
             tmp = 'tmp_test'
-        if not os.path.exists(tmp):
-            os.mkdir(tmp)
+        tmp = join(dirname(realpath(__file__)), tmp)
+        if not exists(tmp):
+            mkdir(tmp)
         temp_folder_dict['pickle_folder'] = tmp
         tmp_test_authorship = '{}/test_authorship'.format(tmp)
-        if not os.path.exists(tmp_test_authorship):
-            os.mkdir(tmp_test_authorship)
+        if not exists(tmp_test_authorship):
+            mkdir(tmp_test_authorship)
         tmp_test_json_output = '{}/test_json_output'.format(tmp)
         temp_folder_dict['tmp_test_json_output'] = tmp_test_json_output
-        if not os.path.exists(tmp_test_json_output):
-            os.mkdir(tmp_test_json_output)
+        if not exists(tmp_test_json_output):
+            mkdir(tmp_test_json_output)
         test_json_output_xml = '{}/test_json_output_xml'.format(tmp)
-        if not os.path.exists(test_json_output_xml):
-            os.mkdir(test_json_output_xml)
+        if not exists(test_json_output_xml):
+            mkdir(test_json_output_xml)
         temp_folder_dict['test_json_output_xml'] = test_json_output_xml
         tmp_test_continue_logic = '{}/test_continue_logic'.format(tmp)
-        if not os.path.exists(tmp_test_continue_logic):
-            os.mkdir(tmp_test_continue_logic)
+        if not exists(tmp_test_continue_logic):
+            mkdir(tmp_test_continue_logic)
         temp_folder_dict['tmp_test_continue_logic'] = tmp_test_continue_logic
         return temp_folder_dict
 
@@ -394,7 +398,7 @@ class TestWikiwho:
             }
         }
         article_title = 'Finger_Lakes'
-        tests = os.path.dirname(os.path.realpath(__file__))
+        tests = dirname(realpath(__file__))
         from django.core import management
         management.call_command('xml_to_pickle', *['--output', tests])
 
@@ -449,5 +453,5 @@ class TestWikiwho:
         #     tmp = 'tmp_test_3'
         # else:
         #     tmp = 'tmp_test'
-        # if os.path.exists(tmp):
+        # if exists(tmp):
         #     os.removedirs(tmp)
