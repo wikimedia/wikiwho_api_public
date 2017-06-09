@@ -26,6 +26,8 @@ from openpyxl import load_workbook
 from mwxml import Dump
 from mwtypes.files import reader
 
+from django.conf import settings
+
 from api.handler import WPHandler
 from wikiwho.tests.utils import article_zips
 from WikiWho.utils import split_into_tokens, iter_rev_tokens
@@ -236,6 +238,7 @@ class TestWikiwho:
         """ setup any state specific to the execution of the given class (which
         usually contains tests).
         """
+        settings.TESTING = True
         # sys.path.append(dirname(realpath(__file__)))
 
     @pytest.fixture(scope='session')

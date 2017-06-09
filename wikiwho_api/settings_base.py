@@ -281,3 +281,6 @@ ADMINS = [('Kenan', 'kenan.erdogan@gesis.org')]  # ('Fabian', 'fabian.floeck@ges
 MANAGERS = [('Kenan', 'kenan.erdogan@gesis.org')]  # ('Fabian', 'fabian.floeck@gesis.org')]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap'  # default is bootstrap2: http://getbootstrap.com/2.3.2/getting-started.html
+
+# Testing
+TESTING = False  # in testing mode is False by default

@@ -74,7 +74,8 @@ class WPHandler(object):
             self.page_id = d['page_id']
             self.saved_article_title = d['article_db_title']
             self.namespace = d['namespace']
-            self.cache_key = 'page_{}'.format(self.page_id)
+            if not settings.TESTING:
+                self.cache_key = 'page_{}'.format(self.page_id)
 
         # logging.debug("trying to load pickle")
         pickle_folder = self.pickle_folder or settings.PICKLE_FOLDER
@@ -162,13 +163,15 @@ class WPHandler(object):
                       'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
                       'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer'}
             # TODO use is_api call? for example celery is not api call! dont forget to do the same for deleting key.
-            if cache.get(self.cache_key, '0') != '1':
-                cache.set(self.cache_key, '1', timeout or gunicorn_timeout)
-            else:
-                raise WPHandlerException('Revision {} of the article ({}) is under process now. '
-                                         'Content of the requested revision will be available soon (Max {} seconds).'.
-                                         format(self.revision_ids[-1], self.article_title or self.page_id,
-                                                user_task_soft_time_limit), '03')
+            if not settings.TESTING:
+                if cache.get(self.cache_key, '0') != '1':
+                    cache.set(self.cache_key, '1', timeout or gunicorn_timeout)
+                else:
+                    raise WPHandlerException('Revision {} of the article ({}) is under process now. '
+                                             'Content of the requested revision will be available soon '
+                                             '(Max {} seconds).'.
+                                             format(self.revision_ids[-1], self.article_title or self.page_id,
+                                                    user_task_soft_time_limit), '03')
 
         while self.revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
             # continue downloading as long as we reach to the given rev_id limit
@@ -251,7 +254,8 @@ class WPHandler(object):
             pickle_dump(self.wikiwho, self.pickle_path)
             if self.save_tables:
                 wikiwho_to_db(self.wikiwho, save_tables=self.save_tables)
-            cache.delete(self.cache_key)
+            if not settings.TESTING:
+                cache.delete(self.cache_key)
         # return True
         # time2 = time()
         # print("Execution time exit: {}".format(time2-time1))
