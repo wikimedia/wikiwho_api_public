@@ -18,6 +18,7 @@ from wikiwho.utils_db import wikiwho_to_db
 from wikiwho.wikiwho_simple import Wikiwho
 from .utils import get_latest_revision_data, create_wp_session, Timeout, generate_rvcontinue
 from .utils_pickles import pickle_dump, pickle_load
+from .models import RecursionErrorArticle
 
 sys.setrecursionlimit(5000)  # default is 1000
 # http://neopythonic.blogspot.de/2009/04/tail-recursion-elimination.html
@@ -35,7 +36,7 @@ class WPHandlerException(Exception):
 
 class WPHandler(object):
     def __init__(self, article_title, page_id=None, pickle_folder='', save_tables=(),
-                 check_exists=True, is_xml=False, revision_id=None, *args, **kwargs):
+                 check_exists=True, is_xml=False, revision_id=None, log_error_into_db=True, *args, **kwargs):
         # super(WPHandler, self).__init__(article_title, pickle_folder=pickle_folder, *args, **kwargs)
         self.article_title = article_title
         self.saved_article_title = ''
@@ -53,6 +54,7 @@ class WPHandler(object):
         self.is_xml = is_xml
         self.namespace = 0
         self.cache_key = None
+        self.log_error_into_db = log_error_into_db
 
     def __enter__(self):
         # time1 = time()
@@ -219,7 +221,22 @@ class WPHandler(object):
                 #     raise WPHandlerException(message="End revision ID does not exist!")
                 # pass first item in pages dict
                 _, page = result['query']['pages'].popitem()
-                self.wikiwho.analyse_article(page.get('revisions', []))
+                try:
+                    self.wikiwho.analyse_article(page.get('revisions', []))
+                except RecursionError as e:
+                    if self.log_error_into_db:
+                        failed_rev_id = int(self.wikiwho.revision_curr.id)
+                        failed_article, created = RecursionErrorArticle.objects.get_or_create(
+                            id=self.page_id,
+                            defaults={'count': 1, 'title': self.article_title, 'revisions': [failed_rev_id]})
+                        if not created:
+                            failed_article.count += 1
+                            if failed_rev_id not in failed_article.revisions:
+                                failed_article.revisions.append(failed_rev_id)
+                                failed_article.save(update_fields=['count', 'modified', 'revisions'])
+                            else:
+                                failed_article.save(update_fields=['count', 'modified'])
+                    raise e
             if 'continue' not in result:
                 self._set_wikiwho_rvcontinue()
                 break

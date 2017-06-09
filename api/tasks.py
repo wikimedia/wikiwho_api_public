@@ -7,6 +7,7 @@ from django.core.cache import cache
 
 from deployment.celery_config import default_task_soft_time_limit, user_task_soft_time_limit, long_task_soft_time_limit
 from .handler import WPHandler, WPHandlerException
+from .models import LongFailedArticle
 
 
 def process_article_task(page_title, page_id=None, revision_id=None, timeout=0, raise_soft_time_limit=False):
@@ -27,7 +28,18 @@ def process_article_task(page_title, page_id=None, revision_id=None, timeout=0, 
     except SoftTimeLimitExceeded as e:
         cache.delete(cache_key)
         if raise_soft_time_limit:
-            # TODO add this page id in a database table
+            failed_rev_id = int(wp.wikiwho.revision_curr.id)
+            failed_article, created = LongFailedArticle.objects.get_or_create(id=wp.page_id,
+                                                                              defaults={'count': 1,
+                                                                                        'title': page_title,
+                                                                                        'revisions': [failed_rev_id]})
+            if not created:
+                failed_article.count += 1
+                if failed_rev_id not in failed_article.revisions:
+                    failed_article.revisions.append(failed_rev_id)
+                    failed_article.save(update_fields=['count', 'modified', 'revisions'])
+                else:
+                    failed_article.save(update_fields=['count', 'modified'])
             raise e
         else:
             process_article_long.delay(page_title, page_id, revision_id)
