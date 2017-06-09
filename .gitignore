@@ -4,6 +4,7 @@
 *.sqlite3
 
 wikiwho_api/settings.py
+wikiwho_api/settings_test.py
 
 master_old_test/
 tests_ignore/
