@@ -8,6 +8,7 @@ class LongFailedArticleAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'count', 'revisions', 'created', 'modified', )
     list_filter = ('id', )
     readonly_fields = ('created', 'modified', )
+    ordering = ('-modified', )
 
 
 class RecursionErrorArticleAdmin(LongFailedArticleAdmin):
