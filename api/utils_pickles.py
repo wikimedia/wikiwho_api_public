@@ -31,13 +31,14 @@ class OpenFileLock:
                 fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 # Lock acquired!
                 # if self._mode == 'rb':
-                #     # TODO do not prevent other reads, just check if file is locked.
+                #     # do not prevent other reads, just check if file is locked.
                 #     # but then it is possible that during reading, file is over written by some other process
                 #     # and read data is not correct
                 #     # if read mode, check only if file is locked
                 #     fcntl.flock(self._fd, fcntl.LOCK_UN)
                 return self._fd
             except (OSError, IOError) as ex:
+                # BlockingIOError is raised
                 if ex.errno != errno.EAGAIN:  # Resource temporarily unavailable
                     raise
                 elif self._timeout is not None and time.time() > (start_lock_search + self._timeout):
@@ -72,10 +73,10 @@ def pickle_load(pickle_path):
             with OpenFileLock(pickle_path, 'rb', timeout=settings.PICKLE_OPEN_TIMEOUT) as f:
                 obj = pickle.load(f)
             return obj
-        except EOFError:
+        except EOFError:  # TODO should we also catch BlockingIOError and retry?
+            # if EOFError, retry
             # EOFError Ran out of input
             # EOFError usually happens when pickle file is empty (size 0)
-            # TODO is this case valid for us? is this True
             time.sleep(0.1)
             if not retries:
                 raise

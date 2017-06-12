@@ -44,6 +44,8 @@ def get_latest_revision_data(page_id=None, article_title=None, revision_id=None)
                 'article_db_title': None,
                 'latest_revision_id': None,
                 'namespace': None}
+    # NOTE: page['touched']: Page touched timestamp. Note that this can differ from the timestamp of the last revision.
+    # https://www.mediawiki.org/wiki/API:Info
     return {'page_id': page['pageid'],
             'article_db_title': page['title'].replace(' ', '_'),
             'latest_revision_id': page["lastrevid"],

@@ -137,6 +137,13 @@ class WPHandler(object):
         self._set_wikiwho_rvcontinue()
 
     def handle(self, revision_ids, is_api_call=True, timeout=None):
+        """
+
+        :param revision_ids:
+        :param is_api_call:
+        :param timeout: cache_key_timeout
+        :return:
+        """
         # time1 = time()
         # check if article exists
         if self.latest_revision_id is None:
@@ -175,7 +182,9 @@ class WPHandler(object):
                                              format(self.revision_ids[-1], self.article_title or self.page_id,
                                                     user_task_soft_time_limit), '03')
 
+        # TODO: do we need this check in while anymore?
         while self.revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
+            # FIXME compare timestamps!
             # continue downloading as long as we reach to the given rev_id limit
             # if rvcontinue > self.revision_ids[-1], it means this rev_id is saved,
             # so no calculation is needed

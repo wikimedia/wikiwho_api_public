@@ -10,14 +10,14 @@ from .handler import WPHandler, WPHandlerException
 from .models import LongFailedArticle
 
 
-def process_article_task(page_title, page_id=None, revision_id=None, timeout=0, raise_soft_time_limit=False):
+def process_article_task(page_title, page_id=None, revision_id=None, cache_key_timeout=0, raise_soft_time_limit=False):
     # if cache.get('page_{}'.format(page_id)) == '1':
     #     return False
     cache_key = None
     try:
         with WPHandler(page_title, page_id=page_id, revision_id=revision_id) as wp:
             cache_key = wp.cache_key
-            wp.handle(revision_ids=[], is_api_call=False, timeout=timeout)
+            wp.handle(revision_ids=[], is_api_call=False, timeout=cache_key_timeout)
     except WPHandlerException as e:
         if cache_key:
             cache.delete(cache_key)
@@ -52,15 +52,15 @@ def process_article_task(page_title, page_id=None, revision_id=None, timeout=0, 
 @shared_task(bind=True, soft_time_limit=default_task_soft_time_limit)
 def process_article(self, page_title):
     try:
-        process_article_task(page_title, timeout=default_task_soft_time_limit)
+        process_article_task(page_title, cache_key_timeout=default_task_soft_time_limit)
     except WPHandlerException as e:
         if e.code in ['00', '10', '11']:
             # if article doesnt exist or wp errors
-            # NOTE: actually 01 should not occur because we set is_api_call=False in the process_article_task!
+            # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
             raise self.retry(exc=e)
-        # elif e.code == '00':
-        #     # TODO ignore 'article doesnt exist' errors in celery tasks?
-        #     return False
+        elif e.code == '00':
+            # ignore 'article doesnt exist' errors
+            return False
         else:
             raise e
     except (ValueError, ConnectionError, ReadTimeout) as e:
@@ -72,11 +72,11 @@ def process_article(self, page_title):
 @shared_task(bind=True, soft_time_limit=user_task_soft_time_limit)
 def process_article_user(self, page_title, page_id=None, revision_id=None):
     try:
-        process_article_task(page_title, page_id, revision_id, timeout=user_task_soft_time_limit)
+        process_article_task(page_title, page_id, revision_id, cache_key_timeout=user_task_soft_time_limit)
     except WPHandlerException as e:
         if e.code in ['00', '10', '11']:
             # if article doesnt exist or wp errors
-            # NOTE: actually 01 should not occur because we set is_api_call=False in the process_article_task!
+            # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
             raise self.retry(exc=e)
         else:
             raise e
@@ -90,12 +90,12 @@ def process_article_user(self, page_title, page_id=None, revision_id=None):
 def process_article_long(self, page_title, page_id=None, revision_id=None):
     try:
         process_article_task(page_title, page_id, revision_id,
-                             timeout=user_task_soft_time_limit,
+                             cache_key_timeout=long_task_soft_time_limit,
                              raise_soft_time_limit=True)
     except WPHandlerException as e:
         if e.code in ['00', '10', '11']:
             # if article doesnt exist or wp errors
-            # NOTE: actually 01 should not occur because we set is_api_call=False in the process_article_task!
+            # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
             raise self.retry(exc=e)
         else:
             raise e
