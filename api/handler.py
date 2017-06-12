@@ -228,7 +228,7 @@ class WPHandler(object):
                         failed_rev_id = int(self.wikiwho.revision_curr.id)
                         failed_article, created = RecursionErrorArticle.objects.get_or_create(
                             id=self.page_id,
-                            defaults={'count': 1, 'title': self.article_title, 'revisions': [failed_rev_id]})
+                            defaults={'count': 1, 'title': self.article_title or '', 'revisions': [failed_rev_id]})
                         if not created:
                             failed_article.count += 1
                             if failed_rev_id not in failed_article.revisions:
