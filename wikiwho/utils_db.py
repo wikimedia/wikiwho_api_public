@@ -142,7 +142,11 @@ def wikiwho_to_csv(wikiwho, output_folder):
         f.write(current_content[:-1])
     with open('{}/{}_deleted_content.csv'.format(output_folder, wikiwho.page_id), 'w') as f:
         f.write(deleted_content[:-1])
-    # TODO write into revisions csv
+    with open('{}/{}_revisions.csv'.format(output_folder, wikiwho.page_id), 'w') as f:
+        f.write('page_id,rev_id,timestamp,editor\n')
+        for rev_id in wikiwho.ordered_revisions:
+            rev = wikiwho.revisions[rev_id]
+            f.write('{},{},{},{}\n'.format(wikiwho.title, str(rev_id), str(rev.timestamp), rev.editor))
 
 
 def wikiwho_to_graph_json(wikiwho, folder_path):

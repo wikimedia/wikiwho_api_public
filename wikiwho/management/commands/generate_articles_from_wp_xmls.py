@@ -58,7 +58,6 @@ def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables,
                         wp.handle_from_xml_dump(page, timeout)
                         if is_write_into_csv:
                             wikiwho_to_csv(wp.wikiwho, log_folder + '/csv')
-                            # TODO write article ids into a csv
                         if page_ids:
                             c += 1
                             if c == len(page_ids):
