@@ -54,8 +54,8 @@ def process_article(self, page_title):
     try:
         process_article_task(page_title, cache_key_timeout=default_task_soft_time_limit)
     except WPHandlerException as e:
-        if e.code in ['00', '10', '11']:
-            # if article doesnt exist or wp errors
+        if e.code in ['10', '11']:
+            # if wp errors
             # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
             raise self.retry(exc=e)
         elif e.code == '00':
@@ -74,10 +74,13 @@ def process_article_user(self, page_title, page_id=None, revision_id=None):
     try:
         process_article_task(page_title, page_id, revision_id, cache_key_timeout=user_task_soft_time_limit)
     except WPHandlerException as e:
-        if e.code in ['00', '10', '11']:
-            # if article doesnt exist or wp errors
+        if e.code in ['10', '11']:
+            # if wp errors
             # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
             raise self.retry(exc=e)
+        elif e.code == '00':
+            # ignore 'article doesnt exist' errors
+            return False
         else:
             raise e
     except (ValueError, ConnectionError, ReadTimeout) as e:
@@ -93,10 +96,13 @@ def process_article_long(self, page_title, page_id=None, revision_id=None):
                              cache_key_timeout=long_task_soft_time_limit,
                              raise_soft_time_limit=True)
     except WPHandlerException as e:
-        if e.code in ['00', '10', '11']:
-            # if article doesnt exist or wp errors
+        if e.code in ['10', '11']:
+            # if wp errors
             # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
             raise self.retry(exc=e)
+        elif e.code == '00':
+            # ignore 'article doesnt exist' errors
+            return False
         else:
             raise e
     except (ValueError, ConnectionError, ReadTimeout) as e:
