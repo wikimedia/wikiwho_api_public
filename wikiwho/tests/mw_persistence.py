@@ -10,10 +10,10 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import deltas
 import mwpersistence
 from mwreverts.defaults import RADIUS
+from deltas.tokenizers.wikitext_split import wikitext_split
 from openpyxl import load_workbook
 from collections import defaultdict
 import json
-from deltas.tokenizers.wikitext_split import wikitext_split
 import traceback
 import sys
 from pprint import pprint
@@ -30,9 +30,15 @@ def get_token_value(token):
 def test_authorship(article_title, token_data, current_tokens_data):
     # prepare token data to test authorship
     correct_rev_id = token_data.get('correct_rev_id')
-    token = token_data.get('token')
+    token = token_data.get('str')
     context = token_data.get('context')
-    sub_token_list = [get_token_value(t) for t in wikitext_split.tokenize(context)]
+    sub_token_list = []
+    for t in wikitext_split.tokenize(context):
+        t_value = get_token_value(t)
+        if t_value.replace('\\n', '').replace('\r\n', '\n').replace('\r', '\n').strip():
+            # remove white spaces
+            sub_token_list.append(t_value)
+
     n = len(sub_token_list)
     # get list of tokens and revisions of each token of last revision
     token_list = []
@@ -70,7 +76,6 @@ def compute_persistence(article_title, article_data, source, output_folder):
     output_dict = {}
     try:
         # wikitext_split is used, defult is text_split.
-        # TODO what about segmenter?
         state = mwpersistence.DiffState(deltas.SegmentMatcher(tokenizer=wikitext_split), revert_radius=RADIUS)
 
         d = get_latest_revision_data(article_title=article_title)
@@ -125,6 +130,7 @@ def compute_persistence(article_title, article_data, source, output_folder):
                             if until_revision_id == int(current_rev_id):
                                 # current_tokens_ = [get_token_value(ct) for ct in current_tokens]
                                 # print('\n\nseamlessly', 'seamlessly' in text, 'seamlessly' in current_tokens_)
+                                # print('\n\nstudied', 'studied' in text, 'studied' in current_tokens_)
                                 done = True
                                 break
                     if 'continue' not in result or done:
@@ -133,7 +139,12 @@ def compute_persistence(article_title, article_data, source, output_folder):
             elif source == 'dumps':
                 raise NotImplementedError
 
-            last_rev_tokens_data = [{'str': get_token_value(ct), 'revisions': ct.revisions} for ct in current_tokens]
+            last_rev_tokens_data = []
+            for ct in current_tokens:
+                ct_value = get_token_value(ct)
+                if ct_value.replace('\\n', '').replace('\r\n', '\n').replace('\r', '\n').strip():
+                    # remove white spaces
+                    last_rev_tokens_data.append({'str': ct_value, 'revisions': ct.revisions})
 
             # output json files for last revision
             json_data = {
@@ -143,6 +154,7 @@ def compute_persistence(article_title, article_data, source, output_folder):
             }
             with open('{}/{}.json'.format(output_folder, article_title), 'w', encoding='utf-8') as f:
                 f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+
             json_data_rev_ids = {
                 "article_title": article_title,
                 "page_id": page_id,
@@ -155,7 +167,9 @@ def compute_persistence(article_title, article_data, source, output_folder):
             rev_data = article_data[rev_id]
             for token_data in rev_data:
                 if token_data.get('context') and token_data.get('correct_rev_id'):
-                    output_dict.update(test_authorship(article_title, token_data, last_rev_tokens_data))
+                    output_dict.update(
+                        test_authorship(article_title, token_data, last_rev_tokens_data)
+                    )
     except Exception as e:
         print('\n')
         print('=' * 30)
@@ -211,13 +225,13 @@ def main():
             if revision_id in articles_dict[article_title]:
                 # NOTE: lower text
                 articles_dict[article_title][revision_id].append({
-                    'token': '{}'.format(row[3].value).lower(),
+                    'str': '{}'.format(row[3].value).lower(),
                     'context': '{}'.format(row[4].value).lower(),
                     'correct_rev_id': int(row[5].value),
                 })
             else:
                 articles_dict[article_title][revision_id] = [{
-                    'token': '{}'.format(row[3].value).lower(),
+                    'str': '{}'.format(row[3].value).lower(),
                     'context': '{}'.format(row[4].value).lower(),
                     'correct_rev_id': int(row[5].value),
                 }]
