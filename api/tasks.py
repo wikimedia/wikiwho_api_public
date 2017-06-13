@@ -31,7 +31,7 @@ def process_article_task(page_title, page_id=None, revision_id=None, cache_key_t
             failed_rev_id = int(wp.wikiwho.revision_curr.id)
             failed_article, created = LongFailedArticle.objects.get_or_create(id=wp.page_id,
                                                                               defaults={'count': 1,
-                                                                                        'title': page_title,
+                                                                                        'title': wp.saved_article_title or '',
                                                                                         'revisions': [failed_rev_id]})
             if not created:
                 failed_article.count += 1
