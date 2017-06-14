@@ -261,6 +261,7 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
                         self.page_id = wp.page_id
                         wp.handle(revision_ids, is_api_call=True, timeout=timeout)
         except TimeoutError as e:
+            # TODO ? process_article_user.delay(wp.saved_article_title, wp.page_id, )
             process_article_user.delay(article_title, page_id, revision_id)
             response = {'Info': timeout_message}
             status_ = status.HTTP_408_REQUEST_TIMEOUT

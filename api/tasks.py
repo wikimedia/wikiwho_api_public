@@ -44,7 +44,7 @@ def process_article_task(page_title, page_id=None, revision_id=None, cache_key_t
                     failed_article.save(update_fields=['count', 'modified'])
             raise e
         else:
-            process_article_long.delay(page_title, page_id, revision_id)
+            process_article_long.delay(wp.saved_article_title or '', wp.page_id, revision_id)
     #         process_article_long.apply_async([page_title], queue='long_lasting')
     return True
 
