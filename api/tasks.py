@@ -1,4 +1,5 @@
 from __future__ import absolute_import, unicode_literals
+from simplejson import JSONDecodeError
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from requests import ReadTimeout
@@ -21,8 +22,9 @@ def process_article_task(page_title, page_id=None, revision_id=None, cache_key_t
     except WPHandlerException as e:
         if cache_key:
             cache.delete(cache_key)
-        if e.code == '03':
-            # if article is already under process, simply skip it. TODO wait and start a new task?
+        if e.code in ['03', '00']:
+            # 03: if article is already under process, simply skip it. TODO wait and start a new task?
+            # 00: ignore 'article doesnt exist' errors
             return False
         raise e
     except SoftTimeLimitExceeded as e:
@@ -58,13 +60,11 @@ def process_article(self, page_title):
             # if wp errors
             # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
             raise self.retry(exc=e)
-        elif e.code == '00':
-            # ignore 'article doesnt exist' errors
-            return False
         else:
             raise e
-    except (ValueError, ConnectionError, ReadTimeout) as e:
+    except (ValueError, ConnectionError, ReadTimeout, JSONDecodeError) as e:
         # ReadTimeout -> requests timeout
+        # JSONDecodeError -> WP api error from get_latest_revision_data or create_wp_session
         # FIXME are ConnectionResetError and ProtocolError during requests.get occurs due to SoftTimeLimitExceeded?
         raise self.retry(exc=e)
 
@@ -78,12 +78,9 @@ def process_article_user(self, page_title, page_id=None, revision_id=None):
             # if wp errors
             # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
             raise self.retry(exc=e)
-        elif e.code == '00':
-            # ignore 'article doesnt exist' errors
-            return False
         else:
             raise e
-    except (ValueError, ConnectionError, ReadTimeout) as e:
+    except (ValueError, ConnectionError, ReadTimeout, JSONDecodeError) as e:
         raise self.retry(exc=e)
 
 
@@ -100,10 +97,7 @@ def process_article_long(self, page_title, page_id=None, revision_id=None):
             # if wp errors
             # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
             raise self.retry(exc=e)
-        elif e.code == '00':
-            # ignore 'article doesnt exist' errors
-            return False
         else:
             raise e
-    except (ValueError, ConnectionError, ReadTimeout) as e:
+    except (ValueError, ConnectionError, ReadTimeout, JSONDecodeError) as e:
         raise self.retry(exc=e)
