@@ -178,7 +178,7 @@ class WPHandler(object):
                 else:
                     raise WPHandlerException('Revision {} of the article ({}) is under process now. '
                                              'Content of the requested revision will be available soon '
-                                             '(Max {} seconds).'.
+                                             'Try to request again in couple of minutes. (Max {} seconds).'.
                                              format(self.revision_ids[-1], self.article_title or self.page_id,
                                                     user_task_soft_time_limit), '03')
 
