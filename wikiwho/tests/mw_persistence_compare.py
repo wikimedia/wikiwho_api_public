@@ -141,11 +141,11 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
                 if ww_token['in'] or mw_token['in']:
                     similarity_in = jaccard_similarity(ww_token['in'], mw_token['in'])
                 else:
-                    similarity_in = 1
+                    similarity_in = 0.5  # possible max value
                 if ww_token['out'] or mw_token['out']:
                     similarity_out = jaccard_similarity(ww_token['out'], mw_token['out'])
                 else:
-                    similarity_out = 1
+                    similarity_out = 0.5  # possible max value
                 same_in = ww_token['in'] == mw_token['in']
                 ww_found_same_in += 1 if same_in else 0
                 same_out = ww_token['out'] == mw_token['out']
