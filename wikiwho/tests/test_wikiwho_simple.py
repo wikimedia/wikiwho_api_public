@@ -56,6 +56,7 @@ def pytest_generate_tests(metafunc):
             if i == 0 or lines and i+1 not in lines:
                 continue
             if not row[0].value:
+                # parse excel file until first empty row
                 break
             article_title = row[0].value.replace(' ', '_')
             if 'token' in metafunc.fixturenames:

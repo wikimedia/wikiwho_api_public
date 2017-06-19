@@ -75,7 +75,7 @@ def test_authorship(article_title, token_data, current_tokens_data):
 def compute_persistence(article_title, article_data, source, output_folder):
     output_dict = {}
     try:
-        # wikitext_split is used, defult is text_split.
+        # wikitext_split is used, default is text_split.
         state = mwpersistence.DiffState(deltas.SegmentMatcher(tokenizer=wikitext_split), revert_radius=RADIUS)
 
         d = get_latest_revision_data(article_title=article_title)
@@ -143,8 +143,9 @@ def compute_persistence(article_title, article_data, source, output_folder):
             for ct in current_tokens:
                 ct_value = get_token_value(ct)
                 if ct_value.replace('\\n', '').replace('\r\n', '\n').replace('\r', '\n').strip():
-                    # remove white spaces
-                    last_rev_tokens_data.append({'str': ct_value, 'revisions': ct.revisions})
+                    # remove tokens as white spaces
+                    last_rev_tokens_data.append({'str': ct_value,
+                                                 'revisions': ct.revisions})
 
             # output json files for last revision
             json_data = {
@@ -164,8 +165,7 @@ def compute_persistence(article_title, article_data, source, output_folder):
                 f.write(json.dumps(json_data_rev_ids, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
 
             # test authorship
-            rev_data = article_data[rev_id]
-            for token_data in rev_data:
+            for token_data in article_data[rev_id]:
                 if token_data.get('context') and token_data.get('correct_rev_id'):
                     output_dict.update(
                         test_authorship(article_title, token_data, last_rev_tokens_data)
@@ -191,7 +191,7 @@ def get_args():
 
     parser.add_argument('-p', '--articles', help='Path of a csv file that contains list of articles to process. '
                                                  'It should contain page id and rev id (until where persistence is '
-                                                 'calculated). Default is gold standard.')
+                                                 'calculated). Default is gold standard excel file.')
     parser.add_argument('-s', '--revision_source', choices=['api', 'dumps'],
                         help='Source for revision texts. Default is wp api.')
     parser.add_argument('-m', '--max_workers', type=int, help='Default is 16')
@@ -218,6 +218,7 @@ def main():
             if i == 0:
                 continue
             if not row[0].value:
+                # parse excel file until first empty row
                 break
             article_title = row[0].value.replace(' ', '_')
             revision_id = int(row[2].value)
