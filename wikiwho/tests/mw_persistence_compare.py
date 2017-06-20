@@ -9,7 +9,9 @@ import argparse
 
 
 def jaccard_similarity(l1, l2):
-    return len(set(l1).intersection(set(l2))) / float(len(l1) + len(l2))
+    s1 = set(l1)
+    s2 = set(l2)
+    return len(s1.intersection(s2)) / float(len(s1.union(s2)))
 
 
 def mw_pesistence_compare(ww_jsons, mw_jsons):
@@ -18,15 +20,15 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
         if not i.endswith('_rev_ids.json'):
             articles.append(i[:-5])
 
-    # articles = ["Amstrad CPC", "Antarctica", "Apollo 11", "Armenian Genocide", "Barack_Obama",
-    #             "Bioglass", "Bothrops_jararaca", "Chlorine", "Circumcision", "Communist Party of China",
-    #             "Democritus", "Diana,_Princess_of_Wales", "Encryption", "Eritrean Defence Forces",
-    #             "European Free Trade Association", "Evolution", "Geography of El Salvador",
-    #             "Germany", "Home and Away", "Homeopathy", "Iraq War", "Islamophobia", "Jack the Ripper", "Jesus",
-    #             "KLM destinations", "Lemur", "Macedonians (ethnic group)", "Muhammad", "Newberg, Oregon",
-    #             "Race_and_intelligence", "Rhapsody_on_a_Theme_of_Paganini", "Robert Hues", "Saturn's_moons_in_fiction",
-    #             "Sergei Korolev", "South_Western_Main_Line", "Special Air Service", "The_Holocaust",
-    #             "Toshitsugu_Takamatsu", "Vladimir_Putin", "Wernher_von_Braun"]
+    articles = ["Amstrad CPC", "Antarctica", "Apollo 11", "Armenian Genocide", "Barack_Obama",
+                "Bioglass", "Bothrops_jararaca", "Chlorine", "Circumcision", "Communist Party of China",
+                "Democritus", "Diana,_Princess_of_Wales", "Encryption", "Eritrean Defence Forces",
+                "European Free Trade Association", "Evolution", "Geography of El Salvador",
+                "Germany", "Home and Away", "Homeopathy", "Iraq War", "Islamophobia", "Jack the Ripper", "Jesus",
+                "KLM destinations", "Lemur", "Macedonians (ethnic group)", "Muhammad", "Newberg, Oregon",
+                "Race_and_intelligence", "Rhapsody_on_a_Theme_of_Paganini", "Robert Hues", "Saturn's_moons_in_fiction",
+                "Sergei Korolev", "South_Western_Main_Line", "Special Air Service", "The_Holocaust",
+                "Toshitsugu_Takamatsu", "Vladimir_Putin", "Wernher_von_Braun"]
     # articles = ['Bioglass', 'Amstrad_CPC', 'Lemur', 'Antarctica', 'Jesus']
     # articles = ['Bioglass', 'Amstrad_CPC']
     # articles = ['Bioglass']
@@ -141,11 +143,11 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
                 if ww_token['in'] or mw_token['in']:
                     similarity_in = jaccard_similarity(ww_token['in'], mw_token['in'])
                 else:
-                    similarity_in = 0.5  # possible max value
+                    similarity_in = 1  # possible max value
                 if ww_token['out'] or mw_token['out']:
                     similarity_out = jaccard_similarity(ww_token['out'], mw_token['out'])
                 else:
-                    similarity_out = 0.5  # possible max value
+                    similarity_out = 1  # possible max value
                 same_in = ww_token['in'] == mw_token['in']
                 ww_found_same_in += 1 if same_in else 0
                 same_out = ww_token['out'] == mw_token['out']
