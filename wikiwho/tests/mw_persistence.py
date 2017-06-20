@@ -72,11 +72,12 @@ def test_authorship(article_title, token_data, current_tokens_data):
     return output_dict
 
 
-def compute_persistence(article_title, article_data, source, output_folder):
+def compute_persistence(article_title, article_data, source, output_persistence, output_rev_ids, revert_radius):
     output_dict = {}
     try:
         # wikitext_split is used, default is text_split.
-        state = mwpersistence.DiffState(deltas.SegmentMatcher(tokenizer=wikitext_split), revert_radius=RADIUS)
+        state = mwpersistence.DiffState(diff_engine=deltas.SegmentMatcher(tokenizer=wikitext_split),
+                                        revert_radius=revert_radius)
 
         d = get_latest_revision_data(article_title=article_title)
         page_id = d['page_id']
@@ -153,7 +154,7 @@ def compute_persistence(article_title, article_data, source, output_folder):
                 "page_id": page_id,
                 "revisions": [{current_rev_id: {"tokens": last_rev_tokens_data}}]
             }
-            with open('{}/{}.json'.format(output_folder, article_title), 'w', encoding='utf-8') as f:
+            with open(output_persistence, 'w', encoding='utf-8') as f:
                 f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
 
             json_data_rev_ids = {
@@ -161,7 +162,7 @@ def compute_persistence(article_title, article_data, source, output_folder):
                 "page_id": page_id,
                 "revision_ids": article_rev_ids
             }
-            with open('{}/{}_rev_ids.json'.format(output_folder, article_title), 'w', encoding='utf-8') as f:
+            with open(output_rev_ids, 'w', encoding='utf-8') as f:
                 f.write(json.dumps(json_data_rev_ids, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
 
             # test authorship
@@ -182,7 +183,8 @@ def compute_persistence(article_title, article_data, source, output_folder):
 
 def get_args():
     """
-    python mw_persistence.py -m=4 -o='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence'
+    python mw_persistence.py -m=4 -o='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/15'
+    python mw_persistence.py -m=6 -o='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/9999999999999' -r=9999999999999
     python mw_persistence.py -m=2 -p='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/articles.csv' -o='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence'
     """
     parser = argparse.ArgumentParser(description='Compute content persistence and token authorship by '
@@ -196,6 +198,7 @@ def get_args():
                         help='Source for revision texts. Default is wp api.')
     parser.add_argument('-m', '--max_workers', type=int, help='Default is 16')
     parser.add_argument('-o', '--output_folder', required=True)
+    parser.add_argument('-r', '--revert_radius', type=int, help='Default is from mwreverts (15).')
     args = parser.parse_args()
     return args
 
@@ -252,8 +255,9 @@ def main():
 
     revision_source = args.revision_source or 'api'
     max_workers = args.max_workers or 16
+    revert_radius = args.revert_radius or RADIUS  # default is 15
 
-    print('max_workers:', max_workers, 'len articles:', len(articles_dict))
+    print('max_workers:', max_workers, 'len articles:', len(articles_dict), 'revert_radius:', revert_radius)
     print("Start: ", strftime("%Y-%m-%d-%H:%M:%S"))
     output_dict = {}
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
@@ -264,12 +268,30 @@ def main():
         articles_iter = iter(articles_list)
         while articles_left > 0:
             for article_title in articles_iter:
-                # print(article_title, articles_dict[article_title])
+                # print(article_title, articles_dict[article_title], revision_source, revert_radius)
                 # articles_left -= 1
                 # continue
+                output_persistence = '{}/{}.json'.format(output_folder, article_title)
+                output_rev_ids = '{}/{}_rev_ids.json'.format(output_folder, article_title)
+                if exists(output_persistence) and exists(output_rev_ids):
+                    print('skipping {} - already processed, output files exist'.format(article_title))
+                    with open(output_persistence) as f:
+                        j = json.load(f)
+                        for rev_id, tokens in j['revisions'][0].items():
+                            rev_id = int(rev_id)
+                            last_rev_tokens_data = tokens['tokens']
+                            break
+                    for token_data in articles_dict[article_title][rev_id]:
+                        if token_data.get('context') and token_data.get('correct_rev_id'):
+                            output_dict.update(
+                                test_authorship(article_title, token_data, last_rev_tokens_data)
+                            )
+                    articles_left -= 1
+                    continue
                 job = executor.submit(compute_persistence,
                                       article_title, articles_dict[article_title],
-                                      revision_source, output_folder)
+                                      revision_source, output_persistence, output_rev_ids,
+                                      revert_radius)
                 jobs[job] = article_title
                 if len(jobs) == max_workers:  # limit # jobs with max_workers
                     break
