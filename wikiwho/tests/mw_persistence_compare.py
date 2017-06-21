@@ -169,10 +169,10 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
 
         output[article_title] = {'total': len(ww_article_tokens),
                                  'found': ww_found,
-                                 'ww_found_same_origin': float(ww_found_same_o * 100) / ww_found,
-                                 'ww_found_same_in': float(ww_found_same_in * 100) / ww_found,
-                                 'ww_found_same_out': float(ww_found_same_out * 100) / ww_found,
-                                 'ww_found_same_in_out': float(ww_found_same_in_out * 100) / ww_found,
+                                 '%_ww_found_same_origin': float(ww_found_same_o * 100) / ww_found,
+                                 '%_ww_found_same_in': float(ww_found_same_in * 100) / ww_found,
+                                 '%_ww_found_same_out': float(ww_found_same_out * 100) / ww_found,
+                                 '%_ww_found_same_in_out': float(ww_found_same_in_out * 100) / ww_found,
                                  'not_found': not_found}
         with open('{}_diff.json'.format(join(mw_jsons, article_title)), 'w', encoding='utf-8') as f:
             f.write(dumps({article_title: mw_vs_ww_tokens}, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
@@ -187,7 +187,6 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
                                                         t.get('similarity_in', ''), t.get('same_in', ''),
                                                         t.get('similarity_out', ''), t.get('same_out', ''),
                                                         t['op']))
-            f.write(dumps({article_title: mw_vs_ww_tokens}, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
         print('{}: {}'.format(article_title, output[article_title]))
     with open(join(mw_jsons, 'ww_vs_mw_comparison_output.json'), 'w', encoding='utf-8') as f:
         f.write(dumps(output, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
@@ -195,7 +194,7 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
 
 def get_args():
     """
-python mw_persistence_compare.py -w='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/jsons/after_token_density_increase' -m='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence'
+python mw_persistence_compare.py -w='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/jsons/after_token_density_increase' -m='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/15'
     """
     parser = argparse.ArgumentParser(description='Compare computed content persistence and token authorship by '
                                                  'mwpersistence package in detail. This module is created to compare '
