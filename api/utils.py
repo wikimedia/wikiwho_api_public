@@ -10,9 +10,69 @@ from lxml import etree
 import requests
 from requests.exceptions import ReadTimeout
 from datetime import datetime, timedelta
+from copy import deepcopy
 
 from django.conf import settings
 from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
+
+
+def get_page_data_from_wp_api(params):
+    """
+    Example params:
+    params = {'pageids': page_id, 'action': 'query', 'prop': 'revisions',
+              'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
+              'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer',
+              'rvendid': Revision ID to stop listing a}
+    More info: https://www.mediawiki.org/wiki/API:Revisions
+
+    :param params: Dictionary of parameters.
+    :return: Revision data.
+    """
+    params = deepcopy(params)
+    pageids = params.get('pageids')
+    titles = params.get('titles')
+    if pageids:
+        pageids = str(pageids).split('|')
+        if len(pageids) > 1:
+            raise Exception('Please provide only 1 page id in params.')
+        page_id = pageids[0]
+    elif titles:
+        titles = str(titles).split('|')
+        if len(titles) > 1:
+            raise Exception('Please provide only 1 page title in params.')
+        page_title = titles[0]
+    else:
+        raise Exception('Please provide "pageids" or "titles" parameter in params.')
+    rvcontinue = params.get('rvcontinue', '0')
+
+    session = create_wp_session()
+    headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
+               'From': settings.WP_HEADERS_FROM}
+
+    while True:
+        # continue downloading as long as we reach to the given rev_id limit
+        if rvcontinue != '0' and rvcontinue != '1':
+            params['rvcontinue'] = rvcontinue
+
+        result = session.get(url=settings.WP_API_URL, headers=headers, params=params,
+                             timeout=settings.WP_REQUEST_TIMEOUT)
+        result = result.json()
+
+        if 'error' in result:
+            raise Exception('Wikipedia API returned the following error:' + str(result['error']))
+
+        # if 'query' in result:
+        pages = result['query']['pages']
+        if "-1" in pages:
+            raise Exception('The article ({}) you are trying to request does not exist!'.
+                            format(page_title or page_id))
+        _, page = result['query']['pages'].popitem()
+        for rev_data in page.get('revisions', []):
+            yield rev_data
+
+        if 'continue' not in result:
+            break
+        rvcontinue = result['continue']['rvcontinue']
 
 
 def get_latest_revision_data(page_id=None, article_title=None, revision_id=None):

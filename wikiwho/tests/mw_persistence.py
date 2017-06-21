@@ -19,8 +19,8 @@ import sys
 from pprint import pprint
 
 sys.path.insert(0, dirname(dirname(dirname(realpath(__file__)))))
-from wikiwho_api import settings
-from api.utils import get_latest_revision_data, create_wp_session
+from wikiwho_api import settings  # dont delete: this overwrites settings in api.utils!
+from api.utils import get_latest_revision_data, get_page_data_from_wp_api
 
 
 def get_token_value(token):
@@ -87,56 +87,19 @@ def compute_persistence(article_title, article_data, source, output_persistence,
 
         for rev_id in article_data:
             article_rev_ids = []
-            done = False
             until_revision_id = int(rev_id or latest_revision_id)
             # holds the last revision id which is saved. 0 for new article
-            rvcontinue = '0'
             if source == 'api':
-                if until_revision_id >= int(rvcontinue.split('|')[-1]):
-                    # if given rev_id is bigger than saved one
-                    session = create_wp_session()
-                    headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
-                               'From': settings.WP_HEADERS_FROM}
-                    params = {'pageids': page_id, 'action': 'query', 'prop': 'revisions',
-                              'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
-                              'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer'}
-
-                while until_revision_id >= int(rvcontinue.split('|')[-1]):
-                    # continue downloading as long as we reach to the given rev_id limit
-                    # if rvcontinue > self.revision_ids[-1], it means this rev_id is saved,
-                    # so no calculation is needed
-                    if rvcontinue != '0' and rvcontinue != '1':
-                        params['rvcontinue'] = rvcontinue
-
-                    result = session.get(url=settings.WP_API_URL, headers=headers, params=params,
-                                         timeout=settings.WP_REQUEST_TIMEOUT).json()
-
-                    if 'error' in result:
-                        raise Exception('Wikipedia API returned the following error:' + str(result['error']))
-                    if 'query' in result:
-                        pages = result['query']['pages']
-                        if "-1" in pages:
-                            raise Exception('The article ({}) you are trying to request does not exist!'.
-                                            format(article_title or page_id))
-                        _, page = result['query']['pages'].popitem()
-
-                        for r in page.get('revisions', []):
-                            current_rev_id = int(r['revid'])
-                            text = r.get('*', '')
-                            # NOTE: lower()
-                            text = text.lower()
-                            # process new revision text
-                            current_tokens, tokens_added, tokens_removed = state.update(text, revision=current_rev_id)
-                            article_rev_ids.append(current_rev_id)
-                            if until_revision_id == int(current_rev_id):
-                                # current_tokens_ = [get_token_value(ct) for ct in current_tokens]
-                                # print('\n\nseamlessly', 'seamlessly' in text, 'seamlessly' in current_tokens_)
-                                # print('\n\nstudied', 'studied' in text, 'studied' in current_tokens_)
-                                done = True
-                                break
-                    if 'continue' not in result or done:
-                        break
-                    rvcontinue = result['continue']['rvcontinue']
+                params = {'pageids': page_id, 'action': 'query', 'prop': 'revisions',
+                          'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
+                          'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer',
+                          'rvendid': until_revision_id}  # NOTE: rvendid
+                for rev_data in get_page_data_from_wp_api(params):
+                    current_rev_id = int(rev_data['revid'])
+                    text = rev_data.get('*', '').lower()  # NOTE: lower()
+                    # process new revision text
+                    current_tokens, tokens_added, tokens_removed = state.update(text, revision=current_rev_id)
+                    article_rev_ids.append(current_rev_id)
             elif source == 'dumps':
                 raise NotImplementedError
 
