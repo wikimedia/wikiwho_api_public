@@ -148,7 +148,7 @@ def get_args():
     """
     python mw_persistence.py -m=4 -o='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/15'
     python mw_persistence.py -m=6 -o='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/9999999999999' -r=9999999999999
-    python mw_persistence.py -m=2 -p='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/articles.csv' -o='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence'
+python mw_persistence.py -m=4 -p='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/random_1000/1000_random_articles.csv' -o='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/random_1000/15'
     """
     parser = argparse.ArgumentParser(description='Compute content persistence and token authorship by '
                                                  'using mwpersistence package. This module is created to compare '

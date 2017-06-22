@@ -1,7 +1,7 @@
 """
 This module is to compare mwpersistence package with WikiWho in detail.
 """
-from os import listdir
+from os import listdir, mkdir
 from os.path import join
 from json import load, dumps
 from difflib import Differ
@@ -19,16 +19,18 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
     for i in listdir(mw_jsons):
         if not i.endswith('_rev_ids.json'):
             articles.append(i[:-5])
+    output_folder = join(mw_jsons, 'out')
+    mkdir(output_folder)
 
-    articles = ["Amstrad CPC", "Antarctica", "Apollo 11", "Armenian Genocide", "Barack_Obama",
-                "Bioglass", "Bothrops_jararaca", "Chlorine", "Circumcision", "Communist Party of China",
-                "Democritus", "Diana,_Princess_of_Wales", "Encryption", "Eritrean Defence Forces",
-                "European Free Trade Association", "Evolution", "Geography of El Salvador",
-                "Germany", "Home and Away", "Homeopathy", "Iraq War", "Islamophobia", "Jack the Ripper", "Jesus",
-                "KLM destinations", "Lemur", "Macedonians (ethnic group)", "Muhammad", "Newberg, Oregon",
-                "Race_and_intelligence", "Rhapsody_on_a_Theme_of_Paganini", "Robert Hues", "Saturn's_moons_in_fiction",
-                "Sergei Korolev", "South_Western_Main_Line", "Special Air Service", "The_Holocaust",
-                "Toshitsugu_Takamatsu", "Vladimir_Putin", "Wernher_von_Braun"]
+    # articles = ["Amstrad CPC", "Antarctica", "Apollo 11", "Armenian Genocide", "Barack_Obama",
+    #             "Bioglass", "Bothrops_jararaca", "Chlorine", "Circumcision", "Communist Party of China",
+    #             "Democritus", "Diana,_Princess_of_Wales", "Encryption", "Eritrean Defence Forces",
+    #             "European Free Trade Association", "Evolution", "Geography of El Salvador",
+    #             "Germany", "Home and Away", "Homeopathy", "Iraq War", "Islamophobia", "Jack the Ripper", "Jesus",
+    #             "KLM destinations", "Lemur", "Macedonians (ethnic group)", "Muhammad", "Newberg, Oregon",
+    #             "Race_and_intelligence", "Rhapsody_on_a_Theme_of_Paganini", "Robert Hues", "Saturn's_moons_in_fiction",
+    #             "Sergei Korolev", "South_Western_Main_Line", "Special Air Service", "The_Holocaust",
+    #             "Toshitsugu_Takamatsu", "Vladimir_Putin", "Wernher_von_Braun"]
     # articles = ['Bioglass', 'Amstrad_CPC', 'Lemur', 'Antarctica', 'Jesus']
     # articles = ['Bioglass', 'Amstrad_CPC']
     # articles = ['Bioglass']
@@ -66,7 +68,7 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
                             outs.append(article_rev_ids[prev_rev_index+1])
                             ins.append(article_rev_ids[rev_index])
                         prev_rev_index = rev_index
-        with open(join(mw_jsons, '{}_mw.csv'.format(article_title)), 'w') as f:
+        with open(join(output_folder, '{}_mw.csv'.format(article_title)), 'w') as f:
             f.write('str,o_rev_id\n')
             for t in mw_article_tokens:
                 value = t['str'].replace('"', '""')
@@ -100,7 +102,7 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
                     ins = [r for r in t['in'] if int(r) in ww_rev_ids]
                     outs = [r for r in t['out'] if int(r) in ww_rev_ids]
                     ww_article_tokens[i].update({'in': ins, 'out': outs})
-        with open(join(mw_jsons, '{}_ww.csv'.format(article_title)), 'w') as f:
+        with open(join(output_folder, '{}_ww.csv'.format(article_title)), 'w') as f:
             f.write('str,o_rev_id\n')
             for t in ww_article_tokens:
                 value = t['str'].replace('"', '""')
@@ -114,6 +116,10 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
         ww_article_tokens_iter = iter(ww_article_tokens)
         mw_article_tokens_iter = iter(mw_article_tokens)
         ww_found = 0
+        ww_found_there_is_in = 0
+        ww_found_there_is_same_in = 0
+        ww_found_there_is_out = 0
+        ww_found_there_is_same_out = 0
         ww_found_same_o = 0
         ww_found_same_in = 0
         ww_found_same_out = 0
@@ -140,17 +146,21 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
                 assert token == mw_token['str']
                 same_o = ww_token['o_rev_id'] == mw_token['o_rev_id']
                 ww_found_same_o += 1 if same_o else 0
+                same_in = ww_token['in'] == mw_token['in']
+                same_out = ww_token['out'] == mw_token['out']
                 if ww_token['in'] or mw_token['in']:
                     similarity_in = jaccard_similarity(ww_token['in'], mw_token['in'])
+                    ww_found_there_is_same_in += 1 if same_in else 0
+                    ww_found_there_is_in += 1
                 else:
                     similarity_in = 1  # possible max value
                 if ww_token['out'] or mw_token['out']:
                     similarity_out = jaccard_similarity(ww_token['out'], mw_token['out'])
+                    ww_found_there_is_same_out += 1 if same_out else 0
+                    ww_found_there_is_out += 1
                 else:
                     similarity_out = 1  # possible max value
-                same_in = ww_token['in'] == mw_token['in']
                 ww_found_same_in += 1 if same_in else 0
-                same_out = ww_token['out'] == mw_token['out']
                 ww_found_same_out += 1 if same_out else 0
                 ww_found_same_in_out += 1 if same_in and same_out else 0
                 mw_vs_ww_tokens.append(
@@ -161,7 +171,11 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
                         'similarity_in': similarity_in,
                         'similarity_out': similarity_out,
                         'same_in': same_in,
-                        'same_out': same_out
+                        'same_out': same_out,
+                        'len_ins_ww': len(ww_token['in']),
+                        'len_ins_mw': len(mw_token['in']),
+                        'len_outs_ww': len(ww_token['out']),
+                        'len_outs_mw': len(mw_token['out']),
                     }
                 )
         assert len(list(ww_article_tokens_iter)) == 0, len(list(ww_article_tokens_iter))
@@ -171,30 +185,35 @@ def mw_pesistence_compare(ww_jsons, mw_jsons):
                                  'found': ww_found,
                                  '%_ww_found_same_origin': float(ww_found_same_o * 100) / ww_found,
                                  '%_ww_found_same_in': float(ww_found_same_in * 100) / ww_found,
+                                 '%_ww_found_same_in_2': (float(ww_found_there_is_same_in * 100) / ww_found_there_is_in) if ww_found_there_is_in else -1,
                                  '%_ww_found_same_out': float(ww_found_same_out * 100) / ww_found,
+                                 '%_ww_found_same_out_2': (float(ww_found_there_is_same_out * 100) / ww_found_there_is_out) if ww_found_there_is_out else -1,
                                  '%_ww_found_same_in_out': float(ww_found_same_in_out * 100) / ww_found,
                                  'not_found': not_found}
-        with open('{}_diff.json'.format(join(mw_jsons, article_title)), 'w', encoding='utf-8') as f:
+        with open('{}_diff.json'.format(join(output_folder, article_title)), 'w', encoding='utf-8') as f:
             f.write(dumps({article_title: mw_vs_ww_tokens}, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
-        with open('{}_diff.csv'.format(join(mw_jsons, article_title)), 'w') as f:
+        with open('{}_diff.csv'.format(join(output_folder, article_title)), 'w') as f:
             # f.write('str,same_o,op\n')
-            f.write('str,same_o,similarity_in,same_in,similarity_out,same_out,op\n')
+            f.write('str,same_o,len_ins_ww,len_ins_mw,similarity_in,same_in,len_outs_ww,len_outs_mw,similarity_out,same_out,op\n')
             for t in mw_vs_ww_tokens:
                 value = t['str'].replace('"', '""')
                 value = '"{}"'.format(value) if (',' in value or '"' in value) else value
                 # f.write('{},{},{}\n'.format(value, t.get('same_o', ''),
-                f.write('{},{},{},{},{},{},{}\n'.format(value, t.get('same_o', ''),
+                f.write('{},{},{},{},{},{},{},{},{},{},{}\n'.format(value, t.get('same_o', ''),
+                                                        t.get('len_ins_ww', ''), t.get('len_ins_mw', ''),
                                                         t.get('similarity_in', ''), t.get('same_in', ''),
+                                                        t.get('len_outs_ww', ''), t.get('len_outs_mw', ''),
                                                         t.get('similarity_out', ''), t.get('same_out', ''),
                                                         t['op']))
         print('{}: {}'.format(article_title, output[article_title]))
-    with open(join(mw_jsons, 'ww_vs_mw_comparison_output.json'), 'w', encoding='utf-8') as f:
+    with open(join(output_folder, 'ww_vs_mw_comparison_output.json'), 'w', encoding='utf-8') as f:
         f.write(dumps(output, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
 
 
 def get_args():
     """
-python mw_persistence_compare.py -w='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/jsons/after_token_density_increase' -m='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/15'
+python mw_persistence_compare.py -w='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/jsons/after_token_density_increase' -m='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/gold_standard/15'
+python mw_persistence_compare.py -w='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/random_1000/wikiwho' -m='/home/kenan/PycharmProjects/wikiwho_api/tests_ignore/mwpersistence/random_1000/15'
     """
     parser = argparse.ArgumentParser(description='Compare computed content persistence and token authorship by '
                                                  'mwpersistence package in detail. This module is created to compare '

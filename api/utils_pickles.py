@@ -94,3 +94,47 @@ def get_pickle_size(page_id):
     except FileNotFoundError:
         size = 0
     return size
+
+
+def find_pickles_randomly(pickle_folder_path=None, n=2, output_folder=None):
+    # output_folder = '/home/nuser/wikiwho_api/tests_ignore/mwpersistence/random_1000/wikiwho'
+    from os.path import getsize, join
+    from os import listdir
+    from random import sample
+    import json
+    pickle_folder_path = pickle_folder_path or "{}".format(settings.PICKLE_FOLDER)
+    random_files = sample(listdir(pickle_folder_path), n)
+    csv_data = [['article_title', 'last_rev_id', 'len_revs', 'pickle_size', 'page_id']]
+    for file in random_files:
+        path = join(pickle_folder_path, file)
+        ww = pickle_load(path)
+        if not ww.ordered_revisions:
+            continue
+        page_id = ww.page_id
+        article_title = ww.title
+        if '/' in article_title:
+            continue
+        # print(page_id, article_title)
+        last_rev_id = ww.ordered_revisions[-1]
+        len_revs = len(ww.ordered_revisions)
+        pickle_size = getsize(path)
+        csv_data.append([article_title, last_rev_id, len_revs, pickle_size, page_id])
+        ri_ai_json = ww.get_revision_content([last_rev_id], {'str', 'o_rev_id', 'editor'})
+        json_file_path = '{}/{}_ri_ai.json'.format(output_folder, article_title)
+        with open(json_file_path, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(ri_ai_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+
+        io_json = ww.get_revision_content([last_rev_id], {'str', 'in', 'out'})
+        json_file_path = '{}/{}_io.json'.format(output_folder, article_title)
+        with open(json_file_path, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(io_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+
+        rev_ids_json = ww.get_revision_ids({'rev_id', 'editor', 'timestamp'})
+        json_file_path = '{}/{}_rev_ids.json'.format(output_folder, article_title)
+        with open(json_file_path, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(rev_ids_json, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
+
+    import csv
+    with open(join(output_folder, '1000_random_articles.csv'), 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(csv_data)
