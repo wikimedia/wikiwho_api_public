@@ -26,10 +26,10 @@ class BaseAPIRequestLog(models.Model):
     view_method = models.CharField(max_length=200, db_index=True)
 
     # remote IP address of request
-    # remote_addr = models.GenericIPAddressField()
+    remote_addr = models.GenericIPAddressField(null=True)
 
     # originating host of request
-    # host = models.URLField()
+    # host = models.URLField(null=True)
 
     # HTTP method (GET, etc)
     # method = models.CharField(max_length=10)

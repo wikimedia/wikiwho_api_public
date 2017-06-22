@@ -7,9 +7,9 @@ class APIRequestLogAdmin(admin.ModelAdmin):
     date_hierarchy = 'requested_at'
     list_display = ('id', 'requested_at', 'response_ms',
                     'view_method', 'page_id',
-                    'status_code', 'query_params', )
+                    'status_code', 'query_params', 'remote_addr', )
     list_filter = ('view_method', 'status_code', )
-    search_fields = ('page_id', )
+    search_fields = ('page_id', 'remote_addr', )
 
 
 admin.site.register(APIRequestLog, APIRequestLogAdmin)
