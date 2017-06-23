@@ -277,8 +277,8 @@ DEFAULT_FROM_EMAIL = ''  # TODO
 SITE_ID = 1
 
 # Admins
-ADMINS = [('Kenan', 'kenan.erdogan@gesis.org')]  # ('Fabian', 'fabian.floeck@gesis.org')]
-MANAGERS = [('Kenan', 'kenan.erdogan@gesis.org')]  # ('Fabian', 'fabian.floeck@gesis.org')]
+ADMINS = [('Kenan', 'kenan.erdogan@gesis.org'), ('WikiWho', 'wikiwho@gesis.org')]
+MANAGERS = [('Kenan', 'kenan.erdogan@gesis.org'), ('WikiWho', 'wikiwho@gesis.org')]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap'  # default is bootstrap2: http://getbootstrap.com/2.3.2/getting-started.html
 
