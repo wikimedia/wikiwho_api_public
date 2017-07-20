@@ -29,6 +29,7 @@ def whocolor_api_view(request, version, page_title, rev_id=None):
             extended_html, present_editors = wc_handler.handle()
             data['extended_html'] = extended_html
             data['present_editors'] = present_editors
+            rev_id = wc_handler.rev_id
             # data['tokens'] = wc_handler.tokens
             # data['tokencount'] = len(wc_handler.tokens)
             # data['authors'] = []
