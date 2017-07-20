@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'rest_framework_tracking',
     'corsheaders',
+    'WhoColor',  # to collect static files
 ]
 
 MIDDLEWARE_CLASSES = [
