@@ -1,4 +1,5 @@
 git+git://github.com/wikiwho/WikiWho.git@master#egg=WikiWho
+git+git://github.com/wikiwho/WhoColor.git@dev#egg=WhoColor
 Django
 future
 six
@@ -45,3 +46,5 @@ python-memcached
 gunicorn
 fabric3
 #fabric
+
+django-cors-headers

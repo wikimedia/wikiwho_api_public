@@ -11,6 +11,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import hashlib
+
 from WikiWho.wikiwho import Wikiwho as BaseWikiwho
 from WikiWho.utils import iter_rev_tokens
 
@@ -355,3 +357,25 @@ class Wikiwho(BaseWikiwho):
             text.append(word.value)
             origin_rev_ids.append(word.origin_rev_id)
         return text, origin_rev_ids
+
+    def get_whocolor_content(self, revision_id):
+        tokens = []
+        revision = self.revisions[revision_id]
+        for token in iter_rev_tokens(revision):
+            token = {
+                'str': token.value,
+                'editor': self.revisions[token.origin_rev_id].editor,
+            }
+            if token['editor'].startswith('0|'):
+                token['class_name'] = hashlib.md5(token['editor'].encode('utf-8')).hexdigest()
+            else:
+                token['class_name'] = token['editor']
+            tokens.append(token)
+        return tokens
+        # revisions = []
+        # for rev_id in self.ordered_revisions:
+        #     revisions.append({
+        #         'rev_id': rev_id,
+        #         'editor': self.revisions[rev_id].editor
+        #     })
+        # return tokens, revisions

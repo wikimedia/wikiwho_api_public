@@ -30,6 +30,7 @@ urlpatterns = [
     url(r'^admin/clear_sessions', clear_sessions, name='clear_sessions'),
     url(r'^api/(?P<version>(v1.0.0-beta|v1.0.0))/', include('api.urls', namespace='api')),
     url(r'^api/', ApiRedirectView.as_view()),
+    url(r'^whocolor/(?P<version>(v1.0.0-beta|v1.0.0))/', include('whocolor.urls', namespace='whocolor')),
     # url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^account/', include('account_app.urls', namespace='account')),
     url(r'^download/(?P<file_name>.+)/$', download),

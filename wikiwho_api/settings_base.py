@@ -23,11 +23,13 @@ INSTALLED_APPS = [
     'account_app',
     'crispy_forms',
     'rest_framework_tracking',
+    'corsheaders',
 ]
 
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -268,6 +270,8 @@ WP_REQUEST_TIMEOUT = 30  # [seconds]
 # WP_HEADERS_USER_AGENT = 'wikiwho-api'
 WP_HEADERS_USER_AGENT = 'Wikiwho API'
 WP_HEADERS_FROM = 'fabian.floeck@gesis.org and kenan.erdogan@gesis.org'
+WP_HEADERS = {'User-Agent': WP_HEADERS_USER_AGENT, 'From': WP_HEADERS_FROM}
+WP_HEADERS_EXTENDED = {'User-Agent': WP_HEADERS_USER_AGENT, 'From': WP_HEADERS_FROM, "Accept": "*/*", "Host": WP_SERVER}
 
 # registration
 ACCOUNT_ACTIVATION_DAYS = 7
@@ -284,3 +288,11 @@ CRISPY_TEMPLATE_PACK = 'bootstrap'  # default is bootstrap2: http://getbootstrap
 
 # Testing
 TESTING = False  # in testing mode is False by default
+
+# Enable Cross-domain (CORS) GET requests from wikipedia
+CORS_ORIGIN_WHITELIST = (
+    'en.wikipedia.org'
+)
+CORS_ALLOW_METHODS = (
+    'GET',
+)
