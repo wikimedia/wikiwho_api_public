@@ -26,7 +26,7 @@ class WikipediaUser(WikipediaUserBase):
 
     def _make_request(self, data):
         session = create_wp_session()
-        response = session.get(**data)
+        response = session.post(**data)
         response = response.json()
         return response
 
