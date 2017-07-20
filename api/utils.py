@@ -46,16 +46,15 @@ def get_page_data_from_wp_api(params):
     rvcontinue = params.get('rvcontinue', '0')
 
     session = create_wp_session()
-    headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
-               'From': settings.WP_HEADERS_FROM}
 
     while True:
         # continue downloading as long as we reach to the given rev_id limit
         if rvcontinue != '0' and rvcontinue != '1':
             params['rvcontinue'] = rvcontinue
 
-        result = session.get(url=settings.WP_API_URL, headers=headers, params=params,
-                             timeout=settings.WP_REQUEST_TIMEOUT)
+        # IIRC the params flag means the params you see tacked onto the end of your url, while data is the POST data.
+        result = session.get(url=settings.WP_API_URL, headers=settings.WP_HEADERS,
+                             params=params, timeout=settings.WP_REQUEST_TIMEOUT)
         result = result.json()
 
         if 'error' in result:
@@ -87,11 +86,8 @@ def get_latest_revision_data(page_id=None, article_title=None, revision_id=None)
     # set up request for Wikipedia API.
     params.update({'action': "query", 'prop': 'info', 'format': 'json'})
     # params = {'action': "query", 'titles': article_title, 'format': 'json'}
-    headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
-               'From': settings.WP_HEADERS_FROM,
-               "Accept": "*/*", "Host": settings.WP_SERVER}
     # make get request
-    resp_ = requests.get(settings.WP_API_URL, params, headers=headers)
+    resp_ = requests.get(settings.WP_API_URL, params=params, headers=settings.WP_HEADERS)
     response = resp_.json()  # convert response into dict
     pages = response["query"].get('pages')
     is_pages = False
@@ -116,12 +112,10 @@ def get_revision_timestamp(revision_ids):
     # set up request for Wikipedia API.
     params = {'action': "query", 'prop': 'revisions', 'format': 'json',
               'rvprop': 'timestamp|ids', 'revids': '|'.join(revision_ids)}
-    headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
-               'From': settings.WP_HEADERS_FROM,
-               "Accept": "*/*", "Host": settings.WP_SERVER}
     # make get request
     try:
-        resp_ = requests.get(settings.WP_API_URL, params, headers=headers, timeout=settings.WP_REQUEST_TIMEOUT)
+        resp_ = requests.get(settings.WP_API_URL, params, headers=settings.WP_HEADERS,
+                             timeout=settings.WP_REQUEST_TIMEOUT)
     except ReadTimeout:
         return {'error': 'Bad revision ids.'}
     response = resp_.json()  # convert response into dict
@@ -138,9 +132,7 @@ def create_wp_session():
     # create session
     session = requests.session()
     session.auth = (settings.WP_USER, settings.WP_PASSWORD)
-    headers = {'User-Agent': settings.WP_HEADERS_USER_AGENT,
-               'From': settings.WP_HEADERS_FROM}
-    session.headers.update(headers)
+    session.headers.update(settings.WP_HEADERS)
     # get token to log in
     r1 = session.post(settings.WP_API_URL, data={'action': 'query', 'meta': 'tokens',
                                                  'type': 'login', 'format': 'json'})
