@@ -362,15 +362,10 @@ class Wikiwho(BaseWikiwho):
         tokens = []
         revision = self.revisions[revision_id]
         for token in iter_rev_tokens(revision):
-            token = {
+            tokens.append({
                 'str': token.value,
                 'editor': self.revisions[token.origin_rev_id].editor,
-            }
-            if token['editor'].startswith('0|'):
-                token['class_name'] = hashlib.md5(token['editor'].encode('utf-8')).hexdigest()
-            else:
-                token['class_name'] = token['editor']
-            tokens.append(token)
+            })
         return tokens
         # revisions = []
         # for rev_id in self.ordered_revisions:

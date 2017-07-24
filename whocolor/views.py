@@ -1,6 +1,7 @@
 # from django.views.generic.base import TemplateView
 from django.http import JsonResponse
 
+from api.tasks import process_article_user
 from .handler import WhoColorHandler, WhoColorException
 
 
@@ -27,20 +28,26 @@ def whocolor_api_view(request, version, page_title, rev_id=None):
     try:
         with WhoColorHandler(page_title=page_title, revision_id=rev_id) as wc_handler:
             extended_html, present_editors = wc_handler.handle()
-            data['extended_html'] = extended_html
-            data['present_editors'] = present_editors
+            if extended_html is None and present_editors is None:
+                process_article_user.delay(wc_handler.page_title, wc_handler.page_id, wc_handler.rev_id)
+                data['info'] = 'Requested data is not currently available in WikiWho database. ' \
+                               'It will be available soon.'
+                data['success'] = False
+            else:
+                data['extended_html'] = extended_html
+                data['present_editors'] = present_editors
+                data['success'] = True
             rev_id = wc_handler.rev_id
             # data['tokens'] = wc_handler.tokens
             # data['tokencount'] = len(wc_handler.tokens)
             # data['authors'] = []
             # data['revisions'] = []
     except WhoColorException as e:
-        if e.code in []:  # TODO
-            data['info'] = e.message
-        else:
-            data['error'] = e.message
+        # if e.code in []:
+        #     data['info'] = e.message
+        # else:
+        data['error'] = e.message
         data['success'] = False
-    else:
-        data['success'] = True
     data['rev_id'] = rev_id
+    data['page_title'] = page_title
     return JsonResponse(data)

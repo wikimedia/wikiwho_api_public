@@ -5,12 +5,13 @@
     Kenan Erdogan
 """
 import os
+import hashlib
 
 from django.conf import settings
 
 from api.utils_pickles import pickle_load
-from .utils import WikipediaRevText
-from .parser import WikiMarkupParser
+from WhoColor.parser import WikiMarkupParser
+from .utils import WikipediaRevText, WikipediaUser
 
 
 class WhoColorException(Exception):
@@ -28,8 +29,8 @@ class WhoColorHandler(object):
         self.page_title = page_title
         self.rev_id = revision_id
         self.pickle_folder = pickle_folder
-        self.wiki_text = ''
-        self.tokens = []
+        # self.wiki_text = ''
+        # self.tokens = []
         # self.revisions = []
         # self.extended_wiki_text = ''
 
@@ -54,7 +55,7 @@ class WhoColorHandler(object):
                                     format(self.page_title or self.page_id), '00')
         self.page_id = data['page_id']
         self.rev_id = data['rev_id']
-        self.wiki_text = data['rev_text']
+        wiki_text = data['rev_text']
         if data['namespace'] != 0:
             raise WhoColorException('Only articles! Namespace {} is not accepted.'.format(data['namespace']), '02')
 
@@ -62,23 +63,36 @@ class WhoColorHandler(object):
         pickle_path = "{}/{}.p".format(self.pickle_folder, self.page_id)
         already_exists = os.path.exists(pickle_path)
         if not already_exists:
+            # requested page is not processed by WikiWho yet
             if not settings.ONLY_READ_ALLOWED:
-                # TODO start a celery task and return info message
                 return None, None
             else:
                 raise WhoColorException('Only read is allowed for now.', '21')
         else:
             wikiwho = pickle_load(pickle_path)
             if self.rev_id not in wikiwho.revisions:
+                # requested rev id is not processed by WikiWho yet
                 if not settings.ONLY_READ_ALLOWED:
-                    # TODO start a celery task and return info message
                     return None, None
                 else:
                     raise WhoColorException('Only read is allowed for now.', '21')
-            self.tokens = wikiwho.get_whocolor_content(self.rev_id)
+            tokens = wikiwho.get_whocolor_content(self.rev_id)
+
+            # get editor names from wp api
+            editor_ids = {t['editor'] for t in tokens if not t['editor'].startswith('0|')}
+            wp_users_obj = WikipediaUser(editor_ids)
+            editor_names_dict = wp_users_obj.get_editor_names()
+            # set editor and class names for each token
+            for token in tokens:
+                token['editor_name'] = editor_names_dict.get(token['editor'], token['editor'])
+                if token['editor'].startswith('0|'):
+                    token['class_name'] = hashlib.md5(token['editor'].encode('utf-8')).hexdigest()
+                else:
+                    token['class_name'] = token['editor']
 
             # annotate authorship data to wiki text
-            parser = WikiMarkupParser(self.wiki_text, self.tokens)  # , self.revisions)
+            # if registered user, class name is editor id
+            parser = WikiMarkupParser(wiki_text, tokens)  # , self.revisions)
             parser.generate_extended_wiki_markup()
             extended_html = wp_rev_text_obj.convert_wiki_text_to_html(parser.extended_wiki_text)
             return extended_html, parser.present_editors
