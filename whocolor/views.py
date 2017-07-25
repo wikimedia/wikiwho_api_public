@@ -34,7 +34,7 @@ def whocolor_api_view(request, version, page_title, rev_id=None):
                                'It will be available soon.'
                 data['success'] = False
             elif extended_html is False and present_editors is False:
-                data['info'] = 'Requested revision is a spam.'
+                data['info'] = 'Requested revision ({}) is detected as vandalism by WikiWho.'.format(wc_handler.rev_id)
                 data['success'] = False
             else:
                 data['extended_html'] = extended_html
