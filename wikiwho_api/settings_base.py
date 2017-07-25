@@ -290,10 +290,12 @@ CRISPY_TEMPLATE_PACK = 'bootstrap'  # default is bootstrap2: http://getbootstrap
 # Testing
 TESTING = False  # in testing mode is False by default
 
+# Enable any Cross-domain (CORS) requests from all origins
+CORS_ORIGIN_ALLOW_ALL = True
 # Enable Cross-domain (CORS) GET requests from wikipedia
-CORS_ORIGIN_WHITELIST = (
-    'en.wikipedia.org'
-)
-CORS_ALLOW_METHODS = (
-    'GET',
-)
+# CORS_ORIGIN_WHITELIST = (
+#     'en.wikipedia.org'
+# )
+# CORS_ALLOW_METHODS = (
+#     'GET',
+# )

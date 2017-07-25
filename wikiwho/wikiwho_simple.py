@@ -11,8 +11,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import hashlib
-
 from WikiWho.wikiwho import Wikiwho as BaseWikiwho
 from WikiWho.utils import iter_rev_tokens
 
