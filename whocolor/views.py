@@ -33,6 +33,9 @@ def whocolor_api_view(request, version, page_title, rev_id=None):
                 data['info'] = 'Requested data is not currently available in WikiWho database. ' \
                                'It will be available soon.'
                 data['success'] = False
+            elif extended_html is False and present_editors is False:
+                data['info'] = 'Requested revision is a spam.'
+                data['success'] = False
             else:
                 data['extended_html'] = extended_html
                 data['present_editors'] = present_editors

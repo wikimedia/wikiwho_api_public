@@ -71,7 +71,9 @@ class WhoColorHandler(object):
         else:
             wikiwho = pickle_load(pickle_path)
             if self.rev_id not in wikiwho.revisions:
-                # requested rev id is not processed by WikiWho yet
+                # requested rev id is not processed by WikiWho yet or it is in spams
+                if self.rev_id in wikiwho.spam_ids:
+                    return False, False
                 if not settings.ONLY_READ_ALLOWED:
                     return None, None
                 else:
