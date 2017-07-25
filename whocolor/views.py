@@ -1,4 +1,5 @@
-# from django.views.generic.base import TemplateView
+from simplejson import JSONDecodeError
+
 from django.http import JsonResponse
 
 from api.tasks import process_article_user
@@ -27,24 +28,29 @@ def whocolor_api_view(request, version, page_title, rev_id=None):
     data = {}
     try:
         with WhoColorHandler(page_title=page_title, revision_id=rev_id) as wc_handler:
-            extended_html, present_editors = wc_handler.handle()
-            if extended_html is None and present_editors is None:
-                process_article_user.delay(wc_handler.page_title, wc_handler.page_id, wc_handler.rev_id)
-                data['info'] = 'Requested data is not currently available in WikiWho database. ' \
-                               'It will be available soon.'
-                data['success'] = False
-            elif extended_html is False and present_editors is False:
-                data['info'] = 'Requested revision ({}) is detected as vandalism by WikiWho.'.format(wc_handler.rev_id)
+            try:
+                extended_html, present_editors = wc_handler.handle()
+            except JSONDecodeError as e:
+                data['error'] = 'HTTP Response error from Wikipedia! Please try again later.'
                 data['success'] = False
             else:
-                data['extended_html'] = extended_html
-                data['present_editors'] = present_editors
-                data['success'] = True
-            rev_id = wc_handler.rev_id
-            # data['tokens'] = wc_handler.tokens
-            # data['tokencount'] = len(wc_handler.tokens)
-            # data['authors'] = []
-            # data['revisions'] = []
+                if extended_html is None and present_editors is None:
+                    process_article_user.delay(wc_handler.page_title, wc_handler.page_id, wc_handler.rev_id)
+                    data['info'] = 'Requested data is not currently available in WikiWho database. ' \
+                                   'It will be available soon.'
+                    data['success'] = False
+                elif extended_html is False and present_editors is False:
+                    data['info'] = 'Requested revision ({}) is detected as vandalism by WikiWho.'.format(wc_handler.rev_id)
+                    data['success'] = False
+                else:
+                    data['extended_html'] = extended_html
+                    data['present_editors'] = present_editors
+                    data['success'] = True
+                rev_id = wc_handler.rev_id
+                # data['tokens'] = wc_handler.tokens
+                # data['tokencount'] = len(wc_handler.tokens)
+                # data['authors'] = []
+                # data['revisions'] = []
     except WhoColorException as e:
         # if e.code in []:
         #     data['info'] = e.message
