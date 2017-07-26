@@ -7,7 +7,8 @@ from rest_framework import permissions, status, authentication, throttling
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework.schemas import SchemaGenerator  # , as_query_fields
-from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
+from rest_framework_swagger.renderers import OpenAPIRenderer as OpenAPIRendererBase, \
+    SwaggerUIRenderer as SwaggerUIRendererBase
 # from rest_framework_extensions.cache.decorators import cache_response, CacheResponse
 # from rest_framework.compat import coreapi, urlparse
 
@@ -28,7 +29,7 @@ from .utils import get_revision_timestamp, Timeout
 from .tasks import process_article_user
 
 
-class MyOpenAPIRenderer(OpenAPIRenderer):
+class OpenAPIRenderer(OpenAPIRendererBase):
     """
     Custom OpenAPIRenderer to update field types and descriptions.
     """
@@ -36,7 +37,7 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
         """
         Adds settings, overrides, etc. to the specification.
         """
-        data = super(MyOpenAPIRenderer, self).get_customizations()
+        data = super(OpenAPIRenderer, self).get_customizations()
         # print(type(data), data)
         data['paths'] = custom_data['paths']
         data['info'] = custom_data['info']
@@ -49,8 +50,14 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
         return data
 
 
+class SwaggerUIRenderer(SwaggerUIRendererBase):
+    def set_context(self, renderer_context):
+        super(SwaggerUIRenderer, self).set_context(renderer_context)
+        renderer_context['is_ww_api'] = True
+
+
 @api_view()
-@renderer_classes([MyOpenAPIRenderer, SwaggerUIRenderer])
+@renderer_classes([OpenAPIRenderer, SwaggerUIRenderer])
 def schema_view(request, version):
     generator = SchemaGenerator(title='WikiWho API', urlconf='api.urls')
     schema = generator.get_schema(request=request)
@@ -278,7 +285,7 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
                     status_ = status.HTTP_400_BAD_REQUEST
         except JSONDecodeError as e:
             response = {'Error': 'HTTP Response error from Wikipedia! Please try again later.'}
-            status_ = status.HTTP_400_BAD_REQUEST
+            status_ = status.HTTP_503_SERVICE_UNAVAILABLE
         else:
             if all_content:
                 response = self.get_all_content(wp, parameters)

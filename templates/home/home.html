@@ -56,9 +56,11 @@
                         {% if request.user.is_superuser %}
                         <li><a href="{% url 'admin:index' %}">Admin</a></li>
                         {% endif %}
-                        {% api_version as version_url %}
+                        {% ww_api_version as ww_version_url %}
+                        {% wc_api_version as wc_version_url %}
 {#                        <li class="active"><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
-                        <li><a href="{% url 'api:swagger' version_url %}">API</a></li>
+                        <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>
+                        <li><a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a></li>
                         <li><a href="{% url 'contact' %}">Contact</a></li>
                         {% if request.user.is_authenticated %}
 {#                        <li>Hello {{ request.user }}</li>#}
@@ -80,15 +82,22 @@
         {% endblock title %}
 
         {% block content %}
+            <div>
             <p>
                 <a href="https://github.com/wikiwho/WikiWho" target="_blank">WikiWho algorithm</a>
                 <br>
-                <a href="{% url 'api:swagger' version_url %}">WikiWho API</a>
+                <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API</a>
+            </p>
+            <p>
+                <a href="https://github.com/wikiwho/WhoColor">WhoColor source code</a>
+                <br>
+                <a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a>
+            </p>
             {% comment %}TODO
                 Explanation how wikiwho works?
                 Documentation how to use wikiwho algorithm?
             {% endcomment %}
-            </p>
+            </div>
         {% endblock content %}
 
     </div> <!-- /container -->

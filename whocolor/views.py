@@ -1,62 +1,90 @@
+from rest_framework.views import APIView
 from simplejson import JSONDecodeError
 
-from django.http import JsonResponse
+from rest_framework.decorators import api_view, renderer_classes
+from rest_framework.renderers import JSONRenderer
+from rest_framework import permissions, status, authentication
+from rest_framework.response import Response
+from rest_framework.schemas import SchemaGenerator
+from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
 
 from api.tasks import process_article_user
+
 from .handler import WhoColorHandler, WhoColorException
+from .swagger_data import custom_data
 
 
-# class WhoColorBaseView(TemplateView):
-#     template_name = "whocolor/base.html"
-#
-#
-# # TODO LoggingMixin
-# class WhoColorDetailView(TemplateView):
-#     template_name = "whocolor/detail.html"
-#
-#     def get_context_data(self, **kwargs):
-#         context = super(WhoColorDetailView, self).get_context_data(**kwargs)
-#         page_id = kwargs.get('page_id')
-#         page_title = kwargs.get('page_title')
-#         rev_id = kwargs.get('rev_id')
-#         with WhoColorHandler(page_id, page_title, rev_id) as wc_handler:
-#             context['extended_html'] = wc_handler.handle()
-#         return context
+class MyOpenAPIRenderer(OpenAPIRenderer):
+    """
+    Custom OpenAPIRenderer to update field types and descriptions.
+    """
+    def get_customizations(self):
+        """
+        Adds settings, overrides, etc. to the specification.
+        """
+        data = super(MyOpenAPIRenderer, self).get_customizations()
+        # print(type(data), data)
+        data['paths'] = custom_data['paths']
+        data['info'] = custom_data['info']
+        data['basePath'] = custom_data['basePath']
+        # data['externalDocs'] = custom_data['externalDocs']
+        # import pprint
+        # pp = pprint.PrettyPrinter(indent=4)
+        # print(type(data))
+        # pp.pprint(data)
+        return data
 
 
-def whocolor_api_view(request, version, page_title, rev_id=None):
-    data = {}
-    try:
-        with WhoColorHandler(page_title=page_title, revision_id=rev_id) as wc_handler:
-            try:
+@api_view()
+@renderer_classes([MyOpenAPIRenderer, SwaggerUIRenderer])
+def schema_view(request, version):
+    generator = SchemaGenerator(title='WhoColor API', urlconf='whocolor.urls')
+    schema = generator.get_schema(request=request)
+    # print(type(schema), schema)
+    return Response(schema)
+
+
+class WhoColorApiView(APIView):
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly, )
+    authentication_classes = (authentication.SessionAuthentication, authentication.BasicAuthentication)
+    renderer_classes = [JSONRenderer]  # to disable browsable api
+
+    def get(self, request, version, page_title, rev_id=None):
+        response = {}
+        try:
+            with WhoColorHandler(page_title=page_title, revision_id=rev_id) as wc_handler:
                 extended_html, present_editors = wc_handler.handle()
-            except JSONDecodeError as e:
-                data['error'] = 'HTTP Response error from Wikipedia! Please try again later.'
-                data['success'] = False
-            else:
                 if extended_html is None and present_editors is None:
                     process_article_user.delay(wc_handler.page_title, wc_handler.page_id, wc_handler.rev_id)
-                    data['info'] = 'Requested data is not currently available in WikiWho database. ' \
-                                   'It will be available soon.'
-                    data['success'] = False
+                    response['info'] = 'Requested data is not currently available in WikiWho database. ' \
+                                       'It will be available soon.'
+                    response['success'] = False
                 elif extended_html is False and present_editors is False:
-                    data['info'] = 'Requested revision ({}) is detected as vandalism by WikiWho.'.format(wc_handler.rev_id)
-                    data['success'] = False
+                    response['info'] = 'Requested revision ({}) is detected as vandalism by WikiWho.'.\
+                                       format(wc_handler.rev_id)
+                    response['success'] = False
                 else:
-                    data['extended_html'] = extended_html
-                    data['present_editors'] = present_editors
-                    data['success'] = True
+                    response['extended_html'] = extended_html
+                    response['present_editors'] = present_editors
+                    response['success'] = True
+                status_ = status.HTTP_200_OK
                 rev_id = wc_handler.rev_id
-                # data['tokens'] = wc_handler.tokens
-                # data['tokencount'] = len(wc_handler.tokens)
-                # data['authors'] = []
-                # data['revisions'] = []
-    except WhoColorException as e:
-        # if e.code in []:
-        #     data['info'] = e.message
-        # else:
-        data['error'] = e.message
-        data['success'] = False
-    data['rev_id'] = rev_id
-    data['page_title'] = page_title
-    return JsonResponse(data)
+                # response['tokens'] = wc_handler.tokens
+                # response['tokencount'] = len(wc_handler.tokens)
+                # response['authors'] = []
+                # response['revisions'] = []
+        except WhoColorException as e:
+            response['error'] = e.message
+            response['success'] = False
+            if e.code in ['11']:
+                # WP errors
+                status_ = status.HTTP_503_SERVICE_UNAVAILABLE
+            else:
+                status_ = status.HTTP_400_BAD_REQUEST
+        except JSONDecodeError as e:
+            response['error'] = 'HTTP Response error from Wikipedia! Please try again later.'
+            response['success'] = False
+            status_ = status.HTTP_503_SERVICE_UNAVAILABLE
+        response['rev_id'] = rev_id
+        response['page_title'] = page_title
+        return Response(response, status=status_)

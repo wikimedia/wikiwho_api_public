@@ -48,6 +48,9 @@ class WhoColorHandler(object):
         # get rev wiki text from wp
         wp_rev_text_obj = WikipediaRevText(self.page_title, self.page_id, self.rev_id)
         data = wp_rev_text_obj.get_rev_wiki_text()
+        if data is None:
+            raise WhoColorException('The revision ({}) you are trying to request does not exist!'.
+                                    format(self.rev_id), '03')
         if 'error' in data:
             raise WhoColorException('Wikipedia API returned the following error:' + str(data['error']), '11')
         if "-1" in data:

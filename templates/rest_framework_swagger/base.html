@@ -2,10 +2,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>WikiWho API</title>
+  <title>{% if is_ww_api %}WikiWho API{% else %}WhoColor API{% endif %}</title>
   <meta charset="UTF-8">
   <meta name="description"
-        content="WikiWho API provides provenance and change information about the tokens a Wikipedia article consists of.">
+        content="{% if is_ww_api %}WikiWho API provides provenance and change information about the tokens a Wikipedia article consists of.{% else %}WhoColor API{% endif %}">
   <meta name="robots" content="index, follow">
   <link rel="icon" type="image/png" href="{% static 'images/favicon-32x32.png' %}" sizes="32x32" />
   <link rel="icon" type="image/png" href="{% static 'images/favicon-16x16.png' %}" sizes="16x16" />

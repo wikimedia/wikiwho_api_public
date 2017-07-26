@@ -110,7 +110,7 @@ custom_data = {
             #     'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/'
             #            'computational-social-science/'},
         },
-    'basePath': '/api/v{}'.format(version),
+    'basePath': '/api/{}'.format(version_url),
     'host': 'api.wikiwho.net',
     'schemes': 'https',
     'produces': ['application/json'],
