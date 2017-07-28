@@ -363,6 +363,7 @@ class Wikiwho(BaseWikiwho):
             tokens.append({
                 'str': token.value,
                 'editor': self.revisions[token.origin_rev_id].editor,
+                'conflict_score': len(token.inbound) + len(token.outbound)
             })
         return tokens
         # revisions = []

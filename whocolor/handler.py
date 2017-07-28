@@ -68,7 +68,7 @@ class WhoColorHandler(object):
         if not already_exists:
             # requested page is not processed by WikiWho yet
             if not settings.ONLY_READ_ALLOWED:
-                return None, None
+                return None, None, None
             else:
                 raise WhoColorException('Only read is allowed for now.', '21')
         else:
@@ -76,9 +76,9 @@ class WhoColorHandler(object):
             if self.rev_id not in wikiwho.revisions:
                 # requested rev id is not processed by WikiWho yet or it is in spams
                 if self.rev_id in wikiwho.spam_ids:
-                    return False, False
+                    return False, False, False
                 if not settings.ONLY_READ_ALLOWED:
-                    return None, None
+                    return None, None, None
                 else:
                     raise WhoColorException('Only read is allowed for now.', '21')
             tokens = wikiwho.get_whocolor_content(self.rev_id)
@@ -100,7 +100,7 @@ class WhoColorHandler(object):
             parser = WikiMarkupParser(wiki_text, tokens)  # , self.revisions)
             parser.generate_extended_wiki_markup()
             extended_html = wp_rev_text_obj.convert_wiki_text_to_html(parser.extended_wiki_text)
-            return extended_html, parser.present_editors
+            return extended_html, parser.present_editors, parser.conflict_scores
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
