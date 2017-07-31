@@ -360,10 +360,29 @@ class Wikiwho(BaseWikiwho):
         tokens = []
         revision = self.revisions[revision_id]
         for token in iter_rev_tokens(revision):
+            # calculate conflict score
+            editor_in_prev = None
+            conflict_score = 0
+            for i, out_ in enumerate(token.outbound):
+                editor_out = self.revisions[out_].editor
+                if editor_in_prev is not None and editor_in_prev != editor_out:
+                    # exclude first deletions and self reverts (undo actions)
+                    conflict_score += 1
+                try:
+                    in_ = token.inbound[i]
+                except IndexError:
+                    # no in for this out. end of loop.
+                    pass
+                else:
+                    editor_in = self.revisions[in_].editor
+                    if editor_out != editor_in:
+                        # exclude self reverts (undo actions)
+                        conflict_score += 1
+                    editor_in_prev = editor_in
             tokens.append({
                 'str': token.value,
                 'editor': self.revisions[token.origin_rev_id].editor,
-                'conflict_score': len(token.inbound) + len(token.outbound)
+                'conflict_score': conflict_score
             })
         return tokens
         # revisions = []
