@@ -84,7 +84,7 @@ class WhoColorHandler(object):
             whocolor_data = wikiwho.get_whocolor_data(self.rev_id)
 
             # get editor names from wp api
-            editor_ids = {v[2] for k, v in whocolor_data['revisions'].items() if not v[2].startswith('0|')}
+            editor_ids = {v[2] for k, v in whocolor_data['revisions'].items() if v[2] and not v[2].startswith('0|')}
             wp_users_obj = WikipediaUser(editor_ids)
             editor_names_dict = wp_users_obj.get_editor_names()
 
