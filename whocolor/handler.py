@@ -81,14 +81,15 @@ class WhoColorHandler(object):
                     return None, None, None
                 else:
                     raise WhoColorException('Only read is allowed for now.', '21')
-            tokens = wikiwho.get_whocolor_content(self.rev_id)
+            whocolor_data = wikiwho.get_whocolor_data(self.rev_id)
 
             # get editor names from wp api
-            editor_ids = {t['editor'] for t in tokens if not t['editor'].startswith('0|')}
+            editor_ids = {v[2] for k, v in whocolor_data['revisions'].items() if not v[2].startswith('0|')}
             wp_users_obj = WikipediaUser(editor_ids)
             editor_names_dict = wp_users_obj.get_editor_names()
+
             # set editor and class names for each token
-            for token in tokens:
+            for token in whocolor_data['tokens']:
                 token['editor_name'] = editor_names_dict.get(token['editor'], token['editor'])
                 if token['editor'].startswith('0|'):
                     token['class_name'] = hashlib.md5(token['editor'].encode('utf-8')).hexdigest()
@@ -97,10 +98,25 @@ class WhoColorHandler(object):
 
             # annotate authorship data to wiki text
             # if registered user, class name is editor id
-            parser = WikiMarkupParser(wiki_text, tokens)  # , self.revisions)
+            parser = WikiMarkupParser(wiki_text, whocolor_data['tokens'])  # , self.revisions)
             parser.generate_extended_wiki_markup()
             extended_html = wp_rev_text_obj.convert_wiki_text_to_html(parser.extended_wiki_text)
-            return extended_html, parser.present_editors, parser.conflict_scores
+
+            # exclude unnecessary token data
+            # [[conflict_score, str, o_rev_id, in, out, editor/class_name]]
+            tokens = [[token['conflict_score'], token['str'], token['o_rev_id'],
+                       token['in'], token['out'], token['class_name']]
+                      for token in whocolor_data['tokens']]
+
+            # append editor names into revisions
+            # {rev_id: [timestamp, parent_id, class_name/editor, editor_name]}
+            for rev_id, rev_data in whocolor_data['revisions'].items():
+                rev_data.append(editor_names_dict.get(rev_data[2], rev_data[2]))
+                if rev_data[2].startswith('0|'):
+                    rev_data[2] = hashlib.md5(rev_data[2].encode('utf-8')).hexdigest()
+
+            whocolor_data['tokens'] = tokens
+            return extended_html, parser.present_editors, whocolor_data
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass

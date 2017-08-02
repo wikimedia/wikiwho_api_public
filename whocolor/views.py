@@ -53,7 +53,7 @@ class WhoColorApiView(APIView):
         response = {}
         try:
             with WhoColorHandler(page_title=page_title, revision_id=rev_id) as wc_handler:
-                extended_html, present_editors, conflict_scores = wc_handler.handle()
+                extended_html, present_editors, whocolor_data = wc_handler.handle()
                 if extended_html is None and present_editors is None:
                     process_article_user.delay(wc_handler.page_title, wc_handler.page_id, wc_handler.rev_id)
                     response['info'] = 'Requested data is not currently available in WikiWho database. ' \
@@ -66,14 +66,10 @@ class WhoColorApiView(APIView):
                 else:
                     response['extended_html'] = extended_html
                     response['present_editors'] = present_editors
-                    response['conflict_scores'] = conflict_scores
+                    response.update(whocolor_data)
                     response['success'] = True
                 status_ = status.HTTP_200_OK
                 rev_id = wc_handler.rev_id
-                # response['tokens'] = wc_handler.tokens
-                # response['tokencount'] = len(wc_handler.tokens)
-                # response['authors'] = []
-                # response['revisions'] = []
         except WhoColorException as e:
             response['error'] = e.message
             response['success'] = False

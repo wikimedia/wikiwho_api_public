@@ -356,9 +356,10 @@ class Wikiwho(BaseWikiwho):
             origin_rev_ids.append(word.origin_rev_id)
         return text, origin_rev_ids
 
-    def get_whocolor_content(self, revision_id):
+    def get_whocolor_data(self, revision_id):
         tokens = []
         revision = self.revisions[revision_id]
+        biggest_conflict_score = 0
         for token in iter_rev_tokens(revision):
             # calculate conflict score
             editor_in_prev = None
@@ -380,15 +381,26 @@ class Wikiwho(BaseWikiwho):
                         conflict_score += 1
                     editor_in_prev = editor_in
             tokens.append({
+                'o_rev_id': token.origin_rev_id,
                 'str': token.value,
+                'in': token.inbound,
+                'out': token.outbound,
                 'editor': self.revisions[token.origin_rev_id].editor,
                 'conflict_score': conflict_score
             })
-        return tokens
-        # revisions = []
-        # for rev_id in self.ordered_revisions:
-        #     revisions.append({
-        #         'rev_id': rev_id,
-        #         'editor': self.revisions[rev_id].editor
-        #     })
-        # return tokens, revisions
+            if conflict_score > biggest_conflict_score:
+                biggest_conflict_score = conflict_score
+        # for token in tokens:
+        #     token['conflict_score'] /= float(biggest_conflict_score)
+
+        # {rev_id: [timestamp, parent_id, editor]}
+        revisions = {self.ordered_revisions[0]: [self.revisions[self.ordered_revisions[0]].timestamp,
+                                                 0,
+                                                 self.revisions[self.ordered_revisions[0]].editor]}
+        for i, rev_id in enumerate(self.ordered_revisions[1:]):
+            revisions[rev_id] = [self.revisions[rev_id].timestamp,
+                                 self.ordered_revisions[i],  # parent = previous rev id
+                                 self.revisions[rev_id].editor]
+        return {'tokens': tokens,
+                'revisions': revisions,
+                'biggest_conflict_score': biggest_conflict_score}
