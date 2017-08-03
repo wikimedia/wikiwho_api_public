@@ -14,6 +14,9 @@ from __future__ import unicode_literals
 from WikiWho.wikiwho import Wikiwho as BaseWikiwho
 from WikiWho.utils import iter_rev_tokens
 
+from dateutil import parser
+from datetime import datetime
+
 
 class Wikiwho(BaseWikiwho):
 
@@ -361,6 +364,10 @@ class Wikiwho(BaseWikiwho):
         revision = self.revisions[revision_id]
         biggest_conflict_score = 0
         for token in iter_rev_tokens(revision):
+            o_rev_id = token.origin_rev_id
+            # calculate age
+            o_rev_ts = parser.parse(self.revisions[o_rev_id].timestamp)
+            age = datetime.now(o_rev_ts.tzinfo) - o_rev_ts
             # calculate conflict score
             editor_in_prev = None
             conflict_score = 0
@@ -381,12 +388,13 @@ class Wikiwho(BaseWikiwho):
                         conflict_score += 1
                     editor_in_prev = editor_in
             tokens.append({
-                'o_rev_id': token.origin_rev_id,
+                'o_rev_id': o_rev_id,
                 'str': token.value,
                 'in': token.inbound,
                 'out': token.outbound,
                 'editor': self.revisions[token.origin_rev_id].editor,
-                'conflict_score': conflict_score
+                'conflict_score': conflict_score,
+                'age': age.total_seconds()
             })
             if conflict_score > biggest_conflict_score:
                 biggest_conflict_score = conflict_score

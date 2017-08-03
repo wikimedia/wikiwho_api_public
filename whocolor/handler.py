@@ -103,9 +103,9 @@ class WhoColorHandler(object):
             extended_html = wp_rev_text_obj.convert_wiki_text_to_html(parser.extended_wiki_text)
 
             # exclude unnecessary token data
-            # [[conflict_score, str, o_rev_id, in, out, editor/class_name]]
+            # [[conflict_score, str, o_rev_id, in, out, editor/class_name, age]]
             tokens = [[token['conflict_score'], token['str'], token['o_rev_id'],
-                       token['in'], token['out'], token['class_name']]
+                       token['in'], token['out'], token['class_name'], token['age']]
                       for token in whocolor_data['tokens']]
 
             # append editor names into revisions
