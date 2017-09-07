@@ -219,13 +219,16 @@ class WPHandler(object):
             #   raise WPHandlerException('Wikipedia API returned the following warning:" + result['warnings']))
             if 'query' in result:
                 pages = result['query']['pages']
-                if "-1" in pages:
+                if '-1' in pages:
                     raise WPHandlerException('The article ({}) you are trying to request does not exist!'.
                                              format(self.article_title or self.page_id), '00')
                 # elif not pages.get('revision'):
                 #     raise WPHandlerException(message="End revision ID does not exist!")
                 # pass first item in pages dict
                 _, page = result['query']['pages'].popitem()
+                if 'missing' in page:
+                    raise WPHandlerException('The article ({}) you are trying to request does not exist!'.
+                                             format(self.article_title or self.page_id), '00')
                 try:
                     self.wikiwho.analyse_article(page.get('revisions', []))
                 except RecursionError as e:
