@@ -45,7 +45,7 @@
 {% block header %}
 <div id='header'>
   <div class="swagger-ui-wrap">
-    <a id="logo" href="{% url 'home' %}"><img class="logo__img" alt="wikiwho" height="30" width="30" src="{% static 'images/logo_small.png' %}" /><span class="logo__title">wikiwho</span></a>
+    <a id="logo" href="{% url 'home' %}"><img class="logo__img" alt="WikiWho" height="30" width="30" src="{% static 'images/logo_small.png' %}" /><span class="logo__title">WikiWho</span></a>
     <form id='api_selector'>
       <input id="input_baseUrl" name="baseUrl" type="hidden"/>
       {% if USE_SESSION_AUTH %}
@@ -59,6 +59,20 @@
           </div>
         {% endif %}
         {% block extra_nav %}
+            <div class='input'>
+                <select id="language_select">
+                {% load i18n %}
+                {% load url_translation %}
+                {% get_current_language as LANGUAGE_CODE %}
+                {% get_available_languages as LANGUAGES %}
+                {% get_language_info_list for LANGUAGES as languages %}
+                {% for language in languages %}
+                    <option value="{% translate_url language.code %}" {% if language.code == LANGUAGE_CODE %}selected{% endif %}>
+                        {{ language.name }}
+                    </option>
+                {% endfor %}
+                </select>
+            </div>
             {% if request.user.is_superuser %}
             <div class='input'><a id="admin" class="header__btn" href="{% url 'admin:index' %}">Admin</a></div>
             {% endif %}
@@ -119,6 +133,18 @@
     });
 </script>
 {% endcomment %}
+<script>
+    $(function(){
+      // bind change event to select
+      $('#language_select').on('change', function () {
+          var url = $(this).val(); // get selected value
+          if (url) { // require a URL
+              window.location = url; // redirect
+          }
+          return false;
+      });
+    });
+</script>
 {% endblock %}
 </body>
 </html>

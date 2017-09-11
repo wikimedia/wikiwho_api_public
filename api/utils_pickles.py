@@ -9,6 +9,7 @@ from os.path import getsize
 from six.moves import cPickle as pickle
 
 from django.conf import settings
+from django.utils.translation import get_language
 
 
 class OpenFileLock:
@@ -53,6 +54,11 @@ class OpenFileLock:
         self._fd.close()
 
 
+def get_pickle_folder(lang=None):
+    # return '{}_{}'.format(settings.PICKLE_FOLDER, get_language())
+    return getattr(settings, 'PICKLE_FOLDER_{}'.format(lang or get_language()).upper())
+
+
 def pickle_dump(obj, pickle_path):
     # try to lock file:
     # 1) if not already locked, then lock, write and then unlock
@@ -82,13 +88,13 @@ def pickle_load(pickle_path):
                 raise
 
 
-def pickle_find_path(page_id, pickle_folder=''):
-    pickle_path = "{}/{}.p".format(pickle_folder or settings.PICKLE_FOLDER, page_id)
+def pickle_load_only_id(page_id, lang=None):
+    pickle_path = "{}/{}.p".format(get_pickle_folder(lang), page_id)
     return pickle_load(pickle_path)
 
 
-def get_pickle_size(page_id):
-    pickle_path = "{}/{}.p".format(settings.PICKLE_FOLDER, page_id)
+def get_pickle_size(page_id, lang=None):
+    pickle_path = "{}/{}.p".format(get_pickle_folder(lang), page_id)
     try:
         size = getsize(pickle_path)  # [byte]
     except FileNotFoundError:
@@ -102,7 +108,7 @@ def find_pickles_randomly(pickle_folder_path=None, n=2, output_folder=None):
     from os import listdir
     from random import sample
     import json
-    pickle_folder_path = pickle_folder_path or "{}".format(settings.PICKLE_FOLDER)
+    pickle_folder_path = pickle_folder_path or get_pickle_folder()
     random_files = sample(listdir(pickle_folder_path), n)
     csv_data = [['article_title', 'last_rev_id', 'len_revs', 'pickle_size', 'page_id']]
     for file in random_files:

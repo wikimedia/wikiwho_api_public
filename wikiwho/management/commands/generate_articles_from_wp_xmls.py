@@ -19,11 +19,12 @@ from django.db.utils import OperationalError, DatabaseError
 from django.conf import settings
 
 from api.handler import WPHandler
+from api.utils_pickles import get_pickle_folder
 from base.utils import is_db_running
 from wikiwho.utils_db import wikiwho_to_csv
 
 
-def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables,
+def generate_articles(xml_file_path, page_ids, log_folder, pickle_folder, format_, save_tables,
                       check_exists=False, timeout=None, is_write_into_csv=False):
     xml_file_name = basename(xml_file_path)
     logger = logging.getLogger(xml_file_name[:-3].split('-')[-1])
@@ -53,7 +54,7 @@ def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables,
                 # if not page_ids or int(page.id) in page_ids:
                     # logger.error('processing {}'.format(page.id))
                     with WPHandler(page.title, page_id=page.id, save_tables=save_tables,
-                                   check_exists=check_exists, is_xml=True) as wp:
+                                   check_exists=check_exists, is_xml=True, pickle_folder=pickle_folder) as wp:
                         # print(wp.article_title)
                         wp.handle_from_xml_dump(page, timeout)
                         if is_write_into_csv:
@@ -101,6 +102,8 @@ class Command(BaseCommand):
                             help='Write content, current content and deleted content into csv. '
                                  'This must be called with check_exists flag. Default is False.',
                             default=False, required=False)
+        parser.add_argument('-lang', '--language', help="Wikipedia language. Default is 'en'.",
+                            required=False)
 
     def handle(self, *args, **options):
         # get path of xml dumps
@@ -130,8 +133,11 @@ class Command(BaseCommand):
         elif not json_folder:
             # if there is no json inputs, process all pages in each xml dump
             xml_files = [['{}/{}'.format(xml_folder, x), []] for x in listdir(xml_folder) if x.endswith('.7z')]
-        xml_files = {int(x[0].split('xml-p')[1].split('p')[0]): x for x in xml_files}
-        xml_files = [xml_files[x] for x in sorted(xml_files)]
+        try:
+            xml_files = {int(x[0].split('xml-p')[1].split('p')[0]): x for x in xml_files}
+            xml_files = [xml_files[x] for x in sorted(xml_files)]
+        except IndexError:
+            pass
 
         if not xml_files:
             raise CommandError('In given folder ({}), there are no 7z files.'.format(xml_folder))
@@ -186,13 +192,17 @@ class Command(BaseCommand):
             elif m.upper() == 'T':
                 save_tables.append('token')
 
+        # set pickle folder
+        lang = options['language'] or 'en'
+        pickle_folder = get_pickle_folder(lang)
+
         # Sequential process of xml dumps - test purposes
-        # for xml_file_path in xml_files:
-        #     generate_articles(xml_file_path, page_ids, log_folder, format_,
+        # for xml_file_path, page_ids in xml_files:
+        #     generate_articles(xml_file_path, page_ids, log_folder, pickle_folder, format_,
         #                       save_tables, check_exists, timeout, is_write_into_csv)
 
         # Concurrent process of xml dumps
-        print(max_workers, save_tables)
+        print(max_workers, save_tables, pickle_folder)
         # print(xml_files)
         with Executor(max_workers=max_workers) as executor:
             jobs = {}
@@ -201,7 +211,7 @@ class Command(BaseCommand):
 
             while files_left:
                 for xml_file_path, page_ids in files_iter:
-                    job = executor.submit(generate_articles, xml_file_path, page_ids, log_folder,
+                    job = executor.submit(generate_articles, xml_file_path, page_ids, log_folder, pickle_folder,
                                           format_, save_tables, check_exists, timeout, is_write_into_csv)
                     jobs[job] = basename(xml_file_path)
                     if len(jobs) == max_workers:  # limit # jobs with max_workers

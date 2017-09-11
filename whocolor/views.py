@@ -8,7 +8,10 @@ from rest_framework.response import Response
 from rest_framework.schemas import SchemaGenerator
 from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
 
+from django.utils.translation import get_language
+
 from api.tasks import process_article_user
+from api.messages import MESSAGES
 
 from .handler import WhoColorHandler, WhoColorException
 from .swagger_data import custom_data
@@ -26,7 +29,7 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
         # print(type(data), data)
         data['paths'] = custom_data['paths']
         data['info'] = custom_data['info']
-        data['basePath'] = custom_data['basePath']
+        data['basePath'] = '/{}{}'.format(get_language(), custom_data['basePath'])
         # data['externalDocs'] = custom_data['externalDocs']
         # import pprint
         # pp = pprint.PrettyPrinter(indent=4)
@@ -79,7 +82,7 @@ class WhoColorApiView(APIView):
             else:
                 status_ = status.HTTP_400_BAD_REQUEST
         except JSONDecodeError as e:
-            response['error'] = 'HTTP Response error from Wikipedia! Please try again later.'
+            response['error'] = MESSAGES['wp_http_error'][0]
             response['success'] = False
             status_ = status.HTTP_503_SERVICE_UNAVAILABLE
         response['rev_id'] = rev_id

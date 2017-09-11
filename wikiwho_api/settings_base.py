@@ -30,6 +30,7 @@ INSTALLED_APPS = [
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -91,21 +92,17 @@ LOGOUT_REDIRECT_URL = 'home'  # default is None
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
-
 TIME_ZONE = 'Europe/Berlin'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
-
 LANGUAGE_CODE = 'en'
-
-# LANGUAGES = (
-#     ('en', _('English')),
-#     ('de', _('German')),
-# )
+# from django.utils.translation import ugettext_lazy as _
+LANGUAGES = (
+    ('en', 'English'),
+    # ('de', _('German')),
+    ('eu', 'Basque'),  # Euskara
+)
 # LOCALE_PATHS = (
 #     os.path.join(BASE_DIR, 'locale').replace('\\', '/'),
 # )
@@ -265,7 +262,7 @@ ALL_CONTENT_THRESHOLD_LIMIT = 0
 ONLY_READ_ALLOWED = False
 
 # Wikipedia
-WP_SERVER = "en.wikipedia.org"
+WP_SERVER = "{}.wikipedia.org"  # changes according to language
 WP_API_URL = 'https://{}/w/api.php'.format(WP_SERVER)
 WP_REQUEST_TIMEOUT = 30  # [seconds]
 # WP_HEADERS_USER_AGENT = 'wikiwho-api'
@@ -285,7 +282,7 @@ SITE_ID = 1
 ADMINS = [('Kenan', 'kenan.erdogan@gesis.org'), ('WikiWho', 'wikiwho@gesis.org')]
 MANAGERS = [('Kenan', 'kenan.erdogan@gesis.org'), ('WikiWho', 'wikiwho@gesis.org')]
 
-CRISPY_TEMPLATE_PACK = 'bootstrap'  # default is bootstrap2: http://getbootstrap.com/2.3.2/getting-started.html
+CRISPY_TEMPLATE_PACK = 'bootstrap3'  # http://getbootstrap.com/docs/3.3/getting-started/
 
 # Testing
 TESTING = False  # in testing mode is False by default

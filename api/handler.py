@@ -11,14 +11,16 @@ from requests.exceptions import ConnectionError
 # from builtins import open
 from django.conf import settings
 from django.core.cache import cache
+from django.utils.translation import get_language, get_language_info
 
 from deployment.gunicorn_config import timeout as gunicorn_timeout
 from deployment.celery_config import user_task_soft_time_limit
 from wikiwho.utils_db import wikiwho_to_db
 from wikiwho.wikiwho_simple import Wikiwho
-from .utils import get_latest_revision_data, create_wp_session, Timeout, generate_rvcontinue
-from .utils_pickles import pickle_dump, pickle_load
+from .utils import get_latest_revision_data, create_wp_session, Timeout, generate_rvcontinue, get_wp_api_url
+from .utils_pickles import pickle_dump, pickle_load, get_pickle_folder
 from .models import RecursionErrorArticle
+from .messages import MESSAGES
 
 sys.setrecursionlimit(5000)  # default is 1000
 # http://neopythonic.blogspot.de/2009/04/tail-recursion-elimination.html
@@ -55,6 +57,7 @@ class WPHandler(object):
         self.namespace = 0
         self.cache_key = None
         self.log_error_into_db = log_error_into_db
+        self.language = get_language()
 
     def __enter__(self):
         # time1 = time()
@@ -64,7 +67,8 @@ class WPHandler(object):
         if self.page_id:
             self.page_id = int(self.page_id)
             if not 0 < self.page_id < 2147483647:
-                raise WPHandlerException('Please enter a valid page id ({}).'.format(self.page_id), '01')
+                raise WPHandlerException(MESSAGES['invalid_page_id'][0].format(self.page_id),
+                                         MESSAGES['invalid_page_id'][1])
 
         if self.is_xml:
             self.saved_article_title = self.article_title.replace(' ', '_')
@@ -77,10 +81,10 @@ class WPHandler(object):
             self.saved_article_title = d['article_db_title']
             self.namespace = d['namespace']
             if not settings.TESTING:
-                self.cache_key = 'page_{}'.format(self.page_id)
+                self.cache_key = 'page_{}_{}'.format(self.language, self.page_id)
 
         # logging.debug("trying to load pickle")
-        pickle_folder = self.pickle_folder or settings.PICKLE_FOLDER
+        pickle_folder = self.pickle_folder or get_pickle_folder()
         self.pickle_path = "{}/{}.p".format(pickle_folder, self.page_id)
         self.already_exists = os.path.exists(self.pickle_path)
         if not self.already_exists:
@@ -126,7 +130,8 @@ class WPHandler(object):
         if self.check_exists and self.already_exists:
             # no continue logic for xml processing
             # return
-            raise WPHandlerException('Article ({}) already exists.'.format(self.page_id), '20')
+            raise WPHandlerException(MESSAGES['already_exists'][0].format(self.page_id),
+                                     MESSAGES['already_exists'][1])
 
         if timeout:
             with Timeout(seconds=timeout,
@@ -147,17 +152,19 @@ class WPHandler(object):
         # time1 = time()
         # check if article exists
         if self.latest_revision_id is None:
-            raise WPHandlerException('The article ({}) you are trying to request does not exist.'.
-                                     format(self.article_title or self.page_id), '00')
+            raise WPHandlerException(MESSAGES['article_not_in_wp'][0].format(self.article_title or self.page_id,
+                                                                             get_language_info(self.language)['name'].lower()),
+                                     MESSAGES['article_not_in_wp'][1])
         elif self.namespace != 0:
-            raise WPHandlerException('Only articles! Namespace {} is not accepted.'.format(self.namespace), '02')
+            raise WPHandlerException(MESSAGES['invalid_namespace'][0].format(self.namespace),
+                                     MESSAGES['invalid_namespace'][1])
         self.revision_ids = revision_ids or [self.latest_revision_id]
 
         if settings.ONLY_READ_ALLOWED:
             if self.already_exists:
                 return
             else:
-                raise WPHandlerException('Only read is allowed for now.', '21')
+                raise WPHandlerException(*MESSAGES['only_read_allowed'])
 
         # holds the last revision id which is saved. 0 for new article
         rvcontinue = self.saved_rvcontinue
@@ -174,11 +181,10 @@ class WPHandler(object):
                 if cache.get(self.cache_key, '0') != '1':
                     cache.set(self.cache_key, '1', timeout or gunicorn_timeout)
                 else:
-                    raise WPHandlerException('Revision {} of the article ({}) is under process now. '
-                                             'Content of the requested revision will be available soon '
-                                             'Try to request again in couple of minutes. (Max {} seconds).'.
-                                             format(self.revision_ids[-1], self.article_title or self.page_id,
-                                                    user_task_soft_time_limit), '03')
+                    raise WPHandlerException(MESSAGES['revision_under_process'][0].format(self.revision_ids[-1],
+                                                                                          self.article_title or self.page_id,
+                                                                                          user_task_soft_time_limit),
+                                             MESSAGES['revision_under_process'][1])
 
         # TODO: do we need this check in while anymore?
         while self.revision_ids[-1] >= int(rvcontinue.split('|')[-1]):
@@ -192,7 +198,7 @@ class WPHandler(object):
             if rvcontinue != '0' and rvcontinue != '1':
                 params['rvcontinue'] = rvcontinue
             try:
-                result = session.get(url=settings.WP_API_URL, headers=settings.WP_HEADERS,
+                result = session.get(url=get_wp_api_url(), headers=settings.WP_HEADERS,
                                      params=params, timeout=settings.WP_REQUEST_TIMEOUT).json()
             except ConnectionError as e:
                 try:
@@ -202,26 +208,28 @@ class WPHandler(object):
                 if isinstance(sub_error, TimeoutError):
                     raise TimeoutError
                 if is_api_call:
-                    raise WPHandlerException('HTTP Response error from Wikipedia! Please try again later.', '10')
+                    raise WPHandlerException(*MESSAGES['wp_http_error'])
                 else:
                     # if not api query, raise the original exception
                     raise e
             except Exception as e:
                 if is_api_call:
-                    raise WPHandlerException('HTTP Response error from Wikipedia! Please try again later.', '10')
+                    raise WPHandlerException(*MESSAGES['wp_http_error'])
                 else:
                     # if not api query, raise the original exception
                     raise e
 
             if 'error' in result:
-                raise WPHandlerException('Wikipedia API returned the following error:' + str(result['error']), '11')
+                raise WPHandlerException(MESSAGES['wp_error'][0] + str(result['error']),
+                                         MESSAGES['wp_error'][1])
             # if 'warnings' in result:
-            #   raise WPHandlerException('Wikipedia API returned the following warning:" + result['warnings']))
+            #     raise WPHandlerException(messages['wp_warning'][0] + str(result['warnings']), messages['wp_warning'][1])
             if 'query' in result:
                 pages = result['query']['pages']
-                if '-1' in pages:
-                    raise WPHandlerException('The article ({}) you are trying to request does not exist!'.
-                                             format(self.article_title or self.page_id), '00')
+                if "-1" in pages:
+                    raise WPHandlerException(MESSAGES['article_not_in_wp'][0].format(self.article_title or self.page_id,
+                                                                                     get_language_info(self.language)['name'].lower()),
+                                             MESSAGES['article_not_in_wp'][1])
                 # elif not pages.get('revision'):
                 #     raise WPHandlerException(message="End revision ID does not exist!")
                 # pass first item in pages dict

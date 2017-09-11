@@ -13,7 +13,12 @@ from datetime import datetime, timedelta
 from copy import deepcopy
 
 from django.conf import settings
+from django.utils.translation import get_language
 from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
+
+
+def get_wp_api_url(lang=None):
+    return settings.WP_API_URL.format(lang or get_language())
 
 
 def get_page_data_from_wp_api(params):
@@ -53,7 +58,7 @@ def get_page_data_from_wp_api(params):
             params['rvcontinue'] = rvcontinue
 
         # IIRC the params flag means the params you see tacked onto the end of your url, while data is the POST data.
-        result = session.get(url=settings.WP_API_URL, headers=settings.WP_HEADERS,
+        result = session.get(url=get_wp_api_url(), headers=settings.WP_HEADERS,
                              params=params, timeout=settings.WP_REQUEST_TIMEOUT)
         result = result.json()
 
@@ -87,7 +92,7 @@ def get_latest_revision_data(page_id=None, article_title=None, revision_id=None)
     params.update({'action': "query", 'prop': 'info', 'format': 'json'})
     # params = {'action': "query", 'titles': article_title, 'format': 'json'}
     # make get request
-    resp_ = requests.get(settings.WP_API_URL, params=params, headers=settings.WP_HEADERS)
+    resp_ = requests.get(get_wp_api_url(), params=params, headers=settings.WP_HEADERS)
     response = resp_.json()  # convert response into dict
     pages = response["query"].get('pages')
     is_pages = False
@@ -114,7 +119,7 @@ def get_revision_timestamp(revision_ids):
               'rvprop': 'timestamp|ids', 'revids': '|'.join(revision_ids)}
     # make get request
     try:
-        resp_ = requests.get(settings.WP_API_URL, params, headers=settings.WP_HEADERS,
+        resp_ = requests.get(get_wp_api_url(), params, headers=settings.WP_HEADERS,
                              timeout=settings.WP_REQUEST_TIMEOUT)
     except ReadTimeout:
         return {'error': 'Bad revision ids.'}
@@ -128,19 +133,20 @@ def get_revision_timestamp(revision_ids):
     return [timestamps[rev_id] for rev_id in revision_ids]
 
 
-def create_wp_session():
+def create_wp_session(lang=None):
     # create session
     session = requests.session()
     session.auth = (settings.WP_USER, settings.WP_PASSWORD)
     session.headers.update(settings.WP_HEADERS)
     # get token to log in
-    r1 = session.post(settings.WP_API_URL, data={'action': 'query', 'meta': 'tokens',
-                                                 'type': 'login', 'format': 'json'})
+    wp_api_url = get_wp_api_url(lang)
+    r1 = session.post(wp_api_url, data={'action': 'query', 'meta': 'tokens',
+                                        'type': 'login', 'format': 'json'})
     token = r1.json()["query"]["tokens"]["logintoken"]
     # token = urllib.parse.quote(token)
     # log in
-    r2 = session.post(settings.WP_API_URL, data={'action': 'login', 'format': 'json', 'lgname': settings.WP_USER,
-                                                 'lgpassword': settings.WP_PASSWORD, 'lgtoken': token})
+    r2 = session.post(wp_api_url, data={'action': 'login', 'format': 'json', 'lgname': settings.WP_USER,
+                                        'lgpassword': settings.WP_PASSWORD, 'lgtoken': token})
     return session
 
 
@@ -241,7 +247,7 @@ def get_article_xml(article_name):
             params['rvcontinue'] = rvcontinue
             print(rvcontinue)
         try:
-            result = session.get(url=settings.WP_API_URL, headers=headers, params=params)
+            result = session.get(url=get_wp_api_url(), headers=headers, params=params)
         except:
             print("HTTP Response error! Try again later!")
         p = etree.XMLParser(huge_tree=True, encoding='utf-8')

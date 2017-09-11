@@ -10,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap -->
-    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" media="screen">
+    <link href="{% static 'bootstrap-3.3.7-dist/css/bootstrap.min.css' %}" rel="stylesheet">
     {% block style %}
         <style>
             body {
@@ -24,7 +24,7 @@
     {% endblock style %}
     {% block extra_style %}
     {% endblock extra_style %}
-    <link href="{% static 'bootstrap/css/bootstrap-responsive.min.css' %}" rel="stylesheet">
+{#    <link href="{% static 'bootstrap-3.3.7-dist/css/bootstrap-theme.min.css' %}" rel="stylesheet">#}
     <link rel="icon" type="image/png" href="{% static 'images/favicon-32x32.png' %}" sizes="32x32" />
     <link rel="icon" type="image/png" href="{% static 'images/favicon-16x16.png' %}" sizes="16x16" />
 
@@ -36,53 +36,59 @@
 </head>
 
 <body>
-    <div class="navbar navbar-inverse navbar-fixed-top">
-        <div class="navbar-inner">
-            <div class="container">
-                <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-{#                <a class="brand" href="{% url 'home' %}">wikiwho</a>#}
-                <a id="logo" class="brand" href="{% url 'home' %}">
-                    <img alt="wikiwho" height="60" width="60" src="{% static 'images/logo_white.png' %}" />
-                </a>
-                <div class="nav-collapse collapse">
-{#                    <ul class="nav pull-left">#}
-{#                        <li><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
-{#                    </ul>#}
-                    <ul class="nav pull-right">
-                        {% if request.user.is_superuser %}
-                        <li><a href="{% url 'admin:index' %}">Admin</a></li>
-                        {% endif %}
-                        {% ww_api_version as ww_version_url %}
-                        {% wc_api_version as wc_version_url %}
-{#                        <li class="active"><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
-                        <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>
-                        <li><a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a></li>
-                        <li><a href="{% url 'contact' %}">Contact</a></li>
-                        {% if request.user.is_authenticated %}
-{#                        <li>Hello {{ request.user }}</li>#}
-                        <li><a href="{% url 'account:detail' %}">My Account</a></li>
-                        <li><a href="{% url 'account:logout' %}">Logout</a></li>
-                        {% else %}
-                        <li><a href="{% url 'account:login' %}">Login</a></li>
-                        <li><a href="{% url 'account:register' %}">Register</a></li>
-                        {% endif %}
-                    </ul>
-                </div>
-            </div>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="{% url 'home' %}">
+            <img alt="WikiWho" width="60" src="{% static 'images/logo_white.png' %}">
+          </a>
         </div>
-    </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav navbar-right">
+            {% if request.user.is_superuser %}
+            <li><a href="{% url 'admin:index' %}">Admin</a></li>
+            {% endif %}
+            {% ww_api_version as ww_version_url %}
+            {% wc_api_version as wc_version_url %}
+    {#                        <li class="active"><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
+            <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>
+            <li><a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a></li>
+            <li><a href="{% url 'contact' %}">Contact</a></li>
+            {% if request.user.is_authenticated %}
+    {#                        <li>Hello {{ request.user }}</li>#}
+            <li><a href="{% url 'account:detail' %}">My Account</a></li>
+            <li><a href="{% url 'account:logout' %}">Logout</a></li>
+            {% else %}
+            <li><a href="{% url 'account:login' %}">Login</a></li>
+            <li><a href="{% url 'account:register' %}">Register</a></li>
+            {% endif %}
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Language <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                {% load i18n %}
+                {% load url_translation %}
+                {% get_current_language as LANGUAGE_CODE %}
+                {% get_available_languages as LANGUAGES %}
+                {% get_language_info_list for LANGUAGES as languages %}
+                {% for language in languages %}
+                    <li><a href="{% translate_url language.code %}">{{ language.name }}</a></li>
+                {% endfor %}
+              </ul>
+            </li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
 
     <div class="container">
+        <div class="page-header">
         {% block title %}
-            <h1>Welcome to the wikiwho server</h1>
+            <h1>Welcome to the WikiWho server</h1>
         {% endblock title %}
-
+        </div>
+        <div class="row">
         {% block content %}
-            <div>
+            <div class="col-md-12">
             <p>
                 <a href="https://github.com/wikiwho/WikiWho" target="_blank">WikiWho algorithm</a>
                 <br>
@@ -99,13 +105,14 @@
             {% endcomment %}
             </div>
         {% endblock content %}
+        </div>
 
     </div> <!-- /container -->
 
     {% block scripts %}
 {#    <script src="http://code.jquery.com/jquery.js"></script>#}
-    <script src="{% static 'scripts/jquery-3.1.1.min.js' %}"></script>
-    <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'scripts/jquery-3.2.1.min.js' %}"></script>
+    <script src="{% static 'bootstrap-3.3.7-dist/js/bootstrap.min.js' %}"></script>
     {% endblock scripts %}
 
     {% block extra_js %}

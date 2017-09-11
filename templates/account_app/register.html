@@ -10,6 +10,7 @@
 {% endblock %}
 
 {% block content %}
+    <div class="col-md-6">
     {% if user_form and account_form %}
         <form action="" method="post">
             {% csrf_token %}
@@ -25,4 +26,5 @@
             Please first <a href="{% url 'account:logout' %}?next={{ request.path }}">logout</a> to create a new account.
         </div>
     {% endif %}
+    </div>
 {% endblock %}

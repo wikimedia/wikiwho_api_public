@@ -16,6 +16,7 @@ from rest_framework_swagger.renderers import OpenAPIRenderer as OpenAPIRendererB
 from django.conf import settings
 from django.views.generic.base import RedirectView
 from django.urls import reverse
+from django.utils.translation import get_language
 # from django.core.signals import request_started, request_finished
 # from django.http import HttpResponse
 
@@ -27,6 +28,7 @@ from .handler import WPHandler, WPHandlerException
 from .swagger_data import custom_data, allowed_params, query_params, version_url
 from .utils import get_revision_timestamp, Timeout
 from .tasks import process_article_user
+from .messages import MESSAGES
 
 
 class OpenAPIRenderer(OpenAPIRendererBase):
@@ -41,7 +43,7 @@ class OpenAPIRenderer(OpenAPIRendererBase):
         # print(type(data), data)
         data['paths'] = custom_data['paths']
         data['info'] = custom_data['info']
-        data['basePath'] = custom_data['basePath']
+        data['basePath'] = '/{}{}'.format(get_language(), custom_data['basePath'])
         # data['externalDocs'] = custom_data['externalDocs']
         # import pprint
         # pp = pprint.PrettyPrinter(indent=4)
@@ -284,7 +286,7 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
                 else:
                     status_ = status.HTTP_400_BAD_REQUEST
         except JSONDecodeError as e:
-            response = {'Error': 'HTTP Response error from Wikipedia! Please try again later.'}
+            response = {'Error': MESSAGES['wp_http_error'][0]}
             status_ = status.HTTP_503_SERVICE_UNAVAILABLE
         else:
             if all_content:

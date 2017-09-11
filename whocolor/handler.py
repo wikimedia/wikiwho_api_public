@@ -8,8 +8,10 @@ import os
 import hashlib
 
 from django.conf import settings
+from django.utils.translation import get_language, get_language_info
 
-from api.utils_pickles import pickle_load
+from api.utils_pickles import pickle_load, get_pickle_folder
+from api.messages import MESSAGES
 from WhoColor.parser import WikiMarkupParser
 from .utils import WikipediaRevText, WikipediaUser
 
@@ -39,9 +41,10 @@ class WhoColorHandler(object):
         if self.page_id is not None:
             self.page_id = int(self.page_id)
             if not 0 < self.page_id < 2147483647:
-                raise WhoColorException('Please enter a valid page id ({}).'.format(self.page_id), '01')
+                raise WhoColorException(MESSAGES['invalid_page_id'][0].format(self.page_id),
+                                        MESSAGES['invalid_page_id'][1])
 
-        self.pickle_folder = self.pickle_folder or settings.PICKLE_FOLDER
+        self.pickle_folder = self.pickle_folder or get_pickle_folder()
         return self
 
     def handle(self):
@@ -49,18 +52,21 @@ class WhoColorHandler(object):
         wp_rev_text_obj = WikipediaRevText(self.page_title, self.page_id, self.rev_id)
         data = wp_rev_text_obj.get_rev_wiki_text()
         if data is None:
-            raise WhoColorException('The revision ({}) you are trying to request does not exist!'.
-                                    format(self.rev_id), '03')
+            raise WhoColorException(MESSAGES['revision_not_in_wp'][0].format(self.rev_id),
+                                    MESSAGES['revision_not_in_wp'][1])
         if 'error' in data:
-            raise WhoColorException('Wikipedia API returned the following error:' + str(data['error']), '11')
+            raise WhoColorException(MESSAGES['wp_error'][0] + str(data['error']),
+                                    MESSAGES['wp_error'][1])
         if "-1" in data:
-            raise WhoColorException('The article ({}) you are trying to request does not exist!'.
-                                    format(self.page_title or self.page_id), '00')
+            raise WhoColorException(MESSAGES['article_not_in_wp'][0].format(self.page_title or self.page_id,
+                                                                            get_language_info(get_language())['name'].lower()),
+                                    MESSAGES['article_not_in_wp'][1])
         self.page_id = data['page_id']
         self.rev_id = data['rev_id']
         wiki_text = data['rev_text']
         if data['namespace'] != 0:
-            raise WhoColorException('Only articles! Namespace {} is not accepted.'.format(data['namespace']), '02')
+            raise WhoColorException(MESSAGES['invalid_namespace'][0].format(data['namespace']),
+                                    MESSAGES['invalid_namespace'][1])
 
         # get authorship data directly from pickles
         pickle_path = "{}/{}.p".format(self.pickle_folder, self.page_id)
@@ -70,7 +76,7 @@ class WhoColorHandler(object):
             if not settings.ONLY_READ_ALLOWED:
                 return None, None, None
             else:
-                raise WhoColorException('Only read is allowed for now.', '21')
+                raise WhoColorException(*MESSAGES['only_read_allowed'])
         else:
             wikiwho = pickle_load(pickle_path)
             if self.rev_id not in wikiwho.revisions:
@@ -80,7 +86,7 @@ class WhoColorHandler(object):
                 if not settings.ONLY_READ_ALLOWED:
                     return None, None, None
                 else:
-                    raise WhoColorException('Only read is allowed for now.', '21')
+                    raise WhoColorException(*MESSAGES['only_read_allowed'])
             whocolor_data = wikiwho.get_whocolor_data(self.rev_id)
 
             # get editor names from wp api

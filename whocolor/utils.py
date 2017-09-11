@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
-from api.utils import create_wp_session
+from api.utils import create_wp_session, get_wp_api_url
 
 from WhoColor.utils import WikipediaRevText as WikipediaRevTextBase, WikipediaUser as WikipediaUserBase
 
@@ -10,7 +10,7 @@ class WikipediaRevText(WikipediaRevTextBase):
     def _prepare_request(self, wiki_text=None):
         data = super(WikipediaRevText, self)._prepare_request(wiki_text)
         data['headers'] = settings.WP_HEADERS
-        data['url'] = settings.WP_API_URL
+        data['url'] = get_wp_api_url()
         data['timeout'] = settings.WP_REQUEST_TIMEOUT
         return data
 
@@ -20,12 +20,12 @@ class WikipediaUser(WikipediaUserBase):
     def _prepare_request(self):
         data = super(WikipediaUser, self)._prepare_request()
         data['headers'] = settings.WP_HEADERS
-        data['url'] = settings.WP_API_URL
+        data['url'] = get_wp_api_url('en')
         data['timeout'] = settings.WP_REQUEST_TIMEOUT
         return data
 
     def _make_request(self, data):
-        session = create_wp_session()
+        session = create_wp_session('en')
         response = session.post(**data)
         response = response.json()
         return response

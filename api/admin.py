@@ -1,9 +1,9 @@
 from os.path import exists
 
 from django.contrib import admin
-from django.conf import settings
 
 from .models import LongFailedArticle, RecursionErrorArticle
+from .utils_pickles import get_pickle_folder
 
 
 class LongFailedArticleAdmin(admin.ModelAdmin):
@@ -28,7 +28,7 @@ class LongFailedArticleAdmin(admin.ModelAdmin):
     revisions_.allow_tags = True
 
     def pickle_exists(self, obj):
-        pickle_path = "{}/{}.p".format(settings.PICKLE_FOLDER, obj.id)
+        pickle_path = "{}/{}.p".format(get_pickle_folder(), obj.id)
         return exists(pickle_path)
 
 

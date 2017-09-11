@@ -14,6 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf.urls import url, include
+from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns, static
@@ -28,6 +29,11 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^admin/clear_cache', clear_cache, name='clear_cache'),
     url(r'^admin/clear_sessions', clear_sessions, name='clear_sessions'),
+    url(r'^sitemap\.xml$', sitemap, {'sitemaps': {'api': ApiStaticViewSitemap, 'base': BaseStaticViewSitemap}},
+        name='django.contrib.sitemaps.views.sitemap')
+]
+
+urlpatterns += i18n_patterns(
     url(r'^api/(?P<version>(v1.0.0-beta|v1.0.0))/', include('api.urls', namespace='api')),
     url(r'^api/', ApiRedirectView.as_view()),
     url(r'^whocolor/(?P<version>(v1.0.0-beta|v1.0.0))/', include('whocolor.urls', namespace='whocolor')),
@@ -37,8 +43,8 @@ urlpatterns = [
     url(r'^contact/$', TemplateView.as_view(template_name='contact/contact.html'), name='contact'),
     # url(r'^docs/', include('rest_framework_docs.urls')),
     url(r'^$', TemplateView.as_view(template_name='home/home.html'), name='home'),
-    url(r'^sitemap\.xml$', sitemap, {'sitemaps': {'api': ApiStaticViewSitemap, 'base': BaseStaticViewSitemap}},
-        name='django.contrib.sitemaps.views.sitemap')]
+    # prefix_default_language=False
+)
 
 
 if settings.DEBUG:

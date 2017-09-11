@@ -1,11 +1,11 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import F
-from django.conf import settings
 # from django.utils.functional import cached_property
 
 from base.models import BaseModel
 
+from api.utils_pickles import get_pickle_folder
 from .utils_db import tokens_custom
 
 
@@ -21,7 +21,7 @@ class Article(BaseModel):
 
     @property
     def pickle_file(self):
-        return '{}/{}.p'.format(settings.PICKLE_FOLDER, self.id)
+        return '{}/{}.p'.format(get_pickle_folder(), self.id)
 
     @property
     def wikipedia_url(self):
