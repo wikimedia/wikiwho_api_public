@@ -262,7 +262,7 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
             revision_id = revision_ids[0] if revision_ids else None
             if settings.DEBUG:
                 # to run locally with Timeout: runserver --noreload --nothreading
-                with WPHandler(article_title, page_id=page_id, revision_id=revision_id) as wp:
+                with WPHandler(article_title, page_id=page_id, revision_id=revision_id, language=language) as wp:
                     self.page_id = wp.page_id
                     wp.handle(revision_ids, is_api_call=True)
             else:
