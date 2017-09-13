@@ -27,16 +27,20 @@ class WikipediaRevText(WikipediaRevTextBase):
 
 
 class WikipediaUser(WikipediaUserBase):
+    def __init__(self, editor_ids, language=None):
+        # self.editor_ids = set(map(str, editor_ids))  # set of ids
+        self.editor_ids = editor_ids  # set of ids
+        self.language = language
 
     def _prepare_request(self):
         data = super(WikipediaUser, self)._prepare_request()
         data['headers'] = settings.WP_HEADERS
-        data['url'] = get_wp_api_url('en')
+        data['url'] = get_wp_api_url(self.language)
         data['timeout'] = settings.WP_REQUEST_TIMEOUT
         return data
 
     def _make_request(self, data):
-        session = create_wp_session('en')
+        session = create_wp_session(self.language)
         response = session.post(**data)
         response = response.json()
         return response

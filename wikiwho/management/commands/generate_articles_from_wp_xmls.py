@@ -193,8 +193,8 @@ class Command(BaseCommand):
                 save_tables.append('token')
 
         # set pickle folder
-        lang = options['language'] or 'en'
-        pickle_folder = get_pickle_folder(lang)
+        language = options['language'] or 'en'
+        pickle_folder = get_pickle_folder(language)
 
         # Sequential process of xml dumps - test purposes
         # for xml_file_path, page_ids in xml_files:

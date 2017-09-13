@@ -54,9 +54,9 @@ class OpenFileLock:
         self._fd.close()
 
 
-def get_pickle_folder(lang=None):
+def get_pickle_folder(language=None):
     # return '{}_{}'.format(settings.PICKLE_FOLDER, get_language())
-    return getattr(settings, 'PICKLE_FOLDER_{}'.format(lang or get_language()).upper())
+    return getattr(settings, 'PICKLE_FOLDER_{}'.format(language or get_language()).upper())
 
 
 def pickle_dump(obj, pickle_path):
@@ -88,13 +88,13 @@ def pickle_load(pickle_path):
                 raise
 
 
-def pickle_load_only_id(page_id, lang=None):
-    pickle_path = "{}/{}.p".format(get_pickle_folder(lang), page_id)
+def pickle_load_only_id(page_id, language=None):
+    pickle_path = "{}/{}.p".format(get_pickle_folder(language), page_id)
     return pickle_load(pickle_path)
 
 
-def get_pickle_size(page_id, lang=None):
-    pickle_path = "{}/{}.p".format(get_pickle_folder(lang), page_id)
+def get_pickle_size(page_id, language=None):
+    pickle_path = "{}/{}.p".format(get_pickle_folder(language), page_id)
     try:
         size = getsize(pickle_path)  # [byte]
     except FileNotFoundError:

@@ -17,8 +17,8 @@ from django.utils.translation import get_language
 from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
 
 
-def get_wp_api_url(lang=None):
-    return settings.WP_API_URL.format(lang or get_language())
+def get_wp_api_url(language=None):
+    return settings.WP_API_URL.format(language or get_language())
 
 
 def get_page_data_from_wp_api(params, language='en'):
@@ -133,13 +133,13 @@ def get_revision_timestamp(revision_ids, language):
     return [timestamps[rev_id] for rev_id in revision_ids]
 
 
-def create_wp_session(lang=None):
+def create_wp_session(language=None):
     # create session
     session = requests.session()
     session.auth = (settings.WP_USER, settings.WP_PASSWORD)
     session.headers.update(settings.WP_HEADERS)
     # get token to log in
-    wp_api_url = get_wp_api_url(lang)
+    wp_api_url = get_wp_api_url(language)
     r1 = session.post(wp_api_url, data={'action': 'query', 'meta': 'tokens',
                                         'type': 'login', 'format': 'json'})
     token = r1.json()["query"]["tokens"]["logintoken"]
