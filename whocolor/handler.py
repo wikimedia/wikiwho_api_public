@@ -26,11 +26,13 @@ class WhoColorException(Exception):
 
 
 class WhoColorHandler(object):
-    def __init__(self, page_id=None, page_title=None, revision_id=None, pickle_folder='', *args, **kwargs):
+    def __init__(self, page_id=None, page_title=None, revision_id=None, pickle_folder='',
+                 language=None, *args, **kwargs):
         self.page_id = page_id
         self.page_title = page_title
         self.rev_id = revision_id
         self.pickle_folder = pickle_folder
+        self.language = language or get_language()
         # self.wiki_text = ''
         # self.tokens = []
         # self.revisions = []
@@ -44,12 +46,12 @@ class WhoColorHandler(object):
                 raise WhoColorException(MESSAGES['invalid_page_id'][0].format(self.page_id),
                                         MESSAGES['invalid_page_id'][1])
 
-        self.pickle_folder = self.pickle_folder or get_pickle_folder()
+        self.pickle_folder = self.pickle_folder or get_pickle_folder(self.language)
         return self
 
     def handle(self):
         # get rev wiki text from wp
-        wp_rev_text_obj = WikipediaRevText(self.page_title, self.page_id, self.rev_id)
+        wp_rev_text_obj = WikipediaRevText(self.page_title, self.page_id, self.rev_id, self.language)
         data = wp_rev_text_obj.get_rev_wiki_text()
         if data is None:
             raise WhoColorException(MESSAGES['revision_not_in_wp'][0].format(self.rev_id),

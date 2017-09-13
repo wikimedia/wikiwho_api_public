@@ -7,10 +7,10 @@ from WhoColor.utils import WikipediaRevText as WikipediaRevTextBase, WikipediaUs
 
 class WikipediaRevText(WikipediaRevTextBase):
 
-    def _prepare_request(self, wiki_text=None):
+    def _prepare_request(self, wiki_text=None, language=None):
         data = super(WikipediaRevText, self)._prepare_request(wiki_text)
         data['headers'] = settings.WP_HEADERS
-        data['url'] = get_wp_api_url()
+        data['url'] = get_wp_api_url(language)
         data['timeout'] = settings.WP_REQUEST_TIMEOUT
         return data
 

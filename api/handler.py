@@ -85,7 +85,7 @@ class WPHandler(object):
                 self.cache_key = 'page_{}_{}'.format(self.language, self.page_id)
 
         # logging.debug("trying to load pickle")
-        pickle_folder = self.pickle_folder or get_pickle_folder()
+        pickle_folder = self.pickle_folder or get_pickle_folder(self.language)
         self.pickle_path = "{}/{}.p".format(pickle_folder, self.page_id)
         self.already_exists = os.path.exists(self.pickle_path)
         if not self.already_exists:
@@ -118,12 +118,12 @@ class WPHandler(object):
             # if all revisions were detected as spam,
             # wikiwho object holds no information (it is in initial status, rvcontinue=0)
             # or if last processed revision is a spam
-            self.wikiwho.rvcontinue, last_spam_ts = generate_rvcontinue(self.wikiwho.spam_ids[-1])
+            self.wikiwho.rvcontinue, last_spam_ts = generate_rvcontinue(self.language, self.wikiwho.spam_ids[-1])
             if rev.timestamp != 0 and (rev.timestamp > last_spam_ts or last_spam_ts == '0'):
                 # rev id comparison was wrong
-                self.wikiwho.rvcontinue = generate_rvcontinue(rev.id, rev.timestamp)
+                self.wikiwho.rvcontinue = generate_rvcontinue(self.language, rev.id, rev.timestamp)
         else:
-            self.wikiwho.rvcontinue = generate_rvcontinue(rev.id, rev.timestamp)
+            self.wikiwho.rvcontinue = generate_rvcontinue(self.language, rev.id, rev.timestamp)
 
     def handle_from_xml_dump(self, page, timeout=None):
         # this handle is used only to fill the db so if already exists, skip this article
@@ -199,7 +199,7 @@ class WPHandler(object):
             if rvcontinue != '0' and rvcontinue != '1':
                 params['rvcontinue'] = rvcontinue
             try:
-                result = session.get(url=get_wp_api_url(), headers=settings.WP_HEADERS,
+                result = session.get(url=get_wp_api_url(self.language), headers=settings.WP_HEADERS,
                                      params=params, timeout=settings.WP_REQUEST_TIMEOUT).json()
             except ConnectionError as e:
                 try:

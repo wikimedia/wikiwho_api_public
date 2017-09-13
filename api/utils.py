@@ -21,7 +21,7 @@ def get_wp_api_url(lang=None):
     return settings.WP_API_URL.format(lang or get_language())
 
 
-def get_page_data_from_wp_api(params):
+def get_page_data_from_wp_api(params, language='en'):
     """
     Example params:
     params = {'pageids': page_id, 'action': 'query', 'prop': 'revisions',
@@ -58,7 +58,7 @@ def get_page_data_from_wp_api(params):
             params['rvcontinue'] = rvcontinue
 
         # IIRC the params flag means the params you see tacked onto the end of your url, while data is the POST data.
-        result = session.get(url=get_wp_api_url(), headers=settings.WP_HEADERS,
+        result = session.get(url=get_wp_api_url(language), headers=settings.WP_HEADERS,
                              params=params, timeout=settings.WP_REQUEST_TIMEOUT)
         result = result.json()
 
@@ -113,13 +113,13 @@ def get_latest_revision_data(language, page_id=None, article_title=None, revisio
             'namespace': page["ns"]}
 
 
-def get_revision_timestamp(revision_ids):
+def get_revision_timestamp(revision_ids, language):
     # set up request for Wikipedia API.
     params = {'action': "query", 'prop': 'revisions', 'format': 'json',
               'rvprop': 'timestamp|ids', 'revids': '|'.join(revision_ids)}
     # make get request
     try:
-        resp_ = requests.get(get_wp_api_url(), params, headers=settings.WP_HEADERS,
+        resp_ = requests.get(get_wp_api_url(language), params, headers=settings.WP_HEADERS,
                              timeout=settings.WP_REQUEST_TIMEOUT)
     except ReadTimeout:
         return {'error': 'Bad revision ids.'}
@@ -166,7 +166,7 @@ class Timeout:
         signal.alarm(0)
 
 
-def generate_rvcontinue(rev_id, rev_ts=None):
+def generate_rvcontinue(language, rev_id, rev_ts=None):
     """
     :param rev_id: Revision id, must be integer. 
     :param rev_ts: revision timestamp, must be string representation.
@@ -176,7 +176,7 @@ def generate_rvcontinue(rev_id, rev_ts=None):
     if rev_ts is None:
         return_ts = True
         try:
-            rev_ts_list = get_revision_timestamp([str(rev_id)])
+            rev_ts_list = get_revision_timestamp([str(rev_id)], language)
         except Exception:
             return '0', '0'
         if 'error' in rev_ts_list:

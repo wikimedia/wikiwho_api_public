@@ -318,7 +318,7 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
 
     # @detail_route(renderer_classes=(StaticHTMLRenderer,))
     def get_range_rev_content(self, request, version, article_title, start_rev_id, end_rev_id):
-        timestamps = get_revision_timestamp([start_rev_id, end_rev_id])
+        timestamps = get_revision_timestamp([start_rev_id, end_rev_id], get_language())
         if 'error' in timestamps:
             return Response({'Error': timestamps['error']},
                             status=status.HTTP_400_BAD_REQUEST)

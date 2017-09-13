@@ -28,7 +28,7 @@ class LongFailedArticleAdmin(admin.ModelAdmin):
     revisions_.allow_tags = True
 
     def pickle_exists(self, obj):
-        pickle_path = "{}/{}.p".format(get_pickle_folder(), obj.id)
+        pickle_path = "{}/{}.p".format(get_pickle_folder(obj.language), obj.id)
         return exists(pickle_path)
 
 
