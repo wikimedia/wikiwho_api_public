@@ -291,7 +291,7 @@ class WPHandler(object):
             pickle_dump(self.wikiwho, self.pickle_path)
             if self.save_tables:
                 wikiwho_to_db(self.wikiwho, save_tables=self.save_tables)
-            if not settings.TESTING:
+            if not settings.TESTING and not self.is_xml:
                 cache.delete(self.cache_key)
         # return True
         # time2 = time()
