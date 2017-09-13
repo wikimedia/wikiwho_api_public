@@ -58,7 +58,8 @@ class WhoColorApiView(APIView):
             with WhoColorHandler(page_title=page_title, revision_id=rev_id) as wc_handler:
                 extended_html, present_editors, whocolor_data = wc_handler.handle()
                 if extended_html is None and present_editors is None:
-                    process_article_user.delay(wc_handler.page_title, wc_handler.page_id, wc_handler.rev_id)
+                    process_article_user.delay(get_language(), wc_handler.page_title,
+                                               wc_handler.page_id, wc_handler.rev_id)
                     response['info'] = 'Requested data is not currently available in WikiWho database. ' \
                                        'It will be available soon.'
                     response['success'] = False

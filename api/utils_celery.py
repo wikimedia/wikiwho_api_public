@@ -39,11 +39,11 @@ def get_inactive_task_pages():
 
 
 def process_changed_articles():
-    for page_title in iter_changed_pages():
+    for language, page_title in iter_changed_pages():
         # print(len(get_inactive_task_pages()))
         if page_title not in get_inactive_task_pages():
             # if already not registered to celery
-            process_article.delay(page_title)
+            process_article.delay(language, page_title)
             # FIXME event data doesnt contain pageid! decide a limit + settings.PICKLE_BIG_SIZE_LIMIT
             # if get_pickle_size(page_id) > 446197:
             #     process_big_sized_article.delay(page_title)

@@ -38,7 +38,8 @@ class WPHandlerException(Exception):
 
 class WPHandler(object):
     def __init__(self, article_title, page_id=None, pickle_folder='', save_tables=(),
-                 check_exists=True, is_xml=False, revision_id=None, log_error_into_db=True, *args, **kwargs):
+                 check_exists=True, is_xml=False, revision_id=None, log_error_into_db=True,
+                 language=None, *args, **kwargs):
         # super(WPHandler, self).__init__(article_title, pickle_folder=pickle_folder, *args, **kwargs)
         self.article_title = article_title
         self.saved_article_title = ''
@@ -57,7 +58,7 @@ class WPHandler(object):
         self.namespace = 0
         self.cache_key = None
         self.log_error_into_db = log_error_into_db
-        self.language = get_language()
+        self.language = language or get_language()
 
     def __enter__(self):
         # time1 = time()

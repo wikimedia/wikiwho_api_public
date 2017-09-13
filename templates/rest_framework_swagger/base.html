@@ -67,7 +67,7 @@
                 {% get_available_languages as LANGUAGES %}
                 {% get_language_info_list for LANGUAGES as languages %}
                 {% for language in languages %}
-                    <option value="{% translate_url language.code %}" {% if language.code == LANGUAGE_CODE %}selected{% endif %}>
+                    <option value="{% translate_current_url language.code %}" {% if language.code == LANGUAGE_CODE %}selected{% endif %}>
                         {{ language.name }}
                     </option>
                 {% endfor %}

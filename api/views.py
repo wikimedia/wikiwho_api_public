@@ -257,6 +257,7 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
         timeout_message = 'Process took more than {} seconds. ' \
                           'Requested data will be available soon (Max {} seconds). ' \
                           'Please try again later.'.format(timeout, user_task_soft_time_limit)
+        language = get_language()
         try:
             revision_id = revision_ids[0] if revision_ids else None
             if settings.DEBUG:
@@ -266,12 +267,12 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
                     wp.handle(revision_ids, is_api_call=True)
             else:
                 with Timeout(seconds=timeout, error_message=timeout_message):
-                    with WPHandler(article_title, page_id=page_id, revision_id=revision_id) as wp:
+                    with WPHandler(article_title, page_id=page_id, revision_id=revision_id, language=language) as wp:
                         self.page_id = wp.page_id
                         wp.handle(revision_ids, is_api_call=True, timeout=timeout)
         except TimeoutError as e:
             # TODO ? process_article_user.delay(wp.saved_article_title, wp.page_id, )
-            process_article_user.delay(article_title, page_id, revision_id)
+            process_article_user.delay(language, article_title, page_id, revision_id)
             response = {'Info': timeout_message}
             status_ = status.HTTP_408_REQUEST_TIMEOUT
         except WPHandlerException as e:

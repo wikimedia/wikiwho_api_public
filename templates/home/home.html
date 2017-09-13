@@ -51,8 +51,25 @@
             {% ww_api_version as ww_version_url %}
             {% wc_api_version as wc_version_url %}
     {#                        <li class="active"><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
-            <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>
-            <li><a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Available APIs<span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                {% load i18n %}
+                {% load url_translation %}
+                {% get_current_language as LANGUAGE_CODE %}
+                {% get_available_languages as LANGUAGES %}
+                {% get_language_info_list for LANGUAGES as languages %}
+                {% for language in languages %}
+{#                    <li><a href="{% translate_current_url language.code %}">{{ language.name }}</a></li>#}
+                    <li><a href="{% translate_url language.code 'api:swagger' ww_version_url %}">WikiWho {{ language.code|title  }}</a></li>
+                {% endfor %}
+                {% for language in languages %}
+                    <li><a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor {{ language.code|title }}</a></li>
+                {% endfor %}
+              </ul>
+            </li>
+{#            <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>#}
+{#            <li><a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a></li>#}
             <li><a href="{% url 'contact' %}">Contact</a></li>
             {% if request.user.is_authenticated %}
     {#                        <li>Hello {{ request.user }}</li>#}
@@ -62,19 +79,6 @@
             <li><a href="{% url 'account:login' %}">Login</a></li>
             <li><a href="{% url 'account:register' %}">Register</a></li>
             {% endif %}
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Language <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                {% load i18n %}
-                {% load url_translation %}
-                {% get_current_language as LANGUAGE_CODE %}
-                {% get_available_languages as LANGUAGES %}
-                {% get_language_info_list for LANGUAGES as languages %}
-                {% for language in languages %}
-                    <li><a href="{% translate_url language.code %}">{{ language.name }}</a></li>
-                {% endfor %}
-              </ul>
-            </li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
@@ -92,12 +96,17 @@
             <p>
                 <a href="https://github.com/wikiwho/WikiWho" target="_blank">WikiWho algorithm</a>
                 <br>
-                <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API</a>
+{#                <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
+                <a href="{% translate_url 'en' 'api:swagger' ww_version_url %}">WikiWho API EN</a>
+                <br>
+                <a href="{% translate_url 'eu' 'api:swagger' ww_version_url %}">WikiWho API EU</a>
             </p>
             <p>
                 <a href="https://github.com/wikiwho/WhoColor">WhoColor source code</a>
                 <br>
-                <a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a>
+                <a href="{% translate_url 'en' 'whocolor:swagger' wc_version_url %}">WhoColor API EN</a>
+                <br>
+                <a href="{% translate_url 'eu' 'whocolor:swagger' wc_version_url %}">WhoColor API EU</a>
             </p>
             {% comment %}TODO
                 Explanation how wikiwho works?
