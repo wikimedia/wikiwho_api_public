@@ -55,7 +55,8 @@ def generate_articles(xml_file_path, page_ids, log_folder, pickle_folder, format
                 # if not page_ids or int(page.id) in page_ids:
                     # logger.error('processing {}'.format(page.id))
                     with WPHandler(page.title, page_id=page.id, save_tables=save_tables,
-                                   check_exists=check_exists, is_xml=True, pickle_folder=pickle_folder) as wp:
+                                   check_exists=check_exists, is_xml=True, pickle_folder=pickle_folder,
+                                   language=language) as wp:
                         # print(wp.article_title)
                         if language == 'eu':
                             # in eu wiki dumps, revisions are not ordered by timestamp
