@@ -9,6 +9,7 @@ from os import mkdir, listdir
 from os.path import basename, exists
 import logging
 from time import strftime, sleep
+import operator
 
 from concurrent.futures import ProcessPoolExecutor, as_completed  # , ThreadPoolExecutor, TimeoutError, CancelledError
 from mwxml import Dump
@@ -24,7 +25,7 @@ from base.utils import is_db_running
 from wikiwho.utils_db import wikiwho_to_csv
 
 
-def generate_articles(xml_file_path, page_ids, log_folder, pickle_folder, format_, save_tables,
+def generate_articles(xml_file_path, page_ids, log_folder, pickle_folder, format_, save_tables, language,
                       check_exists=False, timeout=None, is_write_into_csv=False):
     xml_file_name = basename(xml_file_path)
     logger = logging.getLogger(xml_file_name[:-3].split('-')[-1])
@@ -56,7 +57,12 @@ def generate_articles(xml_file_path, page_ids, log_folder, pickle_folder, format
                     with WPHandler(page.title, page_id=page.id, save_tables=save_tables,
                                    check_exists=check_exists, is_xml=True, pickle_folder=pickle_folder) as wp:
                         # print(wp.article_title)
-                        wp.handle_from_xml_dump(page, timeout)
+                        if language == 'eu':
+                            # in eu wiki dumps, revisions are not ordered by timestamp
+                            page_ = sorted(list(page), key=operator.attrgetter('timestamp'))
+                        else:
+                            page_ = page
+                        wp.handle_from_xml_dump(page_, timeout)
                         if is_write_into_csv:
                             wikiwho_to_csv(wp.wikiwho, log_folder + '/csv')
                         if page_ids:
@@ -212,7 +218,7 @@ class Command(BaseCommand):
             while files_left:
                 for xml_file_path, page_ids in files_iter:
                     job = executor.submit(generate_articles, xml_file_path, page_ids, log_folder, pickle_folder,
-                                          format_, save_tables, check_exists, timeout, is_write_into_csv)
+                                          format_, save_tables, language, check_exists, timeout, is_write_into_csv)
                     jobs[job] = basename(xml_file_path)
                     if len(jobs) == max_workers:  # limit # jobs with max_workers
                         break
