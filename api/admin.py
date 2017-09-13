@@ -8,8 +8,8 @@ from .utils_pickles import get_pickle_folder
 
 class LongFailedArticleAdmin(admin.ModelAdmin):
     date_hierarchy = 'modified'
-    list_display = ('id', 'title_', 'count', 'revisions_', 'pickle_exists', 'created', 'modified', )
-    list_filter = ('id', )
+    list_display = ('id', 'title_', 'language', 'count', 'revisions_', 'pickle_exists', 'created', 'modified', )
+    list_filter = ('id', 'language', )
     readonly_fields = ('created', 'modified', )
     ordering = ('-modified', )
 

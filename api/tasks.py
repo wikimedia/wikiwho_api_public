@@ -33,6 +33,7 @@ def process_article_task(language, page_title, page_id=None, revision_id=None,
         if raise_soft_time_limit:
             failed_rev_id = int(wp.wikiwho.revision_curr.id)
             failed_article, created = LongFailedArticle.objects.get_or_create(id=wp.page_id,
+                                                                              language=language,
                                                                               defaults={'count': 1,
                                                                                         'title': wp.saved_article_title or '',
                                                                                         'revisions': [failed_rev_id]})
