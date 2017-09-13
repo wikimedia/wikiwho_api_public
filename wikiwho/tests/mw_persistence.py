@@ -79,7 +79,7 @@ def compute_persistence(article_title, article_data, source, output_persistence,
         state = mwpersistence.DiffState(diff_engine=deltas.SegmentMatcher(tokenizer=wikitext_split),
                                         revert_radius=revert_radius)
 
-        d = get_latest_revision_data(article_title=article_title)
+        d = get_latest_revision_data('en', article_title=article_title)
         page_id = d['page_id']
         latest_revision_id = d['latest_revision_id']
         if len(article_data) > 1:

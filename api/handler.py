@@ -76,7 +76,7 @@ class WPHandler(object):
             # self.page_id = self.page_id
         else:
             # get db title from wp api
-            d = get_latest_revision_data(self.page_id, self.article_title, self.revision_id)
+            d = get_latest_revision_data(self.language, self.page_id, self.article_title, self.revision_id)
             self.latest_revision_id = d['latest_revision_id']
             self.page_id = d['page_id']
             self.saved_article_title = d['article_db_title']

@@ -79,7 +79,7 @@ def get_page_data_from_wp_api(params):
         rvcontinue = result['continue']['rvcontinue']
 
 
-def get_latest_revision_data(page_id=None, article_title=None, revision_id=None):
+def get_latest_revision_data(language, page_id=None, article_title=None, revision_id=None):
     if page_id:
         params = {'pageids': page_id}
     elif article_title:
@@ -92,7 +92,7 @@ def get_latest_revision_data(page_id=None, article_title=None, revision_id=None)
     params.update({'action': "query", 'prop': 'info', 'format': 'json'})
     # params = {'action': "query", 'titles': article_title, 'format': 'json'}
     # make get request
-    resp_ = requests.get(get_wp_api_url(), params=params, headers=settings.WP_HEADERS)
+    resp_ = requests.get(get_wp_api_url(language), params=params, headers=settings.WP_HEADERS)
     response = resp_.json()  # convert response into dict
     pages = response["query"].get('pages')
     is_pages = False
