@@ -27,3 +27,9 @@ SWAGGER_SETTINGS['VALIDATOR_URL'] = 'https://online.swagger.io/validator'
 #         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
 #     }
 # }
+
+# Default logging for Django. This sends an email to the site admins on every
+# HTTP 500 error. Depending on DEBUG, all other log records are either sent to
+# the console (DEBUG=True) or discarded (DEBUG=False) by means of the
+# require_debug_true filter.
+# https://docs.djangoproject.com/en/1.10/topics/logging/#examples
