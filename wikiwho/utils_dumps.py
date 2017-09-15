@@ -46,9 +46,23 @@ def get_file_hash(file_path, blocksize=65536):
     return hash_md5.hexdigest()
 
 
-def download_wp_dumps(folder, url='https://dumps.wikimedia.org/enwiki/20161101', date_time='2016-11-11 00:06:44'):
+def get_md5_hashes(url):
+    r = requests.get(url)
+    lines = r.text.split('\n')
+    md5_hashes = {}
+    for line in lines:
+        line = line.split('  ')
+        if line[-1].endswith('.7z'):
+            md5_hashes[line[-1]] = line[0]
+    return md5_hashes
+
+
+def download_wp_dumps(folder, url, date_time, md5_url):
+    # ex url = 'https://dumps.wikimedia.org/enwiki/20161101'
+    # ex date_time = '2016-11-11 00:06:44'
+    # ex md5_url = 'https://dumps.wikimedia.org/dewiki/20170801/dewiki-20170801-md5sums.txt'
     download_urls = get_dumps_download_urls(url, date_time)
-    md5_hashes = get_md5_hashes()
+    md5_hashes = get_md5_hashes(md5_url)
     for download_url in download_urls:
         local_file_path = download_file(folder, download_url)
         file_hash = get_file_hash(local_file_path)
@@ -58,9 +72,9 @@ def download_wp_dumps(folder, url='https://dumps.wikimedia.org/enwiki/20161101',
     print('Done')
 
 
-def check_files_hash(folder):
+def check_files_hash(folder, md5_url):
     from os import listdir
-    md5_hashes = get_md5_hashes()
+    md5_hashes = get_md5_hashes(md5_url)
     for file in listdir(folder):
         if file.endswith('.7z'):
             file_path = '{}/{}'.format(folder, file)
@@ -70,7 +84,7 @@ def check_files_hash(folder):
     print('Done')
 
 
-def get_md5_hashes():
+def get_md5_hashes_old():
     md5_hashes = {
         'enwiki-20161101-pages-meta-history1.xml-p000000010p000002289.7z': '7b010cf0d76669945043dfd955f990a7',
         'enwiki-20161101-pages-meta-history1.xml-p000002290p000004531.7z': '5b79c7574d860b1111d689693e91997a',
