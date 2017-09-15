@@ -11,7 +11,8 @@ class FailedArticle(BaseModel):
     revisions = ArrayField(models.IntegerField(), blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-    language = models.CharField(max_length=32, default='')
+    language = models.CharField(max_length=8, default='',
+                                choices=(('', '-------'), ('en', 'English'), ('de', 'German'), ('eu', 'Basque')))
 
     class Meta:
         abstract = True

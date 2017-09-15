@@ -1,6 +1,7 @@
 # import traceback
 
 from django.utils.timezone import now
+from django.utils.translation import get_language
 
 from .models import APIRequestLog
 
@@ -51,6 +52,7 @@ class LoggingMixin(object):
             # host=request.get_host(),
             # method=request.method,
             query_params=request.query_params.dict().__str__()[:256],
+            language=get_language()
         )
 
         # regular initial, including auth check

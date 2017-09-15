@@ -53,6 +53,9 @@ class BaseAPIRequestLog(models.Model):
     # custom manager
     # objects = PrefetchUserManager()
 
+    language = models.CharField(max_length=8, default='',
+                                choices=(('', '-------'), ('en', 'English'), ('de', 'German'), ('eu', 'Basque')))
+
     class Meta:
         abstract = True
 
