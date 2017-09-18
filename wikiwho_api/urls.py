@@ -29,6 +29,12 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^admin/clear_cache', clear_cache, name='clear_cache'),
     url(r'^admin/clear_sessions', clear_sessions, name='clear_sessions'),
+    # url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^account/', include('account_app.urls', namespace='account')),
+    url(r'^download/(?P<file_name>.+)/$', download),
+    url(r'^contact/$', TemplateView.as_view(template_name='contact/contact.html'), name='contact'),
+    # url(r'^docs/', include('rest_framework_docs.urls')),
+    url(r'^$', TemplateView.as_view(template_name='home/home.html'), name='home'),
     url(r'^sitemap\.xml$', sitemap, {'sitemaps': {'api': ApiStaticViewSitemap, 'base': BaseStaticViewSitemap}},
         name='django.contrib.sitemaps.views.sitemap')
 ]
@@ -37,12 +43,6 @@ urlpatterns += i18n_patterns(
     url(r'^api/(?P<version>(v1.0.0-beta|v1.0.0))/', include('api.urls', namespace='api')),
     url(r'^api/', ApiRedirectView.as_view()),
     url(r'^whocolor/(?P<version>(v1.0.0-beta|v1.0.0))/', include('whocolor.urls', namespace='whocolor')),
-    # url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^account/', include('account_app.urls', namespace='account')),
-    url(r'^download/(?P<file_name>.+)/$', download),
-    url(r'^contact/$', TemplateView.as_view(template_name='contact/contact.html'), name='contact'),
-    # url(r'^docs/', include('rest_framework_docs.urls')),
-    url(r'^$', TemplateView.as_view(template_name='home/home.html'), name='home'),
     # prefix_default_language=False
 )
 

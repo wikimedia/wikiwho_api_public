@@ -95,18 +95,19 @@
             <div class="col-md-12">
             <p>
                 <a href="https://github.com/wikiwho/WikiWho" target="_blank">WikiWho algorithm</a>
+                {% for language in languages %}
                 <br>
-{#                <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
-                <a href="{% translate_url 'en' 'api:swagger' ww_version_url %}">WikiWho API EN</a>
-                <br>
-                <a href="{% translate_url 'eu' 'api:swagger' ww_version_url %}">WikiWho API EU</a>
+{#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
+                <a href="{% translate_url language.code 'api:swagger' ww_version_url %}">WikiWho API {{ language.code|upper  }}</a>
+                {% endfor %}
             </p>
             <p>
                 <a href="https://github.com/wikiwho/WhoColor">WhoColor source code</a>
+                {% for language in languages %}
                 <br>
-                <a href="{% translate_url 'en' 'whocolor:swagger' wc_version_url %}">WhoColor API EN</a>
-                <br>
-                <a href="{% translate_url 'eu' 'whocolor:swagger' wc_version_url %}">WhoColor API EU</a>
+{#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
+                <a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor API {{ language.code|upper  }}</a>
+                {% endfor %}
             </p>
             {% comment %}TODO
                 Explanation how wikiwho works?
