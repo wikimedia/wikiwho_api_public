@@ -56,7 +56,7 @@ def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables,
                     with WPHandler(page.title, page_id=page.id, save_tables=save_tables,
                                    check_exists=check_exists, is_xml=True, language=language) as wp:
                         # print(wp.article_title)
-                        if language == 'eu':
+                        if language in ['eu', 'de']:
                             # in eu wiki dumps, revisions are not ordered by timestamp
                             page_ = sorted(list(page), key=operator.attrgetter('timestamp'))
                         else:
