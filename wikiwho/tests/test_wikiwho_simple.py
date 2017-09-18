@@ -5,7 +5,7 @@ These are integration tests to test behaviour of wikiwho algorithm.
 To run only test_authorship test calls:
 py.test test_wikiwho_simple.py::TestWikiwho::test_authorship
 To run only test_json_output test calls:
-py.test test_wikiwho_simple.py::TestWikiwho::test_json_output
+py.test test_wikiwho_simple.py::TestWikiwho::test_json_output  --lines=2,32 -n=3
 To run tests on specific lines of input excel:
 py.test test_wikiwho_simple.py --lines=3,9
 py.test test_wikiwho_simple.py::TestWikiwho::test_authorship --lines=3,9

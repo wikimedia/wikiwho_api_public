@@ -14,15 +14,15 @@ class LongFailedArticleAdmin(admin.ModelAdmin):
     ordering = ('-modified', )
 
     def title_(self, obj):
-        return '<a href="https://en.wikipedia.org/wiki/{}">{}</a>'.format(obj.title, obj.title)
+        return '<a href="https://{}.wikipedia.org/wiki/{}">{}</a>'.format(obj.language, obj.title, obj.title)
     title_.short_description = 'Title'
     title_.allow_tags = True
 
     def revisions_(self, obj):
         revisions = []
         for rev in obj.revisions:
-            revisions.append('<a href="https://en.wikipedia.org/w/index.php?title={}&oldid={}">{}</a>'.
-                             format(obj.title, rev, rev))
+            revisions.append('<a href="https://{}.wikipedia.org/w/index.php?title={}&oldid={}">{}</a>'.
+                             format(obj.language, obj.title, rev, rev))
         return ', '.join(revisions)
     revisions_.short_description = 'Revisions'
     revisions_.allow_tags = True

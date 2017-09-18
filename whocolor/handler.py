@@ -26,12 +26,10 @@ class WhoColorException(Exception):
 
 
 class WhoColorHandler(object):
-    def __init__(self, page_id=None, page_title=None, revision_id=None, pickle_folder='',
-                 language=None, *args, **kwargs):
+    def __init__(self, page_id=None, page_title=None, revision_id=None, language=None, *args, **kwargs):
         self.page_id = page_id
         self.page_title = page_title
         self.rev_id = revision_id
-        self.pickle_folder = pickle_folder
         self.language = language or get_language()
         # self.wiki_text = ''
         # self.tokens = []
@@ -46,7 +44,7 @@ class WhoColorHandler(object):
                 raise WhoColorException(MESSAGES['invalid_page_id'][0].format(self.page_id),
                                         MESSAGES['invalid_page_id'][1])
 
-        self.pickle_folder = self.pickle_folder or get_pickle_folder(self.language)
+        self.pickle_folder = get_pickle_folder(self.language)
         return self
 
     def handle(self):
