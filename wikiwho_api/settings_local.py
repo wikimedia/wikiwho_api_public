@@ -11,6 +11,8 @@ INTERNAL_IPS = ['127.0.0.1']
 # PICKLE_FOLDER = 'tmp_pickles'
 PICKLE_FOLDER_EN = 'tmp_pickles/en'
 PICKLE_FOLDER_EU = 'tmp_pickles/eu'
+PICKLE_FOLDER_DE = 'tmp_pickles/de'
+PICKLE_FOLDER_TR = 'tmp_pickles/tr'
 
 INSTALLED_APPS += ['debug_toolbar',
                    'debug_panel']
