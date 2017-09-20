@@ -51,16 +51,10 @@ def generate_articles(xml_file_path, page_ids, log_folder, format_, save_tables,
         for page in dump:
             try:
                 if page.namespace == 0 and not page.redirect and (not page_ids or int(page.id) in page_ids):
-                # if not page_ids or int(page.id) in page_ids:
-                    # logger.error('processing {}'.format(page.id))
                     with WPHandler(page.title, page_id=page.id, save_tables=save_tables,
                                    check_exists=check_exists, is_xml=True, language=language) as wp:
-                        # print(wp.article_title)
-                        if language in ['eu', 'de']:
-                            # in eu wiki dumps, revisions are not ordered by timestamp
-                            page_ = sorted(list(page), key=operator.attrgetter('timestamp'))
-                        else:
-                            page_ = page
+                        # in some wiki dumps such as eu or de, revisions are not ordered by timestamp
+                        page_ = sorted(list(page), key=operator.attrgetter('timestamp'))
                         wp.handle_from_xml_dump(page_, timeout)
                         if is_write_into_csv:
                             wikiwho_to_csv(wp.wikiwho, log_folder + '/csv')
@@ -91,14 +85,10 @@ class Command(BaseCommand):
         parser.add_argument('-m', '--max_workers', type=int, help='Number of processors/threads to run parallel. '
                                                                   'Default is # compressed files in given folder path.',
                             required=False)
-        parser.add_argument('-d', '--mode', help='Empty: dont save into db, A: Save only articles , '
-                                                 'R: save only revisions, ART: Save all. Default is empty.',
+        parser.add_argument('-lang', '--language', help="Wikipedia language. Default is 'en'.",
                             required=False)
         parser.add_argument('-t', '--timeout', type=float, required=False,
                             help='Timeout value for each processor for analyzing articles [minutes]')
-        parser.add_argument('-tpe', '--thread_pool_executor', action='store_true',
-                            help='Use ThreadPoolExecutor, default is ProcessPoolExecutor', default=False,
-                            required=False)
         parser.add_argument('-c', '--check_exists', action='store_true',
                             help='Check if an article exists before creating it.'
                                  ' If yes, go to the next article. If not, process article. ',
@@ -107,8 +97,12 @@ class Command(BaseCommand):
                             help='Write content, current content and deleted content into csv. '
                                  'This must be called with check_exists flag. Default is False.',
                             default=False, required=False)
-        parser.add_argument('-lang', '--language', help="Wikipedia language. Default is 'en'.",
+        parser.add_argument('-db', '--db_mode', help='Empty: dont save into db, A: Save only articles , '
+                                                     'R: save only revisions, ART: Save all. Default is empty.',
                             required=False)
+        parser.add_argument('-tpe', '--thread_pool_executor', action='store_true',
+                            help='Use ThreadPoolExecutor, default is ProcessPoolExecutor (Not implemented)',
+                            default=False, required=False)
 
     def handle(self, *args, **options):
         # get path of xml dumps

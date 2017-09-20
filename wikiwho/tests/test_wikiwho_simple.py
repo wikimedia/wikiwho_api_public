@@ -348,7 +348,7 @@ class TestWikiwho:
         :param revision_id_start: Correct revision id of first token of article in gold standard.
         :param revision_id_end: Revision id where authorship of token in gold standard is tested.
         """
-        # TODO test
+        # TODO update and finish
         # first create article and revisions until revision_id_start
         with WPHandler(article_title, pickle_folder=temp_folder['pickle_folder'],
                        save_tables=('article', 'revision', 'token', )) as wp:
@@ -410,9 +410,10 @@ class TestWikiwho:
         }
         article_title = 'Finger_Lakes'
         tests = dirname(realpath(__file__))
+        # create the pickle file
         from django.core import management
         management.call_command('xml_to_pickle', *['--output', tests])
-
+        # load the pickle and compare last rev id, in and outs with data dict
         with WPHandler(article_title, pickle_folder=tests, save_tables=('article', 'revision', 'token', )) as wp:
             for rev_id in wp.wikiwho.ordered_revisions:
                 if rev_id not in data.keys():
@@ -428,7 +429,6 @@ class TestWikiwho:
                     assert inbound == data[rev_id]['in'][i], 'inbound does not match, rev id: {} - {}'.format(rev_id, i)
                     assert outbound == data[rev_id]['out'][i], 'outbound does not match, rev id: {} - {}'.format(rev_id, i)
                     i += 1
-            # TODO compare from db too
 
     def test_authorship(self, temp_folder, article_title, revision_id, token, context, correct_rev_id):
         sub_token_list = split_into_tokens(context)

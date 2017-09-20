@@ -96,16 +96,6 @@ class WPHandler(object):
             self.wikiwho = pickle_load(self.pickle_path)
             self.wikiwho.title = self.saved_article_title
         self.saved_rvcontinue = self.wikiwho.rvcontinue
-        # if self.save_tables:
-        #     update titles of other articles with other page ids by using wp api (celery task)
-        #     articles = [a for a in Article.objects.filter(title=self.saved_article_title)]
-        #     for article in articles:
-        #         if article.id == page_id:
-        #             self.article_obj = article
-        #             articles.remove(article)
-        #             break
-        #     if articles:
-        #         update_titles_task(articles)
 
         # time2 = time()
         # print("Execution time enter: {}".format(time2-time1))
