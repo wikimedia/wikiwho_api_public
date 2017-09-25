@@ -38,6 +38,13 @@ def stream_response(url):
 def stream_response_with_requests(url):
     """Get a streaming response for the given event feed using requests."""
     import requests
+    # TODO The id field can be used to tell EventStreams to start consuming from an earlier
+    # position in the stream. This enables clients to automatically resume from where they
+    # left off if they are disconnected.
+    # https://wikitech.wikimedia.org/wiki/EventStreams
+    # headers = {'Last-Event-ID': [{"topic": "codfw.mediawiki.recentchange", "partition": 0, "offset": -1},
+    #                              {"topic": "eqiad.mediawiki.recentchange", "partition": 0, "offset": 431056994}]}
+    # return requests.get(url, stream=True, headers=headers)
     return requests.get(url, stream=True)
 
 
@@ -63,7 +70,7 @@ def iter_changed_pages():
                 #     # counter += 1
                 #     yield page_title  # , time.time() - start, counter
                 try:
-                    change = loads(event.data)
+                    change = loads(data)
                 except ValueError:  # JSONDecodeError
                     continue
                 page_title = change.get('title')
