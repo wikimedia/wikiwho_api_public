@@ -3,7 +3,7 @@ from os.path import exists
 from django.contrib import admin
 
 from .models import LongFailedArticle, RecursionErrorArticle
-from .utils_pickles import get_pickle_folder
+from .utils_pickles import get_pickle_folder, pickle_load
 
 
 class LongFailedArticleAdmin(admin.ModelAdmin):
@@ -29,7 +29,10 @@ class LongFailedArticleAdmin(admin.ModelAdmin):
 
     def pickle_exists(self, obj):
         pickle_path = "{}/{}.p".format(get_pickle_folder(obj.language), obj.id)
-        return exists(pickle_path)
+        if exists(pickle_path):
+            ww = pickle_load(pickle_path)
+            return ww.ordered_revisions[-1]
+        return False
 
 
 class RecursionErrorArticleAdmin(LongFailedArticleAdmin):
