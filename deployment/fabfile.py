@@ -15,7 +15,7 @@ def staging():
 
 @task
 def production():
-    env.hosts = ['nuser@api.wikiwho.net']
+    env.hosts = ['nuser@www.wikiwho.net']
     env.environment = 'production'
 
 

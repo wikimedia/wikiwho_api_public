@@ -44,7 +44,7 @@ custom_data = {
                            'computational-social-science/)',
         },
     'basePath': '/whocolor/{}'.format(version_url),
-    'host': 'api.wikiwho.net',
+    'host': 'www.wikiwho.net',
     'schemes': 'https',
     'produces': ['application/json'],
     # 'externalDocs': {
