@@ -166,7 +166,7 @@ class WPHandler(object):
 
         # process new revisions of the article
         rvcontinue = self.saved_rvcontinue  # holds the last revision id which is saved. 0 for new article
-        session = create_wp_session()
+        session = create_wp_session(self.language)
         params = {'pageids': self.page_id, 'action': 'query', 'prop': 'revisions',
                   'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
                   'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer',
