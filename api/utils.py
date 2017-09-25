@@ -190,6 +190,12 @@ def generate_rvcontinue(language, rev_id, rev_ts=None):
         return rvcontinue
 
 
+def revert_rvcontinue(rvcontinue):
+    timestamp = datetime.strptime(rvcontinue.split('|')[0], '%Y%m%d%H%M%S') - timedelta(seconds=1)
+    timestamp = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
+    return timestamp
+
+
 def get_throttle_data(request):
     throttle_dict = {}
     if request.user.is_authenticated:
