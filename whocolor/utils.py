@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import os
+import subprocess
+
 from django.conf import settings
 from api.utils import create_wp_session, get_wp_api_url
 
@@ -24,6 +27,12 @@ class WikipediaRevText(WikipediaRevTextBase):
         data['url'] = get_wp_api_url(self.language)
         data['timeout'] = settings.WP_REQUEST_TIMEOUT
         return data
+
+    def convert_wiki_text_to_html_parsoid(self, wiki_text):
+        process = subprocess.Popen(['{}/parsoid.sh'.format(os.path.dirname(os.path.realpath(__file__))), '--wt2html', "'{}".format(wiki_text)],
+                                   stdout=subprocess.PIPE)
+        output, error = process.communicate()
+        return error or output.decode()
 
 
 class WikipediaUser(WikipediaUserBase):
