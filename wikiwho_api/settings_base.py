@@ -100,7 +100,7 @@ LANGUAGE_CODE = 'en'
 # from django.utils.translation import ugettext_lazy as _
 LANGUAGES = (
     ('en', 'English'),
-    # ('de', _('German')),
+    ('de', 'German'),
     ('eu', 'Basque'),  # Euskara
 )
 # LOCALE_PATHS = (
