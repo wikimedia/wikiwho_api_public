@@ -1,6 +1,7 @@
 from os.path import exists
 
 from django.contrib import admin
+from django.utils.html import format_html
 
 from .models import LongFailedArticle, RecursionErrorArticle
 from .utils_pickles import get_pickle_folder, pickle_load
@@ -32,8 +33,8 @@ class LongFailedArticleAdmin(admin.ModelAdmin):
         if exists(pickle_path):
             ww = pickle_load(pickle_path)
             last_rev_in_pickle = ww.ordered_revisions[-1]
-            return '<a href="https://{}.wikipedia.org/w/index.php?title={}&oldid={}">{}</a>'.\
-                format(obj.language, obj.title, last_rev_in_pickle, last_rev_in_pickle)
+            return format_html('<a href="https://{}.wikipedia.org/w/index.php?title={}&oldid={}">{}</a>'.
+                               format(obj.language, obj.title, last_rev_in_pickle, last_rev_in_pickle))
         return False
 
 
