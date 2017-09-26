@@ -87,8 +87,14 @@ class WPHandler(object):
             self.wikiwho = Wikiwho(self.saved_article_title)
             self.wikiwho.page_id = self.page_id
         else:
-            self.wikiwho = pickle_load(self.pickle_path)
-            self.wikiwho.title = self.saved_article_title
+            try:
+                self.wikiwho = pickle_load(self.pickle_path)
+            except EOFError:
+                # create a new pickle, this one will overwrite the problematic one
+                self.wikiwho = Wikiwho(self.saved_article_title)
+                self.wikiwho.page_id = self.page_id
+            else:
+                self.wikiwho.title = self.saved_article_title
         self.saved_rvcontinue = self.wikiwho.rvcontinue
 
         # time2 = time()
