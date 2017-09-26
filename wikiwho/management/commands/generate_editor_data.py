@@ -4,9 +4,10 @@ Example usage:
 """
 from os.path import join, basename
 import glob
+import pytz
+import sys
 from time import strftime
 from datetime import datetime, timedelta
-import pytz
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -30,7 +31,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('-from', '--from_ym', required=True,
-                            help='Year-month to created data from [YYYY-MM]. Included')
+                            help='Year-month to created data from [YYYY-MM]. Included.')
         parser.add_argument('-to', '--to_ym', required=True,
                             help='Year-month to created data until [YYYY-MM]. Not included.')
         parser.add_argument('-lang', '--language', help="Wikipedia language. Ex: 'en' or 'en,eu,de'", required=True)
@@ -52,7 +53,7 @@ class Command(BaseCommand):
         # get max number of concurrent workers
         max_workers = options['max_workers']
 
-        print('Start at {}'.format(strftime("%H:%M:%S %d-%m-%Y")))
+        print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
         print(max_workers, languages, from_ym, to_ym)
         # Concurrent process of pickles of each language to generate editor data
         for language in languages:
@@ -60,10 +61,11 @@ class Command(BaseCommand):
             log_folder = options['log_folder']
             logger = get_logger('future_log', log_folder, is_process=True, is_set=True, language=language)
             pickle_folder = get_pickle_folder(language)
-            print('Start: {} - {} at {}'.format(language, pickle_folder, strftime("%H:%M:%S %d-%m-%Y")))
+            print('Start: {} - {} at {}'.format(language, pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
 
             pickles_iter = glob.iglob(join(pickle_folder, '*.p'))
-            pickles_left = sum(1 for x in pickles_iter)
+            pickles_all = sum(1 for x in pickles_iter)
+            pickles_left = pickles_all
             pickles_iter = glob.iglob(join(pickle_folder, '*.p'))
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
                 jobs = {}
@@ -84,6 +86,8 @@ class Command(BaseCommand):
                             logger.exception('{}-{}'.format(page_id_, language))
 
                         del jobs[job]
+                        sys.stdout.write('\rPickles left: {} - Pickles processed: {:.3f}%'.
+                                         format(pickles_left, ((pickles_all - pickles_left) * 100) / pickles_all))
                         break  # to add a new job, if there is any
-            print('Done: {} - {} at {}'.format(language, pickle_folder, strftime("%H:%M:%S %d-%m-%Y")))
-        print('Done at {}'.format(strftime("%H:%M:%S %d-%m-%Y")))
+            print('\nDone: {} - {} at {}'.format(language, pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
+        print('Done at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))

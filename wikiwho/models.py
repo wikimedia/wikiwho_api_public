@@ -8,19 +8,22 @@ from api.utils_pickles import get_pickle_folder
 
 
 class Article(BaseModel):
-    id = models.IntegerField(primary_key=True, blank=False, null=False, editable=False, help_text='Wikipedia page id', db_index=True)
+    page_id = models.IntegerField(blank=False, null=False, db_index=True)
     title = models.CharField(max_length=256, blank=False)
     rvcontinue = models.CharField(max_length=32, blank=True, null=False, default='0')
     spam_ids = ArrayField(models.IntegerField(), blank=True, null=True)  # array of spam revision ids
     language = models.CharField(max_length=2, default='', db_index=True,
                                 choices=(('', '-------'), ('en', 'English'), ('de', 'German'), ('eu', 'Basque')))
 
+    # class Meta:
+    #     unique_together = (('page_id', 'language'), )
+
     def __str__(self):
-        return '{} - {}'.format(self.title, self.id)
+        return '{} - {}'.format(self.title, self.page_id)
 
     @property
     def pickle_file(self):
-        return '{}/{}.p'.format(get_pickle_folder(self.language), self.id)
+        return '{}/{}.p'.format(get_pickle_folder(self.language), self.page_id)
 
     @property
     def wikipedia_url(self):
@@ -56,29 +59,22 @@ class EditorDataNotIndexed(EditorData):
         abstract = True
 
 
-class EditorDataIndexed(EditorData):
-    article_id = models.IntegerField(blank=False, null=False, db_index=True)
-    editor_id = models.IntegerField(blank=False, null=False, db_index=True)
-    year_month = models.DateField(blank=False, null=False, db_index=True)
-
-    class Meta:
-        abstract = True
-        # ordering = ['year_month', 'editor_id']
-
-
 class EditorDataEnNotIndexed(EditorDataNotIndexed):
     pass
 
 
-class EditorDataEn(EditorDataIndexed):
+class EditorDataEn(EditorDataNotIndexed):
     pass
+
+    # class Meta:
+    #     ordering = ['year_month', 'editor_id']
 
 
 class EditorDataEuNotIndexed(EditorDataNotIndexed):
     pass
 
 
-class EditorDataEu(EditorDataIndexed):
+class EditorDataEu(EditorDataNotIndexed):
     pass
 
 
@@ -86,7 +82,7 @@ class EditorDataDeNotIndexed(EditorDataNotIndexed):
     pass
 
 
-class EditorDataDe(EditorDataIndexed):
+class EditorDataDe(EditorDataNotIndexed):
     pass
 
 

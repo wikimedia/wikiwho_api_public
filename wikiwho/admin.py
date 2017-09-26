@@ -7,9 +7,9 @@ from .models import Article, EditorDataEnNotIndexed, EditorDataEn, EditorDataEuN
 
 
 class ArticleAdmin(BaseAdmin):
-    search_fields = ('id', 'title', )
-    list_display = ('id', 'title', 'language', 'rvcontinue', 'spam_ids', )
-    readonly_fields = ('id', 'title', 'rvcontinue', 'spam_ids', 'language', )
+    search_fields = ('page_id', 'title', )
+    list_display = ('page_id', 'title', 'language', 'rvcontinue', 'spam_ids', )
+    readonly_fields = ('id', 'page_id', 'title', 'rvcontinue', 'spam_ids', 'language', )
     list_filter = ('language', )
 
     """

@@ -145,11 +145,10 @@ def fill_editor_table(pickle_path, from_ym, to_ym, language, update=False):
             wp.handle(revision_ids=[], is_api_call=False)
             wikiwho = wp.wikiwho
 
-    article, created = Article.objects.update_or_create(id=wikiwho.page_id,
+    article, created = Article.objects.update_or_create(page_id=wikiwho.page_id, language=language,
                                                         defaults={'title': wikiwho.title,
                                                                   'spam_ids': wikiwho.spam_ids,
-                                                                  'rvcontinue': wikiwho.rvcontinue,
-                                                                  'language': language})
+                                                                  'rvcontinue': wikiwho.rvcontinue})
     # if not created:
     #     article_last_rev_ts = parse_datetime(revert_rvcontinue(article.rvcontinue))
     #     if article_last_rev_ts >= to_ym:
@@ -162,7 +161,7 @@ def fill_editor_table(pickle_path, from_ym, to_ym, language, update=False):
     article_revisions_dict = {}
     for rev_id in wikiwho.ordered_revisions:
         article_revisions_dict[rev_id] = parse_datetime(wikiwho.revisions[rev_id].timestamp)
-    # {'y-m': 'id': [oadd, oadd_48, dels, dels_48, reins, reins_48, persistent_o_adds, persistent_actions]}
+    # {'y-m': 'editor_id': [oadd, oadd_48, dels, dels_48, reins, reins_48, persistent_o_adds, persistent_actions]}
     editors_dict = {}
     ym_start = 12 * from_ym.year + from_ym.month - 1
     ym_end = 12 * to_ym.year + to_ym.month
@@ -173,95 +172,72 @@ def fill_editor_table(pickle_path, from_ym, to_ym, language, update=False):
             defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0])
 
     for token in wikiwho.tokens:
-        origin_rev_ts = article_revisions_dict[token.origin_rev_id]
-        if from_ym <= origin_rev_ts <= to_ym:
-            origin_editor = wikiwho.revisions[token.origin_rev_id].editor
-            origin_ym = '{}-{:02}'.format(origin_rev_ts.year, origin_rev_ts.month)
-            origin_ym = datetime.strptime(origin_ym, '%Y-%m').replace(tzinfo=pytz.UTC).date()
-            o_adds = 1
-            o_adds_surv_48h = 0
-            persistent_o_adds = 0
+        # oadd
+        oadd_rev_ts = article_revisions_dict[token.origin_rev_id]
+        if from_ym <= oadd_rev_ts <= to_ym:
+            oadd_ym = oadd_rev_ts.date().replace(day=1)
+            oadd_editor = wikiwho.revisions[token.origin_rev_id].editor  # oadd action
+            editors_dict[oadd_ym][oadd_editor][0] += 1
             if token.outbound:
                 first_out_ts = article_revisions_dict[token.outbound[0]]
-                seconds = (first_out_ts - origin_rev_ts).total_seconds()
-                if seconds >= seconds_limit:
-                    o_adds_surv_48h = 1
-                if first_out_ts.year != origin_ym.year or first_out_ts.month != origin_ym.month:
-                    # not deleted in this month
-                    persistent_o_adds = 1
+                if (first_out_ts - oadd_rev_ts).total_seconds() >= seconds_limit:
+                    # survived 48 hours
+                    editors_dict[oadd_ym][oadd_editor][1] += 1
+                    if first_out_ts.year != oadd_ym.year or first_out_ts.month != oadd_ym.month:
+                        # not deleted in this month
+                        editors_dict[oadd_ym][oadd_editor][6] += 1
+                        editors_dict[oadd_ym][oadd_editor][7] += 1
             else:
-                o_adds_surv_48h = 1
-                persistent_o_adds = 1
-            editors_dict[origin_ym][origin_editor][0] += o_adds
-            editors_dict[origin_ym][origin_editor][1] += o_adds_surv_48h
-            editors_dict[origin_ym][origin_editor][6] += persistent_o_adds
-            editors_dict[origin_ym][origin_editor][7] += persistent_o_adds
+                editors_dict[oadd_ym][oadd_editor][1] += 1
+                editors_dict[oadd_ym][oadd_editor][6] += 1
+                editors_dict[oadd_ym][oadd_editor][7] += 1
 
         # rein and del
-        prev_in_rev_id = None
-        out_rev_id = None
+        in_rev_id = None
         for i, out_rev_id in enumerate(token.outbound):
             # rein
-            if prev_in_rev_id is not None:
+            if i != 0:
                 # there is out for this in
-                reins = 1
-                reins_surv_48h = 0
-                persistent_reins = 0
-                prev_in_rev_ts = article_revisions_dict[prev_in_rev_id]
-                if from_ym <= prev_in_rev_ts <= to_ym:
-                    rein_editor = wikiwho.revisions[prev_in_rev_id].editor
-                    rein_ym = '{}-{:02}'.format(prev_in_rev_ts.year, prev_in_rev_ts.month)
-                    rein_ym = datetime.strptime(rein_ym, '%Y-%m').replace(tzinfo=pytz.UTC).date()
+                if from_ym <= in_rev_ts <= to_ym:
+                    rein_ym = in_rev_ts.date().replace(day=1)
+                    rein_editor = wikiwho.revisions[in_rev_id].editor
+                    editors_dict[rein_ym][rein_editor][2] += 1  # action rein is done
                     out_rev_ts = article_revisions_dict[out_rev_id]
-                    seconds = (out_rev_ts - prev_in_rev_ts).total_seconds()
-                    if seconds >= seconds_limit:
-                        reins_surv_48h = 1
-                    if out_rev_ts.year != rein_ym.year or out_rev_ts.month != rein_ym.month:
-                        # not deleted in this month
-                        persistent_reins = 1
-                    editors_dict[rein_ym][rein_editor][2] += reins
-                    editors_dict[rein_ym][rein_editor][3] += reins_surv_48h
-                    editors_dict[rein_ym][rein_editor][7] += persistent_reins
+                    if (out_rev_ts - in_rev_ts).total_seconds() >= seconds_limit:
+                        editors_dict[rein_ym][rein_editor][3] += 1  # rein survived 48 hours
+                        if out_rev_ts.year != rein_ym.year or out_rev_ts.month != rein_ym.month:
+                            editors_dict[rein_ym][rein_editor][7] += 1  # persistent action
 
             # del
+            in_rev_id = None
             out_rev_ts = article_revisions_dict[out_rev_id]
-            try:
-                in_rev_id = token.inbound[i]
-            except (IndexError, KeyError):
-                # no in for this out
-                if from_ym <= out_rev_ts <= to_ym:
-                    del_editor = wikiwho.revisions[out_rev_id].editor
-                    del_ym = '{}-{:02}'.format(out_rev_ts.year, out_rev_ts.month)
-                    del_ym = datetime.strptime(del_ym, '%Y-%m').replace(tzinfo=pytz.UTC).date()
+            if from_ym <= out_rev_ts <= to_ym:
+                del_ym = out_rev_ts.date().replace(day=1)
+                del_editor = wikiwho.revisions[out_rev_id].editor
+                try:
+                    in_rev_id = token.inbound[i]
+                except (IndexError, KeyError):
+                    # no in for this out
                     editors_dict[del_ym][del_editor][4] += 1
                     editors_dict[del_ym][del_editor][5] += 1
                     editors_dict[del_ym][del_editor][7] += 1
-                break
-            else:
-                # there is in for this out
-                if from_ym <= out_rev_ts <= to_ym:
-                    del_editor = wikiwho.revisions[out_rev_id].editor
-                    del_ym = '{}-{:02}'.format(out_rev_ts.year, out_rev_ts.month)
-                    del_ym = datetime.strptime(del_ym, '%Y-%m').replace(tzinfo=pytz.UTC).date()
+                    break
+                else:
+                    # there is in for this out
                     editors_dict[del_ym][del_editor][4] += 1
                     in_rev_ts = article_revisions_dict[in_rev_id]
-                    seconds = (in_rev_ts - out_rev_ts).total_seconds()
-                    if seconds >= seconds_limit:
+                    if (in_rev_ts - out_rev_ts).total_seconds() >= seconds_limit:
                         editors_dict[del_ym][del_editor][5] += 1
-                    if in_rev_ts.year != del_ym.year or in_rev_ts.month != del_ym.month:
-                        # not re inserted in this month
-                        editors_dict[del_ym][del_editor][7] += 1
-
-            prev_in_rev_id = in_rev_id
-            out_rev_id = None
+                        if in_rev_ts.year != del_ym.year or in_rev_ts.month != del_ym.month:
+                            editors_dict[del_ym][del_editor][7] += 1
+            else:
+                break
         # last rein
-        if prev_in_rev_id is not None and out_rev_id is None:
+        if in_rev_id is not None:
             # no out for this in
-            prev_in_rev_ts = article_revisions_dict[prev_in_rev_id]
-            if from_ym <= prev_in_rev_ts <= to_ym:
-                rein_editor = wikiwho.revisions[prev_in_rev_id].editor
-                rein_ym = '{}-{:02}'.format(prev_in_rev_ts.year, prev_in_rev_ts.month)
-                rein_ym = datetime.strptime(rein_ym, '%Y-%m').replace(tzinfo=pytz.UTC).date()
+            if from_ym <= in_rev_ts <= to_ym:
+                rein_ym = in_rev_ts.date().replace(day=1)
+                rein_editor = wikiwho.revisions[in_rev_id].editor
                 editors_dict[rein_ym][rein_editor][2] += 1
                 editors_dict[rein_ym][rein_editor][3] += 1
                 editors_dict[rein_ym][rein_editor][7] += 1
