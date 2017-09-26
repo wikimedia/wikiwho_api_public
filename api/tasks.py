@@ -9,6 +9,7 @@ from django.core.cache import cache
 from deployment.celery_config import default_task_soft_time_limit, user_task_soft_time_limit, long_task_soft_time_limit
 from .handler import WPHandler, WPHandlerException
 from .models import LongFailedArticle
+# from wikiwho.utils_db import wikiwho_to_db
 
 
 def process_article_task(language, page_title, page_id=None, revision_id=None,
@@ -103,3 +104,13 @@ def process_article_long(self, language, page_title, page_id=None, revision_id=N
             raise e
     except (ValueError, ConnectionError, ReadTimeout, JSONDecodeError) as e:
         raise self.retry(exc=e)
+
+
+# # retry max 3 times (default value of max_retries) and
+# # wait 180 seconds (default value of default_retry_delay) between each retry.
+# @shared_task(bind=True, soft_time_limit=db_time_limit)
+# def wikiwho_to_db_task(self, wikiwho, language, save_tables=('article', 'revision', 'token',)):
+#     try:
+#         wikiwho_to_db(wikiwho, language, save_tables)
+#     except Exception as e:
+#         raise self.retry(exc=e)

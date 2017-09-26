@@ -20,7 +20,6 @@ from django.utils.translation import get_language
 # from django.core.signals import request_started, request_finished
 # from django.http import HttpResponse
 
-from wikiwho.models import Revision, Article
 from rest_framework_tracking.mixins import LoggingMixin
 from deployment.gunicorn_config import timeout as gunicorn_timeout
 from deployment.celery_config import user_task_soft_time_limit
@@ -114,42 +113,6 @@ class WikiwhoView(object):
             else:
                 return wp.wikiwho.get_revision_content(wp.revision_ids, parameters)
 
-        # TODO minimal
-        revision_ids = wp.revision_ids
-        json_data = dict()
-        json_data["article"] = wp.saved_article_title
-        json_data["success"] = True
-        json_data["message"] = None
-
-        if only_last_valid_revision:
-            data = self.article.to_json(parameters, content=True, last_rev_id=None, ordered=True)
-            json_data["revisions"] = [data] if data else []
-        else:
-            revisions = []
-            db_revision_ids = []
-            if len(revision_ids) > 1:
-                # FIXME revision ids are not ordered
-                filter_ = {'id__range': revision_ids}
-                order_fields = ['timestamp']
-            else:
-                filter_ = {'id': revision_ids[0]}
-                order_fields = []
-            for revision in Revision.objects.filter(**filter_).order_by(*order_fields):
-                revisions.append({revision.id: revision.to_json(parameters, content=True, ordered=True, with_token_ids=with_token_ids)})
-                db_revision_ids.append(revision.id)
-
-            for rev_id in revision_ids:
-                if rev_id not in db_revision_ids:
-                    return {'Error': 'Revision ID ({}) does not exist or is spam or deleted!'.format(rev_id)}
-
-            json_data["revisions"] = sorted(revisions, key=lambda x: sorted(x.keys())) \
-                if len(revision_ids) > 1 else revisions
-
-        # import json
-        # with open('tmp_pickles/{}_db.json'.format(self.article.title), 'w') as f:
-        #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
-        return json_data
-
     def get_all_content(self, wp, parameters, minimal=False, from_db=False):
         if not from_db:
             return wp.wikiwho.get_all_content(parameters)
@@ -158,57 +121,15 @@ class WikiwhoView(object):
                 return wp.wikiwho.get_all_min_content()
             else:
                 return wp.wikiwho.get_all_content(parameters)
-        # TODO from_db
-        json_data = dict()
-        return json_data
 
     def get_deleted_content(self, wp, parameters, minimal=False, last_rev_id=None, from_db=False):
         # TODO get deleted content for a specific revision
         if not from_db:
             return wp.wikiwho.get_deleted_content(parameters)
-        if not self.article:
-            self.article = Article.objects.get(id=wp.page_id)
-        json_data = dict()
-        json_data["article"] = self.article.title
-        json_data["success"] = True
-        json_data["message"] = None
-        threshold = parameters[-1]
-        json_data["threshold"] = threshold
-
-        # TODO use latest_revision_id from handler?
-        data = self.article.to_json(parameters, deleted=True, threshold=threshold, last_rev_id=last_rev_id, ordered=False)
-        json_data.update(data)
-        # OR TODO which way is faster?
-        # revision = self.article.revisions.select_related('article').order_by('timestamp').last()
-        # json_data["deleted_tokens"] = revision.to_json(parameters, deleted=True, threshold=threshold)
-        # json_data["revision_id"] = revision.id
-
-        # import json
-        # with open('tmp_pickles/{}_deleted_tokens_db.json'.format(self.article.title), 'w') as f:
-        #     f.write(json.dumps(json_data, indent=4, separators=(',', ': '), sort_keys=True, ensure_ascii=False))
-        return json_data
 
     def get_revision_ids(self, wp, parameters=None, from_db=False):
         if not from_db:
             return wp.wikiwho.get_revision_ids(parameters)
-        json_data = dict()
-        json_data["article"] = wp.saved_article_title
-        json_data["success"] = True
-        json_data["message"] = None
-        annotate_dict, values_list = Revision.get_annotate_and_values(parameters, ids=True)
-        order_fields = ['timestamp']
-        json_data["revisions"] = list(Revision.objects.filter(article_id=wp.page_id).order_by(*order_fields).
-                                      annotate(**annotate_dict).values(*values_list))
-        # """
-        # EXPLAIN SELECT "wikiwho_revision"."editor",
-        #                "wikiwho_revision"."timestamp",
-        #                "wikiwho_revision"."id" AS "rev_id"
-        #         FROM "wikiwho_revision"
-        #         WHERE "wikiwho_revision"."article_id" = 662
-        #         ORDER BY "wikiwho_revision"."timestamp" ASC
-        # """
-        # json_data["revisions"] = list(self.revisions.order_by(*order_fields).annotate(**annotate_dict).values_list(*values_list, flat=True))
-        return json_data
 
 
 class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):

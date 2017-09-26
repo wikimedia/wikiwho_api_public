@@ -1,18 +1,18 @@
 from django.contrib import admin
 
-from django.utils.html import format_html
-
 from base.admin import BaseAdmin
 
-from .models import Article, Revision, Token
-# TODO make everything read only + base admin class + check list_filters, show_change_link + test searching
+from .models import Article, EditorDataEnNotIndexed, EditorDataEn, EditorDataEuNotIndexed, EditorDataEu, \
+    EditorDataDeNotIndexed, EditorDataDe
 
 
 class ArticleAdmin(BaseAdmin):
     search_fields = ('id', 'title', )
-    list_display = ('id', 'title', 'rvcontinue', 'spam_ids', )
-    readonly_fields = ('id', 'title', 'rvcontinue', 'spam_ids', 'article_revisions', )
+    list_display = ('id', 'title', 'language', 'rvcontinue', 'spam_ids', )
+    readonly_fields = ('id', 'title', 'rvcontinue', 'spam_ids', 'language', )
+    list_filter = ('language', )
 
+    """
     def article_revisions(self, obj):
         table = '<table style="width:100%">'
         table += '<thead><tr><th>REVISION</th><th>EDITOR</th><th>TIMESTAMP</th><th>CREATED</th></thead>'
@@ -29,6 +29,58 @@ class ArticleAdmin(BaseAdmin):
         table = '<br><div># revisions: {}</div>'.format(c) + table
         return format_html(table)
     article_revisions.short_description = 'Article revisions'
+    """
+
+
+class EditorDataNotIndexedAdmin(BaseAdmin):
+    list_display = ('id', 'article_id', 'editor_id', 'editor_name', 'year_month',
+                    'o_adds', 'o_adds_surv_48h', 'dels', 'dels_surv_48h',
+                    'reins', 'reins_surv_48h', 'persistent_o_adds', 'persistent_actions',)
+    readonly_fields = ('id', 'article_id', 'editor_id', 'editor_name', 'year_month',
+                       'o_adds', 'o_adds_surv_48h', 'dels', 'dels_surv_48h',
+                       'reins', 'reins_surv_48h', 'persistent_o_adds', 'persistent_actions',)
+
+
+class EditorDataIndexedAdmin(EditorDataNotIndexedAdmin):
+    search_fields = ('article_id', 'title', )
+    date_hierarchy = 'year_month'
+    ordering = ('year_month', )
+
+
+class EditorDataEnNotIndexedAdmin(EditorDataNotIndexedAdmin):
+    pass
+
+
+class EditorDataEnAdmin(EditorDataIndexedAdmin):
+    pass
+
+
+class EditorDataEuNotIndexedAdmin(EditorDataNotIndexedAdmin):
+    pass
+
+
+class EditorDataEuAdmin(EditorDataIndexedAdmin):
+    pass
+
+
+class EditorDataDeNotIndexedAdmin(EditorDataNotIndexedAdmin):
+    pass
+
+
+class EditorDataDeAdmin(EditorDataIndexedAdmin):
+    pass
+
+
+admin.site.register(Article, ArticleAdmin)
+admin.site.register(EditorDataEnNotIndexed, EditorDataEnNotIndexedAdmin)
+admin.site.register(EditorDataEn, EditorDataEnAdmin)
+admin.site.register(EditorDataEuNotIndexed, EditorDataEuNotIndexedAdmin)
+admin.site.register(EditorDataEu, EditorDataEuAdmin)
+admin.site.register(EditorDataDeNotIndexed, EditorDataDeNotIndexedAdmin)
+admin.site.register(EditorDataDe, EditorDataDeAdmin)
+
+"""
+from .models import Revision, Token
 
 
 class RevisionAdmin(BaseAdmin):
@@ -52,9 +104,6 @@ class TokenAdmin(BaseAdmin):
         return len(obj.outbound)
     len_outbound.short_description = 'len outbound'
 
-admin.site.register(Article, ArticleAdmin)
-# admin.site.register(Article)
 admin.site.register(Revision, RevisionAdmin)
-# admin.site.register(Revision)
 admin.site.register(Token, TokenAdmin)
-# admin.site.register(Token)
+"""

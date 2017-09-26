@@ -1,8 +1,20 @@
+from os.path import exists, join
+from os import mkdir
 from time import strftime
 import logging
 
 
-def get_logger(name, log_folder, is_process=True, is_set=True):
+def get_logger(name, log_folder, is_process=True, is_set=True, language=None):
+    if language:
+        log_folder = join(log_folder, 'logs')
+        if not exists(log_folder):
+            mkdir(log_folder)
+        log_folder = join(log_folder, language)
+    else:
+        log_folder = join(log_folder, 'logs')
+    if not exists(log_folder):
+        mkdir(log_folder)
+
     logger = logging.getLogger(name)
     file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
                                                                 name,

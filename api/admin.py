@@ -31,7 +31,9 @@ class LongFailedArticleAdmin(admin.ModelAdmin):
         pickle_path = "{}/{}.p".format(get_pickle_folder(obj.language), obj.id)
         if exists(pickle_path):
             ww = pickle_load(pickle_path)
-            return ww.ordered_revisions[-1]
+            last_rev_in_pickle = ww.ordered_revisions[-1]
+            return '<a href="https://{}.wikipedia.org/w/index.php?title={}&oldid={}">{}</a>'.\
+                format(obj.language, obj.title, last_rev_in_pickle, last_rev_in_pickle)
         return False
 
 
