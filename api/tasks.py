@@ -52,9 +52,9 @@ def process_article_task(language, page_title, page_id=None, revision_id=None,
     return True
 
 
-# retry max 3 times (default value of max_retries) and
-# wait 180 seconds (default value of default_retry_delay) between each retry.
-@shared_task(bind=True, soft_time_limit=default_task_soft_time_limit)
+# retry max 6 times (default value of max_retries is 3) and
+# wait 360 seconds (default value of default_retry_delay is 180) between each retry.
+@shared_task(bind=True, soft_time_limit=default_task_soft_time_limit, max_retries=6, default_retry_delay=6 * 60)
 def process_article(self, language, page_title):
     try:
         process_article_task(language, page_title, cache_key_timeout=default_task_soft_time_limit)
@@ -72,7 +72,9 @@ def process_article(self, language, page_title):
         raise self.retry(exc=e)
 
 
-@shared_task(bind=True, soft_time_limit=user_task_soft_time_limit)
+# retry max 6 times (default value of max_retries is 3) and
+# wait 360 seconds (default value of default_retry_delay is 180) between each retry.
+@shared_task(bind=True, soft_time_limit=user_task_soft_time_limit, max_retries=6, default_retry_delay=6 * 60)
 def process_article_user(self, language, page_title, page_id=None, revision_id=None):
     try:
         process_article_task(language, page_title, page_id, revision_id, cache_key_timeout=user_task_soft_time_limit)
@@ -87,9 +89,9 @@ def process_article_user(self, language, page_title, page_id=None, revision_id=N
         raise self.retry(exc=e)
 
 
-# retry max 3 times (default value of max_retries) and
-# wait 180 seconds (default value of default_retry_delay) between each retry.
-@shared_task(bind=True, soft_time_limit=long_task_soft_time_limit)
+# retry max 6 times (default value of max_retries is 3) and
+# wait 360 seconds (default value of default_retry_delay is 180) between each retry.
+@shared_task(bind=True, soft_time_limit=long_task_soft_time_limit, max_retries=6, default_retry_delay=6 * 60)
 def process_article_long(self, language, page_title, page_id=None, revision_id=None):
     try:
         process_article_task(language, page_title, page_id, revision_id,
