@@ -2,19 +2,22 @@ import uuid
 import json
 import pytz
 from datetime import datetime
-
 from collections import defaultdict
+
 from django.db import connection
 from django.utils.dateparse import parse_datetime
+from django.db.utils import ProgrammingError
 
 from WikiWho.utils import iter_rev_tokens
 from api.handler import WPHandler
 from api.utils_pickles import pickle_load
 # from api.utils import revert_rvcontinue
-from .models import Article, EditorDataEnNotIndexed, EditorDataEn, EditorDataEuNotIndexed, EditorDataEu, \
+from wikiwho.models import Article, EditorDataEnNotIndexed, EditorDataEn, EditorDataEuNotIndexed, EditorDataEu, \
     EditorDataDeNotIndexed, EditorDataDe
 
-EDITOR_MODEL = {'en': EditorDataEnNotIndexed, 'eu': EditorDataEuNotIndexed, 'de': EditorDataDeNotIndexed}
+EDITOR_MODEL = {'en': (EditorDataEnNotIndexed, EditorDataEn, ),
+                'eu': (EditorDataEuNotIndexed, EditorDataEu, ),
+                'de': (EditorDataDeNotIndexed, EditorDataDe, )}
 
 
 def wikiwho_to_db(wikiwho, language, save_tables=('article', 'revision', 'token', )):
@@ -135,7 +138,7 @@ def wikiwho_to_db(wikiwho, language, save_tables=('article', 'revision', 'token'
         Token.objects.bulk_create(tokens, batch_size=1000000)
 
 
-def fill_editor_table(pickle_path, from_ym, to_ym, language, update=False):
+def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
     wikiwho = pickle_load(pickle_path)
 
     if update:
@@ -242,11 +245,11 @@ def fill_editor_table(pickle_path, from_ym, to_ym, language, update=False):
                 editors_dict[rein_ym][rein_editor][3] += 1
                 editors_dict[rein_ym][rein_editor][7] += 1
 
-    EDITOR_MODEL[language].objects.bulk_create(
+    EDITOR_MODEL[language][0].objects.bulk_create(
         [
-            EDITOR_MODEL[language](
+            EDITOR_MODEL[language][0](
                 article_id=wikiwho.page_id,
-                editor_id=0 if editor.startswith('0|') else int(editor),
+                editor_id=0 if editor.startswith('0|') or editor == '' else int(editor),
                 editor_name=editor[2:] if editor.startswith('0|') else '',
                 year_month=ym,
                 o_adds=data[0],
@@ -263,6 +266,83 @@ def fill_editor_table(pickle_path, from_ym, to_ym, language, update=False):
         ],
         batch_size=1000000
     )
+
+
+def manage_editor_tables(language, from_ym, to_ym):
+    master_table = "wikiwho_{}".format(EDITOR_MODEL[language][1].__name__.lower())
+    part_table = '{}{}'.format(master_table, from_ym.year)
+    if from_ym.month == 1:
+        # new year
+        with connection.cursor() as cursor:
+            # create a new partition table for current new year
+            new_table_query = """
+            CREATE TABLE {} 
+            (CHECK ( year_month >= DATE '{}-01-01' AND year_month <= DATE '{}-12-31' )) 
+            INHERITS ({});
+            """.format(part_table, from_ym.year, from_ym.year, master_table)
+            cursor.execute(new_table_query)
+
+            # create a trigger function
+            x = "{} ( NEW.year_month >= DATE '{}-01-01' AND NEW.year_month <= DATE '{}-12-31' ) THEN INSERT INTO {} VALUES (NEW.*);"
+            trigger_function_query = """
+            CREATE OR REPLACE FUNCTION wikiwho_editordata_{}_insert_trigger()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                {}
+                ELSE
+                   RAISE EXCEPTION 'Date out of range. Fix the wikiwho_editordata_insert_trigger() function!';
+                END IF;
+                RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+            """.format(language,
+                       '\n'.join([x.format('IF' if year == from_ym.year else 'ELSIF', year, year,
+                                           '{}{}'.format(master_table, year))
+                                  for year in range(from_ym.year, 2000, -1)]))
+            cursor.execute(trigger_function_query)
+            # attach trigger query to the table, this has to be done only one time
+            trigger_query = """
+            CREATE TRIGGER insert_wikiwho_editordata_{}_trigger
+              BEFORE INSERT ON {}
+              FOR EACH ROW EXECUTE PROCEDURE wikiwho_editordata_{}_insert_trigger();
+              """.format(language, master_table, language)
+            try:
+                cursor.execute(trigger_query)
+            except ProgrammingError:
+                pass
+
+    with connection.cursor() as cursor:
+        if from_ym.month != 1:
+            # drop indexes in the last partition
+            cursor.execute("DROP INDEX {}_article_id;".format(part_table))
+            cursor.execute("DROP INDEX {}_year_month;".format(part_table))
+            cursor.execute("DROP INDEX {}_editor_id_ym;".format(part_table))
+
+        # fill data
+        not_indexed_table = "wikiwho_{}".format(EDITOR_MODEL[language][0].__name__.lower())
+        insert_query = """
+        INSERT INTO {} 
+        (article_id, editor_id, year_month, editor_name, o_adds, o_adds_surv_48h, 
+        dels, dels_surv_48h, reins, reins_surv_48h, persistent_o_adds, persistent_actions) 
+        (
+          SELECT 
+            article_id, editor_id, year_month, editor_name, o_adds, o_adds_surv_48h, 
+            dels, dels_surv_48h, reins, reins_surv_48h, persistent_o_adds, persistent_actions
+          FROM {} 
+        );
+        """.format(master_table, not_indexed_table)
+        cursor.execute(insert_query)
+
+        # re-create indexes
+        cursor.execute("CREATE INDEX {}_article_id ON {} USING btree (article_id);".format(part_table, part_table))
+        cursor.execute("CREATE INDEX {}_year_month ON {} USING btree (year_month);".format(part_table, part_table))
+        cursor.execute("CREATE INDEX {}_editor_id_ym ON {} USING btree (editor_id, year_month);".
+                       format(part_table, part_table))
+
+
+def empty_editor_tables(language):
+    EDITOR_MODEL[language][0].objects.all().delete()
 
 
 def wikiwho_to_csv(wikiwho, output_folder):

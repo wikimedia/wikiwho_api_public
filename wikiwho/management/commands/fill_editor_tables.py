@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
+python manage.py fill_editor_tables -from 2001-01 -to 2002-01 -m 6 -log '' -lang 'en,de,eu'
 """
-from os.path import join, basename
 import glob
 import pytz
 import sys
+from os.path import join, basename
 from time import strftime
 from datetime import datetime, timedelta
 
@@ -15,19 +16,11 @@ from django.core.management.base import BaseCommand
 
 from api.utils_pickles import get_pickle_folder
 from base.utils_log import get_logger
-from wikiwho.utils_db import fill_editor_table
-
-
-def generate_editors_data(page_id, pickle_path, language, from_ym, to_ym, log_folder):
-    logger = get_logger(page_id, log_folder, is_process=True, is_set=False, language=language)
-    try:
-        fill_editor_table(pickle_path, from_ym, to_ym, language, update=True)
-    except Exception as e:
-        logger.exception('{}-{}-{}-{}'.format(page_id, language, from_ym, to_ym))
+from wikiwho.utils_db import fill_editor_tables
 
 
 class Command(BaseCommand):
-    help = 'Generates editor data and fills the editor database.'
+    help = 'Generates editor data and fills the editor database per ym, editor, article.'
 
     def add_arguments(self, parser):
         parser.add_argument('-from', '--from_ym', required=True,
@@ -43,15 +36,17 @@ class Command(BaseCommand):
         #                     help='Timeout value for each processor for analyzing articles [minutes]')
         # parser.add_argument('-c', '--check_exists', action='store_true', help='', default=False, required=False)
 
-    def handle(self, *args, **options):
+    def get_parameters(self, options):
         from_ym = options['from_ym']
         from_ym = datetime.strptime(from_ym, '%Y-%m').replace(tzinfo=pytz.UTC)
         to_ym = options['to_ym']
         to_ym = datetime.strptime(to_ym, '%Y-%m').replace(tzinfo=pytz.UTC) - timedelta(seconds=1)
         languages = options['language'].split(',')
-
-        # get max number of concurrent workers
         max_workers = options['max_workers']
+        return from_ym, to_ym, languages, max_workers
+
+    def handle(self, *args, **options):
+        from_ym, to_ym, languages, max_workers = self.get_parameters(options)
 
         print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
         print(max_workers, languages, from_ym, to_ym)
@@ -59,7 +54,8 @@ class Command(BaseCommand):
         for language in languages:
             # set logging
             log_folder = options['log_folder']
-            logger = get_logger('future_log', log_folder, is_process=True, is_set=True, language=language)
+            logger = get_logger('fill_editor_tables_future_log_{}'.format(language),
+                                log_folder, is_process=True, is_set=True, language=language)
             pickle_folder = get_pickle_folder(language)
             print('Start: {} - {} at {}'.format(language, pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
 
@@ -72,7 +68,7 @@ class Command(BaseCommand):
                 while pickles_left:
                     for pickle_path in pickles_iter:
                         page_id = basename(pickle_path)[:-2]
-                        job = executor.submit(generate_editors_data, page_id, pickle_path, language, from_ym, to_ym, log_folder)
+                        job = executor.submit(fill_editor_tables, pickle_path, from_ym, to_ym, language, update=True)
                         jobs[job] = page_id
                         if len(jobs) == max_workers:  # limit # jobs with max_workers
                             break

@@ -39,12 +39,12 @@ class EditorDataNotIndexedAdmin(BaseAdmin):
     readonly_fields = ('id', 'article_id', 'editor_id', 'editor_name', 'year_month',
                        'o_adds', 'o_adds_surv_48h', 'dels', 'dels_surv_48h',
                        'reins', 'reins_surv_48h', 'persistent_o_adds', 'persistent_actions',)
+    search_fields = ('editor_id', 'article_id', )
+    date_hierarchy = 'year_month'
 
 
 class EditorDataIndexedAdmin(EditorDataNotIndexedAdmin):
-    search_fields = ('article_id', 'title', )
-    date_hierarchy = 'year_month'
-    ordering = ('year_month', )
+    ordering = ('-year_month', )
 
 
 class EditorDataEnNotIndexedAdmin(EditorDataNotIndexedAdmin):
