@@ -76,7 +76,7 @@
             {% if request.user.is_superuser %}
             <div class='input'><a id="admin" class="header__btn" href="{% url 'admin:index' %}">Admin</a></div>
             {% endif %}
-            <div class='input'><a id="contact" class="header__btn" href="mailto:fabian.floeck@gesis.org?cc=kenan.erdogan@gesis.org" target="_top" data-sw-translate>Contact</a></div>
+            <div class='input'><a id="contact" class="header__btn" href="mailto:wikiwho@gesis.org?cc=fabian.floeck@gesis.org;kenan.erdogan@gesis.org" target="_top" data-sw-translate>Contact</a></div>
           {# Override this block to add more buttons, content to nav bar. #}
             {% if request.user.is_authenticated %}
                 <div class='input'><a id="auth" class="header__btn" href="{% url 'account:detail' %}" data-sw-translate>My Account</a></div>
