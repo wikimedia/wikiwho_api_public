@@ -15,7 +15,8 @@ from wikiwho.utils_db import empty_editor_tables
 
 
 def empty_editor_tables_base(language, log_folder):
-    logger = get_logger(language, log_folder, is_process=True, is_set=False, language=language)
+    logger = get_logger('empty_editor_tables_{}'.format(language), log_folder, is_process=True,
+                        is_set=False, language=language)
     try:
         empty_editor_tables(language)
     except Exception as e:
@@ -38,8 +39,7 @@ class Command(BaseCommand):
         max_workers = options['max_workers']
         # set logging
         log_folder = options['log_folder']
-        logger = get_logger('empty_editor_tables_future_log',
-                            log_folder, is_process=True, is_set=True)
+        logger = get_logger('empty_editor_tables', log_folder, is_process=True, is_set=True)
 
         print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
         print(max_workers, languages, log_folder)

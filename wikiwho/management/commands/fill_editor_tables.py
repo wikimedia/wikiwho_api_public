@@ -54,7 +54,8 @@ class Command(BaseCommand):
         for language in languages:
             # set logging
             log_folder = options['log_folder']
-            logger = get_logger('fill_editor_tables_future_log_{}'.format(language),
+            logger = get_logger('fill_editor_tables_{}_from_{}_{}_to_{}_{}'.
+                                format(language, from_ym.year, from_ym.month, to_ym.year, to_ym.month),
                                 log_folder, is_process=True, is_set=True, language=language)
             pickle_folder = get_pickle_folder(language)
             print('Start: {} - {} at {}'.format(language, pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))

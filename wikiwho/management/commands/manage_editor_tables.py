@@ -14,11 +14,13 @@ from .fill_editor_tables import Command as CommandBase
 
 
 def manage_editor_tables_base(language, from_ym, to_ym, log_folder):
-    logger = get_logger(language, log_folder, is_process=True, is_set=False, language=language)
+    logger = get_logger('manage_editor_tables_{}_from_{}_{}_to_{}_{}'.
+                        format(language, from_ym.year, from_ym.month, to_ym.year, to_ym.month),
+                        log_folder, is_process=True, is_set=False, language=language)
     try:
         manage_editor_tables(language, from_ym, to_ym)
     except Exception as e:
-        logger.exception('{}-{}-{}'.format(language, from_ym, to_ym))
+        logger.exception('Manage editor tables exception {}-{}-{}'.format(language, from_ym, to_ym))
 
 
 class Command(CommandBase):
@@ -29,7 +31,9 @@ class Command(CommandBase):
 
         # set logging
         log_folder = options['log_folder']
-        logger = get_logger('manage_editor_tables_future_log', log_folder, is_process=True, is_set=True)
+        logger = get_logger('manage_editor_tables_from_{}_{}_to_{}_{}'.
+                            format(from_ym.year, from_ym.month, to_ym.year, to_ym.month),
+                            log_folder, is_process=True, is_set=True)
 
         print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
         print(max_workers, languages, from_ym, to_ym, log_folder)

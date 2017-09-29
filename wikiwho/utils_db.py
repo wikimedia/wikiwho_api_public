@@ -9,7 +9,7 @@ from django.utils.dateparse import parse_datetime
 from django.db.utils import ProgrammingError
 
 from WikiWho.utils import iter_rev_tokens
-from api.handler import WPHandler
+from api.handler import WPHandler, WPHandlerException
 from api.utils_pickles import pickle_load
 # from api.utils import revert_rvcontinue
 from wikiwho.models import Article, EditorDataEnNotIndexed, EditorDataEn, EditorDataEuNotIndexed, EditorDataEu, \
@@ -139,14 +139,23 @@ def wikiwho_to_db(wikiwho, language, save_tables=('article', 'revision', 'token'
 
 
 def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
-    wikiwho = pickle_load(pickle_path)
+    try:
+        wikiwho = pickle_load(pickle_path)
+    except EOFError:
+        update = True
 
     if update:
         # update pickle until latest revision
-        with WPHandler(wikiwho.title, page_id=wikiwho.page_id, language=language) as wp:
-            # TODO what to do with Long failed and recursion articles
-            wp.handle(revision_ids=[], is_api_call=False)
-            wikiwho = wp.wikiwho
+        try:
+            with WPHandler(wikiwho.title, page_id=wikiwho.page_id, language=language) as wp:
+                wp.handle(revision_ids=[], is_api_call=False)
+                wikiwho = wp.wikiwho
+        except WPHandlerException as e:
+            if e.code == '00':
+                # article does not exist on wp anymore
+                pass
+            else:
+                raise e
 
     article, created = Article.objects.update_or_create(page_id=wikiwho.page_id, language=language,
                                                         defaults={'title': wikiwho.title,
