@@ -43,6 +43,10 @@ class EditorData(BaseModel):
     persistent_actions = models.IntegerField(blank=False)
     # data = JSONField(null=True, blank=True)  # TODO or TextField?
 
+    @property
+    def language(self):
+        return self.__class__.__name__.lower().split('editordata')[-1]
+
     class Meta:
         abstract = True
 

@@ -8,9 +8,20 @@ from .models import Article, EditorDataEnNotIndexed, EditorDataEn, EditorDataEuN
 
 class ArticleAdmin(BaseAdmin):
     search_fields = ('page_id', 'title', )
-    list_display = ('page_id', 'title', 'language', 'rvcontinue', 'spam_ids', )
+    list_display = ('id', 'page_id_', 'title_', 'language', 'rvcontinue', 'spam_ids', )
     readonly_fields = ('id', 'page_id', 'title', 'rvcontinue', 'spam_ids', 'language', )
     list_filter = ('language', )
+
+    def page_id_(self, obj):
+        return '<a href="https://{}.wikipedia.org/w/api.php?action=query&prop=info&inprop=url&format=json&' \
+               'pageids={}">{}</a>'.format(obj.language, obj.page_id, obj.page_id)
+    page_id_.short_description = 'Page ID'
+    page_id_.allow_tags = True
+
+    def title_(self, obj):
+        return '<a href="https://{}.wikipedia.org/wiki/{}">{}</a>'.format(obj.language, obj.title, obj.title)
+    title_.short_description = 'Title'
+    title_.allow_tags = True
 
     """
     def article_revisions(self, obj):
@@ -33,7 +44,7 @@ class ArticleAdmin(BaseAdmin):
 
 
 class EditorDataNotIndexedAdmin(BaseAdmin):
-    list_display = ('id', 'article_id', 'editor_id', 'editor_name', 'year_month',
+    list_display = ('id', 'article_id_', 'editor_id_', 'editor_name', 'year_month',
                     'o_adds', 'o_adds_surv_48h', 'dels', 'dels_surv_48h',
                     'reins', 'reins_surv_48h', 'persistent_o_adds', 'persistent_actions',)
     readonly_fields = ('id', 'article_id', 'editor_id', 'editor_name', 'year_month',
@@ -41,6 +52,18 @@ class EditorDataNotIndexedAdmin(BaseAdmin):
                        'reins', 'reins_surv_48h', 'persistent_o_adds', 'persistent_actions',)
     search_fields = ('editor_id', 'article_id', )
     date_hierarchy = 'year_month'
+
+    def article_id_(self, obj):
+        return '<a href="https://{}.wikipedia.org/w/api.php?action=query&prop=info&inprop=url&format=json&' \
+               'pageids={}">{}</a>'.format(obj.language, obj.article_id, obj.article_id)
+    article_id_.short_description = 'Page ID'
+    article_id_.allow_tags = True
+
+    def editor_id_(self, obj):
+        return '<a href="https://{}.wikipedia.org/w/api.php?action=query&list=users&format=json&ususerids={}">' \
+               '{}</a>'.format(obj.language, obj.editor_id, obj.editor_id)
+    editor_id_.short_description = 'Editor ID'
+    editor_id_.allow_tags = True
 
 
 class EditorDataIndexedAdmin(EditorDataNotIndexedAdmin):
