@@ -48,6 +48,7 @@ class LoggingMixin(object):
             # path=request.path,
             # view=view_name,
             view_method=view_method,
+            view_class=self.__class__.__name__,
             # remote_addr=ipaddr,
             # host=request.get_host(),
             # method=request.method,

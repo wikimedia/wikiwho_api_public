@@ -13,6 +13,7 @@ from django.utils.translation import get_language
 from api.tasks import process_article_user
 from api.messages import MESSAGES
 
+from rest_framework_tracking.mixins import LoggingMixin
 from .handler import WhoColorHandler, WhoColorException
 from .swagger_data import custom_data
 
@@ -47,10 +48,14 @@ def schema_view(request, version):
     return Response(schema)
 
 
-class WhoColorApiView(APIView):
+class WhoColorApiView(LoggingMixin, APIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, )
     authentication_classes = (authentication.SessionAuthentication, authentication.BasicAuthentication)
     renderer_classes = [JSONRenderer]  # to disable browsable api
+
+    def __init__(self, page_id=None):
+        super(WhoColorApiView, self).__init__()
+        self.page_id = page_id
 
     def get(self, request, version, page_title, rev_id=None):
         response = {}
@@ -58,6 +63,7 @@ class WhoColorApiView(APIView):
             language = get_language()
             with WhoColorHandler(page_title=page_title, revision_id=rev_id, language=language) as wc_handler:
                 extended_html, present_editors, whocolor_data = wc_handler.handle()
+                self.page_id = wc_handler.page_id
                 if extended_html is None and present_editors is None:
                     process_article_user.delay(language, wc_handler.page_title,
                                                wc_handler.page_id, wc_handler.rev_id)

@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, connection
 # from django.conf import settings
 
 # from .managers import PrefetchUserManager
@@ -23,7 +23,8 @@ class BaseAPIRequestLog(models.Model):
     # view = models.CharField(max_length=200, db_index=True)
 
     # method of the view
-    view_method = models.CharField(max_length=200, db_index=True)
+    view_method = models.CharField(max_length=200)
+    view_class = models.CharField(max_length=200)
 
     # remote IP address of request
     # remote_addr = models.GenericIPAddressField(null=True)
@@ -55,6 +56,19 @@ class BaseAPIRequestLog(models.Model):
 
     language = models.CharField(max_length=8, default='',
                                 choices=(('', '-------'), ('en', 'English'), ('de', 'German'), ('eu', 'Basque')))
+
+    @classmethod
+    def overview(cls):
+        with connection.cursor() as cursor:
+            q = """
+            select date_trunc('month', requested_at) as year_month, language, count(*) 
+            from rest_framework_tracking_apirequestlog  
+            group by month, language 
+            order by month;
+            """
+            cursor.execute(q)
+            rows = cursor.fetchall()
+        return rows
 
     class Meta:
         abstract = True
