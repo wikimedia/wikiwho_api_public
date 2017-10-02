@@ -4,7 +4,9 @@ Example usage:
 python manage.py manage_editor_tables -from 2001-01 -to 2002-01 -m 3 -log '' -lang 'en,de,eu'
 """
 import sys
+import pytz
 from time import strftime
+from datetime import datetime, timedelta
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -26,9 +28,28 @@ def manage_editor_tables_base(language, from_ym, to_ym, log_folder):
 class Command(CommandBase):
     help = 'Partition editor tables if necessary and fill latest data into relevant editor table.'
 
+    def add_arguments(self, parser):
+        parser.add_argument('-from', '--from_ym', required=True,
+                            help='Year-month to created data from [YYYY-MM]. Included.')
+        parser.add_argument('-to', '--to_ym', required=True,
+                            help='Year-month to created data until [YYYY-MM]. Not included.')
+        parser.add_argument('-lang', '--language', help="Wikipedia language. Ex: 'en' or 'en,eu,de'", required=True)
+        parser.add_argument('-log', '--log_folder', help='Folder where to write logs. Default is folder of xml folder',
+                            required=True)
+        parser.add_argument('-m', '--max_workers', type=int, help='Number of processors/threads to run parallel. ',
+                            required=True)
+
+    def get_parameters(self, options):
+        from_ym = options['from_ym']
+        from_ym = datetime.strptime(from_ym, '%Y-%m').replace(tzinfo=pytz.UTC)
+        to_ym = options['to_ym']
+        to_ym = datetime.strptime(to_ym, '%Y-%m').replace(tzinfo=pytz.UTC) - timedelta(seconds=1)
+        languages = options['language'].split(',')
+        max_workers = options['max_workers']
+        return from_ym, to_ym, languages, max_workers
+
     def handle(self, *args, **options):
-        # json file is not used in this command
-        json_file, from_ym, to_ym, languages, max_workers = self.get_parameters(options)
+        from_ym, to_ym, languages, max_workers = self.get_parameters(options)
 
         # set logging
         log_folder = options['log_folder']

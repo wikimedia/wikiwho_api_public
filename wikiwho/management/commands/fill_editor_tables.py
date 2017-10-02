@@ -22,7 +22,7 @@ from base.utils_log import get_logger
 from wikiwho.utils_db import fill_editor_tables
 
 
-def fill_editor_tables_base(pickle_path, from_ym, to_ym, language, update=False):
+def fill_editor_tables_base(pickle_path, from_ym, to_ym, language, update):
     retries = 6
     while retries:
         retries -= 1
@@ -61,6 +61,9 @@ class Command(BaseCommand):
                             required=True)
         parser.add_argument('-m', '--max_workers', type=int, help='Number of processors/threads to run parallel. ',
                             required=True)
+        parser.add_argument('-u', '--update', action='store_true',
+                            help='Update pickles from WP api before generating editor data. Default is False.',
+                            default=False, required=False)
         # parser.add_argument('-t', '--timeout', type=float, required=False,
         #                     help='Timeout value for each processor for analyzing articles [minutes]')
         # parser.add_argument('-c', '--check_exists', action='store_true', help='', default=False, required=False)
@@ -73,10 +76,11 @@ class Command(BaseCommand):
         to_ym = datetime.strptime(to_ym, '%Y-%m').replace(tzinfo=pytz.UTC) - timedelta(seconds=1)
         languages = options['language'].split(',')
         max_workers = options['max_workers']
-        return json_file, from_ym, to_ym, languages, max_workers
+        update = options['update']
+        return json_file, from_ym, to_ym, languages, max_workers, update
 
     def handle(self, *args, **options):
-        json_file, from_ym, to_ym, languages, max_workers = self.get_parameters(options)
+        json_file, from_ym, to_ym, languages, max_workers, update = self.get_parameters(options)
 
         print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
         print(max_workers, languages, from_ym, to_ym)
@@ -107,7 +111,7 @@ class Command(BaseCommand):
                 while pickles_left:
                     for pickle_path in pickles_iter:
                         page_id = basename(pickle_path)[:-2]
-                        job = executor.submit(fill_editor_tables_base, pickle_path, from_ym, to_ym, language, update=True)
+                        job = executor.submit(fill_editor_tables_base, pickle_path, from_ym, to_ym, language, update)
                         jobs[job] = page_id
                         if len(jobs) == max_workers:  # limit # jobs with max_workers
                             break
