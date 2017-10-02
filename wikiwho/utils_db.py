@@ -319,11 +319,10 @@ def manage_editor_tables(language, from_ym, to_ym):
                 pass
 
     with connection.cursor() as cursor:
-        if from_ym.month != 1:
-            # drop indexes in the last partition
-            cursor.execute("DROP INDEX {}_article_id;".format(part_table))
-            cursor.execute("DROP INDEX {}_year_month;".format(part_table))
-            cursor.execute("DROP INDEX {}_editor_id_ym;".format(part_table))
+        # drop indexes in the last partition
+        cursor.execute("DROP INDEX {}_article_id;".format(part_table))
+        cursor.execute("DROP INDEX {}_year_month;".format(part_table))
+        cursor.execute("DROP INDEX {}_editor_id_ym;".format(part_table))
 
         # fill data
         not_indexed_table = "wikiwho_{}".format(EDITOR_MODEL[language][0].__name__.lower())
