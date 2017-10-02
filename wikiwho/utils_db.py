@@ -146,16 +146,10 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
 
     if update:
         # update pickle until latest revision
-        try:
-            with WPHandler(wikiwho.title, page_id=wikiwho.page_id, language=language) as wp:
-                wp.handle(revision_ids=[], is_api_call=False)
-                wikiwho = wp.wikiwho
-        except WPHandlerException as e:
-            if e.code == '00':
-                # article does not exist on wp anymore
-                pass
-            else:
-                raise e
+        with WPHandler(wikiwho.title, page_id=wikiwho.page_id, language=language) as wp:
+            # TODO what to do with Long failed and recursion articles
+            wp.handle(revision_ids=[], is_api_call=False)
+            wikiwho = wp.wikiwho
 
     article, created = Article.objects.update_or_create(page_id=wikiwho.page_id, language=language,
                                                         defaults={'title': wikiwho.title,

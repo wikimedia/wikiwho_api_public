@@ -27,7 +27,8 @@ class Command(CommandBase):
     help = 'Partition editor tables if necessary and fill latest data into relevant editor table.'
 
     def handle(self, *args, **options):
-        from_ym, to_ym, languages, max_workers = self.get_parameters(options)
+        # json file is not used in this command
+        json_file, from_ym, to_ym, languages, max_workers = self.get_parameters(options)
 
         # set logging
         log_folder = options['log_folder']

@@ -6,23 +6,52 @@ python manage.py fill_editor_tables -from 2001-01 -to 2002-01 -m 6 -log '' -lang
 import glob
 import pytz
 import sys
+import json
 from os.path import join, basename
-from time import strftime
+from time import strftime, sleep
 from datetime import datetime, timedelta
+from simplejson import JSONDecodeError
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from django.core.management.base import BaseCommand
 
 from api.utils_pickles import get_pickle_folder
+from api.handler import WPHandlerException
 from base.utils_log import get_logger
 from wikiwho.utils_db import fill_editor_tables
+
+
+def fill_editor_tables_base(pickle_path, from_ym, to_ym, language, update=False):
+    retries = 6
+    while retries:
+        retries -= 1
+        try:
+            fill_editor_tables(pickle_path, from_ym, to_ym, language, update)
+            return
+        except WPHandlerException as e:
+            if e.code == '00':
+                # article does not exist on wp anymore
+                # dont try to update it, process what we have
+                update = False
+                sleep(30)
+                if not retries:
+                    raise
+            else:
+                raise e
+        except (UnboundLocalError, JSONDecodeError):
+            sleep(30)
+            if not retries:
+                raise
 
 
 class Command(BaseCommand):
     help = 'Generates editor data and fills the editor database per ym, editor, article.'
 
     def add_arguments(self, parser):
+        parser.add_argument('-f', '--file', required=False,
+                            help='Pickles json file {"en": [list of page ids], "de" [], }. '
+                                 'If not given, list is taken from relevant pickle folder for each language.')
         parser.add_argument('-from', '--from_ym', required=True,
                             help='Year-month to created data from [YYYY-MM]. Included.')
         parser.add_argument('-to', '--to_ym', required=True,
@@ -37,16 +66,17 @@ class Command(BaseCommand):
         # parser.add_argument('-c', '--check_exists', action='store_true', help='', default=False, required=False)
 
     def get_parameters(self, options):
+        json_file = options['file'] or None
         from_ym = options['from_ym']
         from_ym = datetime.strptime(from_ym, '%Y-%m').replace(tzinfo=pytz.UTC)
         to_ym = options['to_ym']
         to_ym = datetime.strptime(to_ym, '%Y-%m').replace(tzinfo=pytz.UTC) - timedelta(seconds=1)
         languages = options['language'].split(',')
         max_workers = options['max_workers']
-        return from_ym, to_ym, languages, max_workers
+        return json_file, from_ym, to_ym, languages, max_workers
 
     def handle(self, *args, **options):
-        from_ym, to_ym, languages, max_workers = self.get_parameters(options)
+        json_file, from_ym, to_ym, languages, max_workers = self.get_parameters(options)
 
         print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
         print(max_workers, languages, from_ym, to_ym)
@@ -60,16 +90,24 @@ class Command(BaseCommand):
             pickle_folder = get_pickle_folder(language)
             print('Start: {} - {} at {}'.format(language, pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
 
-            pickles_iter = glob.iglob(join(pickle_folder, '*.p'))
-            pickles_all = sum(1 for x in pickles_iter)
-            pickles_left = pickles_all
-            pickles_iter = glob.iglob(join(pickle_folder, '*.p'))
+            if json_file:
+                with open(json_file, 'r') as f:
+                    pickles_dict = json.loads(f.read())
+                    pickles_list = [join(pickle_folder, '{}.p'.format(page_id)) for page_id in pickles_dict[language]]
+                    pickles_all = len(pickles_list)
+                    pickles_left = pickles_all
+                    pickles_iter = iter(pickles_list)
+            else:
+                pickles_iter = glob.iglob(join(pickle_folder, '*.p'))
+                pickles_all = sum(1 for x in pickles_iter)
+                pickles_left = pickles_all
+                pickles_iter = glob.iglob(join(pickle_folder, '*.p'))
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
                 jobs = {}
                 while pickles_left:
                     for pickle_path in pickles_iter:
                         page_id = basename(pickle_path)[:-2]
-                        job = executor.submit(fill_editor_tables, pickle_path, from_ym, to_ym, language, update=True)
+                        job = executor.submit(fill_editor_tables_base, pickle_path, from_ym, to_ym, language, update=True)
                         jobs[job] = page_id
                         if len(jobs) == max_workers:  # limit # jobs with max_workers
                             break
