@@ -283,7 +283,10 @@ def manage_editor_tables(language, from_ym, to_ym):
             (CHECK ( year_month >= DATE '{}-01-01' AND year_month <= DATE '{}-12-31' )) 
             INHERITS ({});
             """.format(part_table, from_ym.year, from_ym.year, master_table)
-            cursor.execute(new_table_query)
+            try:
+                cursor.execute(new_table_query)
+            except ProgrammingError:
+                pass
 
             # create a trigger function
             x = "{} ( NEW.year_month >= DATE '{}-01-01' AND NEW.year_month <= DATE '{}-12-31' ) THEN INSERT INTO {} VALUES (NEW.*);"
