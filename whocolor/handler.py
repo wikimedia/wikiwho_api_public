@@ -102,6 +102,13 @@ class WhoColorHandler(object):
                 else:
                     token['class_name'] = token['editor']
 
+            # append editor names into revisions
+            # {rev_id: [timestamp, parent_id, class_name/editor, editor_name]}
+            for rev_id, rev_data in whocolor_data['revisions'].items():
+                rev_data.append(editor_names_dict.get(rev_data[2], rev_data[2]))
+                if rev_data[2].startswith('0|'):
+                    rev_data[2] = hashlib.md5(rev_data[2].encode('utf-8')).hexdigest()
+
             # annotate authorship data to wiki text
             # if registered user, class name is editor id
             parser = WikiMarkupParser(wiki_text, whocolor_data['tokens'])  # , self.revisions)
@@ -113,13 +120,6 @@ class WhoColorHandler(object):
             tokens = [[token['conflict_score'], token['str'], token['o_rev_id'],
                        token['in'], token['out'], token['class_name'], token['age']]
                       for token in whocolor_data['tokens']]
-
-            # append editor names into revisions
-            # {rev_id: [timestamp, parent_id, class_name/editor, editor_name]}
-            for rev_id, rev_data in whocolor_data['revisions'].items():
-                rev_data.append(editor_names_dict.get(rev_data[2], rev_data[2]))
-                if rev_data[2].startswith('0|'):
-                    rev_data[2] = hashlib.md5(rev_data[2].encode('utf-8')).hexdigest()
 
             whocolor_data['tokens'] = tokens
             return extended_html, parser.present_editors, whocolor_data
