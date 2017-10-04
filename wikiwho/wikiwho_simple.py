@@ -360,7 +360,7 @@ class Wikiwho(BaseWikiwho):
         return text, origin_rev_ids
 
     def get_whocolor_data(self, revision_id):
-        tokens = []
+        tokens = []  # {[{'o_rev_id': , 'str': , 'in': , 'out': , 'editor': , 'conflict_score': , 'age': }]}
         revision = self.revisions[revision_id]
         biggest_conflict_score = 0
         for token in iter_rev_tokens(revision):
