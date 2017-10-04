@@ -3,6 +3,7 @@ import json
 import pytz
 from datetime import datetime
 from collections import defaultdict
+from os.path import basename
 
 from django.db import connection
 from django.utils.dateparse import parse_datetime
@@ -141,12 +142,15 @@ def wikiwho_to_db(wikiwho, language, save_tables=('article', 'revision', 'token'
 def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
     try:
         wikiwho = pickle_load(pickle_path)
+        title = wikiwho.title
     except EOFError:
+        title = None
         update = True
 
     if update:
         # update pickle until latest revision
-        with WPHandler(wikiwho.title, page_id=wikiwho.page_id, language=language) as wp:
+        page_id = int(basename(pickle_path)[:-2])
+        with WPHandler(title, page_id=page_id, language=language) as wp:
             # TODO what to do with Long failed and recursion articles
             wp.handle(revision_ids=[], is_api_call=False)
             wikiwho = wp.wikiwho

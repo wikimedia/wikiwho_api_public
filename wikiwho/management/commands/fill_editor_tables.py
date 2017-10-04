@@ -2,6 +2,8 @@
 """
 Example usage:
 python manage.py fill_editor_tables -from 2001-01 -to 2002-01 -m 6 -log '' -lang 'en,de,eu'
+
+Check wikiwho_api/cron/manage_editor_data.sh for more information how we use 3 editor data scripts each month.
 """
 import glob
 import pytz
@@ -30,8 +32,9 @@ def fill_editor_tables_base(pickle_path, from_ym, to_ym, language, update):
             fill_editor_tables(pickle_path, from_ym, to_ym, language, update)
             return
         except WPHandlerException as e:
-            if e.code == '00':
+            if e.code in ['00', '02']:
                 # article does not exist on wp anymore
+                # and invalid namespace (probably page was an article and then is moved at some point)
                 # dont try to update it, process what we have
                 update = False
                 sleep(30)
