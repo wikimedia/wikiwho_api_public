@@ -40,7 +40,8 @@ class LoggingMixin(object):
         if hasattr(self, 'action'):
             view_method = self.action if self.action else ''
         else:
-            view_method = request.method.lower()
+            # get url name as view method
+            view_method = request.resolver_match.url_name
 
         # save to log
         self.request.log = APIRequestLog(
