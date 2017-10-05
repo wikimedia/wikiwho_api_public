@@ -103,6 +103,7 @@ LANGUAGES = (
     ('de', 'German'),
     ('eu', 'Basque'),  # Euskara
     ('tr', 'Turkish'),
+    # ('es', 'Spanish'),
 )
 # LOCALE_PATHS = (
 #     os.path.join(BASE_DIR, 'locale').replace('\\', '/'),

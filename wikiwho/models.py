@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.conf import settings
 # from django.utils.functional import cached_property
 
 from base.models import BaseModel
@@ -13,7 +14,7 @@ class Article(BaseModel):
     rvcontinue = models.CharField(max_length=32, blank=True, null=False, default='0')
     spam_ids = ArrayField(models.IntegerField(), blank=True, null=True)  # array of spam revision ids
     language = models.CharField(max_length=2, default='', db_index=True,
-                                choices=(('', '-------'), ('en', 'English'), ('de', 'German'), ('eu', 'Basque')))
+                                choices=(('', '-------'), ) + tuple(settings.LANGUAGES))
 
     # class Meta:
     #     unique_together = (('page_id', 'language'), )

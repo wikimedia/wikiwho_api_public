@@ -1,5 +1,5 @@
 from django.db import models, connection
-# from django.conf import settings
+from django.conf import settings
 
 # from .managers import PrefetchUserManager
 
@@ -54,8 +54,7 @@ class BaseAPIRequestLog(models.Model):
     # custom manager
     # objects = PrefetchUserManager()
 
-    language = models.CharField(max_length=8, default='',
-                                choices=(('', '-------'), ('en', 'English'), ('de', 'German'), ('eu', 'Basque')))
+    language = models.CharField(max_length=8, default='', choices=(('', '-------'), ) + tuple(settings.LANGUAGES))
 
     @classmethod
     def overview(cls):
