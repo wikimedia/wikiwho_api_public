@@ -9,10 +9,16 @@ from .utils_pickles import get_pickle_folder, pickle_load
 
 class LongFailedArticleAdmin(admin.ModelAdmin):
     date_hierarchy = 'modified'
-    list_display = ('id', 'page_id', 'title_', 'language', 'count', 'revisions_', 'pickle_exists', 'created', 'modified', )
+    list_display = ('id', 'page_id_', 'title_', 'language', 'count', 'revisions_', 'pickle_exists', 'created', 'modified', )
     list_filter = ('id', 'page_id', 'language', )
     readonly_fields = ('created', 'modified', )
     ordering = ('-modified', )
+
+    def page_id_(self, obj):
+        return '<a href="https://{}.wikipedia.org/w/api.php?action=query&prop=info&inprop=url&format=json&' \
+               'pageids={}">{}</a>'.format(obj.language, obj.page_id, obj.page_id)
+    page_id_.short_description = 'Page ID'
+    page_id_.allow_tags = True
 
     def title_(self, obj):
         return '<a href="https://{}.wikipedia.org/wiki/{}">{}</a>'.format(obj.language, obj.title, obj.title)
