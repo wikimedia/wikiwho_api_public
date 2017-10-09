@@ -12,6 +12,8 @@ from django.db.utils import ProgrammingError
 from WikiWho.utils import iter_rev_tokens
 from api.handler import WPHandler, WPHandlerException
 from api.utils_pickles import pickle_load
+from api.utils import Timeout
+from api.models import LongFailedArticle, RecursionErrorArticle
 # from api.utils import revert_rvcontinue
 from wikiwho.models import Article, EditorDataEnNotIndexed, EditorDataEn, EditorDataEuNotIndexed, EditorDataEu, \
     EditorDataDeNotIndexed, EditorDataDe
@@ -150,11 +152,14 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
     if update:
         # update pickle until latest revision
         page_id = int(basename(pickle_path)[:-2])
-        # TODO add timeout
-        with WPHandler(title, page_id=page_id, language=language) as wp:
-            # TODO what to do with Long failed and recursion articles
-            wp.handle(revision_ids=[], is_api_call=False)
-            wikiwho = wp.wikiwho
+        # TODO handle failed articles better:
+        if not(LongFailedArticle.objects.filter(id=page_id, language=language).exists() or
+               RecursionErrorArticle.objects.filter(id=page_id, language=language).exists()):
+            timeout = 3600 * 6  # 6 hours
+            with Timeout(seconds=timeout, error_message='Timeout {} seconds - page id {}'.format(timeout, page_id)):
+                with WPHandler(title, page_id=page_id, language=language) as wp:
+                    wp.handle(revision_ids=[], is_api_call=False, timeout=timeout)
+                    wikiwho = wp.wikiwho
 
     article, created = Article.objects.update_or_create(page_id=wikiwho.page_id, language=language,
                                                         defaults={'title': wikiwho.title,
@@ -288,10 +293,7 @@ def manage_editor_tables(language, from_ym, to_ym):
             (CHECK ( year_month >= DATE '{}-01-01' AND year_month <= DATE '{}-12-31' )) 
             INHERITS ({});
             """.format(part_table, from_ym.year, from_ym.year, master_table)
-            try:
-                cursor.execute(new_table_query)
-            except ProgrammingError:
-                pass
+            cursor.execute(new_table_query)
 
             # create a trigger function
             x = "{} ( NEW.year_month >= DATE '{}-01-01' AND NEW.year_month <= DATE '{}-12-31' ) THEN INSERT INTO {} VALUES (NEW.*);"
@@ -324,10 +326,11 @@ def manage_editor_tables(language, from_ym, to_ym):
                 pass
 
     with connection.cursor() as cursor:
-        # drop indexes in the last partition
-        cursor.execute("DROP INDEX {}_article_id;".format(part_table))
-        cursor.execute("DROP INDEX {}_year_month;".format(part_table))
-        cursor.execute("DROP INDEX {}_editor_id_ym;".format(part_table))
+        if from_ym.month != 1:
+            # drop indexes in the last partition
+            cursor.execute("DROP INDEX {}_article_id;".format(part_table))
+            cursor.execute("DROP INDEX {}_year_month;".format(part_table))
+            cursor.execute("DROP INDEX {}_editor_id_ym;".format(part_table))
 
         # fill data
         not_indexed_table = "wikiwho_{}".format(EDITOR_MODEL[language][0].__name__.lower())

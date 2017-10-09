@@ -9,8 +9,8 @@ from .utils_pickles import get_pickle_folder, pickle_load
 
 class LongFailedArticleAdmin(admin.ModelAdmin):
     date_hierarchy = 'modified'
-    list_display = ('id', 'title_', 'language', 'count', 'revisions_', 'pickle_exists', 'created', 'modified', )
-    list_filter = ('id', 'language', )
+    list_display = ('id', 'page_id', 'title_', 'language', 'count', 'revisions_', 'pickle_exists', 'created', 'modified', )
+    list_filter = ('id', 'page_id', 'language', )
     readonly_fields = ('created', 'modified', )
     ordering = ('-modified', )
 
@@ -29,7 +29,7 @@ class LongFailedArticleAdmin(admin.ModelAdmin):
     revisions_.allow_tags = True
 
     def pickle_exists(self, obj):
-        pickle_path = "{}/{}.p".format(get_pickle_folder(obj.language), obj.id)
+        pickle_path = "{}/{}.p".format(get_pickle_folder(obj.language), obj.page_id)
         if exists(pickle_path):
             ww = pickle_load(pickle_path)
             last_rev_in_pickle = ww.ordered_revisions[-1]

@@ -6,7 +6,7 @@ from base.models import BaseModel
 
 
 class FailedArticle(BaseModel):
-    id = models.IntegerField(primary_key=True, blank=False, null=False, editable=False, help_text='Wikipedia page id')
+    page_id = models.IntegerField(blank=False, null=False, db_index=True)
     title = models.CharField(max_length=256, blank=False)
     count = models.PositiveIntegerField(default=0)
     revisions = ArrayField(models.IntegerField(), blank=True, null=True)
@@ -18,7 +18,7 @@ class FailedArticle(BaseModel):
         abstract = True
 
     def __str__(self):
-        return '{} - {}'.format(self.id, self.title)
+        return '{} - {}'.format(self.page_id, self.title)
 
 
 class LongFailedArticle(FailedArticle):
