@@ -225,7 +225,7 @@ class WPHandler(object):
                     if self.log_error_into_db:
                         failed_rev_id = int(self.wikiwho.revision_curr.id)
                         failed_article, created = RecursionErrorArticle.objects.get_or_create(
-                            id=self.page_id,
+                            page_id=self.page_id,
                             language=self.language,
                             defaults={'count': 1,
                                       'title': self.saved_article_title or '',
