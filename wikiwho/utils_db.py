@@ -150,6 +150,7 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
     if update:
         # update pickle until latest revision
         page_id = int(basename(pickle_path)[:-2])
+        # TODO add timeout
         with WPHandler(title, page_id=page_id, language=language) as wp:
             # TODO what to do with Long failed and recursion articles
             wp.handle(revision_ids=[], is_api_call=False)
