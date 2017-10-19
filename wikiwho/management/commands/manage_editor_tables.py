@@ -7,6 +7,8 @@ import sys
 import pytz
 from time import strftime
 from datetime import datetime, timedelta
+from os.path import exists
+from os import mkdir
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -53,6 +55,8 @@ class Command(CommandBase):
 
         # set logging
         log_folder = options['log_folder']
+        if not exists(log_folder):
+            mkdir(log_folder)
         logger = get_logger('manage_editor_tables_from_{}_{}_to_{}_{}'.
                             format(from_ym.year, from_ym.month, to_ym.year, to_ym.month),
                             log_folder, is_process=True, is_set=True)

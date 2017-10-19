@@ -9,7 +9,8 @@ import glob
 import pytz
 import sys
 import json
-from os.path import join, basename
+from os.path import join, basename, exists
+from os import mkdir
 from time import strftime, sleep
 from datetime import datetime, timedelta
 from simplejson import JSONDecodeError
@@ -91,6 +92,8 @@ class Command(BaseCommand):
         for language in languages:
             # set logging
             log_folder = options['log_folder']
+            if not exists(log_folder):
+                mkdir(log_folder)
             logger = get_logger('fill_editor_tables_{}_from_{}_{}_to_{}_{}'.
                                 format(language, from_ym.year, from_ym.month, to_ym.year, to_ym.month),
                                 log_folder, is_process=True, is_set=True, language=language)

@@ -5,6 +5,8 @@ python manage.py empty_editor_tables -m 3 -log '' -lang 'en,de,eu'
 """
 import sys
 from time import strftime
+from os.path import exists
+from os import mkdir
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -39,6 +41,8 @@ class Command(BaseCommand):
         max_workers = options['max_workers']
         # set logging
         log_folder = options['log_folder']
+        if not exists(log_folder):
+            mkdir(log_folder)
         logger = get_logger('empty_editor_tables', log_folder, is_process=True, is_set=True)
 
         print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
