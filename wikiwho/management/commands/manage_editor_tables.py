@@ -17,12 +17,12 @@ from wikiwho.utils_db import manage_editor_tables
 from .fill_editor_tables import Command as CommandBase
 
 
-def manage_editor_tables_base(language, from_ym, to_ym, log_folder):
+def manage_editor_tables_base(language, from_ym, to_ym, log_folder, already_partitioned):
     logger = get_logger('manage_editor_tables_{}_from_{}_{}_to_{}_{}'.
                         format(language, from_ym.year, from_ym.month, to_ym.year, to_ym.month),
                         log_folder, is_process=True, is_set=False, language=language)
     try:
-        manage_editor_tables(language, from_ym, to_ym)
+        manage_editor_tables(language, from_ym, to_ym, already_partitioned)
     except Exception as e:
         logger.exception('Manage editor tables exception {}-{}-{}'.format(language, from_ym, to_ym))
 
@@ -40,6 +40,9 @@ class Command(CommandBase):
                             required=True)
         parser.add_argument('-m', '--max_workers', type=int, help='Number of processors/threads to run parallel. ',
                             required=True)
+        parser.add_argument('-a', '--already_partitioned', action='store_true',
+                            help='If three is there already a partition for this year month. Default is False.',
+                            default=False, required=False)
 
     def get_parameters(self, options):
         from_ym = options['from_ym']
@@ -62,7 +65,8 @@ class Command(CommandBase):
                             log_folder, is_process=True, is_set=True)
 
         print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
-        print(max_workers, languages, from_ym, to_ym, log_folder)
+        already_partitioned = options['already_partitioned']
+        print(max_workers, languages, from_ym, to_ym, log_folder, already_partitioned)
         languages_iter = iter(languages)
         languages_all = len(languages)
         languages_left = languages_all
@@ -70,7 +74,7 @@ class Command(CommandBase):
             jobs = {}
             while languages_left:
                 for language in languages_iter:
-                    job = executor.submit(manage_editor_tables_base, language, from_ym, to_ym, log_folder)
+                    job = executor.submit(manage_editor_tables_base, language, from_ym, to_ym, log_folder, already_partitioned)
                     jobs[job] = language
                     if len(jobs) == max_workers:  # limit # jobs with max_workers
                         break

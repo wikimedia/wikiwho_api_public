@@ -281,10 +281,10 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
     )
 
 
-def manage_editor_tables(language, from_ym, to_ym):
+def manage_editor_tables(language, from_ym, to_ym, already_partitioned=False):
     master_table = "wikiwho_{}".format(EDITOR_MODEL[language][1].__name__.lower())
     part_table = '{}{}'.format(master_table, from_ym.year)
-    if from_ym.month == 1:
+    if from_ym.month == 1 and not already_partitioned:
         # new year
         with connection.cursor() as cursor:
             # create a new partition table for current new year
@@ -326,7 +326,7 @@ def manage_editor_tables(language, from_ym, to_ym):
                 pass
 
     with connection.cursor() as cursor:
-        if from_ym.month != 1:
+        if from_ym.month != 1 or already_partitioned:
             # drop indexes in the last partition
             cursor.execute("DROP INDEX {}_article_id;".format(part_table))
             cursor.execute("DROP INDEX {}_year_month;".format(part_table))
