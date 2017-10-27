@@ -108,10 +108,10 @@ class Command(BaseCommand):
                     pickles_left = pickles_all
                     pickles_iter = iter(pickles_list)
             else:
-                pickles_iter = glob.iglob(join(pickle_folder, '*.p'))
-                pickles_all = sum(1 for x in pickles_iter)
+                pickles_list = list(glob.iglob(join(pickle_folder, '*.p')))
+                pickles_all = len(pickles_list)
                 pickles_left = pickles_all
-                pickles_iter = glob.iglob(join(pickle_folder, '*.p'))
+                pickles_iter = iter(pickles_list)
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
                 jobs = {}
                 while pickles_left:
