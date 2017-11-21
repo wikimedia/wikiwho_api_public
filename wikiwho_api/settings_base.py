@@ -149,9 +149,9 @@ CACHES = {
 # REST_FRAMEWORK and Swagger UI
 REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/day',
-        'user': '2000/day',
-        'burst': '100/minute'
+        'anon': '2000/day',
+        # 'user': '2000/day',
+        'burst': '30/minute'
     },
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
     # 'DEFAULT_AUTHENTICATION_CLASSES': (

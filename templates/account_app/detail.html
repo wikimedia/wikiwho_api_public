@@ -46,13 +46,14 @@
             {% endcomment %}
             <button class="btn btn-inverse" type="submit">Update</button>
         </form>
-
+        {% comment %}
         <div>
             <h4>API rates</h4>
             Allowed: {{ throttle_data.user.allowed }}<br>
             Used: {{ throttle_data.user.used|default_if_none:0 }} (will be reset in {{ throttle_data.user.remaining_duration }} seconds)<br>
             Burst allowed: {{ throttle_data.burst.allowed }}<br>
         </div>
+        {% endcomment %}
 
         <div>
             <br>

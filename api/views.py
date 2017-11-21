@@ -148,7 +148,7 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, )  # TODO attention here!
     authentication_classes = (authentication.SessionAuthentication, authentication.BasicAuthentication)
     # authentication_classes = (authentication.TokenAuthentication, )
-    throttle_classes = (throttling.UserRateThrottle, throttling.AnonRateThrottle, BurstRateThrottle)
+    throttle_classes = (throttling.AnonRateThrottle, BurstRateThrottle)
     renderer_classes = [JSONRenderer]  # to disable browsable api
 
     def get_parameters(self, query_type):

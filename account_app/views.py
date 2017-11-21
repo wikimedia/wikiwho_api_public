@@ -16,7 +16,7 @@ from django.contrib.auth.views import password_reset as base_password_reset
 from django.contrib import messages
 
 from account_app.models import Account
-from api.utils import get_throttle_data
+# from api.utils import get_throttle_data
 
 from .forms import UserForm, AccountForm, UserPasswordForm, EmailForm
 
@@ -68,7 +68,8 @@ def account_detail(request):
     context = {'user_form': user_form,
                'account_form': account_form,
                'user': request.user,
-               'throttle_data': get_throttle_data(request)}
+               # 'throttle_data': get_throttle_data(request)
+               }
     return render(request, 'account_app/detail.html', context)
 
 
