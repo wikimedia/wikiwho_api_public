@@ -17,7 +17,7 @@ function perform_backups()
         if ! pg_dump -Fp -h "$HOSTNAME" -U "$USERNAME" "$DATABASE" | gzip > $BACKUP_FILE"$DATABASE".sql.gz.in_progress; then
             echo "[!!ERROR!!] Failed to produce plain backup database $DATABASE" 1>&2
         else
-            rm -f *.sql.gz  # delete old one when new one is created
+            rm -f $BACKUP_DIR*.sql.gz  # delete old one when new one is created
             mv $BACKUP_FILE"$DATABASE".sql.gz.in_progress $BACKUP_FILE"$DATABASE".sql.gz  # rename new one
         fi
     done
