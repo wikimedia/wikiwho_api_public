@@ -1,6 +1,6 @@
 git+git://github.com/wikiwho/WikiWho.git@master#egg=WikiWho
 git+git://github.com/wikiwho/WhoColor.git@master#egg=WhoColor
-Django
+Django<2.0
 future
 six
 requests
