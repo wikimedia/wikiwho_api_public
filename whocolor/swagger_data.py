@@ -40,8 +40,7 @@ custom_data = {
             #                'representation. \n\nSpecification: http://swagger.io/specification \n\n'
             #                'Example api: http://petstore.swagger.io/',
             'description': '### **Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
-                           '(http://www.gesis.org/en/institute/gesis-scientific-departments/'
-                           'computational-social-science/)',
+                           '(https://www.gesis.org/en/institute/departments/computational-social-science/)',
         },
     'basePath': '/whocolor/{}'.format(version_url),
     'host': 'www.wikiwho.net',

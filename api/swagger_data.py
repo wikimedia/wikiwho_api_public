@@ -101,8 +101,7 @@ custom_data = {
                            '(note that the dataset excludes redirect articles and tokenization can slightly differ '
                            'from the API version)\n\n'
                            '### **Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
-                           '(http://www.gesis.org/en/institute/gesis-scientific-departments/'
-                           'computational-social-science/)\n\n'
+                           '(https://www.gesis.org/en/institute/departments/computational-social-science/)\n\n'
                            'Data from this API is published under the CC-BY-SA 4.0 license. Original revision data '
                            'is retrieved from Wikimedia servers and the terms for reuse put forth by Wikimedia apply.',
             # 'contact': {
