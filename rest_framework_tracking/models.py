@@ -62,8 +62,8 @@ class BaseAPIRequestLog(models.Model):
             q = """
             select date_trunc('month', requested_at) as year_month, language, count(*) 
             from rest_framework_tracking_apirequestlog  
-            group by month, language 
-            order by month;
+            group by year_month, language 
+            order by language, year_month;
             """
             cursor.execute(q)
             rows = cursor.fetchall()
