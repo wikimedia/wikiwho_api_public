@@ -13,9 +13,7 @@ wikiwho/tests/tmp_test/
 assets/images/fav/
 tmp_pickles/
 static/
-notebooks/ipython_log.py
-notebooks/ignore
-.ipynb_checkpoints/
+wikiwho_notebooks
 .well-known
 flower.db
 flower.bak
