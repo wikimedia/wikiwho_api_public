@@ -217,10 +217,10 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
                 if from_ym <= in_rev_ts <= to_ym:
                     rein_ym = in_rev_ts.date().replace(day=1)
                     rein_editor = wikiwho.revisions[in_rev_id].editor
-                    editors_dict[rein_ym][rein_editor][2] += 1  # action rein is done
+                    editors_dict[rein_ym][rein_editor][4] += 1  # action rein is done
                     out_rev_ts = article_revisions_dict[out_rev_id]
                     if (out_rev_ts - in_rev_ts).total_seconds() >= seconds_limit:
-                        editors_dict[rein_ym][rein_editor][3] += 1  # rein survived 48 hours
+                        editors_dict[rein_ym][rein_editor][5] += 1  # rein survived 48 hours
                         if out_rev_ts.year != rein_ym.year or out_rev_ts.month != rein_ym.month:
                             editors_dict[rein_ym][rein_editor][7] += 1  # persistent action
 
@@ -234,16 +234,16 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
                     in_rev_id = token.inbound[i]
                 except (IndexError, KeyError):
                     # no in for this out
-                    editors_dict[del_ym][del_editor][4] += 1
-                    editors_dict[del_ym][del_editor][5] += 1
+                    editors_dict[del_ym][del_editor][2] += 1
+                    editors_dict[del_ym][del_editor][3] += 1
                     editors_dict[del_ym][del_editor][7] += 1
                     break
                 else:
                     # there is in for this out
-                    editors_dict[del_ym][del_editor][4] += 1
+                    editors_dict[del_ym][del_editor][2] += 1
                     in_rev_ts = article_revisions_dict[in_rev_id]
                     if (in_rev_ts - out_rev_ts).total_seconds() >= seconds_limit:
-                        editors_dict[del_ym][del_editor][5] += 1
+                        editors_dict[del_ym][del_editor][3] += 1
                         if in_rev_ts.year != del_ym.year or in_rev_ts.month != del_ym.month:
                             editors_dict[del_ym][del_editor][7] += 1
             else:
@@ -254,8 +254,8 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
             if from_ym <= in_rev_ts <= to_ym:
                 rein_ym = in_rev_ts.date().replace(day=1)
                 rein_editor = wikiwho.revisions[in_rev_id].editor
-                editors_dict[rein_ym][rein_editor][2] += 1
-                editors_dict[rein_ym][rein_editor][3] += 1
+                editors_dict[rein_ym][rein_editor][4] += 1
+                editors_dict[rein_ym][rein_editor][5] += 1
                 editors_dict[rein_ym][rein_editor][7] += 1
 
     EDITOR_MODEL[language][0].objects.bulk_create(
