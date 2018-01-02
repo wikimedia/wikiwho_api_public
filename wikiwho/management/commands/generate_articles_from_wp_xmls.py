@@ -181,9 +181,9 @@ class Command(BaseCommand):
         timeout = int(options['timeout'] * 60) if options['timeout'] else None  # convert into seconds
 
         # decide which tables in db will be filled
-        mode = options['mode'] or ''
+        db_mode = options['db_mode'] or ''
         save_tables = []
-        for m in mode:
+        for m in db_mode:
             if m.upper() == 'A':
                 save_tables.append('article')
             elif m.upper() == 'R':
