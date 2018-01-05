@@ -75,15 +75,10 @@ def iter_changed_pages():
                     continue
                 page_title = change.get('title')
                 wiki = change.get('wiki')
-                if wiki in ['enwiki', 'euwiki', 'dewiki', 'trwiki'] and change.get('namespace') == 0 and \
-                        page_title and change.get('type') in ['edit', 'new']:
-                    language = 'en'
-                    if wiki == 'euwiki':
-                        language = 'eu'
-                    elif wiki == 'dewiki':
-                        language = 'de'
-                    elif wiki == 'trwiki':
-                        language = 'tr'
+                wikis = ['enwiki', 'euwiki', 'dewiki', 'trwiki', 'eswiki']
+                if wiki in wikis and change.get('namespace') == 0 and \
+                   page_title and change.get('type') in ['edit', 'new']:
+                    language = wiki.split('wiki')[0]
                     # yield change
                     yield language, page_title
         except ProtocolError as e:

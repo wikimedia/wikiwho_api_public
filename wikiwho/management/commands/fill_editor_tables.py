@@ -57,12 +57,11 @@ class Command(BaseCommand):
                             help='Pickles json file {"en": [list of page ids], "de" [], }. '
                                  'If not given, list is taken from relevant pickle folder for each language.')
         parser.add_argument('-from', '--from_ym', required=True,
-                            help='Year-month to created data from [YYYY-MM]. Included.')
+                            help='Year-month to create data from [YYYY-MM]. Included.')
         parser.add_argument('-to', '--to_ym', required=True,
-                            help='Year-month to created data until [YYYY-MM]. Not included.')
+                            help='Year-month to create data until [YYYY-MM]. Not included.')
         parser.add_argument('-lang', '--language', help="Wikipedia language. Ex: 'en' or 'en,eu,de'", required=True)
-        parser.add_argument('-log', '--log_folder', help='Folder where to write logs. Default is folder of xml folder',
-                            required=True)
+        parser.add_argument('-log', '--log_folder', help='Folder where to write logs.', required=True)
         parser.add_argument('-m', '--max_workers', type=int, help='Number of processors/threads to run parallel. ',
                             required=True)
         parser.add_argument('-u', '--update', action='store_true',

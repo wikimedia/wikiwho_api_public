@@ -91,6 +91,22 @@ class EditorDataDe(EditorDataNotIndexed):
     pass
 
 
+class EditorDataEsNotIndexed(EditorDataNotIndexed):
+    pass
+
+
+class EditorDataEs(EditorDataNotIndexed):
+    pass
+
+
+class EditorDataTrNotIndexed(EditorDataNotIndexed):
+    pass
+
+
+class EditorDataTr(EditorDataNotIndexed):
+    pass
+
+
 """
 class Revision(BaseModel):
     id = models.IntegerField(primary_key=True, blank=False, null=False, editable=False, help_text='Wikipedia revision id')
