@@ -3,7 +3,7 @@ from django.contrib import admin
 from base.admin import BaseAdmin
 
 from .models import Article, EditorDataEnNotIndexed, EditorDataEn, EditorDataEuNotIndexed, EditorDataEu, \
-    EditorDataDeNotIndexed, EditorDataDe
+    EditorDataDeNotIndexed, EditorDataDe, EditorDataEsNotIndexed, EditorDataEs, EditorDataTrNotIndexed, EditorDataTr
 
 
 class ArticleAdmin(BaseAdmin):
@@ -94,6 +94,22 @@ class EditorDataDeAdmin(EditorDataIndexedAdmin):
     pass
 
 
+class EditorDataEsNotIndexedAdmin(EditorDataNotIndexedAdmin):
+    pass
+
+
+class EditorDataEsAdmin(EditorDataIndexedAdmin):
+    pass
+
+
+class EditorDataTrNotIndexedAdmin(EditorDataNotIndexedAdmin):
+    pass
+
+
+class EditorDataTrAdmin(EditorDataIndexedAdmin):
+    pass
+
+
 admin.site.register(Article, ArticleAdmin)
 admin.site.register(EditorDataEnNotIndexed, EditorDataEnNotIndexedAdmin)
 admin.site.register(EditorDataEn, EditorDataEnAdmin)
@@ -101,6 +117,10 @@ admin.site.register(EditorDataEuNotIndexed, EditorDataEuNotIndexedAdmin)
 admin.site.register(EditorDataEu, EditorDataEuAdmin)
 admin.site.register(EditorDataDeNotIndexed, EditorDataDeNotIndexedAdmin)
 admin.site.register(EditorDataDe, EditorDataDeAdmin)
+admin.site.register(EditorDataEsNotIndexed, EditorDataEsNotIndexedAdmin)
+admin.site.register(EditorDataEs, EditorDataEsAdmin)
+admin.site.register(EditorDataTrNotIndexed, EditorDataTrNotIndexedAdmin)
+admin.site.register(EditorDataTr, EditorDataTrAdmin)
 
 """
 from .models import Revision, Token
