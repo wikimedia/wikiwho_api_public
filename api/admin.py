@@ -10,7 +10,7 @@ from .utils_pickles import get_pickle_folder, pickle_load
 class LongFailedArticleAdmin(admin.ModelAdmin):
     date_hierarchy = 'modified'
     list_display = ('id', 'page_id_', 'title_', 'language', 'count', 'revisions_', 'pickle_exists', 'created', 'modified', )
-    list_filter = ('id', 'page_id', 'language', )
+    list_filter = ('language', 'page_id', 'id', )
     readonly_fields = ('created', 'modified', )
     ordering = ('-modified', )
 
