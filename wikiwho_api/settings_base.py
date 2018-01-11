@@ -151,7 +151,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '2000/day',
         # 'user': '2000/day',
-        'burst': '30/minute'
+        'burst': '60/minute'
     },
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
     # 'DEFAULT_AUTHENTICATION_CLASSES': (
