@@ -5,28 +5,38 @@
 <head>
     <title>{% block head_title %}WikiWho{% endblock %}</title>
     <meta name="description"
-          content="WikiWho - an algorithm to identify the revision origin of - and all changes ever applied to - the tokens of a revisioned Wiki document. This enables, e.g., detecting authorship and editor interactions. WikiWho API provides provenance and change information about the tokens a Wikipedia article consists of.">
+    content="WikiWho - an algorithm to identify the revision origin of - and all changes ever applied to - the tokens of a revisioned Wiki document. This enables, e.g., detecting authorship and editor interactions. WikiWho API provides provenance and change information about the tokens a Wikipedia article consists of.">
     <meta name="robots" content="index, follow">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap -->
     <link href="{% static 'bootstrap-3.3.7-dist/css/bootstrap.min.css' %}" rel="stylesheet">
     {% block style %}
-        <style>
-            body {
-                padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
-            }
-            .navbar .brand {
-                padding: 5px 20px 5px;
-                margin-left: -20px;
-            }
-        </style>
-    {% endblock style %}
-    {% block extra_style %}
-    {% endblock extra_style %}
+    <style>
+    body {
+        padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+    }
+    .navbar .brand {
+        padding: 5px 20px 5px;
+        margin-left: -20px;
+    }
+    .page-header { 
+        margin-top: 25px;
+    }
+    .sub-navbar {
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    #page-contents {
+        margin-top: 50px;
+    }
+</style>
+{% endblock style %}
+{% block extra_style %}
+{% endblock extra_style %}
 {#    <link href="{% static 'bootstrap-3.3.7-dist/css/bootstrap-theme.min.css' %}" rel="stylesheet">#}
-    <link rel="icon" type="image/png" href="{% static 'images/favicon-32x32.png' %}" sizes="32x32" />
-    <link rel="icon" type="image/png" href="{% static 'images/favicon-16x16.png' %}" sizes="16x16" />
+<link rel="icon" type="image/png" href="{% static 'images/favicon-32x32.png' %}" sizes="32x32" />
+<link rel="icon" type="image/png" href="{% static 'images/favicon-16x16.png' %}" sizes="16x16" />
 
 {#    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">#}
 {#    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">#}
@@ -41,86 +51,145 @@
         <div class="navbar-header">
           <a class="navbar-brand" href="{% url 'home' %}">
             <img alt="WikiWho" width="60" src="{% static 'images/logo_white.png' %}">
-          </a>
-        </div>
-        <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav navbar-right">
-            {% if request.user.is_superuser %}
-            <li><a href="{% url 'admin:index' %}">Admin</a></li>
-            {% endif %}
-            {% ww_api_version as ww_version_url %}
-            {% wc_api_version as wc_version_url %}
-    {#                        <li class="active"><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Available APIs<span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                {% load i18n %}
-                {% load url_translation %}
-                {% get_current_language as LANGUAGE_CODE %}
-                {% get_available_languages as LANGUAGES %}
-                {% get_language_info_list for LANGUAGES as languages %}
-                {% for language in languages %}
-{#                    <li><a href="{% translate_current_url language.code %}">{{ language.name }}</a></li>#}
-                    <li><a href="{% translate_url language.code 'api:swagger' ww_version_url %}">WikiWho {{ language.code|title  }}</a></li>
-                {% endfor %}
-                {% for language in languages %}
-                    <li><a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor {{ language.code|title }}</a></li>
-                {% endfor %}
-              </ul>
-            </li>
-{#            <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>#}
-{#            <li><a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a></li>#}
-            <li><a href="{% url 'contact' %}">Contact</a></li>
-            {% if request.user.is_authenticated %}
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav navbar-right">
+        {% if request.user.is_superuser %}
+        <li><a href="{% url 'admin:index' %}">Admin</a></li>
+        {% endif %}
+        {% ww_api_version as ww_version_url %}
+        {% wc_api_version as wc_version_url %}
+        {#                        <li class="active"><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Available APIs<span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            {% load i18n %}
+            {% load url_translation %}
+            {% get_current_language as LANGUAGE_CODE %}
+            {% get_available_languages as LANGUAGES %}
+            {% get_language_info_list for LANGUAGES as languages %}
+            {% for language in languages %}
+            {#                    <li><a href="{% translate_current_url language.code %}">{{ language.name }}</a></li>#}
+            <li><a href="{% translate_url language.code 'api:swagger' ww_version_url %}">WikiWho {{ language.code|title  }}</a></li>
+            {% endfor %}
+            {% for language in languages %}
+            <li><a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor {{ language.code|title }}</a></li>
+            {% endfor %}
+        </ul>
+    </li>
+    {#            <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>#}
+    {#            <li><a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a></li>#}
+    <li><a href="{% url 'contact' %}">Contact</a></li>
+    {% if request.user.is_authenticated %}
     {#                        <li>Hello {{ request.user }}</li>#}
-            <li><a href="{% url 'account:detail' %}">My Account</a></li>
-            <li><a href="{% url 'account:logout' %}">Logout</a></li>
-            {% else %}
-            <li><a href="{% url 'account:login' %}">Login</a></li>
-            <li><a href="{% url 'account:register' %}">Register</a></li>
-            {% endif %}
-          </ul>
-        </div><!--/.nav-collapse -->
-      </div>
-    </nav>
+    <li><a href="{% url 'account:detail' %}">My Account</a></li>
+    <li><a href="{% url 'account:logout' %}">Logout</a></li>
+    {% else %}
+    <li><a href="{% url 'account:login' %}">Login</a></li>
+    <li><a href="{% url 'account:register' %}">Register</a></li>
+    {% endif %}
+</ul>
+</div><!--/.nav-collapse -->
+</div>
+</nav>
 
-    <div class="container">
-        <div class="page-header">
+<div class="container">
+    <div class="page-header">
         {% block title %}
-            <h1>Welcome to the WikiWho server</h1>
-        {% endblock title %}
-        </div>
         <div class="row">
-        {% block content %}
-            <div class="col-md-12">
-            <p>
-                <a href="https://github.com/wikiwho/WikiWho" target="_blank">WikiWho algorithm</a>
-                {% for language in languages %}
-                <br>
-{#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
-                <a href="{% translate_url language.code 'api:swagger' ww_version_url %}">WikiWho API {{ language.code|upper  }}</a>
-                {% endfor %}
-            </p>
-            <p>
-                <a href="https://github.com/wikiwho/WhoColor">WhoColor source code</a>
-                {% for language in languages %}
-                <br>
-{#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
-                <a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor API {{ language.code|upper  }}</a>
-                {% endfor %}
-            </p>
-            {% comment %}TODO
-                Explanation how wikiwho works?
-                Documentation how to use wikiwho algorithm?
-            {% endcomment %}
+            <div class="col-xs-9">
+                <img src="{% static 'images/logo_black_cropped.png' %}" class="img-responsive" style="max-width: 40%; margin-bottom: 20px"> 
+                <p>
+                &nbsp;A service for mining changes and interactions from revisioned writing platforms.
+                </p>
+            </div>        
+            <div class="col-xs-3">
+                <div class="clearfix">
+                    <img src="{% static 'images/GESIS-Logo.svg' %}" class="img-responsive pull-right" style="max-width: 60%; margin-bottom: 20px">
+                </div>
+                <img src="{% static 'images/Logo_KIT.svg' %}" class="img-responsive pull-right" style="max-width: 30%"></div>
             </div>
-        {% endblock content %}
+        </div>
+        {% endblock title %}
+        
+        <div class="row">
+            {% block content %}
+            <div class="col-md-12">
+                <div class="row sub-navbar">
+                    <div class="col-xs-4">
+                        <h3>Introduction <a href="#introduction"><img src="{% static 'images/bluearrow.png' %}" width="10"></a></h3>
+                        Introduction to the functionality of wikiwho. 
+                    </div>
+                    <div class="col-xs-4">
+                        <h3>Services <a href="#services"><img src="{% static 'images/bluearrow.png' %}" width="10"></a></h3>
+                        WikiWho API and Data sets
+                    </div>
+                    <div class="col-xs-4">
+                        <h3>Tehnical Background <a href="#tech_background"><img src="{% static 'images/bluearrow.png' %}" width="10"></a></h3>
+                        The research paper about the wikiwho algorithm for mining authorship
+                    </div>
+                </div>
+
+                <div id="page-contents">
+
+                    <section id="introduction">
+
+                        <h3>Introduction</h3>
+                        <p>The core functionality of wikiwho is to parse the complete set of all historical revisions (versions) of a wikipedia article in order to find out who wrote and/or removed which exact text at what point in time. this means that given a specific revision of an article (e.g., the current one) wikiwho can determine for each word and special character which user first introduced that word and if and how it was deleted/reintroduced afterwards. this functionality is not offered by wikipedia as such and wikiwho was shown to perform this task with very high accuracy (~95%) and very efficiently, being the only tool that has been scientifically proven to perform this task that well (<a href="https://f-squared.org/wikiwho/#paper">cf. the paper</a>).  </p>
+                        <p>on top of the generated authorship and change data, other data can be mined and other tools can be build. we have extended the original model to also provide relationships between editors in an article such as "delete" or "reintroduce" based on the word they delete or add. we are currently working on a visualization of these networks as well as other visualization of metrics and word authorship useful for end-users that are interested in exploring the collaborative writing dynamics of wikipedia.  </p>
+
+                    </section>
+
+                    <section id="services">
+                        <h3>Services</h3>
+                        <h4>WikiWho Api <a href="#"></a></h4>
+                        <p>We offer an API for word provenance/authorship for the English Wikipedia: <br>You can get word/token-wise information from which revision what content originated (and thereby which editor originally authored the word) as well as all changes a token was ever subject to. Try the graphical interface at:
+                        </p><p><strong><a href="https://api.wikiwho.net/api" target="_blank">https://api.wikiwho.net/api</a></strong>  </p>
+                        <br>
+                        Or make an example call: <a href="https://api.wikiwho.net/api/v1.0.0-beta/rev_content/Cologne/?o_rev_id=true&amp;editor=true&amp;token_id=true&amp;out=true&amp;in=true" target="_blank">https://api.wikiwho.net/api/v1.0.0-beta/rev_content/Cologne/?o_rev_id=true&amp;editor=true&amp;token_id=true&amp;out=true&amp;in=true</a>
+
+                        <h4>Data sets</h4>
+                        <ul>
+                            <li><a href="https://docs.google.com/spreadsheet/ccc?key=0AjaQHqjWAtIHdHdiSFNjcXVyeHQwYkJuNHZ0NE00aXc&amp;usp=sharing" target="_blank">description of the datasets</a></li>
+                            <li><a href="https://f-squared.org/wikiwho/datasets/dataset1.tar.gz">dataset 1</a> <i>(file size: 80 mb)</i></li>
+                            <li><a href="https://f-squared.org/wikiwho/datasets/dataset2.tar.gz">dataset 2</a> <i>(file size: 5.8 gb)</i></li>
+                        </ul>
+                    </section>
+
+                    <section id="tech_background">
+                        <h3>Tehnical Background <a href="#"></a></h3>
+
+                        <p>
+                            <a href="https://github.com/wikiwho/WikiWho" target="_blank">WikiWho algorithm</a>
+                            {% for language in languages %}
+                            <br>
+                            {#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
+                            <a href="{% translate_url language.code 'api:swagger' ww_version_url %}">WikiWho API {{ language.code|upper  }}</a>
+                            {% endfor %}
+                        </p>
+                        <p>
+                            <a href="https://github.com/wikiwho/WhoColor">WhoColor source code</a>
+                            {% for language in languages %}
+                            <br>
+                            {#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
+                            <a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor API {{ language.code|upper  }}</a>
+                            {% endfor %}
+                        </p>
+                        {% comment %}TODO
+                        Explanation how wikiwho works?
+                        Documentation how to use wikiwho algorithm?
+                        {% endcomment %}
+                    </section>
+                </div>
+            </div>
+            {% endblock content %}
         </div>
 
     </div> <!-- /container -->
 
     {% block scripts %}
-{#    <script src="http://code.jquery.com/jquery.js"></script>#}
+    {#    <script src="http://code.jquery.com/jquery.js"></script>#}
     <script src="{% static 'scripts/jquery-3.2.1.min.js' %}"></script>
     <script src="{% static 'bootstrap-3.3.7-dist/js/bootstrap.min.js' %}"></script>
     {% endblock scripts %}
