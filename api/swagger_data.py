@@ -165,7 +165,7 @@ custom_data = {
                                      'IDs are integers, are unique for the whole Wikipedia and can be used to fetch '
                                      'the current name of a user. The only exemption is user ID = 0, which identifies '
                                      'all unregistered accounts. To still allow for distinction between unregistered '
-                                     'users, the string identifiers (e.g., IPs, MAC-addresses) of unregistered users '
+                                     'users, the string identifiers (e.g., IPv4s, IPv6s) of unregistered users '
                                      'are included in this field, prefixed by "0|".\n\n'
                                      '**token_id:** The token ID assigned internally by the WikiWho algorithm, unique '
                                      'per article. Token IDs are assigned increasing from 1 for each new token added '
