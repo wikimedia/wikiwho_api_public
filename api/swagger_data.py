@@ -40,7 +40,7 @@ responses = {
         # TODO http://swagger.io/specification/#responsesObject
         # 'headers': headers,
         # 'examples': {},
-        },
+    },
     '400': {
         'description': 'BAD REQUEST',
     },
@@ -57,59 +57,59 @@ version_url = 'v{}'.format(version)
 custom_data = {
     'swagger': '2.0',
     'info': {
-            'title': 'WikiWho API',
-            # 'termsOfService': '',
-            'version': version,
-            # 'license': {'name': 'TODO licence?', 'url': ''},
-            # 'description': 'A short description of the application. GFM syntax can be used for rich text '
-            #                'representation. \n\nSpecification: http://swagger.io/specification \n\n'
-            #                'Example api: http://petstore.swagger.io/',
-            'description': 'This API provides provenance and change information about the tokens a Wikipedia article '
-                           'consists of.\n\n'
-                           'For each article page it mirrors its current state on the English Wikipedia.\n\n'
-                           'It\'s based on the [WikiWho algorithm](https://github.com/wikiwho) - the most accurate '
-                           'algorithm for this task, evaluated against a [gold standard dataset]'
-                           '(http://f-squared.org/wikiwho/#paper) (~95% acc.).\n\n'
-                           'Terminology used here:\n\n'
-                           '- *"Wikipedia"*: A selected language version of Wikipedia. Available languages can be '
-                           'chosen from the top navigation bar. Will be extended in the future.\n'
-                           '- *"article (page)"*: Any Wikipedia page in '
-                           '[namespace = 0](https://en.wikipedia.org/wiki/Wikipedia:Namespace).\n'
-                           '- *"(article) content"*: The tokenized Wiki Markup text content of a (range of) '
-                           'revision(s) of an article page, *not* the front-end HTML (if you want that, you have to '
-                           '"untokenize" and appropriately parse it; the original order of tokens is retained).\n'
-                           '- *"token"*/*"tokenized"*: The Wiki Markup text is split at (i) white spaces and '
-                           '(ii) certain special characters (special chars also act as tokens). E.g., tokens in '
-                           '`"A [[house]], a boat."` are `"a", "[[", "house", "]]", ",", "a", "boat", "."` '
-                           'I.e., all tokens are converted into lower-case and certain character combinations that '
-                           'have a specific function in Wiki Markup, such as double-square brackets, get treated '
-                           'as single tokens. '
-                           '>> [Current WikiWho tokenization]'
-                           '(https://github.com/wikiwho/WikiWho/blob/master/WikiWho/utils.py)\n'
-                           '- *"revisions"*: The article revisions and their IDs as retrieved from Wikipedia, with one '
-                           'exception: The WikiWho algorithm implements a (very lenient)  filter to avoid spending '
-                           'time DIFFing blatant vandalism which gets immediately reverted after. About 0.5% of the '
-                           'revisions from Wikipedia are hence not available here as we consider those changes to '
-                           'have disappeared immediately. This is a temporary constraint to be removed in an '
-                           'upcoming version.\n\n'
-                           '**[>> Toy example for how the token metadata is generated]'
-                           '(https://gist.github.com/faflo/8bd212e81e594676f8d002b175b79de8)**\n\n'
-                           'See the description of the different query types for more information.\n\n'
-                           'A dataset with this data (until Nov. 2016, no redirects) is available for download at '
-                           'https://doi.org/10.5281/zenodo.345571.\n\n'
-                           '**Please cite it** as well if you use data from this API in your research.\n\n'
-                           '(note that the dataset excludes redirect articles and tokenization can slightly differ '
-                           'from the API version)\n\n'
-                           '### **Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
-                           '(https://www.gesis.org/en/institute/departments/computational-social-science/)\n\n'
-                           'Data from this API is published under the CC-BY-SA 4.0 license. Original revision data '
-                           'is retrieved from Wikimedia servers and the terms for reuse put forth by Wikimedia apply.',
-            # 'contact': {
-            #     'name': 'GESIS - Leibniz Institute for the Social Sciences, CSS group',
-            #     # 'email': 'kenan.erdogan@gesis.org?cc=fabian.floeck@gesis.org&subject=wikiwho API',
-            #     'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/'
-            #            'computational-social-science/'},
-        },
+        'title': 'WikiWho API',
+        # 'termsOfService': '',
+        'version': version,
+        # 'license': {'name': 'TODO licence?', 'url': ''},
+        # 'description': 'A short description of the application. GFM syntax can be used for rich text '
+        #                'representation. \n\nSpecification: http://swagger.io/specification \n\n'
+        #                'Example api: http://petstore.swagger.io/',
+        'description': 'This API provides provenance and change information about the tokens a Wikipedia article '
+                       'consists of.\n\n'
+                       'For each article page it mirrors its current state on the English Wikipedia.\n\n'
+                       'It\'s based on the [WikiWho algorithm](https://github.com/wikiwho) - the most accurate '
+                       'algorithm for this task, evaluated against a [gold standard dataset]'
+                       '(http://f-squared.org/wikiwho/#paper) (~95% acc.).\n\n'
+                       'Terminology used here:\n\n'
+                       '- *"Wikipedia"*: A selected language version of Wikipedia. Available languages can be '
+                       'chosen from the top navigation bar. Will be extended in the future.\n'
+                       '- *"article (page)"*: Any Wikipedia page in '
+                       '[namespace = 0](https://en.wikipedia.org/wiki/Wikipedia:Namespace).\n'
+                       '- *"(article) content"*: The tokenized Wiki Markup text content of a (range of) '
+                       'revision(s) of an article page, *not* the front-end HTML (if you want that, you have to '
+                       '"untokenize" and appropriately parse it; the original order of tokens is retained).\n'
+                       '- *"token"*/*"tokenized"*: The Wiki Markup text is split at (i) white spaces and '
+                       '(ii) certain special characters (special chars also act as tokens). E.g., tokens in '
+                       '`"A [[house]], a boat."` are `"a", "[[", "house", "]]", ",", "a", "boat", "."` '
+                       'I.e., all tokens are converted into lower-case and certain character combinations that '
+                       'have a specific function in Wiki Markup, such as double-square brackets, get treated '
+                       'as single tokens. '
+                       '>> [Current WikiWho tokenization]'
+                       '(https://github.com/wikiwho/WikiWho/blob/master/WikiWho/utils.py)\n'
+                       '- *"revisions"*: The article revisions and their IDs as retrieved from Wikipedia, with one '
+                       'exception: The WikiWho algorithm implements a (very lenient)  filter to avoid spending '
+                       'time DIFFing blatant vandalism which gets immediately reverted after. About 0.5% of the '
+                       'revisions from Wikipedia are hence not available here as we consider those changes to '
+                       'have disappeared immediately. This is a temporary constraint to be removed in an '
+                       'upcoming version.\n\n'
+                       '**[>> Toy example for how the token metadata is generated]'
+                       '(https://gist.github.com/faflo/8bd212e81e594676f8d002b175b79de8)**\n\n'
+                       'See the description of the different query types for more information.\n\n'
+                       'A dataset with this data (until Nov. 2016, no redirects) is available for download at '
+                       'https://doi.org/10.5281/zenodo.345571.\n\n'
+                       '**Please cite it** as well if you use data from this API in your research.\n\n'
+                       '(note that the dataset excludes redirect articles and tokenization can slightly differ '
+                       'from the API version)\n\n'
+                       '### **Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
+                       '(https://www.gesis.org/en/institute/departments/computational-social-science/)\n\n'
+                       'Data from this API is published under the CC-BY-SA 4.0 license. Original revision data '
+                       'is retrieved from Wikimedia servers and the terms for reuse put forth by Wikimedia apply.',
+        # 'contact': {
+        #     'name': 'GESIS - Leibniz Institute for the Social Sciences, CSS group',
+        #     # 'email': 'kenan.erdogan@gesis.org?cc=fabian.floeck@gesis.org&subject=wikiwho API',
+        #     'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/'
+        #            'computational-social-science/'},
+    },
     'basePath': '/api/{}'.format(version_url),
     'host': 'www.wikiwho.net',
     'schemes': 'https',
@@ -125,7 +125,7 @@ custom_data = {
          # (https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)',
              {'get': {'description': 'Outputs the content of the most recent (last) revision of the given article, '
                                      ' as available on Wikipedia.\n\n'
-                                     # 'Outputs the content of the most recent (last) revision of an article. \n\n'
+             # 'Outputs the content of the most recent (last) revision of an article. \n\n'
                                      'This is functionally equivalent to `GET /rev_content/{article_title}/`.',
                       # 'produces': ['application/json'],
                       'parameters': [{'description': 'Page ID of the article from Wikipedia',
@@ -382,4 +382,3 @@ custom_data = {
               },
          },
 }
-
