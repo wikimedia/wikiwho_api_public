@@ -1,0 +1,27 @@
+{% extends 'home/home.html' %}
+
+{% block content %}
+    {% load i18n %}
+    {% load url_translation %}
+    {% get_current_language as LANGUAGE_CODE %}
+    {% get_available_languages as LANGUAGES %}
+    {% get_language_info_list for LANGUAGES as languages %}
+    <div class="col-md-12">
+    <p>
+        <a href="https://github.com/wikiwho/WikiWho" target="_blank">WikiWho algorithm</a>
+        {% for language in languages %}
+        <br>
+{#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
+        <a href="{% translate_url language.code 'api:swagger' ww_version_url %}">WikiWho API {{ language.code|upper  }}</a>
+        {% endfor %}
+    </p>
+    <p>
+        <a href="https://github.com/wikiwho/WhoColor">WhoColor source code</a>
+        {% for language in languages %}
+        <br>
+{#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
+        <a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor API {{ language.code|upper  }}</a>
+        {% endfor %}
+    </p>
+    </div>
+{% endblock content %}
