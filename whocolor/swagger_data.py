@@ -56,7 +56,7 @@ custom_data = {
         # 'description': 'A short description of the application. GFM syntax can be used for rich text '
         #                'representation. \n\nSpecification: http://swagger.io/specification \n\n'
         #                'Example api: http://petstore.swagger.io/',
-        'description': 'This API provides text highlighting data needed for the WhoColor JavaScript client.'
+        'description': 'This API provides text highlighting data needed for the WhoColor JavaScript client.\n\n'
                        '### **Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
                        '(https://www.gesis.org/en/institute/departments/computational-social-science/)',
     },
