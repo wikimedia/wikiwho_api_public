@@ -34,7 +34,7 @@ def download(request, file_name):
 
 
 def home(request):
-    home_template = 'home/home_old.html'
+    home_template = 'home/home.html'
     if 'api.wikiwho.net' in request.META.get('HTTP_HOST', ''):
         home_template = 'home/home_api.html'
     return render(request, home_template, {})
