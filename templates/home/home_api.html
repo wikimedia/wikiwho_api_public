@@ -1,12 +1,12 @@
 {% extends 'home/home.html' %}
 
-{% block style %}
+{% block extra_style %}
     <style>
         tokens {
             background-color: #F2F2F2;
         }
     </style>
-{% endblock style %}
+{% endblock extra_style %}
 
 {% block content %}
     {% load i18n %}
@@ -127,14 +127,14 @@
                 such as Tables, Infoboxes (or any templates), certain references.</a>
                 To find out more about the backend that delivers this data and to file issues or even contribute (always
                 welcome!) check our <a href="https://github.com/wikiwho/WhoColor">Github Repository.</a>
+
             </p>
             <p>
                 {% for language in languages %}
-
+                    <br>
                     {#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
                     <a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor
                         API {{ language.code|upper }}</a>
-                    <br>
                 {% endfor %}
             </p>
         </section>

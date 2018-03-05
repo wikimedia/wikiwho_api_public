@@ -1,18 +1,171 @@
 {% extends 'home/home.html' %}
 
+{% block extra_style %}
+    <style>
+        ul {
+            list-style: none;
+        }
+    </style>
+{% endblock extra_style %}
+
 {% block title %}
     <h2>
-    Contact
+        Contact/Imprint
     </h2>
 {% endblock %}
 
 {% block content %}
     <div class="col-md-6">
+        <h3>Contact us</h3>
         <p>
-            <a href="mailto:wikiwho@gesis.org?cc=fabian.floeck@gesis.org;kenan.erdogan@gesis.org" target="_top">Send an email to WikiWho</a>
-    {#        <a href="mailto:fabian.floeck@gesis.org" target="_top">Send email to Fabian Flöck</a>#}
-    {#        <br>#}
-    {#        <a href="mailto:kenan.erdogan@gesis.org" target="_top">Send email to Kenan Erdogan</a>#}
+            Our Email: <br>
+            wikiwho(at)gesis(dot)org
+        </p>
+        <p>
+            <br>
+            Responsible for this site: <br>
+            <br>
+            Dr. Fabian Flöck <br>
+            GESIS – Leibniz Institute for the Social Sciences <br>
+            CSS Department <br>
+            Unter Sachsenhausen 6-8 <br>
+            50667 Cologne <br>
+        </p>
+        <h3>German Impressum:</h3>
+        <p>
+            Die nachstehenden Informationen enthalten die gesetzlich vorgesehenen Pflichtangaben zur
+            Anbieterkennzeichnung sowie wichtige rechtliche Hinweise zur Internetpräsenz von GESIS – Leibniz-Institut
+            für Sozialwissenschaften e.V.
+        </p>
+        <h4>Anbieter</h4>
+        <p>
+            Der Anbieter dieser Internetpräsenz ist die GESIS – Leibniz-Institut für
+            Sozialwissenschaften e.V. GESIS – Leibniz-Institut für
+            Sozialwissenschaften ist an zwei Standorten vertreten und hat seinen Hauptsitz in Mannheim:
+        </p>
+        <ul>
+            <li>
+                <b>GESIS – Leibniz-Institut für Sozialwissenschaften in Mannheim</b><br>
+                Hausanschrift:<br>
+                B2,1<br>
+                68159 Mannheim<br>
+                Postanschrift:<br>
+                Postfach 122155<br>
+                68072 Mannheim<br>
+                Tel.: 0621/1246-0<br>
+                Fax: 0621/1246-100<br>
+            </li>
+            <li>
+                <b>GESIS – Leibniz-Institut für Sozialwissenschaften in Köln</b><br>
+                Hausanschrift:<br>
+                Unter Sachsenhausen 6-8<br>
+                50667 Köln<br>
+                Tel.: 0221/47694-0<br>
+                Fax: 0221/47694-199<br>
+            </li>
+        </ul>
+        <h4>Vertretungsberechtigter Vorstand:</h4>
+        <p>
+            Prof. Dr. Christof Wolf<br>
+            Präsident der GESIS<br>
+            Hausanschrift: B2,1; 68159 Mannheim<br>
+            Postanschrift: Postfach 122155; 68072 Mannheim<br>
+            Tel.: 0621/1246-0<br>
+            Fax: 0621/1246-100<br>
+            E-Mail: praesident(at)gesis(dot)org
+        </p>
+
+        <h4>Registergericht:</h4>
+        <p>
+            Amtsgericht Mannheim<br>
+            Registernummer: VR1449<br>
+            Umsatzsteuer-Identifikationsnummer gemäß § 27a Umsatzsteuergesetz:<br>
+            DE 814 839 735<br>
+        </p>
+
+        <h4>Rechtliche Hinweise</h4>
+        <p>
+            GESIS– Leibniz-Institut für Sozialwissenschaften übernimmt keinerlei Gewähr für die bereitgestellten
+            Informationen. Haftungsansprüche, die auf Grund der Nutzung der bereitgestellten Informationen gegen die
+            GESIS
+            entstehen, sind bis auf Vorsatz oder grobe Fahrlässigkeit ausgeschlossen. Alle Angebote sind freibleibend
+            und
+            unverbindlich. GESIS behält es sich ausdrücklich vor, Teile der Seiten oder das gesamte Angebot ohne
+            gesonderte
+            Ankündigung zu verändern, zu ergänzen, zu löschen oder die Veröffentlichung zeitweise oder endgültig
+            einzustellen.
+        </p>
+        <p>
+            GESIS – Leibniz-Institut für Sozialwissenschaften - im Nachfolgenden kurz GESIS genannt - distanziert sich
+            ausdrücklich von den Inhalten von Seiten, die außerhalb des GESIS-Web-Angebotes liegen und auf die per
+            direkten
+            oder indirekten Verweis (z.B. durch sogenannte »Links«) verwiesen wird. GESIS erklärt hiermit ausdrücklich,
+            dass
+            zum Zeitpunkt der Linksetzung die entsprechenden verlinkten Seiten frei von illegalen Inhalten waren. Auf
+            die
+            aktuelle und künftige Gestaltung, die Inhalte oder die Urheberschaft der gelinkten/verknüpften Seiten hat
+            GESIS
+            keinerlei Einfluss. Deshalb distanziert sie sich hiermit ausdrücklich von allen Inhalten aller
+            gelinkten/verknüpften Seiten, die nach der Linksetzung verändert wurden. Diese Feststellung gilt für alle
+            innerhalb des eigenen Internetangebotes gesetzten Links und Verweise sowie für Fremdeinträge in von GESIS
+            eingerichteten Gästebüchern, Diskussionsforen und Mailinglisten. Für illegale, fehlerhafte oder
+            unvollständige
+            Inhalte und insbesondere für Schäden, die aus der Nutzung solcherart dargebotener Informationen entstehen,
+            haftet allein der Anbieter der Seite, auf welche verwiesen wurde, nicht derjenige, der über Links auf die
+            jeweilige Veröffentlichung lediglich verweist.
+        </p>
+        <h4>Copyright</h4>
+        <p>
+            Das Copyright für veröffentlichte, von GESIS selbst erstellte Objekte bleibt allein bei GESIS. Eine
+            Vervielfältigung oder Verwendung solcher Grafiken, Tondokumente, Videosequenzen und Texte in anderen
+            elektronischen oder gedruckten Publikationen ist ohne ausdrückliche Zustimmung von GESIS nicht gestattet.
+        </p>
+        <h4>Datenübermittlung und Nutzungsstatistiken</h4>
+        <p>
+            Ihr Internet-Browser übermittelt beim Zugriff auf unsere Webseite aus technischen Gründen automatisch Daten
+            an unseren Webserver. Es handelt sich dabei unter anderem um Datum und Uhrzeit des Zugriffs, URL der
+            verweisenden Webseite, abgerufene Datei, Menge der gesendeten Daten, Browsertyp und -version, Betriebssystem
+            sowie Ihre IP-Adresse. Diese Daten werden getrennt von anderen Daten, die Sie im Rahmen der Nutzung unseres
+            Angebotes eingeben gespeichert. Eine Zuordnung dieser Daten zu einer bestimmten Person ist uns nicht
+            möglich. Diese Daten werden zu statistischen Zwecken ausgewertet und im Anschluss gelöscht.
+        </p>
+        <h4>eTracker</h4>
+        <p>
+            Auf dieser Website werden mit Technologien der <a href="http://www.etracker.com/">etracker GmbH</a> Daten zu
+            Marketing- und Optimierungszwecken gesammelt und gespeichert. Aus diesen Daten können unter einem Pseudonym
+            Nutzungsprofile erstellt werden. Hierzu können Cookies eingesetzt werden. Bei Cookies handelt es sich um
+            kleine Textdateien, die lokal im Zwischenspeicher des Internetbrowsers des Seitenbesuchers gespeichert
+            werden. Die Cookies ermöglichen die Wiedererkennung des Internetbrowsers. Die mit den etracker-Technologien
+            erhobenen Daten werden ohne die gesondert erteilte Zustimmung des Betroffenen nicht dazu benutzt, den
+            Besucher dieser Website persönlich zu identifizieren und nicht mit personenbezogenen Daten über den Träger
+            des Pseudonyms zusammengeführt. Der Datenerhebung und -speicherung kann jederzeit mit Wirkung für die
+            Zukunft widersprochen werden.
+        </p>
+        <h4>Cookies</h4>
+        <p>
+            Auf den Webseiten von GESIS werden Cookies genutzt, um den Funktionsumfang zu erweitern. Dadurch können
+            temporär Daten auf Ihrem Rechner gespeichert werden. Diese Speicherung können Sie durch entsprechende
+            Einstellungen in Ihrem Browser verhindern und bestehende Cookies jederzeit löschen. Falls Sie die Nutzung
+            von Cookies komplett deaktivieren, kann dies zu Einschränkungen des Funktionsumfangs unserer Webseiten
+            führen.
+        </p>
+        <h4>Personenbezogene Daten</h4>
+        <p>
+            Personenbezogene Daten werden nur erhoben, wenn Sie uns diese von sich aus, zum Beispiel zum Abschluss eines
+            Vertrages, zur Durchführung einer Umfrage oder bei der Registrierung für personalisierte Dienste mitteilen.
+            Die im Rahmen der GESIS-Webseiten erhobenen personenbezogenen Daten werden ohne Ihre Einwilligung nur zur
+            Vertragsabwicklung und Bearbeitung Ihrer Anfragen genutzt. Darüber hinaus erfolgt eine Nutzung Ihrer
+            personenbezogenen Daten für Zwecke der Werbung und Marktforschung sowie zur bedarfsgerechten Gestaltung
+            elektronischer Dienste von GESIS nur, wenn Sie hierzu zuvor Ihre Einwilligung erteilt haben. Es findet weder
+            eine Weitergabe Ihrer Daten an Dritte noch ein Export der Daten in Staaten außerhalb des europäischen
+            Wirtschaftsraumes statt.
+            Ihre jeweilige Einwilligung können Sie selbstverständlich jederzeit mit Wirkung für die Zukunft widerrufen.
+        </p>
+        <h4>Salvatorische Klausel</h4>
+        <p>
+            Sollten eine oder mehrere Bestimmungen unwirksam sein, so berührt dies die Wirksamkeit der übrigen
+            Bestimmungen nicht. Statt dieser unwirksamen Bestimmungen soll das dem Gewollten am nächsten kommende als
+            vereinbart gelten.
         </p>
     </div>
 {% endblock %}

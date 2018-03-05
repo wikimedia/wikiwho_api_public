@@ -17,6 +17,10 @@
                 padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
             }
 
+            .container {
+                margin-top: 20px;
+            }
+
             .navbar .brand {
                 padding: 5px 20px 5px;
                 margin-left: -20px;
@@ -96,14 +100,14 @@
                 </li>
                 {#            <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>#}
                 {#            <li><a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a></li>#}
-                <li><a href="{% url 'contact' %}">Contact</a></li>
+                <li><a href="{% url 'contact' %}">Contact/Imprint</a></li>
                 {% if request.user.is_authenticated %}
                     {#                        <li>Hello {{ request.user }}</li>#}
                     <li><a href="{% url 'account:detail' %}">My Account</a></li>
                     <li><a href="{% url 'account:logout' %}">Logout</a></li>
                 {% else %}
-                    <li><a href="{% url 'account:login' %}">Login</a></li>
                     <li><a href="{% url 'account:register' %}">Register</a></li>
+                    <li><a href="{% url 'account:login' %}">Login</a></li>
                 {% endif %}
             </ul>
         </div><!--/.nav-collapse -->
