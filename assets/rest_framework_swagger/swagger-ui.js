@@ -22553,7 +22553,8 @@ SwaggerUi.Views.SignatureView = Backbone.View.extend({
     } else {
       this.switchToSnippet();
     }
-
+    //Set the default page to be the models-descriptions
+    this.switchToDescription();
     return this;
   },
 

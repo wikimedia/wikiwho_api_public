@@ -38,6 +38,7 @@
             #page-contents {
                 margin-top: 50px;
             }
+
             #page-contents img {
                 margin-top: 10px;
                 margin-bottom: 10px;
@@ -45,6 +46,19 @@
                 border-radius: 4px;
                 padding: 5px;
             }
+
+            .img-80 {
+                width: 80%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .img-50 {
+                width: 50%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
         </style>
     {% endblock style %}
     {% block extra_style %}
@@ -151,7 +165,7 @@
                         APIs and Data sets, ready to use
                     </div>
                     <div class="col-xs-3">
-                        <a href="#tech_details"><h3>Technical Details <img
+                        <a href="#technical_details"><h3>Technical Details <img
                                 src="{% static 'images/bluearrow.png' %}" width="10"></h3></a>
                         Description of the core algorithm, source code, papers
                     </div>
@@ -183,12 +197,12 @@
                                 While it might sound as if you could achieve this with standard text diff approaches:
                                 <b>it is not that trivial</b>. And usually, this information is not readily available
                                 from
-                                revisioned writing systems. See <a href="#tech_details">Technical Details</a> .
+                                revisioned writing systems. See <a href="#technical_details">Technical Details</a> .
                             </li>
                             <li>
                                 Consequently, WikiWho is – as of writing – the only source of this information in real
                                 time for multiple Wikipedia language editions and which is scientifically evaluated for
-                                the English Wikipedia with at least <a href="#">95% accuracy</a>.
+                                the English Wikipedia with at least <a href="#technical_details">95% accuracy</a>.
                             </li>
                             <li>
                                 On top of this fine-grained change data, there are <b> many possible applications</b>:
@@ -206,12 +220,15 @@
                             </li>
                             <li>
                                 WikiWho was first conceived as a dissertation project at <a
-                                    href="https://www.kit.edu/english/"> Karlsruhe Institute of
-                                Technology</a> by <a href="https://f-squared.org/about.html">Fabian Flöck</a> and
+                                    href="https://www.kit.edu/english/" target="_blank"> Karlsruhe Institute of
+                                Technology</a> by <a href="https://f-squared.org/about.html" target="_blank">Fabian
+                                Flöck</a> and
                                 collaborators and is now hosted, maintained and further
-                                developed at <a href="https://www.gesis.org/home/">GESIS – Leibniz Institute for the
+                                developed at <a href="https://www.gesis.org/home/" target="_blank">GESIS – Leibniz
+                                Institute for the
                                 Social Sciences</a>, <a
-                                    href="https://www.gesis.org/en/institute/departments/computational-social-science/">CSS
+                                    href="https://www.gesis.org/en/institute/departments/computational-social-science/"
+                                    target="_blank">CSS
                                 department</a>. The main
                                 goal is to provide (computational) social scientists easier access to the rich
                                 interaction and collaboration data “hidden” in the change logs of revisioned writing
@@ -266,11 +283,11 @@
                                 (ii) lists
                                 with all the revisions in which the token was ever deleted and (potentially) re-added
                                 and re-deleted from its article. An <a
-                                        href="https://www.aaai.org/ocs/index.php/ICWSM/ICWSM17/paper/download/15689/14890">ICWSM’17
+                                        href="https://www.aaai.org/ocs/index.php/ICWSM/ICWSM17/paper/download/15689/14890" target="_blank">ICWSM’17
                                     dataset paper</a> explains what you can do with
                                 that data, and shows some novel statistics about the English Wikipedia in that regard.
                                 <ol>
-                                    <li>English, <a href="https://doi.org/10.5281/zenodo.834557">until Nov. 2016 (>13
+                                    <li>English, <a href="https://doi.org/10.5281/zenodo.834557" target="_blank">until Nov. 2016 (>13
                                         Billion tokens)</a></li>
                                 </ol>
                             </li>
@@ -287,11 +304,11 @@
                         {#                        </ul>#}
                     </section>
 
-                    <section id="tech_details">
+                    <section id="technical_details">
                         <h3>Technical Details <a href="#"></a></h3>
                         <p>
                             The original algorithm working behind the scenes is described in a <a
-                                href="http://wwwconference.org/proceedings/www2014/proceedings/p843.pdf">WWW 2014
+                                href="http://wwwconference.org/proceedings/www2014/proceedings/p843.pdf" target="_blank">WWW 2014
                             paper</a>, along
                             with an extensive evaluation resulting in 95% accuracy on fairly revision-rich articles. The
                             current code version is available on <a href="https://github.com/wikiwho/WikiWho">GitHub</a>.
@@ -305,7 +322,7 @@
                         <p>
                             Toy example for how the token metadata is generated:
                             <img src="https://camo.githubusercontent.com/8696b757db3fa79affad347ee6c02c1d1078d71c/687474703a2f2f3139332e3137352e3233382e38382f6170695f787472612f65785f666967757265322e706e67"
-                                 class="img-responsive">
+                                 class="img-responsive img-80">
                         </p>
                         <p>In this way, it becomes possible to track – for each single token – all original additions,
                             deletes, reinserts and redeletes and in which revision they took place. Which in turn allows
@@ -330,11 +347,11 @@
                             percentages of the article written and additional provenance information. It also has the
                             ability to show conflict regarding certain text parts and the adding/deleting history of a
                             given word. The Wiki Edu Foundation currently uses the <a
-                                href="https://dashboard.wikiedu.org/courses/RIT/American_Women's_and_Gender_History_(Fall_2016)/articles">WhoColor
+                                href="https://dashboard.wikiedu.org/courses/RIT/American_Women's_and_Gender_History_(Fall_2016)/articles" target="_blank">WhoColor
                             API for a similar display of
                             authorship in its dashboard</a> for students learning to edit Wiki articles.
                         </p>
-                        <img src="{% static 'images/color_history_today.png' %}" class="img-responsive">
+                        <img src="{% static 'images/color_history_today.png' %}" class="img-responsive img-50">
                         <p>
                             For WhoColor, we use an individual-token-level heuristic to compute conflict scores; yet,
                             the sensible <b>identification of conflict</b> or disputes (as opposed to collaboration or
@@ -347,20 +364,20 @@
                             on the minute interactions on each other’s content. We provided a first, relatively simple
                             implementation of this in an extension of WikiWho, using "(re)delete" and "reintroduce"
                             actions between editors to encode antagonistic and supporting actions. <a
-                                href="https://github.com/maribelacosta/wikiwho">See the code on
+                                href="https://github.com/maribelacosta/wikiwho" target="_blank">See the code on
                             GitHub</a>. We have also developed an interactive Web visualization (“WhoVIS”) that takes
                             the
                             antagonistic edit actions extracted in this manner (and weighted by speed, number of tokens
                             changed, etc.) to draw an interaction network between editors in an article over time. In
                             this manner, the relations between editors can be intuitively explored. <a
-                                href="https://f-squared.org/whovisual/#vis">A usable Web demo
+                                href="https://f-squared.org/whovisual/#vis" target="_blank">A usable Web demo
                             and a publication describing the approach are available</a>.</p>
                         <p>
                             Yet, the WikiWho data can be leveraged for much more intricate modeling of interactions,
                             taking for instance into account the semantic content of changes, prior interactions of
                             editors, etc.
                         </p>
-                        <img src="{% static 'images/alberto185_multipolar.png' %}" class="img-responsive">
+                        <img src="{% static 'images/alberto185_multipolar.png' %}" class="img-responsive img-50">
                     </section>
                 </div>
             </div>
@@ -373,6 +390,10 @@
     {#    <script src="http://code.jquery.com/jquery.js"></script>#}
     <script src="{% static 'scripts/jquery-3.2.1.min.js' %}"></script>
     <script src="{% static 'bootstrap-3.3.7-dist/js/bootstrap.min.js' %}"></script>
+    <script>window.addEventListener("hashchange", function () {
+        scrollBy(0, -100)
+    })</script>
+    {#    Navbar hides initial content when jumping to in-page anchor problem fix#}
 {% endblock scripts %}
 
 {% block extra_js %}

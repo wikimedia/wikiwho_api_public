@@ -23,6 +23,7 @@
                 several languages. Apart from the source language edition they draw from, their specifications and usage
                 are
                 identical, as described below.
+                <br>
                 {% for language in languages %}
                     <br>
                     {#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
@@ -33,7 +34,7 @@
             <h4>Usage</h4>
             <p>
                 For each article page, the API mirrors its current state on the Wikipedia.
-                The API is based on the <a href="https://github.com/wikiwho">WikiWho algorithm</a> (~95% acc.).
+                The API is based on the <a href="https://github.com/wikiwho" target="_blank">WikiWho algorithm</a> (~95% acc.).
             </p>
             <p>
                 Currently, there is a limit of 2000 requests/day for unregistered users, and also a 60 requests/minute
@@ -49,7 +50,7 @@
                 </li>
                 <li>
                     <i>"article (page)"</i>: Any Wikipedia page in <a
-                        href="https://en.wikipedia.org/wiki/Wikipedia:Namespace">namespace = 0.</a>
+                        href="https://en.wikipedia.org/wiki/Wikipedia:Namespace" target="_blank">namespace = 0.</a>
                 </li>
                 <li>
                     <i>"(article) content"</i>: The tokenized Wiki Markup text content of a (range of) revision(s) of an
@@ -69,7 +70,7 @@
                     I.e., all tokens are converted into lower-case and certain
                     character combinations that have a specific function in Wiki Markup, such as double-square brackets,
                     get treated as single tokens. >> <a
-                        href="https://github.com/wikiwho/WikiWho/blob/master/WikiWho/utils.py">Current WikiWho
+                        href="https://github.com/wikiwho/WikiWho/blob/master/WikiWho/utils.py" target="_blank">Current WikiWho
                     tokenization</a>
                 </li>
                 <li>
@@ -81,14 +82,14 @@
                     temporary constraint to be removed in an upcoming version.
                 </li>
             </ul>
-            <a href="https://gist.github.com/faflo/8bd212e81e594676f8d002b175b79de8"><b>>> Toy example for how the token
+            <a href="https://gist.github.com/faflo/8bd212e81e594676f8d002b175b79de8" target="_blank"><b>>> Toy example for how the token
                 metadata is generated</b></a>
             <p>
                 See the description of the different query types for more information.
             </p>
             <p>
                 A dataset with this data (until Nov. 2016, no redirects) is available for download at
-                <a href="https://doi.org/10.5281/zenodo.345571.">https://doi.org/10.5281/zenodo.345571.</a>
+                <a href="https://doi.org/10.5281/zenodo.345571." target="_blank">https://doi.org/10.5281/zenodo.345571.</a>
             </p>
             <p>
                 <b>Please cite it</b> as well if you use data from this API in your research
@@ -97,7 +98,7 @@
             </p>
             <p>
                 An example call: <a
-                    href="https://api.wikiwho.net/api/v1.0.0-beta/rev_content/Cologne/?o_rev_id=true&editor=true&token_id=true&out=true&in=true">Cologne</a>
+                    href="https://api.wikiwho.net/api/v1.0.0-beta/rev_content/Cologne/?o_rev_id=true&editor=true&token_id=true&out=true&in=true" target="_blank">Cologne</a>
             </p>
         </section>
         <section id="whocolor_api">
@@ -120,13 +121,13 @@
             <p>The main use case so far (hence the name) is colored annotation of text parts with this meta information,
                 for example in a Grease-/Tampermonkey userscript we developed, which runs in a browser extension and can
                 be used on any Wikipedia article to find out how wrote and changed which words via simple visual
-                inspection. <a href="https://f-squared.org/whovisual/#color">Find our more here</a>. </p>
+                inspection. <a href="https://f-squared.org/whovisual/#color" target="_blank">Find our more here</a>. </p>
             <p>
                 Note that this API project is still in alpha, several elements of Wiki pages <a
-                    href="https://github.com/wikiwho/WhoColor/issues">cannot yet be annotated,
+                    href="https://github.com/wikiwho/WhoColor/issues" target="_blank">cannot yet be annotated,
                 such as Tables, Infoboxes (or any templates), certain references.</a>
                 To find out more about the backend that delivers this data and to file issues or even contribute (always
-                welcome!) check our <a href="https://github.com/wikiwho/WhoColor">Github Repository.</a>
+                welcome!) check our <a href="https://github.com/wikiwho/WhoColor" target="_blank">Github Repository.</a>
 
             </p>
             <p>

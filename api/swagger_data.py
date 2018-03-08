@@ -34,23 +34,62 @@ headers = {
         "type": "integer"
     }
 }
-responses = {
-    '200': {
-        'description': 'OK',
-        # TODO http://swagger.io/specification/#responsesObject
-        # 'headers': headers,
-        # 'examples': {},
-    },
-    '400': {
-        'description': 'BAD REQUEST',
-    },
-    '408': {
-        'description': 'REQUEST TIMEOUT',
-    },
-    '503': {
-        'description': 'WP SERVICE UNAVAILABLE',
-    },
-}
+definitions = {"token": {'required': [], 'properties': {'token_id': {'type': 'string'}, 'o_rev_id': {'type': 'integer'},
+                                                        'in': {'type': 'array', 'items': {'type': 'integer'}},
+                                                        'str': {'type': 'string'}, 'editor': {'type': 'string'},
+                                                        'out': {'type': 'array', 'items': {'type': 'integer'}}},
+                         'example': {"editor": "21327649", "o_rev_id": 799873642, "token_id": 5278, "str": "redirect",
+                                     "in": [], "out": []
+                                     }}}
+
+definitions['revision'] = {'required': ['tokens', 'editor', 'time'],
+                           'properties': {'tokens': {'type': 'array', 'items': definitions['token']},
+                                          'editor': {"type": "string", "example": "29357210"},
+                                          'time': {"type": "string", "example": "2018-03-04T09:58:27Z"}}}
+
+definitions["revisions"] = {'description': 'a dictionary. `rev_id` is an example key', 'required': ['rev_id'],
+                            'type': 'object', 'properties': {"rev_id": definitions['revision']},
+                            'additionalProperties': definitions['revision'],  # 'example': {"1048945":
+                            #      ["2003-06-17T10:45:57Z", 0, "5f340c8127b65dc0ee98cc2bd8708e75", "0|157.193.172.88"]}
+                            }
+
+definitions['rev_content'] = {'required': ['revisions', 'article_title', 'message', 'page_id', 'success'],
+                              'properties': {'revisions': {"type": "array", "items": definitions['revisions']},
+                                             'article_title': {"type": "string", "example": "Dinar"},
+                                             'message': {"type": "string", "example": "null"},
+                                             'page_id': {"type": "integer", "example": "220241"},
+                                             'success': {"type": "boolean", "example": True}, }}
+definitions['all_tokens'] = {'required': ['tokens', 'article_title', 'message', 'page_id', 'success', 'threshold'],
+                             'properties': {'tokens': {"type": "array", "items": definitions['token']},
+                                            'threshold': {'type': 'integer', 'example': 0},
+                                            'article_title': {"type": "string", "example": "Dinar"},
+                                            'message': {"type": "string", "example": "null"},
+                                            'page_id': {"type": "integer", "example": 220241},
+                                            'success': {"type": "boolean", "example": True}, }}
+
+definitions['rev_meta'] = {'required': ['editor', 'id', 'timestamp'],
+                           'properties': {'editor': {"type": "string", "example": "0|157.193.172.88"},
+                                          'id': {"type": "integer", "example": 1047879},
+                                          'timestamp': {"type": "string", "example": "2003-06-17T10:45:57Z"}}}
+
+definitions['rev_ids'] = {'required': ['revisions', 'article_title', 'message', 'page_id', 'success'],
+                          'properties': {'revisions': {"type": "array", "items": definitions['rev_meta']},
+                                         'article_title': {"type": "string", "example": "Dinar"},
+                                         'message': {"type": "string", "example": "null"},
+                                         'page_id': {"type": "integer", "example": "220241"},
+                                         'success': {"type": "boolean", "example": True}, }}
+
+responses_rev_content = {'200': {'description': 'OK', 'schema': definitions['rev_content']},
+                         '400': {'description': 'BAD REQUEST', }, '408': {'description': 'REQUEST TIMEOUT'},
+                         '503': {'description': 'WP SERVICE UNAVAILABLE', }, }
+
+responses_all_content = {'200': {'description': 'OK', 'schema': definitions['all_tokens']},
+                         '400': {'description': 'BAD REQUEST', }, '408': {'description': 'REQUEST TIMEOUT'},
+                         '503': {'description': 'WP SERVICE UNAVAILABLE'}}
+
+responses_rev_ids = {'200': {'description': 'OK', 'schema': definitions['rev_ids']},
+                     '400': {'description': 'BAD REQUEST', }, '408': {'description': 'REQUEST TIMEOUT'},
+                     '503': {'description': 'WP SERVICE UNAVAILABLE'}}
 
 version = '1.0.0-beta'
 version_url = 'v{}'.format(version)
@@ -99,7 +138,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_rev_content,
                       'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of the last revision of an article'
                       }
@@ -115,7 +154,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_rev_content,
                       'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of a specific revision of an article'
                       }
@@ -147,7 +186,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'string'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_rev_content,
                       'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of the last revision of an article'
                       }
@@ -166,7 +205,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_rev_content,
                       'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of a specific revision of an article'
                       }
@@ -194,7 +233,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_rev_content,
                       'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of a range of revisions of an article'
                       }
@@ -216,7 +255,7 @@ custom_data = {
                                       'required': False,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_all_content,
                       'tags': ['2 - All content'],
                       'summary': 'Get the all content an article'
                       }
@@ -239,7 +278,7 @@ custom_data = {
                                       'required': False,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_all_content,
                       'tags': ['2 - All content'],
                       'summary': 'Get the all content an article'
                       }
@@ -313,7 +352,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'boolean'}
                                      ],
-                      'responses': responses,
+                      'responses': responses_rev_ids,
                       'tags': ['3 - Revision IDs'],
                       'summary': 'Get revision IDs of an article'
                       }
@@ -340,7 +379,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'boolean'}
                                      ],
-                      'responses': responses,
+                      'responses': responses_rev_ids,
                       'tags': ['3 - Revision IDs'],
                       'summary': 'Get revision IDs of an article'
                       }
