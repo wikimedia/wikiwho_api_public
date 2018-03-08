@@ -1,11 +1,11 @@
 import os
 
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.management import call_command
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect
+from django.shortcuts import render
 
 
 @staff_member_required
@@ -31,3 +31,10 @@ def download(request, file_name):
             response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(file_path)
             return response
     raise Http404('{} is not available to download'.format(file_name))
+
+
+def home(request):
+    home_template = 'home/home.html'
+    if 'api.wikiwho.net' in request.META.get('HTTP_HOST', ''):
+        home_template = 'home/home_api.html'
+    return render(request, home_template, {})

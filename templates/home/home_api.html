@@ -1,0 +1,144 @@
+{% extends 'home/home.html' %}
+
+{% block extra_style %}
+    <style>
+        tokens {
+            background-color: #F2F2F2;
+        }
+    </style>
+{% endblock extra_style %}
+
+{% block content %}
+    {% load i18n %}
+    {% load url_translation %}
+    {% get_current_language as LANGUAGE_CODE %}
+    {% get_available_languages as LANGUAGES %}
+    {% get_language_info_list for LANGUAGES as languages %}
+    <div class="col-md-12">
+        <section id="wikiwho_api">
+
+            <h3>WikiWho APIs</h3>
+            <p>
+                The APIs provide provenance and change information about the tokens a Wikipedia article consists of, for
+                several languages. Apart from the source language edition they draw from, their specifications and usage
+                are
+                identical, as described below.
+                <br>
+                {% for language in languages %}
+                    <br>
+                    {#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
+                    <a href="{% translate_url language.code 'api:swagger' ww_version_url %}">WikiWho
+                        API {{ language.code|upper }}</a>
+                {% endfor %}
+            </p>
+            <h4>Usage</h4>
+            <p>
+                For each article page, the API mirrors its current state on the Wikipedia.
+                The API is based on the <a href="https://github.com/wikiwho" target="_blank">WikiWho algorithm</a> (~95% acc.).
+            </p>
+            <p>
+                Currently, there is a limit of 2000 requests/day for unregistered users, and also a 60 requests/minute
+                limit
+                for all users.
+            </p>
+            Terminology used:
+            <ul>
+                <li>
+                    <i>"Wikipedia"</i>: A selected language version of Wikipedia. Available languages can be chosen from
+                    the
+                    top navigation bar.
+                </li>
+                <li>
+                    <i>"article (page)"</i>: Any Wikipedia page in <a
+                        href="https://en.wikipedia.org/wiki/Wikipedia:Namespace" target="_blank">namespace = 0.</a>
+                </li>
+                <li>
+                    <i>"(article) content"</i>: The tokenized Wiki Markup text content of a (range of) revision(s) of an
+                    article page, not the front-end HTML (if you want that, you have to "untokenize" and appropriately
+                    parse
+                    it; the original order of tokens is retained – or take a look at the <a href="#whocolor_api">WhoColor
+                    API)</a>.
+                </li>
+                <li>
+                    <i>"token"/"tokenized"</i>: The Wiki Markup text is split at (i) white spaces and (ii) certain
+                    special
+                    characters (special chars also act as tokens). E.g., tokens in
+                    <tokens>"A [[house]], a boat."</tokens>
+                    are
+                    <tokens>"a", "[[", "house", "]]", ",", "a", "boat", "."
+                    </tokens>
+                    I.e., all tokens are converted into lower-case and certain
+                    character combinations that have a specific function in Wiki Markup, such as double-square brackets,
+                    get treated as single tokens. >> <a
+                        href="https://github.com/wikiwho/WikiWho/blob/master/WikiWho/utils.py" target="_blank">Current WikiWho
+                    tokenization</a>
+                </li>
+                <li>
+                    <i>"revisions"</i>: The article revisions and their IDs as retrieved from Wikipedia, with one
+                    exception:
+                    The WikiWho algorithm implements a (very lenient) filter to avoid spending time DIFFing blatant
+                    vandalism which gets immediately reverted after. About 0.5% of the revisions from Wikipedia are
+                    hence not available here as we consider those changes to have disappeared immediately. This is a
+                    temporary constraint to be removed in an upcoming version.
+                </li>
+            </ul>
+            <a href="https://gist.github.com/faflo/8bd212e81e594676f8d002b175b79de8" target="_blank"><b>>> Toy example for how the token
+                metadata is generated</b></a>
+            <p>
+                See the description of the different query types for more information.
+            </p>
+            <p>
+                A dataset with this data (until Nov. 2016, no redirects) is available for download at
+                <a href="https://doi.org/10.5281/zenodo.345571." target="_blank">https://doi.org/10.5281/zenodo.345571.</a>
+            </p>
+            <p>
+                <b>Please cite it</b> as well if you use data from this API in your research
+                (note that the dataset excludes redirect articles and tokenization can slightly differ from the API
+                version, as we continuously improve it).
+            </p>
+            <p>
+                An example call: <a
+                    href="https://api.wikiwho.net/api/v1.0.0-beta/rev_content/Cologne/?o_rev_id=true&editor=true&token_id=true&out=true&in=true" target="_blank">Cologne</a>
+            </p>
+        </section>
+        <section id="whocolor_api">
+            <h3>WhoColor APIs</h3>
+            <p>This collection of APIs can be thought of as an additional service on top of the core WikiWho data
+                described above, available for the same languages. The same term descriptions as above apply.
+            </p>
+            <p>The goal is to deliver annotated HTML of a Wiki article that can be read by a browser (instead of
+                annotated, tokenized Wikitext as delivered by the primary API). </p>
+            <p>Annotations available per token (realized via &lt;span&gt;) are currently:
+            </p>
+            <ul>
+                <li>original revision and author</li>
+                <li>changes applied</li>
+                <li>conflict score</li>
+            </ul>
+            <p>plus certain metadata (e.g., ‘present’ authors and their percentages of words originally written in the
+                current revision, revision list with metadata).
+            </p>
+            <p>The main use case so far (hence the name) is colored annotation of text parts with this meta information,
+                for example in a Grease-/Tampermonkey userscript we developed, which runs in a browser extension and can
+                be used on any Wikipedia article to find out how wrote and changed which words via simple visual
+                inspection. <a href="https://f-squared.org/whovisual/#color" target="_blank">Find our more here</a>. </p>
+            <p>
+                Note that this API project is still in alpha, several elements of Wiki pages <a
+                    href="https://github.com/wikiwho/WhoColor/issues" target="_blank">cannot yet be annotated,
+                such as Tables, Infoboxes (or any templates), certain references.</a>
+                To find out more about the backend that delivers this data and to file issues or even contribute (always
+                welcome!) check our <a href="https://github.com/wikiwho/WhoColor" target="_blank">Github Repository.</a>
+
+            </p>
+            <p>
+                {% for language in languages %}
+                    <br>
+                    {#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
+                    <a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor
+                        API {{ language.code|upper }}</a>
+                {% endfor %}
+            </p>
+        </section>
+
+    </div>
+{% endblock content %}

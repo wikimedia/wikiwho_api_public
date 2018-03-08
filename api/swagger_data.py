@@ -34,82 +34,86 @@ headers = {
         "type": "integer"
     }
 }
-responses = {
-    '200': {
-        'description': 'OK',
-        # TODO http://swagger.io/specification/#responsesObject
-        # 'headers': headers,
-        # 'examples': {},
-        },
-    '400': {
-        'description': 'BAD REQUEST',
-    },
-    '408': {
-        'description': 'REQUEST TIMEOUT',
-    },
-    '503': {
-        'description': 'WP SERVICE UNAVAILABLE',
-    },
-}
+definitions = {"token": {'required': [], 'properties': {'token_id': {'type': 'string'}, 'o_rev_id': {'type': 'integer'},
+                                                        'in': {'type': 'array', 'items': {'type': 'integer'}},
+                                                        'str': {'type': 'string'}, 'editor': {'type': 'string'},
+                                                        'out': {'type': 'array', 'items': {'type': 'integer'}}},
+                         'example': {"editor": "21327649", "o_rev_id": 799873642, "token_id": 5278, "str": "redirect",
+                                     "in": [], "out": []
+                                     }}}
+
+definitions['revision'] = {'required': ['tokens', 'editor', 'time'],
+                           'properties': {'tokens': {'type': 'array', 'items': definitions['token']},
+                                          'editor': {"type": "string", "example": "29357210"},
+                                          'time': {"type": "string", "example": "2018-03-04T09:58:27Z"}}}
+
+definitions["revisions"] = {'description': 'a dictionary. `rev_id` is an example key', 'required': ['rev_id'],
+                            'type': 'object', 'properties': {"rev_id": definitions['revision']},
+                            'additionalProperties': definitions['revision'],  # 'example': {"1048945":
+                            #      ["2003-06-17T10:45:57Z", 0, "5f340c8127b65dc0ee98cc2bd8708e75", "0|157.193.172.88"]}
+                            }
+
+definitions['rev_content'] = {'required': ['revisions', 'article_title', 'message', 'page_id', 'success'],
+                              'properties': {'revisions': {"type": "array", "items": definitions['revisions']},
+                                             'article_title': {"type": "string", "example": "Dinar"},
+                                             'message': {"type": "string", "example": "null"},
+                                             'page_id': {"type": "integer", "example": "220241"},
+                                             'success': {"type": "boolean", "example": True}, }}
+definitions['all_tokens'] = {'required': ['tokens', 'article_title', 'message', 'page_id', 'success', 'threshold'],
+                             'properties': {'tokens': {"type": "array", "items": definitions['token']},
+                                            'threshold': {'type': 'integer', 'example': 0},
+                                            'article_title': {"type": "string", "example": "Dinar"},
+                                            'message': {"type": "string", "example": "null"},
+                                            'page_id': {"type": "integer", "example": 220241},
+                                            'success': {"type": "boolean", "example": True}, }}
+
+definitions['rev_meta'] = {'required': ['editor', 'id', 'timestamp'],
+                           'properties': {'editor': {"type": "string", "example": "0|157.193.172.88"},
+                                          'id': {"type": "integer", "example": 1047879},
+                                          'timestamp': {"type": "string", "example": "2003-06-17T10:45:57Z"}}}
+
+definitions['rev_ids'] = {'required': ['revisions', 'article_title', 'message', 'page_id', 'success'],
+                          'properties': {'revisions': {"type": "array", "items": definitions['rev_meta']},
+                                         'article_title': {"type": "string", "example": "Dinar"},
+                                         'message': {"type": "string", "example": "null"},
+                                         'page_id': {"type": "integer", "example": "220241"},
+                                         'success': {"type": "boolean", "example": True}, }}
+
+responses_rev_content = {'200': {'description': 'OK', 'schema': definitions['rev_content']},
+                         '400': {'description': 'BAD REQUEST', }, '408': {'description': 'REQUEST TIMEOUT'},
+                         '503': {'description': 'WP SERVICE UNAVAILABLE', }, }
+
+responses_all_content = {'200': {'description': 'OK', 'schema': definitions['all_tokens']},
+                         '400': {'description': 'BAD REQUEST', }, '408': {'description': 'REQUEST TIMEOUT'},
+                         '503': {'description': 'WP SERVICE UNAVAILABLE'}}
+
+responses_rev_ids = {'200': {'description': 'OK', 'schema': definitions['rev_ids']},
+                     '400': {'description': 'BAD REQUEST', }, '408': {'description': 'REQUEST TIMEOUT'},
+                     '503': {'description': 'WP SERVICE UNAVAILABLE'}}
 
 version = '1.0.0-beta'
 version_url = 'v{}'.format(version)
 custom_data = {
     'swagger': '2.0',
     'info': {
-            'title': 'WikiWho API',
-            # 'termsOfService': '',
-            'version': version,
-            # 'license': {'name': 'TODO licence?', 'url': ''},
-            # 'description': 'A short description of the application. GFM syntax can be used for rich text '
-            #                'representation. \n\nSpecification: http://swagger.io/specification \n\n'
-            #                'Example api: http://petstore.swagger.io/',
-            'description': 'This API provides provenance and change information about the tokens a Wikipedia article '
-                           'consists of.\n\n'
-                           'For each article page it mirrors its current state on the English Wikipedia.\n\n'
-                           'It\'s based on the [WikiWho algorithm](https://github.com/wikiwho) - the most accurate '
-                           'algorithm for this task, evaluated against a [gold standard dataset]'
-                           '(http://f-squared.org/wikiwho/#paper) (~95% acc.).\n\n'
-                           'Terminology used here:\n\n'
-                           '- *"Wikipedia"*: A selected language version of Wikipedia. Available languages can be '
-                           'chosen from the top navigation bar. Will be extended in the future.\n'
-                           '- *"article (page)"*: Any Wikipedia page in '
-                           '[namespace = 0](https://en.wikipedia.org/wiki/Wikipedia:Namespace).\n'
-                           '- *"(article) content"*: The tokenized Wiki Markup text content of a (range of) '
-                           'revision(s) of an article page, *not* the front-end HTML (if you want that, you have to '
-                           '"untokenize" and appropriately parse it; the original order of tokens is retained).\n'
-                           '- *"token"*/*"tokenized"*: The Wiki Markup text is split at (i) white spaces and '
-                           '(ii) certain special characters (special chars also act as tokens). E.g., tokens in '
-                           '`"A [[house]], a boat."` are `"a", "[[", "house", "]]", ",", "a", "boat", "."` '
-                           'I.e., all tokens are converted into lower-case and certain character combinations that '
-                           'have a specific function in Wiki Markup, such as double-square brackets, get treated '
-                           'as single tokens. '
-                           '>> [Current WikiWho tokenization]'
-                           '(https://github.com/wikiwho/WikiWho/blob/master/WikiWho/utils.py)\n'
-                           '- *"revisions"*: The article revisions and their IDs as retrieved from Wikipedia, with one '
-                           'exception: The WikiWho algorithm implements a (very lenient)  filter to avoid spending '
-                           'time DIFFing blatant vandalism which gets immediately reverted after. About 0.5% of the '
-                           'revisions from Wikipedia are hence not available here as we consider those changes to '
-                           'have disappeared immediately. This is a temporary constraint to be removed in an '
-                           'upcoming version.\n\n'
-                           '**[>> Toy example for how the token metadata is generated]'
-                           '(https://gist.github.com/faflo/8bd212e81e594676f8d002b175b79de8)**\n\n'
-                           'See the description of the different query types for more information.\n\n'
-                           'A dataset with this data (until Nov. 2016, no redirects) is available for download at '
-                           'https://doi.org/10.5281/zenodo.345571.\n\n'
-                           '**Please cite it** as well if you use data from this API in your research.\n\n'
-                           '(note that the dataset excludes redirect articles and tokenization can slightly differ '
-                           'from the API version)\n\n'
-                           '### **Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
-                           '(https://www.gesis.org/en/institute/departments/computational-social-science/)\n\n'
-                           'Data from this API is published under the CC-BY-SA 4.0 license. Original revision data '
-                           'is retrieved from Wikimedia servers and the terms for reuse put forth by Wikimedia apply.',
-            # 'contact': {
-            #     'name': 'GESIS - Leibniz Institute for the Social Sciences, CSS group',
-            #     # 'email': 'kenan.erdogan@gesis.org?cc=fabian.floeck@gesis.org&subject=wikiwho API',
-            #     'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/'
-            #            'computational-social-science/'},
-        },
+        'title': 'WikiWho API',
+        # 'termsOfService': '',
+        'version': version,
+        # 'license': {'name': 'TODO licence?', 'url': ''},
+        # 'description': 'A short description of the application. GFM syntax can be used for rich text '
+        #                'representation. \n\nSpecification: http://swagger.io/specification \n\n'
+        #                'Example api: http://petstore.swagger.io/',
+        'description': 'Documentation can be found at [api.wikiwho.net](https://api.wikiwho.net)\n\n'
+                       '### **Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
+                       '(https://www.gesis.org/en/institute/departments/computational-social-science/)\n\n'
+                       'Data from this API is published under the CC-BY-SA 4.0 license. Original revision data '
+                       'is retrieved from Wikimedia servers and the terms for reuse put forth by Wikimedia apply.',
+        # 'contact': {
+        #     'name': 'GESIS - Leibniz Institute for the Social Sciences, CSS group',
+        #     # 'email': 'kenan.erdogan@gesis.org?cc=fabian.floeck@gesis.org&subject=wikiwho API',
+        #     'url': 'http://www.gesis.org/en/institute/gesis-scientific-departments/'
+        #            'computational-social-science/'},
+    },
     'basePath': '/api/{}'.format(version_url),
     'host': 'www.wikiwho.net',
     'schemes': 'https',
@@ -125,7 +129,7 @@ custom_data = {
          # (https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)',
              {'get': {'description': 'Outputs the content of the most recent (last) revision of the given article, '
                                      ' as available on Wikipedia.\n\n'
-                                     # 'Outputs the content of the most recent (last) revision of an article. \n\n'
+             # 'Outputs the content of the most recent (last) revision of an article. \n\n'
                                      'This is functionally equivalent to `GET /rev_content/{article_title}/`.',
                       # 'produces': ['application/json'],
                       'parameters': [{'description': 'Page ID of the article from Wikipedia',
@@ -134,7 +138,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_rev_content,
                       'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of the last revision of an article'
                       }
@@ -150,7 +154,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_rev_content,
                       'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of a specific revision of an article'
                       }
@@ -165,7 +169,7 @@ custom_data = {
                                      'IDs are integers, are unique for the whole Wikipedia and can be used to fetch '
                                      'the current name of a user. The only exemption is user ID = 0, which identifies '
                                      'all unregistered accounts. To still allow for distinction between unregistered '
-                                     'users, the string identifiers (e.g., IPs, MAC-addresses) of unregistered users '
+                                     'users, the string identifiers (e.g., IPv4s, IPv6s) of unregistered users '
                                      'are included in this field, prefixed by "0|".\n\n'
                                      '**token_id:** The token ID assigned internally by the WikiWho algorithm, unique '
                                      'per article. Token IDs are assigned increasing from 1 for each new token added '
@@ -182,7 +186,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'string'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_rev_content,
                       'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of the last revision of an article'
                       }
@@ -201,7 +205,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_rev_content,
                       'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of a specific revision of an article'
                       }
@@ -229,7 +233,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_rev_content,
                       'tags': ['1 - Content per revision'],
                       'summary': 'Get the content of a range of revisions of an article'
                       }
@@ -251,7 +255,7 @@ custom_data = {
                                       'required': False,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_all_content,
                       'tags': ['2 - All content'],
                       'summary': 'Get the all content an article'
                       }
@@ -274,7 +278,7 @@ custom_data = {
                                       'required': False,
                                       'type': 'integer'},
                                      ] + query_params,
-                      'responses': responses,
+                      'responses': responses_all_content,
                       'tags': ['2 - All content'],
                       'summary': 'Get the all content an article'
                       }
@@ -348,7 +352,7 @@ custom_data = {
                                       'required': True,
                                       'type': 'boolean'}
                                      ],
-                      'responses': responses,
+                      'responses': responses_rev_ids,
                       'tags': ['3 - Revision IDs'],
                       'summary': 'Get revision IDs of an article'
                       }
@@ -375,11 +379,10 @@ custom_data = {
                                       'required': True,
                                       'type': 'boolean'}
                                      ],
-                      'responses': responses,
+                      'responses': responses_rev_ids,
                       'tags': ['3 - Revision IDs'],
                       'summary': 'Get revision IDs of an article'
                       }
               },
          },
 }
-

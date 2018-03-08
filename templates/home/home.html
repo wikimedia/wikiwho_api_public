@@ -16,116 +16,387 @@
             body {
                 padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
             }
+
+            .container {
+                margin-top: 20px;
+            }
+
             .navbar .brand {
                 padding: 5px 20px 5px;
                 margin-left: -20px;
             }
+
+            .page-header {
+                margin-top: 25px;
+            }
+
+            .sub-navbar {
+                padding-bottom: 15px;
+                border-bottom: 1px solid #eee;
+            }
+
+            #page-contents {
+                margin-top: 50px;
+            }
+
+            #page-contents img {
+                margin-top: 10px;
+                margin-bottom: 10px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 5px;
+            }
+
+            .img-80 {
+                width: 80%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .img-50 {
+                width: 50%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
         </style>
     {% endblock style %}
     {% block extra_style %}
     {% endblock extra_style %}
-{#    <link href="{% static 'bootstrap-3.3.7-dist/css/bootstrap-theme.min.css' %}" rel="stylesheet">#}
-    <link rel="icon" type="image/png" href="{% static 'images/favicon-32x32.png' %}" sizes="32x32" />
-    <link rel="icon" type="image/png" href="{% static 'images/favicon-16x16.png' %}" sizes="16x16" />
+    {#    <link href="{% static 'bootstrap-3.3.7-dist/css/bootstrap-theme.min.css' %}" rel="stylesheet">#}
+    <link rel="icon" type="image/png" href="{% static 'images/favicon-32x32.png' %}" sizes="32x32"/>
+    <link rel="icon" type="image/png" href="{% static 'images/favicon-16x16.png' %}" sizes="16x16"/>
 
-{#    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">#}
-{#    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">#}
-{#    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">#}
-{#    <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">#}
-{#    <link rel="shortcut icon" href="../assets/ico/favicon.png">#}
+    {#    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">#}
+    {#    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">#}
+    {#    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">#}
+    {#    <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">#}
+    {#    <link rel="shortcut icon" href="../assets/ico/favicon.png">#}
 </head>
 
 <body>
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand" href="{% url 'home' %}">
-            <img alt="WikiWho" width="60" src="{% static 'images/logo_white.png' %}">
-          </a>
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <img alt="WikiWho" width="60" src="{% static 'images/logo_white.png' %}">
+            </a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav navbar-right">
-            {% if request.user.is_superuser %}
-            <li><a href="{% url 'admin:index' %}">Admin</a></li>
-            {% endif %}
-            {% ww_api_version as ww_version_url %}
-            {% wc_api_version as wc_version_url %}
-    {#                        <li class="active"><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Available APIs<span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                {% load i18n %}
-                {% load url_translation %}
-                {% get_current_language as LANGUAGE_CODE %}
-                {% get_available_languages as LANGUAGES %}
-                {% get_language_info_list for LANGUAGES as languages %}
-                {% for language in languages %}
-{#                    <li><a href="{% translate_current_url language.code %}">{{ language.name }}</a></li>#}
-                    <li><a href="{% translate_url language.code 'api:swagger' ww_version_url %}">WikiWho {{ language.code|title  }}</a></li>
-                {% endfor %}
-                {% for language in languages %}
-                    <li><a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor {{ language.code|title }}</a></li>
-                {% endfor %}
-              </ul>
-            </li>
-{#            <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>#}
-{#            <li><a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a></li>#}
-            <li><a href="{% url 'contact' %}">Contact</a></li>
-            {% if request.user.is_authenticated %}
-    {#                        <li>Hello {{ request.user }}</li>#}
-            <li><a href="{% url 'account:detail' %}">My Account</a></li>
-            <li><a href="{% url 'account:logout' %}">Logout</a></li>
-            {% else %}
-            <li><a href="{% url 'account:login' %}">Login</a></li>
-            <li><a href="{% url 'account:register' %}">Register</a></li>
-            {% endif %}
-          </ul>
+            <ul class="nav navbar-nav navbar-right">
+                {% if request.user.is_superuser %}
+                    <li><a href="{% url 'admin:index' %}">Admin</a></li>
+                {% endif %}
+                {% ww_api_version as ww_version_url %}
+                {% wc_api_version as wc_version_url %}
+                {#                        <li class="active"><a href="{% url 'api:swagger' 'v1.0.0-beta' %}">API</a></li>#}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                       aria-expanded="false">Available APIs<span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        {% load i18n %}
+                        {% load url_translation %}
+                        {% get_current_language as LANGUAGE_CODE %}
+                        {% get_available_languages as LANGUAGES %}
+                        {% get_language_info_list for LANGUAGES as languages %}
+                        {% for language in languages %}
+                            {#                    <li><a href="{% translate_current_url language.code %}">{{ language.name }}</a></li>#}
+                            <li>
+                                <a href="{% translate_url language.code 'api:swagger' ww_version_url %}">WikiWho {{ language.code|title }}</a>
+                            </li>
+                        {% endfor %}
+                        {% for language in languages %}
+                            <li>
+                                <a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor {{ language.code|title }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {#            <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>#}
+                {#            <li><a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a></li>#}
+                <li><a href="{% url 'contact' %}">Contact/Imprint</a></li>
+                {% if request.user.is_authenticated %}
+                    {#                        <li>Hello {{ request.user }}</li>#}
+                    <li><a href="{% url 'account:detail' %}">My Account</a></li>
+                    <li><a href="{% url 'account:logout' %}">Logout</a></li>
+                {% else %}
+                    <li><a href="{% url 'account:register' %}">Register</a></li>
+                    <li><a href="{% url 'account:login' %}">Login</a></li>
+                {% endif %}
+            </ul>
         </div><!--/.nav-collapse -->
-      </div>
-    </nav>
+    </div>
+</nav>
 
-    <div class="container">
-        <div class="page-header">
+<div class="container">
+    <div class="page-header">
         {% block title %}
-            <h1>Welcome to the WikiWho server</h1>
+            <div class="row">
+                <div class="col-xs-9">
+                    <img src="{% static 'images/logo_black_cropped.png' %}" class="img-responsive"
+                         style="max-width: 40%; margin-bottom: 20px">
+                    <p>
+                        &nbsp;A service for mining changes and interactions from revisioned writing platforms.
+                    </p>
+                </div>
+                <div class="col-xs-3">
+                    <div class="clearfix">
+                        <img src="{% static 'images/GESIS-Logo.svg' %}" class="img-responsive pull-right"
+                             style="max-width: 60%; margin-bottom: 20px">
+                    </div>
+                    <img src="{% static 'images/Logo_KIT.svg' %}" class="img-responsive pull-right"
+                         style="max-width: 30%"></div>
+            </div>
+
         {% endblock title %}
-        </div>
-        <div class="row">
+    </div>
+    <div class="row">
         {% block content %}
             <div class="col-md-12">
-            <p>
-                <a href="https://github.com/wikiwho/WikiWho" target="_blank">WikiWho algorithm</a>
-                {% for language in languages %}
-                <br>
-{#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
-                <a href="{% translate_url language.code 'api:swagger' ww_version_url %}">WikiWho API {{ language.code|upper  }}</a>
-                {% endfor %}
-            </p>
-            <p>
-                <a href="https://github.com/wikiwho/WhoColor">WhoColor source code</a>
-                {% for language in languages %}
-                <br>
-{#                    <a href="{% url 'api:swagger' ww_version_url %}">WikiWho API EN</a>#}
-                <a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor API {{ language.code|upper  }}</a>
-                {% endfor %}
-            </p>
-            {% comment %}TODO
-                Explanation how wikiwho works?
-                Documentation how to use wikiwho algorithm?
-            {% endcomment %}
+                <div class="row sub-navbar">
+                    <div class="col-xs-3">
+                        <a href="#introduction"><h3>Introduction <img src="{% static 'images/bluearrow.png' %}"
+                                                                      width="10"></h3></a>
+                        Introduction to the functionality of wikiwho.
+                    </div>
+                    <div class="col-xs-3">
+                        <a href="#services"><h3>Services <img src="{% static 'images/bluearrow.png' %}" width="10">
+                        </h3></a>
+                        APIs and Data sets, ready to use
+                    </div>
+                    <div class="col-xs-3">
+                        <a href="#technical_details"><h3>Technical Details <img
+                                src="{% static 'images/bluearrow.png' %}" width="10"></h3></a>
+                        Description of the core algorithm, source code, papers
+                    </div>
+                    <div class="col-xs-3">
+                        <a href="#tools_use_cases"><h3>Tools and further use cases <img
+                                src="{% static 'images/bluearrow.png' %}" width="10"></h3></a>
+                        Well, tools and further use cases
+                    </div>
+                </div>
+
+                <div id="page-contents">
+
+                    <section id="introduction">
+
+                        <h3>Introduction</h3>
+                        <ul>
+                            <li>
+                                The core functionality of WikiWho: given a revisioned text document, it parses the
+                                complete set of all historical revisions (versions) in order to find out <b>who wrote
+                                and/or removed and/or reinserted which exact text at token level at what revision</b>.
+                                This means that for every token (~word), its individual add/removal/reintroduction
+                                history becomes available.
+                            </li>
+                            <li>Initial and currently sole use case: <b>Wikipedia articles</b> in different languages
+                                (Each
+                                edit on an article creates a new revision). Other systems planned.
+                            </li>
+                            <li>
+                                While it might sound as if you could achieve this with standard text diff approaches:
+                                <b>it is not that trivial</b>. And usually, this information is not readily available
+                                from
+                                revisioned writing systems. See <a href="#technical_details">Technical Details</a> .
+                            </li>
+                            <li>
+                                Consequently, WikiWho is – as of writing – the only source of this information in real
+                                time for multiple Wikipedia language editions and which is scientifically evaluated for
+                                the English Wikipedia with at least <a href="#technical_details">95% accuracy</a>.
+                            </li>
+                            <li>
+                                On top of this fine-grained change data, there are <b> many possible applications</b>:
+                                One is to aid editors with improved change tracking in interfaces and seeing their <b>
+                                editing impact</b>. Another one is to focus on the <b> longevity of </b> and <b>
+                                disputes </b> about certain n-grams, an interesting linguistic question, especially in
+                                the large corpus of Wikipedia.
+                                Thirdly, it allows studying the minute change interaction of editors with each others
+                                content, allowing to <b> infer social interaction networks</b> from them – i.e., to
+                                investigate <b>collaboration vs. conflict </b> in online writing.
+                            </li>
+                            <li>
+                                We provide the <b> core data as open APIs and datasets </b>, as well as additional
+                                resources. Check them out <a href="#services"> below </a>.
+                            </li>
+                            <li>
+                                WikiWho was first conceived as a dissertation project at <a
+                                    href="https://www.kit.edu/english/" target="_blank"> Karlsruhe Institute of
+                                Technology</a> by <a href="https://f-squared.org/about.html" target="_blank">Fabian
+                                Flöck</a> and
+                                collaborators and is now hosted, maintained and further
+                                developed at <a href="https://www.gesis.org/home/" target="_blank">GESIS – Leibniz
+                                Institute for the
+                                Social Sciences</a>, <a
+                                    href="https://www.gesis.org/en/institute/departments/computational-social-science/"
+                                    target="_blank">CSS
+                                department</a>. The main
+                                goal is to provide (computational) social scientists easier access to the rich
+                                interaction and collaboration data “hidden” in the change logs of revisioned writing
+                                systems. It is thereby part of one of GESIS’ missions, namely to enable accessibility
+                                for digital behavioral trace data to scientific stakeholders studying social phenomena.
+                            </li>
+                        </ul>
+                        {#                        <p>The core functionality of wikiwho is to parse the complete set of all historical revisions#}
+                        {#                            (versions) of a wikipedia article in order to find out who wrote and/or removed which exact#}
+                        {#                            text at what point in time. this means that given a specific revision of an article (e.g.,#}
+                        {#                            the current one) wikiwho can determine for each word and special character which user first#}
+                        {#                            introduced that word and if and how it was deleted/reintroduced afterwards. this#}
+                        {#                            functionality is not offered by wikipedia as such and wikiwho was shown to perform this task#}
+                        {#                            with very high accuracy (~95%) and very efficiently, being the only tool that has been#}
+                        {#                            scientifically proven to perform this task that well (<a#}
+                        {#                                    href="https://f-squared.org/wikiwho/#paper">cf. the paper</a>). </p>#}
+                        {#                        <p>on top of the generated authorship and change data, other data can be mined and other tools#}
+                        {#                            can be build. we have extended the original model to also provide relationships between#}
+                        {#                            editors in an article such as "delete" or "reintroduce" based on the word they delete or#}
+                        {#                            add. we are currently working on a visualization of these networks as well as other#}
+                        {#                            visualization of metrics and word authorship useful for end-users that are interested in#}
+                        {#                            exploring the collaborative writing dynamics of wikipedia. </p>#}
+
+                    </section>
+
+                    <section id="services">
+                        <h3>Services</h3>
+                        <h4>APIs <a href="#"></a></h4>
+                        <p>We offer APIs (1 per language) for word provenance/changes of Wikipedia articles:
+                            You can get token-wise information from which revision what content originated (and thereby
+                            which editor originally authored the word) as well as all changes a token was ever subject
+                            to. An additional set of APIs delivers special HTML markup for interface applications, e.g.,
+                            the browser extension WhoColor. To see how it works and what languages we offer, take a look
+                            at the API page.
+
+                        </p>
+                        <p><strong>
+                            <a href="https://api.wikiwho.net/api" target="_blank">https://api.wikiwho.net/api</a>
+                        </strong></p>
+
+                        <h4>Data sets</h4>
+                        <p>
+                            Periodically, we export our collected and processed data (that you can get over the APIs)
+                            and publish a cleaned up and documented dataset in an easy-to-consume format. Currently we
+                            offer the following data dumps, which we will expand in the future:
+                        </p>
+                        <ul>
+                            <li><b>TokTrack: A Complete Token Provenance and Change Tracking Dataset.</b> (containing
+                                every
+                                instance of all tokens ever written in undeleted, non-redirect articles.)
+                                Each token is annotated with: (i) the article revision it was originally created in, and
+                                (ii) lists
+                                with all the revisions in which the token was ever deleted and (potentially) re-added
+                                and re-deleted from its article. An <a
+                                        href="https://www.aaai.org/ocs/index.php/ICWSM/ICWSM17/paper/download/15689/14890" target="_blank">ICWSM’17
+                                    dataset paper</a> explains what you can do with
+                                that data, and shows some novel statistics about the English Wikipedia in that regard.
+                                <ol>
+                                    <li>English, <a href="https://doi.org/10.5281/zenodo.834557" target="_blank">until Nov. 2016 (>13
+                                        Billion tokens)</a></li>
+                                </ol>
+                            </li>
+                        </ul>
+                        {##}
+                        {#                        <ul>#}
+                        {#                            <li>#}
+                        {#                                <a href="https://docs.google.com/spreadsheet/ccc?key=0AjaQHqjWAtIHdHdiSFNjcXVyeHQwYkJuNHZ0NE00aXc&amp;usp=sharing"#}
+                        {#                                   target="_blank">description of the datasets</a></li>#}
+                        {#                            <li><a href="https://f-squared.org/wikiwho/datasets/dataset1.tar.gz">dataset 1</a> <i>(file#}
+                        {#                                size: 80 mb)</i></li>#}
+                        {#                            <li><a href="https://f-squared.org/wikiwho/datasets/dataset2.tar.gz">dataset 2</a> <i>(file#}
+                        {#                                size: 5.8 gb)</i></li>#}
+                        {#                        </ul>#}
+                    </section>
+
+                    <section id="technical_details">
+                        <h3>Technical Details <a href="#"></a></h3>
+                        <p>
+                            The original algorithm working behind the scenes is described in a <a
+                                href="http://wwwconference.org/proceedings/www2014/proceedings/p843.pdf" target="_blank">WWW 2014
+                            paper</a>, along
+                            with an extensive evaluation resulting in 95% accuracy on fairly revision-rich articles. The
+                            current code version is available on <a href="https://github.com/wikiwho/WikiWho">GitHub</a>.
+                        </p>
+                        <p>
+                            In a nutshell, the approach divides each revision into hierarchically nested paragraph,
+                            sentence and token elements and tracks their appearance through the complete content graph
+                            it builds in this way over all revisions. It is implemented currently for Wikitext, but can
+                            run on any kind of text in principle (although tokenization rules might have to be adapted).
+                        </p>
+                        <p>
+                            Toy example for how the token metadata is generated:
+                            <img src="https://camo.githubusercontent.com/8696b757db3fa79affad347ee6c02c1d1078d71c/687474703a2f2f3139332e3137352e3233382e38382f6170695f787472612f65785f666967757265322e706e67"
+                                 class="img-responsive img-80">
+                        </p>
+                        <p>In this way, it becomes possible to track – for each single token – all original additions,
+                            deletes, reinserts and redeletes and in which revision they took place. Which in turn allows
+                            to infer the editor, timestamp, etc. of those revisions. Also, individual tokens retain a
+                            unique ID, making it possible to distinguish two tokens with identical strings in different
+                            text positions.
+                        </p>
+
+                    </section>
+
+                    <section id="tools_use_cases">
+                        <h3>Tools and further use cases <a href="#"></a></h3>
+                        <p>From the generated provenance and change data further new forms of data can be mined and
+                            novel tools can be built.
+                        </p>
+                        <p>
+                            We already provide the <b>WhoColor userscript</b> for the Tamper-/Greasemonkey browser
+                            extensions,
+                            using live data from the <a href="https://api.wikiwho.net/">WhoColor API</a>. Opening a
+                            Wikipedia article it creates a color-markup
+                            on the text, showing the original authors of the content, an author list ordered by
+                            percentages of the article written and additional provenance information. It also has the
+                            ability to show conflict regarding certain text parts and the adding/deleting history of a
+                            given word. The Wiki Edu Foundation currently uses the <a
+                                href="https://dashboard.wikiedu.org/courses/RIT/American_Women's_and_Gender_History_(Fall_2016)/articles" target="_blank">WhoColor
+                            API for a similar display of
+                            authorship in its dashboard</a> for students learning to edit Wiki articles.
+                        </p>
+                        <img src="{% static 'images/color_history_today.png' %}" class="img-responsive img-50">
+                        <p>
+                            For WhoColor, we use an individual-token-level heuristic to compute conflict scores; yet,
+                            the sensible <b>identification of conflict</b> or disputes (as opposed to collaboration or
+                            non-interaction) related to a specific part of a changing document over time still poses
+                            several open research questions – answers to which the WikiWho data can offer.
+                        </p>
+                        <p>
+                            Another, related use case is the <b>extraction of relations between editors</b> in an
+                            article based
+                            on the minute interactions on each other’s content. We provided a first, relatively simple
+                            implementation of this in an extension of WikiWho, using "(re)delete" and "reintroduce"
+                            actions between editors to encode antagonistic and supporting actions. <a
+                                href="https://github.com/maribelacosta/wikiwho" target="_blank">See the code on
+                            GitHub</a>. We have also developed an interactive Web visualization (“WhoVIS”) that takes
+                            the
+                            antagonistic edit actions extracted in this manner (and weighted by speed, number of tokens
+                            changed, etc.) to draw an interaction network between editors in an article over time. In
+                            this manner, the relations between editors can be intuitively explored. <a
+                                href="https://f-squared.org/whovisual/#vis" target="_blank">A usable Web demo
+                            and a publication describing the approach are available</a>.</p>
+                        <p>
+                            Yet, the WikiWho data can be leveraged for much more intricate modeling of interactions,
+                            taking for instance into account the semantic content of changes, prior interactions of
+                            editors, etc.
+                        </p>
+                        <img src="{% static 'images/alberto185_multipolar.png' %}" class="img-responsive img-50">
+                    </section>
+                </div>
             </div>
         {% endblock content %}
-        </div>
+    </div>
 
-    </div> <!-- /container -->
+</div> <!-- /container -->
 
-    {% block scripts %}
-{#    <script src="http://code.jquery.com/jquery.js"></script>#}
+{% block scripts %}
+    {#    <script src="http://code.jquery.com/jquery.js"></script>#}
     <script src="{% static 'scripts/jquery-3.2.1.min.js' %}"></script>
     <script src="{% static 'bootstrap-3.3.7-dist/js/bootstrap.min.js' %}"></script>
-    {% endblock scripts %}
+    <script>window.addEventListener("hashchange", function () {
+        scrollBy(0, -100)
+    })</script>
+    {#    Navbar hides initial content when jumping to in-page anchor problem fix#}
+{% endblock scripts %}
 
-    {% block extra_js %}
-    {% endblock extra_js %}
+{% block extra_js %}
+{% endblock extra_js %}
 </body>
 </html>
