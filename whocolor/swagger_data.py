@@ -16,64 +16,34 @@ headers = {
 }
 
 definitions = {
-    "editor": {
-        "required": [
-            "editor_name", "class_name", "authorship_score"
+    "present_editors": {
+        "allOf": [
+            {"required": ["editor_name"], "properties": {"editor_name": {"type": "string"}}},
+            {"required": ["class_name"], "properties": {"class_name": {"type": "string"}}},
+            {"required": ["authorship_score"],
+             "properties": {"authorship_score": {"type": "number", "format": "double"}}},
         ],
-        "properties": {
-            "editor_name": {
-                "type": "string",
-            },
-            "class_name": {
-                "type": "string",
-            },
-            "authorship_score": {
-                "type": "number",
-                "format": "double"
-            }
-        },
-        "example": {
-            "name": "Vanjagenije",
-            "id": "1646408",
-            "score": 14.754098360655737
-        }
+        "example": ["Kanguole", "5563803", 19.4672131147541]
     },
-    'token': {
-        "required": ["conflict_score", "str", "o_rev_id", "in", "out", "class_name", "age"],
-        "properties": {
-            "conflict_score": {"type": "integer"},
-            "str": {"type": "string"},
-            "o_rev_id": {"type": "integer"},
-            "in": {"type": "array", "items": {"type": "integer"}},
-            "out": {"type": "array", "items": {"type": "integer"}},
-            "class_name": {"type": "string"},
-            "age": {"type": "number", "format": "double"},
-        },
+    'tokens': {
+        "allOf": [
+            {"required": ["conflict_score"], "properties": {"conflict_score": {"type": "integer"}}},
+            {"required": ["str"], "properties": {"str": {"type": "string"}}},
+            {"required": ["o_rev_id"], "properties": {"o_rev_id": {"type": "integer"}}},
+            {"required": ["in"], "properties": {"in": {"type": "array", "items": {"type": "integer"}}}},
+            {"required": ["out"], "properties": {"out": {"type": "array", "items": {"type": "integer"}}}},
+            {"required": ["class_name"], "properties": {"class_name": {"type": "string"}}},
+            {"required": ["age"], "properties": {"age": {"type": "number", "format": "double"}}},
+        ],
         "example": [1, "{{", 294212239, [530917836], [343655203], "773061", 276366173.781772],
     },
-    'revision': {
-        "type": "object",
-        "required": ["timestamp", "parent_id", "class_name", "editor_name"],
-        "properties": {
-            "timestamp": {
-                "type": "string",
-                "example": "2003-06-17T10:45:57Z",
-            },
-            "parent_id": {
-                "type": "integer",
-                "format": "int64",
-                "example": 1047879
-            },
-            "class_name": {
-                "type": "string",
-                "example": "5f340c8127b65dc0ee98cc2bd8708e75"
-            },
-            "editor_name": {
-                "type": "string",
-                "example": "Frecklefoot",
-            }
-        },
-        # 'example': ["2003-06-17T10:45:57Z", 0, "5f340c8127b65dc0ee98cc2bd8708e75", "0|157.193.172.88"]
+    'revisions': {
+        "allOf": [
+            {"required": ["timestamp"], "properties": {"timestamp": {"type": "string"}}},
+            {"required": ["parent_id"], "properties": {"parent_id": {"type": "integer", "format": "int64"}}},
+            {"required": ["class_name"], "properties": {"class_name": {"type": "string"}}},
+            {"required": ["editor_name"], "properties": {"editor_name": {"type": "string"}}}
+        ],
     }
 }
 
@@ -99,17 +69,12 @@ definitions["Article"] = {
         },
         'present_editors': {
             "type": "array",
-            "items": definitions['editor'],
-            "example": [[
-                "Kanguole",
-                "5563803",
-                19.4672131147541
-            ]],
+            "items": definitions['present_editors'],
         },
         "tokens": {
             'type': 'array',
             # 'description': 'List of lists containing token information',
-            'items': definitions['token']
+            'items': definitions['tokens']
         },
         "rev_id": {
             "type": "integer",
@@ -126,11 +91,10 @@ definitions["Article"] = {
             'required': ['rev_id'],
             'type': 'object',
             'properties': {
-                "rev_id": definitions['revision']
+                "rev_id": definitions['revisions']
             },
-            'additionalProperties': definitions['revision'],
-            'example': {1048945:
-                            ["2003-06-17T10:45:57Z", 0, "5f340c8127b65dc0ee98cc2bd8708e75", "0|157.193.172.88"]}
+            # 'additionalProperties': definitions['revisions'],
+            'example': {1048945: ["2003-06-17T10:45:57Z", 0, "5f340c8127b65dc0ee98cc2bd8708e75", "0|157.193.172.88"]}
 
         }
     },

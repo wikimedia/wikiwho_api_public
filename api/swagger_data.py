@@ -1,3 +1,5 @@
+# specification for swagger ui v2.0: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md
+
 from django.conf import settings
 
 query_params = [
@@ -34,23 +36,36 @@ headers = {
         "type": "integer"
     }
 }
-definitions = {"token": {'required': [], 'properties': {'token_id': {'type': 'string'}, 'o_rev_id': {'type': 'integer'},
-                                                        'in': {'type': 'array', 'items': {'type': 'integer'}},
-                                                        'str': {'type': 'string'}, 'editor': {'type': 'string'},
-                                                        'out': {'type': 'array', 'items': {'type': 'integer'}}},
-                         'example': {"editor": "21327649", "o_rev_id": 799873642, "token_id": 5278, "str": "redirect",
-                                     "in": [], "out": []
-                                     }}}
+
+definitions = {"token": {'required': ['str'],
+                         'properties': {'token_id': {'type': 'string'}, 'o_rev_id': {'type': 'integer'},
+                                        'in': {'type': 'array', 'items': {'type': 'integer'}},
+                                        'str': {'type': 'string'}, 'editor': {'type': 'string'},
+                                        'out': {'type': 'array', 'items': {'type': 'integer'}}},
+                         'example': {"editor": "21327649", "o_rev_id": 799873642, "token_id": 5278,
+                                     "str": "redirect", "in": [], "out": []}
+                         }
+               }
 
 definitions['revision'] = {'required': ['tokens', 'editor', 'time'],
                            'properties': {'tokens': {'type': 'array', 'items': definitions['token']},
-                                          'editor': {"type": "string", "example": "29357210"},
-                                          'time': {"type": "string", "example": "2018-03-04T09:58:27Z"}}}
+                                          'editor': {"type": "string"},
+                                          'time': {"type": "string"}}}
 
-definitions["revisions"] = {'description': 'a dictionary. `rev_id` is an example key', 'required': ['rev_id'],
-                            'type': 'object', 'properties': {"rev_id": definitions['revision']},
-                            'additionalProperties': definitions['revision'],  # 'example': {"1048945":
-                            #      ["2003-06-17T10:45:57Z", 0, "5f340c8127b65dc0ee98cc2bd8708e75", "0|157.193.172.88"]}
+definitions['revisions'] = {'type': 'object',
+                            'required': ['rev_id'],
+                            'properties': {"rev_id": definitions['revision']},
+                            # 'description': 'a dictionary. `rev_id` is an example key',
+                            # 'additionalProperties': definitions['revision'],
+                            'example': {
+                                "824306828": {
+                                    "tokens":
+                                        {"editor": "21327649", "o_rev_id": 799873642, "token_id": 5278,
+                                         "str": "redirect", "in": [], "out": []},
+                                    "editor": "29357210",
+                                    "time": "2018-03-04T09:58:27Z",
+                                }
+                            }
                             }
 
 definitions['rev_content'] = {'required': ['revisions', 'article_title', 'message', 'page_id', 'success'],
@@ -59,15 +74,16 @@ definitions['rev_content'] = {'required': ['revisions', 'article_title', 'messag
                                              'message': {"type": "string", "example": "null"},
                                              'page_id': {"type": "integer", "example": "220241"},
                                              'success': {"type": "boolean", "example": True}, }}
-definitions['all_tokens'] = {'required': ['tokens', 'article_title', 'message', 'page_id', 'success', 'threshold'],
-                             'properties': {'tokens': {"type": "array", "items": definitions['token']},
-                                            'threshold': {'type': 'integer', 'example': 0},
-                                            'article_title': {"type": "string", "example": "Dinar"},
-                                            'message': {"type": "string", "example": "null"},
-                                            'page_id': {"type": "integer", "example": 220241},
-                                            'success': {"type": "boolean", "example": True}, }}
 
-definitions['rev_meta'] = {'required': ['editor', 'id', 'timestamp'],
+definitions['all_content'] = {'required': ['all_tokens', 'article_title', 'message', 'page_id', 'success', 'threshold'],
+                              'properties': {'all_tokens': {"type": "array", "items": definitions['token']},
+                                             'threshold': {'type': 'integer', 'example': 0},
+                                             'article_title': {"type": "string", "example": "Dinar"},
+                                             'message': {"type": "string", "example": "null"},
+                                             'page_id': {"type": "integer", "example": 220241},
+                                             'success': {"type": "boolean", "example": True}}}
+
+definitions['rev_meta'] = {'required': ['id'],
                            'properties': {'editor': {"type": "string", "example": "0|157.193.172.88"},
                                           'id': {"type": "integer", "example": 1047879},
                                           'timestamp': {"type": "string", "example": "2003-06-17T10:45:57Z"}}}
@@ -77,18 +93,21 @@ definitions['rev_ids'] = {'required': ['revisions', 'article_title', 'message', 
                                          'article_title': {"type": "string", "example": "Dinar"},
                                          'message': {"type": "string", "example": "null"},
                                          'page_id': {"type": "integer", "example": "220241"},
-                                         'success': {"type": "boolean", "example": True}, }}
+                                         'success': {"type": "boolean", "example": True}}}
 
 responses_rev_content = {'200': {'description': 'OK', 'schema': definitions['rev_content']},
-                         '400': {'description': 'BAD REQUEST', }, '408': {'description': 'REQUEST TIMEOUT'},
+                         '400': {'description': 'BAD REQUEST', },
+                         '408': {'description': 'REQUEST TIMEOUT'},
                          '503': {'description': 'WP SERVICE UNAVAILABLE', }, }
 
-responses_all_content = {'200': {'description': 'OK', 'schema': definitions['all_tokens']},
-                         '400': {'description': 'BAD REQUEST', }, '408': {'description': 'REQUEST TIMEOUT'},
+responses_all_content = {'200': {'description': 'OK', 'schema': definitions['all_content']},
+                         '400': {'description': 'BAD REQUEST', },
+                         '408': {'description': 'REQUEST TIMEOUT'},
                          '503': {'description': 'WP SERVICE UNAVAILABLE'}}
 
 responses_rev_ids = {'200': {'description': 'OK', 'schema': definitions['rev_ids']},
-                     '400': {'description': 'BAD REQUEST', }, '408': {'description': 'REQUEST TIMEOUT'},
+                     '400': {'description': 'BAD REQUEST', },
+                     '408': {'description': 'REQUEST TIMEOUT'},
                      '503': {'description': 'WP SERVICE UNAVAILABLE'}}
 
 version = '1.0.0-beta'
