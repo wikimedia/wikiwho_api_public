@@ -133,7 +133,7 @@ custom_data = {
                        '(https://www.gesis.org/en/institute/departments/computational-social-science/)',
     },
     'basePath': '/whocolor/{}'.format(version_url),
-    'host': 'http://127.0.0.1:8000',
+    'host': 'www.wikiwho.net',
     'schemes': 'https',
     'produces': ['application/json'],
     # 'externalDocs': {
@@ -149,7 +149,7 @@ custom_data = {
                 'produces': ['application/json'],
                 'parameters': [{'description': 'The title of the requested article',
                                 'in': 'path',
-                                'name': 'article_title',
+                                'name': 'page_title',
                                 'required': True,
                                 'type': 'string'},
                                ],
