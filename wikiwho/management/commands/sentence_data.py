@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Example usage:
-
+python manage.py sentence_data -m 6 -log '/home/kenan/PycharmProjects/wikiwho_api/tmp_pickles' -lang 'en'
 """
 import glob
 import sys
@@ -97,7 +97,7 @@ def calculate_similarity(list1, list2):
 
 def get_sentence_data(pickle_path):
     ww = generate_sentence_data(pickle_path)
-    output = {}
+    output = []
     seconds_limit = 48 * 3600  # hours
     for s_id in range(len(ww.all_sentences)):
         sentence = ww.all_sentences[s_id]
@@ -114,7 +114,7 @@ def get_sentence_data(pickle_path):
                 if calculate_similarity(sentence.words, added_sentence.words) >= 0.8:
                     x = added_sentence.ins.index(out_rev_id)
                     try:
-                        added_out_rev_id = added_sentence.outs[x+1]
+                        added_out_rev_id = added_sentence.outs[x]
                     except IndexError:
                         pass
                     else:
@@ -128,7 +128,7 @@ def get_sentence_data(pickle_path):
                             if calculate_similarity(added_sentence.words, added_sentence_2.words) >= 0.8:
                                 x = added_sentence_2.ins.index(added_out_rev_id)
                                 try:
-                                    added_out_rev_id_2 = added_sentence_2.outs[x+1]
+                                    added_out_rev_id_2 = added_sentence_2.outs[x]
                                 except IndexError:
                                     pass
                                 else:
@@ -136,8 +136,7 @@ def get_sentence_data(pickle_path):
                                     out_ts = ww.revisions[added_out_rev_id_2].timestamp
                                     if (out_ts - in_ts).total_seconds() >= seconds_limit:
                                         # successful
-                                        output[s_id] = [out_rev_id, added_s_id, added_out_rev_id, added_s_id_2, added_out_rev_id_2]
-
+                                        output.append([sentence.ins[0], s_id, out_rev_id, added_s_id, added_out_rev_id, added_s_id_2, added_out_rev_id_2])
                     break
     ww.output = output
     return ww
