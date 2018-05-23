@@ -94,20 +94,20 @@ class EditorDataDeAdmin(EditorDataIndexedAdmin):
     pass
 
 
-class EditorDataEsNotIndexedAdmin(EditorDataNotIndexedAdmin):
-    pass
+# class EditorDataEsNotIndexedAdmin(EditorDataNotIndexedAdmin):
+#     pass
+#
+#
+# class EditorDataEsAdmin(EditorDataIndexedAdmin):
+#     pass
 
 
-class EditorDataEsAdmin(EditorDataIndexedAdmin):
-    pass
-
-
-class EditorDataTrNotIndexedAdmin(EditorDataNotIndexedAdmin):
-    pass
-
-
-class EditorDataTrAdmin(EditorDataIndexedAdmin):
-    pass
+# class EditorDataTrNotIndexedAdmin(EditorDataNotIndexedAdmin):
+#     pass
+#
+#
+# class EditorDataTrAdmin(EditorDataIndexedAdmin):
+#     pass
 
 
 admin.site.register(Article, ArticleAdmin)
@@ -117,10 +117,10 @@ admin.site.register(EditorDataEuNotIndexed, EditorDataEuNotIndexedAdmin)
 admin.site.register(EditorDataEu, EditorDataEuAdmin)
 admin.site.register(EditorDataDeNotIndexed, EditorDataDeNotIndexedAdmin)
 admin.site.register(EditorDataDe, EditorDataDeAdmin)
-admin.site.register(EditorDataEsNotIndexed, EditorDataEsNotIndexedAdmin)
-admin.site.register(EditorDataEs, EditorDataEsAdmin)
-admin.site.register(EditorDataTrNotIndexed, EditorDataTrNotIndexedAdmin)
-admin.site.register(EditorDataTr, EditorDataTrAdmin)
+# admin.site.register(EditorDataEsNotIndexed, EditorDataEsNotIndexedAdmin)
+# admin.site.register(EditorDataEs, EditorDataEsAdmin)
+# admin.site.register(EditorDataTrNotIndexed, EditorDataTrNotIndexedAdmin)
+# admin.site.register(EditorDataTr, EditorDataTrAdmin)
 
 """
 from .models import Revision, Token
