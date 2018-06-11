@@ -25,8 +25,8 @@ class WikipediaRevText(WikipediaRevTextBase):
 
 class WikipediaUser(WikipediaUserBase):
 
-    def _prepare_request(self):
-        data = super(WikipediaUser, self)._prepare_request()
+    def _prepare_request(self, editor_ids):
+        data = super(WikipediaUser, self)._prepare_request(editor_ids)
         data['headers'] = settings.WP_HEADERS
         data['timeout'] = settings.WP_REQUEST_TIMEOUT
         return data
