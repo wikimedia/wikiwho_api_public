@@ -92,7 +92,8 @@ class WhoColorHandler(object):
             # get editor names from wp api
             editor_ids = {v[2] for k, v in whocolor_data['revisions'].items() if v[2] and not v[2].startswith('0|')}
             wp_users_obj = WikipediaUser(self.language)
-            editor_names_dict = wp_users_obj.get_editor_names(editor_ids, batch_size=500)
+            batch_size = 500 if self.language == 'en' else 50
+            editor_names_dict = wp_users_obj.get_editor_names(editor_ids, batch_size=batch_size)
 
             # set editor and class names for each token
             for token in whocolor_data['tokens']:
