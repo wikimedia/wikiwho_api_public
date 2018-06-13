@@ -25,7 +25,8 @@ class WikipediaRevText(WikipediaRevTextBase):
 
 class WikipediaUser(WikipediaUserBase):
 
-    def __init__(self):
+    def __init__(self, language='en'):
+        self.language = language
         self.session = create_wp_session(self.language)
 
     def _prepare_request(self, editor_ids):
