@@ -25,6 +25,9 @@ class WikipediaRevText(WikipediaRevTextBase):
 
 class WikipediaUser(WikipediaUserBase):
 
+    def __init__(self):
+        self.session = create_wp_session(self.language)
+
     def _prepare_request(self, editor_ids):
         data = super(WikipediaUser, self)._prepare_request(editor_ids)
         data['headers'] = settings.WP_HEADERS
@@ -32,8 +35,7 @@ class WikipediaUser(WikipediaUserBase):
         return data
 
     def _make_request(self, data):
-        session = create_wp_session(self.language)
-        response = session.post(**data)
+        response = self.session.post(**data)
         response = response.json()
         return response
 
