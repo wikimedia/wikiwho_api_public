@@ -71,10 +71,11 @@ def get_refs(pickle_path, csv_output_folder):
                     in_ref = True
                     ref_id += 1
                     ref_sentences = []
-                    ref = [ref_id, ref_sentences]
+                    ref = [rev_id, ref_id, ref_sentences]
                 if in_ref is True:
                     ref_sentences.append(sentence)
-                if s_words[-3:] == ['/', 'ref', '>'] or '/ref>' in ''.join(s_words):
+                # if s_words[-3:] == ['/', 'ref', '>'] or '/ref>' in ''.join(s_words):
+                if s_words[-3:] == ['/', 'ref', '>']:
                     in_ref = False
                     refs.append(ref)
                 if not hasattr(sentence, 'ins'):
@@ -109,14 +110,15 @@ def get_refs(pickle_path, csv_output_folder):
 
     # output
     ref_check = set()
-    refs_out = [['ref_id', 's_id', 'tokens', 'ins', 'outs']]
-    for ref_id, sentences in refs:
+    refs_out = [['rev_id', 'editor_id', 'ref_id', 's_id', 'tokens', 'token_ids', 'token_editors', 'ins', 'outs']]
+    for rev_id, ref_id, sentences in refs:
         sentences_ids = '-'.join([str(s.id_) for s in sentences])
         if sentences_ids in ref_check:
             continue
         ref_check.add(sentences_ids)
         for s in sentences:
-            refs_out.append([ref_id, s.id_, words(s), s.ins, s.outs])
+            refs_out.append([rev_id, wikiwho.revisions[rev_id].editor, ref_id, s.id_, words(s), [w.token_id for w in s.words],
+                             [wikiwho.revisions[w.origin_rev_id].editor for w in s.words], s.ins, s.outs])
     with open('{}/{}.csv'.format(csv_output_folder, wikiwho.page_id), 'w', newline='') as f:
         writer = csv.writer(f, delimiter=';')
         writer.writerows(refs_out)
