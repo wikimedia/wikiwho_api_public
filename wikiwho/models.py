@@ -42,6 +42,16 @@ class EditorData(BaseModel):
     reins_surv_48h = models.IntegerField(blank=False)
     persistent_o_adds = models.IntegerField(blank=False)
     persistent_actions = models.IntegerField(blank=False)
+    adds_stopword_count = models.IntegerField(blank=False, default=0)
+    dels_stopword_count = models.IntegerField(blank=False, default=0)
+    reins_stopword_count = models.IntegerField(blank=False, default=0)
+    # total_actions = models.IntegerField(blank=False, default=0)
+    # total_actions_surv_48h = models.IntegerField(blank=False, default=0)
+    # total_actions_stopword_count = models.IntegerField(blank=False, default=0)
+    # adds_surv_ratio = models.IntegerField(blank=False, default=0)
+    # reins_surv_ratio = models.IntegerField(blank=False, default=0)
+    # dels_surv_ratio = models.IntegerField(blank=False, default=0)
+
     # data = JSONField(null=True, blank=True)  # TODO or TextField?
 
     @property

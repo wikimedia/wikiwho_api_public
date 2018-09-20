@@ -3,7 +3,7 @@ import json
 import pytz
 from datetime import datetime
 from collections import defaultdict
-from os.path import basename
+from os.path import basename, join, dirname, realpath
 
 from django.db import connection
 from django.utils.dateparse import parse_datetime
@@ -179,6 +179,8 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
         article_revisions_dict[rev_id] = parse_datetime(wikiwho.revisions[rev_id].timestamp)
     # {'y-m': 'editor_id': [oadd, oadd_48, dels, dels_48, reins, reins_48, persistent_o_adds, persistent_actions]}
     editors_dict = {}
+    # {'y-m': 'editor_id': [adds_stopword_count, reins_stopword_count, dels_stopword_count]}
+    editors_stop = {}
     ym_start = 12 * from_ym.year + from_ym.month - 1
     ym_end = 12 * to_ym.year + to_ym.month
     for ym in range(ym_start, ym_end):
@@ -186,6 +188,8 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
         m += 1
         editors_dict[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
             defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0])
+        editors_stop[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
+            defaultdict(lambda: [[], [], []])
 
     for token in wikiwho.tokens:
         # oadd
@@ -207,6 +211,8 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
                 editors_dict[oadd_ym][oadd_editor][1] += 1
                 editors_dict[oadd_ym][oadd_editor][6] += 1
                 editors_dict[oadd_ym][oadd_editor][7] += 1
+            # stopword count for oadd
+            editors_stop[oadd_ym][oadd_editor][0].append(token.value)
 
         # rein and del
         in_rev_id = None
@@ -223,6 +229,8 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
                         editors_dict[rein_ym][rein_editor][5] += 1  # rein survived 48 hours
                         if out_rev_ts.year != rein_ym.year or out_rev_ts.month != rein_ym.month:
                             editors_dict[rein_ym][rein_editor][7] += 1  # persistent action
+                    # stopword count for rein
+                    editors_stop[rein_ym][rein_editor][1].append(token.value)
 
             # del
             in_rev_id = None
@@ -237,6 +245,8 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
                     editors_dict[del_ym][del_editor][2] += 1
                     editors_dict[del_ym][del_editor][3] += 1
                     editors_dict[del_ym][del_editor][7] += 1
+                    # stopword count for del
+                    editors_stop[del_ym][del_editor][2].append(token.value)
                     break
                 else:
                     # there is in for this out
@@ -246,6 +256,8 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
                         editors_dict[del_ym][del_editor][3] += 1
                         if in_rev_ts.year != del_ym.year or in_rev_ts.month != del_ym.month:
                             editors_dict[del_ym][del_editor][7] += 1
+                    # stopword count for del
+                    editors_stop[del_ym][del_editor][2].append(token.value)
             else:
                 break
         # last rein
@@ -257,6 +269,46 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
                 editors_dict[rein_ym][rein_editor][4] += 1
                 editors_dict[rein_ym][rein_editor][5] += 1
                 editors_dict[rein_ym][rein_editor][7] += 1
+                # stopword count for rein
+                editors_stop[rein_ym][rein_editor][1].append(token.value)
+
+    # if editors_dict[oadd_ym][oadd_editor][1] == 0 & editors_dict[oadd_ym][oadd_editor][0] == 0 :
+    #     editors_stop[oadd_ym][oadd_editor][6] = 0
+    # else:
+    #     editors_stop[oadd_ym][oadd_editor][6] = editors_dict[oadd_ym][oadd_editor][1] / editors_dict[oadd_ym][oadd_editor][0]
+    #
+    # if editors_dict[rein_ym][rein_editor][5] == 0 & editors_dict[rein_ym][rein_editor][4] == 0 :
+    #     editors_stop[rein_ym][rein_editor][7] = 0
+    # else:
+    #     editors_stop[rein_ym][rein_editor][7] = editors_dict[rein_ym][rein_editor][5] / editors_dict[rein_ym][rein_editor][4]
+    #
+    # if editors_dict[del_ym][del_editor][3] == 0 & editors_dict[del_ym][del_editor][2] == 0:
+    #     editors_stop[del_ym][del_editor][8] = 0
+    # else:
+    #     editors_stop[del_ym][del_editor][8] = editors_dict[del_ym][del_editor][3] / editors_dict[del_ym][del_editor][2]
+
+    p = join(dirname(realpath(__file__)), 'stop_word_list.txt')
+    with open(p, 'r') as f:
+        stopword_set = set(f.read().splitlines())
+
+    # for ym, editor_data in editors_dict.items():
+    #     for editor, data in editor_data.items():
+    #         print(ym, editor)
+    #         stopwords_oadds = []
+    #         stopwords_reins = []
+    #         stopwords_dels = []
+    #         for t in editors_stop[ym][editor][0]:
+    #             if t in stopword_set:
+    #                 stopwords_oadds.append(t)
+    #         for t in editors_stop[ym][editor][1]:
+    #             if t in stopword_set:
+    #                 stopwords_reins.append(t)
+    #         for t in editors_stop[ym][editor][2]:
+    #             if t in stopword_set:
+    #                 stopwords_dels.append(t)
+    #         print('stopwords oadds:', stopwords_oadds)
+    #         print('stopwords reins:', stopwords_reins)
+    #         print('stopwords dels:', stopwords_dels)
 
     EDITOR_MODEL[language][0].objects.bulk_create(
         [
@@ -273,6 +325,15 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
                 reins_surv_48h=data[5],
                 persistent_o_adds=data[6],
                 persistent_actions=data[7],
+                adds_stopword_count=sum(t in stopword_set for t in editors_stop[ym][editor][0]),
+                reins_stopword_count=sum(t in stopword_set for t in editors_stop[ym][editor][1]),
+                dels_stopword_count=sum(t in stopword_set for t in editors_stop[ym][editor][2]),
+                # total_actions = (data[0] + data[2] + data[4]),
+                # total_actions_surv_48h = (data[1] + data[3] + data[5]),
+                # total_actions_stopword_count = ((len([t for t in editors_stop[oadd_ym][oadd_editor][0] if t in stopword_set]))+(len([t for t in editors_stop[rein_ym][rein_editor][1] if t in stopword_set]))+(len([t for t in editors_stop[del_ym][del_editor][2] if t in stopword_set]))),
+                # adds_survived_ratio = editors_stop[oadd_ym][oadd_editor][6],
+                # reins_survived_ratio = editors_stop[rein_ym][rein_editor][7],
+                # dels_survived_ratio = editors_stop[del_ym][del_editor][8],
             )
             for ym, editor_data in editors_dict.items()
             for editor, data in editor_data.items()
