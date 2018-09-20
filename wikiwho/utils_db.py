@@ -192,6 +192,8 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
             defaultdict(lambda: [[], [], []])
 
     for token in wikiwho.tokens:
+        if token.value == '[[':
+           print(token.token_id, token.value, token.outbound)
         # oadd
         oadd_rev_ts = article_revisions_dict[token.origin_rev_id]
         if from_ym <= oadd_rev_ts <= to_ym:
@@ -217,6 +219,7 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
         # rein and del
         in_rev_id = None
         for i, out_rev_id in enumerate(token.outbound):
+            test = False
             # rein
             if i != 0:
                 # there is out for this in
@@ -235,9 +238,15 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
             # del
             in_rev_id = None
             out_rev_ts = article_revisions_dict[out_rev_id]
+            if token.value == '[[':
+               print('xxxxxxx', token.token_id, token.value, out_rev_ts, out_rev_id)
             if from_ym <= out_rev_ts <= to_ym:
                 del_ym = out_rev_ts.date().replace(day=1)
                 del_editor = wikiwho.revisions[out_rev_id].editor
+                if token.value == '[[':
+                   print('token.value', token.token_id, token.value, del_editor, out_rev_id, out_rev_ts, del_ym)
+                if token.value == '[[' and del_editor == '0|77.29.7.39':
+                   print('token.value', token.token_id, token.value, del_editor)
                 try:
                     in_rev_id = token.inbound[i]
                 except (IndexError, KeyError):
@@ -258,8 +267,8 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
                             editors_dict[del_ym][del_editor][7] += 1
                     # stopword count for del
                     editors_stop[del_ym][del_editor][2].append(token.value)
-            else:
-                break
+            # else:
+            #     break
         # last rein
         if in_rev_id is not None:
             # no out for this in
@@ -290,6 +299,8 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
     p = join(dirname(realpath(__file__)), 'stop_word_list.txt')
     with open(p, 'r') as f:
         stopword_set = set(f.read().splitlines())
+
+    print('test1:', '[[' in stopword_set, ']]' in stopword_set)
 
     # for ym, editor_data in editors_dict.items():
     #     for editor, data in editor_data.items():
