@@ -16,7 +16,7 @@ python-dateutil
 #django-admin-tools
 #django-admin-tools-stats
 django-extensions
-django-registration
+django-registration==2.5.2
 django-crispy-forms
 
 celery
