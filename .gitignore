@@ -2,21 +2,32 @@
 .cache
 *.pyc
 *.sqlite3
+assets/images/fav/
+# all collected static files
+static/
 
+# django settings
 wikiwho_api/settings.py
 wikiwho_api/settings_test.py
 
+# local
 master_old_test/
+tmp_pickles/
+cron/ignore
+
+# test output folders
 tests_ignore/
 wikiwho/tests/tmp_test_3/
 wikiwho/tests/tmp_test/
-assets/images/fav/
-tmp_pickles/
-static/
-wikiwho_notebooks
+
+# nginx
 .well-known
+
+# celery flower
 flower.db
 flower.bak
 flower.dat
 flower.dir
-cron/ignore
+
+# wikiwho notebooks repo
+wikiwho_notebooks
