@@ -40,7 +40,7 @@ sseclient-py==1.5
 urllib3
 mwpersistence
 
-psycopg2
+psycopg2==2.7.3.2
 # django-postgres-copy
 python-memcached
 gunicorn
