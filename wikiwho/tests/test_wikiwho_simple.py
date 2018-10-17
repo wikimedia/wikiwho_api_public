@@ -89,7 +89,7 @@ def pytest_generate_tests(metafunc):
 
 
 def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False):
-    test_json_folder = '{}/tests_ignore/jsons/after_token_density_increase'.\
+    test_json_folder = '{}/tests_ignore/jsons/after_rvendid'.\
         format(dirname(dirname(dirname(realpath(__file__)))))
 
     v = WikiwhoView()
