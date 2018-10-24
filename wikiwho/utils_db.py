@@ -20,7 +20,9 @@ from wikiwho.models import Article, EditorDataEnNotIndexed, EditorDataEn, Editor
 
 EDITOR_MODEL = {'en': (EditorDataEnNotIndexed, EditorDataEn, ),
                 'eu': (EditorDataEuNotIndexed, EditorDataEu, ),
-                'de': (EditorDataDeNotIndexed, EditorDataDe, )}
+                'de': (EditorDataDeNotIndexed, EditorDataDe, ),
+                'es': (EditorDataEsNotIndexed, EditorDataEs, ),
+                'tr': (EditorDataTrNotIndexed, EditorDataTr, )}
 
 
 def wikiwho_to_db(wikiwho, language, save_tables=('article', 'revision', 'token', )):
@@ -148,18 +150,20 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
     except EOFError:
         title = None
         update = True
+        # TODO log correpted pickle and dont set upgrade flag
 
     if update:
         # update pickle until latest revision
         page_id = int(basename(pickle_path)[:-2])
-        # TODO handle failed articles better:
-        if not(LongFailedArticle.objects.filter(id=page_id, language=language).exists() or
-               RecursionErrorArticle.objects.filter(id=page_id, language=language).exists()):
+        try:
             timeout = 3600 * 6  # 6 hours
             with Timeout(seconds=timeout, error_message='Timeout {} seconds - page id {}'.format(timeout, page_id)):
                 with WPHandler(title, page_id=page_id, language=language) as wp:
                     wp.handle(revision_ids=[], is_api_call=False, timeout=timeout)
                     wikiwho = wp.wikiwho
+        except WPHandlerException as e:
+            if e.code != '30':
+                raise e
 
     article, created = Article.objects.update_or_create(page_id=wikiwho.page_id, language=language,
                                                         defaults={'title': wikiwho.title,
@@ -192,8 +196,10 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
             defaultdict(lambda: [[], [], []])
 
     for token in wikiwho.tokens:
-        if token.value == '[[':
-           print(token.token_id, token.value, token.outbound)
+        #if token.value in stopwords:
+        #    stop_word = 1
+        #else:
+        #    stop_word = 0
         # oadd
         oadd_rev_ts = article_revisions_dict[token.origin_rev_id]
         if from_ym <= oadd_rev_ts <= to_ym:
@@ -219,9 +225,11 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
         # rein and del
         in_rev_id = None
         for i, out_rev_id in enumerate(token.outbound):
-            test = False
             # rein
-            if i != 0:
+            #if i != 0:
+            if in_rev_id is not None:
+                #in_rev_id = token.inbound[i-1]
+                #in_rev_ts = article_revisions_dict[in_rev_id]
                 # there is out for this in
                 if from_ym <= in_rev_ts <= to_ym:
                     rein_ym = in_rev_ts.date().replace(day=1)
@@ -234,19 +242,16 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
                             editors_dict[rein_ym][rein_editor][7] += 1  # persistent action
                     # stopword count for rein
                     editors_stop[rein_ym][rein_editor][1].append(token.value)
+                elif in_rev_ts > to_ym:
+                    in_rev_id = None
+                    break 
 
             # del
             in_rev_id = None
             out_rev_ts = article_revisions_dict[out_rev_id]
-            if token.value == '[[':
-               print('xxxxxxx', token.token_id, token.value, out_rev_ts, out_rev_id)
             if from_ym <= out_rev_ts <= to_ym:
                 del_ym = out_rev_ts.date().replace(day=1)
                 del_editor = wikiwho.revisions[out_rev_id].editor
-                if token.value == '[[':
-                   print('token.value', token.token_id, token.value, del_editor, out_rev_id, out_rev_ts, del_ym)
-                if token.value == '[[' and del_editor == '0|77.29.7.39':
-                   print('token.value', token.token_id, token.value, del_editor)
                 try:
                     in_rev_id = token.inbound[i]
                 except (IndexError, KeyError):
@@ -267,9 +272,19 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
                             editors_dict[del_ym][del_editor][7] += 1
                     # stopword count for del
                     editors_stop[del_ym][del_editor][2].append(token.value)
-            # else:
-            #     break
+            elif out_rev_ts > to_ym:
+                break
+            else:
+                try:
+                    in_rev_id = token.inbound[i]
+                except:
+                    break
+                else:
+                    in_rev_ts = article_revisions_dict[in_rev_id]
+                
+
         # last rein
+        #if len(token.outbound) - len(token.inbound) == 0:
         if in_rev_id is not None:
             # no out for this in
             if from_ym <= in_rev_ts <= to_ym:
@@ -299,8 +314,6 @@ def fill_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
     p = join(dirname(realpath(__file__)), 'stop_word_list.txt')
     with open(p, 'r') as f:
         stopword_set = set(f.read().splitlines())
-
-    print('test1:', '[[' in stopword_set, ']]' in stopword_set)
 
     # for ym, editor_data in editors_dict.items():
     #     for editor, data in editor_data.items():
