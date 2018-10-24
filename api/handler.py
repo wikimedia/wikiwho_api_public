@@ -16,7 +16,7 @@ from deployment.celery_config import user_task_soft_time_limit
 from wikiwho.wikiwho_simple import Wikiwho
 from .utils import get_latest_revision_data, create_wp_session, Timeout, generate_rvcontinue, get_wp_api_url
 from .utils_pickles import pickle_dump, pickle_load, get_pickle_folder
-from .models import RecursionErrorArticle
+from .models import RecursionErrorArticle, LongFailedArticle
 from .messages import MESSAGES
 
 sys.setrecursionlimit(5000)  # default is 1000
@@ -74,6 +74,10 @@ class WPHandler(object):
             d = get_latest_revision_data(self.language, self.page_id, self.article_title, self.revision_id)
             self.latest_revision_id = d['latest_revision_id']
             self.page_id = d['page_id']
+            if (LongFailedArticle.objects.filter(page_id=self.page_id).exists() or 
+               RecursionErrorArticle.objects.filter(page_id=self.page_id).exists()):
+                raise WPHandlerException(MESSAGES['never_finished_article'][0],
+                                         MESSAGES['never_finished_article'][1]) 
             self.saved_article_title = d['article_db_title']
             self.namespace = d['namespace']
             if not settings.TESTING:

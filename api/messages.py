@@ -14,5 +14,6 @@ MESSAGES = {
     'wp_error': ('Wikipedia API returned the following error:', '11'),
     'wp_warning': ('Wikipedia API returned the following warning:', '12'),
     'already_exists': ('Article ({}) already exists.', '20'),
-    'only_read_allowed': ('Only read is allowed for now.', '21')
+    'only_read_allowed': ('Only read is allowed for now.', '21'),
+    'never_finished_article': ('Article is cant be processed.', '30')
 }

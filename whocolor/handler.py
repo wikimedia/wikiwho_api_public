@@ -72,6 +72,7 @@ class WhoColorHandler(object):
         pickle_path = "{}/{}.p".format(self.pickle_folder, self.page_id)
         already_exists = os.path.exists(pickle_path)
         if not already_exists:
+            # TODO we could start a new user queue task
             # requested page is not processed by WikiWho yet
             if not settings.ONLY_READ_ALLOWED:
                 return None, None, None

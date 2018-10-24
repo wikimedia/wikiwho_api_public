@@ -200,6 +200,9 @@ class WikiwhoApiView(LoggingMixin, WikiwhoView, ViewSet):
             if e.code == '03':
                 response = {'Info': e.message}
                 status_ = status.HTTP_200_OK
+            elif e.code == '30':
+                response = {'Info': e.message}
+                status_ = status.HTTP_408_REQUEST_TIMEOUT
             else:
                 response = {'Error': e.message}
                 if e.code in ['10', '11']:
