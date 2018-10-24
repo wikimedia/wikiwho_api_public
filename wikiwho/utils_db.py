@@ -15,8 +15,13 @@ from api.utils_pickles import pickle_load
 from api.utils import Timeout
 from api.models import LongFailedArticle, RecursionErrorArticle
 # from api.utils import revert_rvcontinue
-from wikiwho.models import Article, EditorDataEnNotIndexed, EditorDataEn, EditorDataEuNotIndexed, EditorDataEu, \
-    EditorDataDeNotIndexed, EditorDataDe
+from wikiwho.models import (
+    Article, 
+    EditorDataEnNotIndexed, EditorDataEn, 
+    EditorDataEuNotIndexed, EditorDataEu, 
+    EditorDataDeNotIndexed, EditorDataDe,
+    EditorDataEsNotIndexed, EditorDataEs,
+    EditorDataTrNotIndexed, EditorDataTr,)
 
 EDITOR_MODEL = {'en': (EditorDataEnNotIndexed, EditorDataEn, ),
                 'eu': (EditorDataEuNotIndexed, EditorDataEu, ),
