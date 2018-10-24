@@ -409,11 +409,13 @@ def manage_editor_tables(language, from_ym, to_ym, already_partitioned=False):
         insert_query = """
         INSERT INTO {} 
         (article_id, editor_id, year_month, editor_name, o_adds, o_adds_surv_48h, 
-        dels, dels_surv_48h, reins, reins_surv_48h, persistent_o_adds, persistent_actions) 
+        dels, dels_surv_48h, reins, reins_surv_48h, persistent_o_adds, persistent_actions, 
+        adds_stopword_count, reins_stopword_count, dels_stopword_count) 
         (
           SELECT 
             article_id, editor_id, year_month, editor_name, o_adds, o_adds_surv_48h, 
-            dels, dels_surv_48h, reins, reins_surv_48h, persistent_o_adds, persistent_actions
+            dels, dels_surv_48h, reins, reins_surv_48h, persistent_o_adds, persistent_actions, 
+            adds_stopword_count, reins_stopword_count, dels_stopword_count
           FROM {} 
         );
         """.format(master_table, not_indexed_table)
