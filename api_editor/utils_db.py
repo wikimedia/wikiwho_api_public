@@ -25,6 +25,52 @@ EDITOR_MODEL = {'en': (EditorDataEnNotIndexed, EditorDataEn, ),
                 'es': (EditorDataEsNotIndexed, EditorDataEs, ),
                 'tr': (EditorDataTrNotIndexed, EditorDataTr, )}
 
+ADDS = 0
+ADDS_48 = 1
+DELS = 2
+DELS_48 = 3
+REINS = 4
+REINS_48 = 5
+ADDS_P = 6
+ACTS_P = 7
+ADDS_SW = 8
+DELS_SW = 9
+REINS_SW = 10
+
+
+
+def prepare_editors_dict(from_ym, to_ym):
+    # {'y-m': 'editor_id': [oadd, oadd_48, dels, dels_48, reins, reins_48, persistent_o_adds, persistent_actions]}
+    editors_dict = {}
+    # {'y-m': 'editor_id': [adds_stopword_count, reins_stopword_count, dels_stopword_count]}
+    editors_stop = {}
+    ym_start = 12 * from_ym.year + from_ym.month - 1
+    ym_end = 12 * to_ym.year + to_ym.month
+    for ym in range(ym_start, ym_end):
+        y, m = divmod(ym, 12)
+        m += 1
+
+        # lambda tupple corresponds to:
+        # ADDS, ADDS_48, DELS, DELS_48, REINS, REINS_48, ADDS_P, ACTS_P, ADDS_SW, DELS_SW, REINS_SW, 
+        editors_dict[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
+            defaultdict(lambda: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+        editors_stop[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
+            defaultdict(lambda: [[], [], []])
+
+    return editors_dict, editors_stop
+
+# def prepare_editors_dict(from_ym, to_ym):
+#     ym_start = 12 * from_ym.year + from_ym.month - 1
+#     ym_end = 12 * to_ym.year + to_ym.month
+    
+#     # {'y-m': 'editor_id': [oadd, oadd_48, dels, dels_48, reins, reins_48, persistent_o_adds, persistent_actions]}
+#     editors_dict = { datetime.strptime('{}-{:02}'.format(*divmod(ym+1, 12)), '%Y-%m').replace(tzinfo=pytz.UTC).date():
+#       defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0]) for ym in range(ym_start, ym_end)}
+#     editors_stop = { datetime.strptime('{}-{:02}'.format(*divmod(ym+1, 12)), '%Y-%m').replace(tzinfo=pytz.UTC).date():
+#        defaultdict(lambda: [[], [], []]) for ym in range(ym_start, ym_end)}
+
+#     return editors_dict, editors_stop
+
 
 def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
     try:
@@ -53,12 +99,6 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                                                         defaults={'title': wikiwho.title,
                                                                   'spam_ids': wikiwho.spam_ids,
                                                                   'rvcontinue': wikiwho.rvcontinue})
-    # if not created:
-    #     article_last_rev_ts = parse_datetime(revert_rvcontinue(article.rvcontinue))
-    #     if article_last_rev_ts >= to_ym:
-    #         raise Exception('Article ({}) is already processed in this period (from {} to {}). '
-    #                         'article db rvcontinue in db: {}'.
-    #                         format(wikiwho.title, from_ym, to_ym, article.rvcontinue))
 
     seconds_limit = 172800  # 48 hours
     # {rev_id: datetime(rev_ts)}
@@ -66,19 +106,10 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     for rev_id in wikiwho.ordered_revisions:
         article_revisions_dict[rev_id] = parse_datetime(
             wikiwho.revisions[rev_id].timestamp)
-    # {'y-m': 'editor_id': [oadd, oadd_48, dels, dels_48, reins, reins_48, persistent_o_adds, persistent_actions]}
-    editors_dict = {}
-    # {'y-m': 'editor_id': [adds_stopword_count, reins_stopword_count, dels_stopword_count]}
-    editors_stop = {}
-    ym_start = 12 * from_ym.year + from_ym.month - 1
-    ym_end = 12 * to_ym.year + to_ym.month
-    for ym in range(ym_start, ym_end):
-        y, m = divmod(ym, 12)
-        m += 1
-        editors_dict[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
-            defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0])
-        editors_stop[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
-            defaultdict(lambda: [[], [], []])
+
+    # create a dictionary to store intermediate results
+    editors_dict, editors_stop = prepare_editors_dict(from_ym, to_ym)
+
 
     for token in wikiwho.tokens:
         # if token.value in stopwords:
