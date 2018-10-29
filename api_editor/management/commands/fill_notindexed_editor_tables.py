@@ -24,7 +24,6 @@ from api.handler import WPHandlerException
 from base.utils_log import get_logger
 from api_editor.utils_db import fill_notindexed_editor_tables
 
-
 def fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, update):
     retries = 6
     while retries:
@@ -120,7 +119,8 @@ class Command(BaseCommand):
 
             if max_workers < 1:
                 for pickle_path in pickles_iter:
-                    fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, update)
+                    fill_notindexed_editor_tables_base(
+                        pickle_path, from_ym, to_ym, language, update)
             else:
                 with ProcessPoolExecutor(max_workers=max_workers) as executor:
                     jobs = {}
