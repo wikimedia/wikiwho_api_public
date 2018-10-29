@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'rest_framework_tracking',
     'corsheaders',
     'WhoColor',  # to collect static files
+    'api_editor'
 ]
 
 MIDDLEWARE_CLASSES = [
