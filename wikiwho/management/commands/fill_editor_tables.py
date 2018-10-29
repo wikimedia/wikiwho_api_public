@@ -24,7 +24,6 @@ from api.handler import WPHandlerException
 from base.utils_log import get_logger
 from wikiwho.utils_db import fill_editor_tables
 
-
 def fill_editor_tables_base(pickle_path, from_ym, to_ym, language, update):
     retries = 6
     while retries:
@@ -111,27 +110,33 @@ class Command(BaseCommand):
                 pickles_all = len(pickles_list)
                 pickles_left = pickles_all
                 pickles_iter = iter(pickles_list)
-            with ProcessPoolExecutor(max_workers=max_workers) as executor:
-                jobs = {}
-                while pickles_left:
-                    for pickle_path in pickles_iter:
-                        page_id = basename(pickle_path)[:-2]
-                        job = executor.submit(fill_editor_tables_base, pickle_path, from_ym, to_ym, language, update)
-                        jobs[job] = page_id
-                        if len(jobs) == max_workers:  # limit # jobs with max_workers
-                            break
 
-                    for job in as_completed(jobs):
-                        pickles_left -= 1
-                        page_id_ = jobs[job]
-                        try:
-                            data = job.result()
-                        except Exception as exc:
-                            logger.exception('{}-{}'.format(page_id_, language))
 
-                        del jobs[job]
-                        sys.stdout.write('\rPickles left: {} - Pickles processed: {:.3f}%'.
-                                         format(pickles_left, ((pickles_all - pickles_left) * 100) / pickles_all))
-                        break  # to add a new job, if there is any
+            if max_workers < 1:
+                for pickle_path in pickles_iter:
+                    fill_editor_tables_base(pickle_path, from_ym, to_ym, language, update)
+            else:
+                with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                    jobs = {}
+                    while pickles_left:
+                        for pickle_path in pickles_iter:
+                            page_id = basename(pickle_path)[:-2]
+                            job = executor.submit(fill_editor_tables_base, pickle_path, from_ym, to_ym, language, update)
+                            jobs[job] = page_id
+                            if len(jobs) == max_workers:  # limit # jobs with max_workers
+                                break
+
+                        for job in as_completed(jobs):
+                            pickles_left -= 1
+                            page_id_ = jobs[job]
+                            try:
+                                data = job.result()
+                            except Exception as exc:
+                                logger.exception('{}-{}'.format(page_id_, language))
+
+                            del jobs[job]
+                            sys.stdout.write('\rPickles left: {} - Pickles processed: {:.3f}%'.
+                                             format(pickles_left, ((pickles_all - pickles_left) * 100) / pickles_all))
+                            break  # to add a new job, if there is any
             print('\nDone: {} - {} at {}'.format(language, pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
         print('Done at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
