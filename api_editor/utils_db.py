@@ -42,15 +42,12 @@ def prepare_editors_dict(from_ym, to_ym):
     # {'y-m': 'editor_id': [oadd, oadd_48, dels, dels_48, reins, reins_48, persistent_o_adds, persistent_actions]}
     editors_dict = {}
 
-    ym_start = 12 * from_ym.year + from_ym.month - 1
-    ym_end = 12 * to_ym.year + to_ym.month
-    for ym in range(ym_start, ym_end):
+    for ym in range(12 * from_ym.year + from_ym.month - 1, 12 * to_ym.year + to_ym.month):
         y, m = divmod(ym, 12)
-        m += 1
 
         # lambda tupple corresponds to:
         # ADDS, ADDS_48, DELS, DELS_48, REINS, REINS_48, ADDS_P, ACTS_P, ADDS_SW, DELS_SW, REINS_SW,
-        editors_dict[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
+        editors_dict[datetime.strptime('{}-{:02}'.format(y, m + 1), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
             defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
     return editors_dict
@@ -110,6 +107,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     editors_dict = prepare_editors_dict(from_ym, to_ym)
 
     for token in wikiwho.tokens:
+        # flag if it is stop word
         is_stop_word = token.value in stopword_set
 
         # original additions
