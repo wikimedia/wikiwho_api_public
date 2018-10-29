@@ -65,6 +65,10 @@ class WPHandler(object):
             if not 0 < self.page_id < 2147483647:
                 raise WPHandlerException(MESSAGES['invalid_page_id'][0].format(self.page_id),
                                          MESSAGES['invalid_page_id'][1])
+            if (LongFailedArticle.objects.filter(page_id=self.page_id, language=self.language).exists() or 
+               RecursionErrorArticle.objects.filter(page_id=self.page_id, language=self.language).exists()):
+                raise WPHandlerException(MESSAGES['never_finished_article'][0],
+                                         MESSAGES['never_finished_article'][1])
 
         if self.is_xml:
             self.saved_article_title = self.article_title.replace(' ', '_')
@@ -74,8 +78,8 @@ class WPHandler(object):
             d = get_latest_revision_data(self.language, self.page_id, self.article_title, self.revision_id)
             self.latest_revision_id = d['latest_revision_id']
             self.page_id = d['page_id']
-            if (LongFailedArticle.objects.filter(page_id=self.page_id).exists() or 
-               RecursionErrorArticle.objects.filter(page_id=self.page_id).exists()):
+            if (LongFailedArticle.objects.filter(page_id=self.page_id, language=self.language).exists() or 
+               RecursionErrorArticle.objects.filter(page_id=self.page_id, language=self.language).exists()):
                 raise WPHandlerException(MESSAGES['never_finished_article'][0],
                                          MESSAGES['never_finished_article'][1]) 
             self.saved_article_title = d['article_db_title']
