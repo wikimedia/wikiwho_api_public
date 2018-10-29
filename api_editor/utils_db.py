@@ -25,18 +25,17 @@ EDITOR_MODEL = {'en': (EditorDataEnNotIndexed, EditorDataEn, ),
                 'es': (EditorDataEsNotIndexed, EditorDataEs, ),
                 'tr': (EditorDataTrNotIndexed, EditorDataTr, )}
 
-ADDS = 0
-ADDS_48 = 1
-DELS = 2
-DELS_48 = 3
-REINS = 4
-REINS_48 = 5
-ADDS_P = 6
-ACTS_P = 7
-ADDS_SW = 8
-DELS_SW = 9
-REINS_SW = 10
-
+__ADDS__ = 0
+__ADDS_48__ = 1
+__DELS__ = 2
+__DELS_48__ = 3
+__REINS__ = 4
+__REINS_48__ = 5
+__ADDS_P__ = 6
+__ACTS_P__ = 7
+__ADDS_SW__ = 8
+__DELS_SW__ = 9
+__REINS_SW__ = 10
 
 
 def prepare_editors_dict(from_ym, to_ym):
@@ -51,9 +50,9 @@ def prepare_editors_dict(from_ym, to_ym):
         m += 1
 
         # lambda tupple corresponds to:
-        # ADDS, ADDS_48, DELS, DELS_48, REINS, REINS_48, ADDS_P, ACTS_P, ADDS_SW, DELS_SW, REINS_SW, 
+        # ADDS, ADDS_48, DELS, DELS_48, REINS, REINS_48, ADDS_P, ACTS_P, ADDS_SW, DELS_SW, REINS_SW,
         editors_dict[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
-            defaultdict(lambda: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+            defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
         editors_stop[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
             defaultdict(lambda: [[], [], []])
 
@@ -62,7 +61,7 @@ def prepare_editors_dict(from_ym, to_ym):
 # def prepare_editors_dict(from_ym, to_ym):
 #     ym_start = 12 * from_ym.year + from_ym.month - 1
 #     ym_end = 12 * to_ym.year + to_ym.month
-    
+
 #     # {'y-m': 'editor_id': [oadd, oadd_48, dels, dels_48, reins, reins_48, persistent_o_adds, persistent_actions]}
 #     editors_dict = { datetime.strptime('{}-{:02}'.format(*divmod(ym+1, 12)), '%Y-%m').replace(tzinfo=pytz.UTC).date():
 #       defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0]) for ym in range(ym_start, ym_end)}
@@ -110,108 +109,121 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     # create a dictionary to store intermediate results
     editors_dict, editors_stop = prepare_editors_dict(from_ym, to_ym)
 
-
     for token in wikiwho.tokens:
         # if token.value in stopwords:
         #    stop_word = 1
         # else:
         #    stop_word = 0
-        # oadd
+
+        # original additions
         oadd_rev_ts = article_revisions_dict[token.origin_rev_id]
         if from_ym <= oadd_rev_ts <= to_ym:
+            # there is an addition
+
             oadd_ym = oadd_rev_ts.date().replace(day=1)
-            # oadd action
             oadd_editor = wikiwho.revisions[token.origin_rev_id].editor
-            editors_dict[oadd_ym][oadd_editor][0] += 1
+            editors_dict[oadd_ym][oadd_editor][__ADDS__] += 1
             if token.outbound:
                 first_out_ts = article_revisions_dict[token.outbound[0]]
                 if (first_out_ts - oadd_rev_ts).total_seconds() >= seconds_limit:
-                    # survived 48 hours
-                    editors_dict[oadd_ym][oadd_editor][1] += 1
+                    # there is an outbund but survived 48 hours
+                    editors_dict[oadd_ym][oadd_editor][__ADDS_48__] += 1
                     if first_out_ts.year != oadd_ym.year or first_out_ts.month != oadd_ym.month:
-                        # not deleted in this month
-                        editors_dict[oadd_ym][oadd_editor][6] += 1
-                        editors_dict[oadd_ym][oadd_editor][7] += 1
+                        # it was not deleted in this month, so it is permanent
+                        editors_dict[oadd_ym][oadd_editor][__ADDS_P__] += 1
+                        editors_dict[oadd_ym][oadd_editor][__ACTS_P__] += 1
             else:
-                editors_dict[oadd_ym][oadd_editor][1] += 1
-                editors_dict[oadd_ym][oadd_editor][6] += 1
-                editors_dict[oadd_ym][oadd_editor][7] += 1
+                # there is no outbound, additions is permanent
+                editors_dict[oadd_ym][oadd_editor][__ADDS_48__] += 1
+                editors_dict[oadd_ym][oadd_editor][__ADDS_P__] += 1
+                editors_dict[oadd_ym][oadd_editor][__ACTS_P__] += 1
+
             # stopword count for oadd
             editors_stop[oadd_ym][oadd_editor][0].append(token.value)
 
-        # rein and del
+        # reinsertions and deleletions
         in_rev_id = None
         for i, out_rev_id in enumerate(token.outbound):
-            # rein
-            # if i != 0:
+            # reinsertions
             if in_rev_id is not None:
-                #in_rev_id = token.inbound[i-1]
-                #in_rev_ts = article_revisions_dict[in_rev_id]
-                # there is out for this in
+                # there is a reinsertion
+
                 if from_ym <= in_rev_ts <= to_ym:
+                    # the reinsertion corresponds to this period
+
                     rein_ym = in_rev_ts.date().replace(day=1)
                     rein_editor = wikiwho.revisions[in_rev_id].editor
-                    # action rein is done
-                    editors_dict[rein_ym][rein_editor][4] += 1
+                    editors_dict[rein_ym][rein_editor][__REINS__] += 1
                     out_rev_ts = article_revisions_dict[out_rev_id]
+
                     if (out_rev_ts - in_rev_ts).total_seconds() >= seconds_limit:
-                        # rein survived 48 hours
-                        editors_dict[rein_ym][rein_editor][5] += 1
+                        # the reinsertion has survived 48 hours
+                        editors_dict[rein_ym][rein_editor][__REINS_48__] += 1
                         if out_rev_ts.year != rein_ym.year or out_rev_ts.month != rein_ym.month:
-                            # persistent action
-                            editors_dict[rein_ym][rein_editor][7] += 1
+                            # it was not deleted again this month, so it is permanent
+                            editors_dict[rein_ym][rein_editor][__ACTS_P__] += 1
+
                     # stopword count for rein
                     editors_stop[rein_ym][rein_editor][1].append(token.value)
                 elif in_rev_ts > to_ym:
                     in_rev_id = None
                     break
 
-            # del
+            # deletions
             in_rev_id = None
             out_rev_ts = article_revisions_dict[out_rev_id]
             if from_ym <= out_rev_ts <= to_ym:
+                # the deletion corresponds to the period
+
                 del_ym = out_rev_ts.date().replace(day=1)
                 del_editor = wikiwho.revisions[out_rev_id].editor
-                try:
+
+                if i < len(token.inbound):
+                    # there is an in for this out (reinsertion)
                     in_rev_id = token.inbound[i]
-                except (IndexError, KeyError):
-                    # no in for this out
-                    editors_dict[del_ym][del_editor][2] += 1
-                    editors_dict[del_ym][del_editor][3] += 1
-                    editors_dict[del_ym][del_editor][7] += 1
-                    # stopword count for del
-                    editors_stop[del_ym][del_editor][2].append(token.value)
-                    break
-                else:
-                    # there is in for this out
-                    editors_dict[del_ym][del_editor][2] += 1
+                    editors_dict[del_ym][del_editor][__DELS__] += 1
                     in_rev_ts = article_revisions_dict[in_rev_id]
                     if (in_rev_ts - out_rev_ts).total_seconds() >= seconds_limit:
-                        editors_dict[del_ym][del_editor][3] += 1
+                        # the deletion lasted at least 48 hours
+                        editors_dict[del_ym][del_editor][__DELS_48__] += 1
                         if in_rev_ts.year != del_ym.year or in_rev_ts.month != del_ym.month:
-                            editors_dict[del_ym][del_editor][7] += 1
+                            # the deletion last until the end of the month (permanent)
+                            editors_dict[del_ym][del_editor][__ACTS_P__] += 1
+
                     # stopword count for del
                     editors_stop[del_ym][del_editor][2].append(token.value)
+
+                else:
+                    # no in for this out, therefore is permament
+                    editors_dict[del_ym][del_editor][__DELS__] += 1
+                    editors_dict[del_ym][del_editor][__DELS_48__] += 1
+                    editors_dict[del_ym][del_editor][__ACTS_P__] += 1
+                    # stopword count for del
+                    editors_stop[del_ym][del_editor][2].append(token.value)
+                    # break the loop (nothing else happen to this token during this month)
+                    break
+
             elif out_rev_ts > to_ym:
                 break
             else:
-                try:
+                if i < len(token.inbound):
+                    # there is an in for this out (reinsertion)
                     in_rev_id = token.inbound[i]
-                except:
-                    break
-                else:
                     in_rev_ts = article_revisions_dict[in_rev_id]
+                else:
+                    # break the loop (nothing else happen to this token during this month)
+                    break
 
         # last rein
         # if len(token.outbound) - len(token.inbound) == 0:
         if in_rev_id is not None:
-            # no out for this in
+            # it is in between the dates
             if from_ym <= in_rev_ts <= to_ym:
                 rein_ym = in_rev_ts.date().replace(day=1)
                 rein_editor = wikiwho.revisions[in_rev_id].editor
-                editors_dict[rein_ym][rein_editor][4] += 1
-                editors_dict[rein_ym][rein_editor][5] += 1
-                editors_dict[rein_ym][rein_editor][7] += 1
+                editors_dict[rein_ym][rein_editor][__REINS__] += 1
+                editors_dict[rein_ym][rein_editor][__REINS_48__] += 1
+                editors_dict[rein_ym][rein_editor][__ACTS_P__] += 1
                 # stopword count for rein
                 editors_stop[rein_ym][rein_editor][1].append(token.value)
 
