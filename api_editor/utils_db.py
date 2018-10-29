@@ -41,8 +41,7 @@ __REINS_SW__ = 10
 def prepare_editors_dict(from_ym, to_ym):
     # {'y-m': 'editor_id': [oadd, oadd_48, dels, dels_48, reins, reins_48, persistent_o_adds, persistent_actions]}
     editors_dict = {}
-    # {'y-m': 'editor_id': [adds_stopword_count, reins_stopword_count, dels_stopword_count]}
-    editors_stop = {}
+
     ym_start = 12 * from_ym.year + from_ym.month - 1
     ym_end = 12 * to_ym.year + to_ym.month
     for ym in range(ym_start, ym_end):
@@ -53,10 +52,9 @@ def prepare_editors_dict(from_ym, to_ym):
         # ADDS, ADDS_48, DELS, DELS_48, REINS, REINS_48, ADDS_P, ACTS_P, ADDS_SW, DELS_SW, REINS_SW,
         editors_dict[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
             defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        editors_stop[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
-            defaultdict(lambda: [[], [], []])
 
-    return editors_dict, editors_stop
+
+    return editors_dict
 
 # def prepare_editors_dict(from_ym, to_ym):
 #     ym_start = 12 * from_ym.year + from_ym.month - 1
@@ -94,6 +92,9 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
             if e.code != '30':
                 raise e
 
+    with open(join(dirname(realpath(__file__)), 'stop_word_list.txt'), 'r') as f:
+        stopword_set = set(f.read().splitlines())
+
     article, created = Article.objects.update_or_create(page_id=wikiwho.page_id, language=language,
                                                         defaults={'title': wikiwho.title,
                                                                   'spam_ids': wikiwho.spam_ids,
@@ -107,13 +108,10 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
             wikiwho.revisions[rev_id].timestamp)
 
     # create a dictionary to store intermediate results
-    editors_dict, editors_stop = prepare_editors_dict(from_ym, to_ym)
+    editors_dict = prepare_editors_dict(from_ym, to_ym)
 
     for token in wikiwho.tokens:
-        # if token.value in stopwords:
-        #    stop_word = 1
-        # else:
-        #    stop_word = 0
+        is_stop_word = token.value in stopword_set
 
         # original additions
         oadd_rev_ts = article_revisions_dict[token.origin_rev_id]
@@ -138,8 +136,10 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 editors_dict[oadd_ym][oadd_editor][__ADDS_P__] += 1
                 editors_dict[oadd_ym][oadd_editor][__ACTS_P__] += 1
 
-            # stopword count for oadd
-            editors_stop[oadd_ym][oadd_editor][0].append(token.value)
+
+            if is_stop_word:
+                # stopword count for oadd
+                editors_dict[oadd_ym][oadd_editor][__ADDS_SW__] += 1
 
         # reinsertions and deleletions
         in_rev_id = None
@@ -163,8 +163,9 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                             # it was not deleted again this month, so it is permanent
                             editors_dict[rein_ym][rein_editor][__ACTS_P__] += 1
 
-                    # stopword count for rein
-                    editors_stop[rein_ym][rein_editor][1].append(token.value)
+                    if is_stop_word:
+                        # stopword count for rein
+                        editors_dict[rein_ym][rein_editor][__REINS_SW__] += 1
                 elif in_rev_ts > to_ym:
                     in_rev_id = None
                     break
@@ -190,16 +191,19 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                             # the deletion last until the end of the month (permanent)
                             editors_dict[del_ym][del_editor][__ACTS_P__] += 1
 
-                    # stopword count for del
-                    editors_stop[del_ym][del_editor][2].append(token.value)
+                    if is_stop_word:
+                        # stopword count for del
+                        editors_dict[del_ym][del_editor][__DELS_SW__] += 1
 
                 else:
                     # no in for this out, therefore is permament
                     editors_dict[del_ym][del_editor][__DELS__] += 1
                     editors_dict[del_ym][del_editor][__DELS_48__] += 1
                     editors_dict[del_ym][del_editor][__ACTS_P__] += 1
-                    # stopword count for del
-                    editors_stop[del_ym][del_editor][2].append(token.value)
+
+                    if is_stop_word:
+                        # stopword count for del
+                        editors_dict[del_ym][del_editor][__DELS_SW__] += 1
                     # break the loop (nothing else happen to this token during this month)
                     break
 
@@ -224,50 +228,15 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 editors_dict[rein_ym][rein_editor][__REINS__] += 1
                 editors_dict[rein_ym][rein_editor][__REINS_48__] += 1
                 editors_dict[rein_ym][rein_editor][__ACTS_P__] += 1
-                # stopword count for rein
-                editors_stop[rein_ym][rein_editor][1].append(token.value)
 
-    # if editors_dict[oadd_ym][oadd_editor][1] == 0 & editors_dict[oadd_ym][oadd_editor][0] == 0 :
-    #     editors_stop[oadd_ym][oadd_editor][6] = 0
-    # else:
-    #     editors_stop[oadd_ym][oadd_editor][6] = editors_dict[oadd_ym][oadd_editor][1] / editors_dict[oadd_ym][oadd_editor][0]
-    #
-    # if editors_dict[rein_ym][rein_editor][5] == 0 & editors_dict[rein_ym][rein_editor][4] == 0 :
-    #     editors_stop[rein_ym][rein_editor][7] = 0
-    # else:
-    #     editors_stop[rein_ym][rein_editor][7] = editors_dict[rein_ym][rein_editor][5] / editors_dict[rein_ym][rein_editor][4]
-    #
-    # if editors_dict[del_ym][del_editor][3] == 0 & editors_dict[del_ym][del_editor][2] == 0:
-    #     editors_stop[del_ym][del_editor][8] = 0
-    # else:
-    #     editors_stop[del_ym][del_editor][8] = editors_dict[del_ym][del_editor][3] / editors_dict[del_ym][del_editor][2]
+                if is_stop_word:
+                    # stopword count for rein
+                    editors_dict[rein_ym][rein_editor][__REINS_SW__] += 1
 
-    p = join(dirname(realpath(__file__)), 'stop_word_list.txt')
-    with open(p, 'r') as f:
-        stopword_set = set(f.read().splitlines())
-
-    # for ym, editor_data in editors_dict.items():
-    #     for editor, data in editor_data.items():
-    #         print(ym, editor)
-    #         stopwords_oadds = []
-    #         stopwords_reins = []
-    #         stopwords_dels = []
-    #         for t in editors_stop[ym][editor][0]:
-    #             if t in stopword_set:
-    #                 stopwords_oadds.append(t)
-    #         for t in editors_stop[ym][editor][1]:
-    #             if t in stopword_set:
-    #                 stopwords_reins.append(t)
-    #         for t in editors_stop[ym][editor][2]:
-    #             if t in stopword_set:
-    #                 stopwords_dels.append(t)
-    #         print('stopwords oadds:', stopwords_oadds)
-    #         print('stopwords reins:', stopwords_reins)
-    #         print('stopwords dels:', stopwords_dels)
 
 
     EDITOR_MODEL[language][0].objects.bulk_create(
-        [
+        (
             EDITOR_MODEL[language][0](
                 article_id=wikiwho.page_id,
                 editor_id=0 if editor.startswith(
@@ -282,22 +251,14 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 reins_surv_48h=data[__REINS_48__],
                 persistent_o_adds=data[__ADDS_P__],
                 persistent_actions=data[__ACTS_P__],
-                adds_stopword_count=sum(
-                    t in stopword_set for t in editors_stop[ym][editor][0]),
-                reins_stopword_count=sum(
-                    t in stopword_set for t in editors_stop[ym][editor][1]),
-                dels_stopword_count=sum(
-                    t in stopword_set for t in editors_stop[ym][editor][2]),
-                # total_actions = (data[0] + data[2] + data[4]),
-                # total_actions_surv_48h = (data[1] + data[3] + data[5]),
-                # total_actions_stopword_count = ((len([t for t in editors_stop[oadd_ym][oadd_editor][0] if t in stopword_set]))+(len([t for t in editors_stop[rein_ym][rein_editor][1] if t in stopword_set]))+(len([t for t in editors_stop[del_ym][del_editor][2] if t in stopword_set]))),
-                # adds_survived_ratio = editors_stop[oadd_ym][oadd_editor][6],
-                # reins_survived_ratio = editors_stop[rein_ym][rein_editor][7],
-                # dels_survived_ratio = editors_stop[del_ym][del_editor][8],
+                adds_stopword_count=data[__ADDS_SW__],
+                reins_stopword_count=data[__REINS_SW__],
+                dels_stopword_count=data[__DELS_SW__],
+
             )
             for ym, editor_data in editors_dict.items()
             for editor, data in editor_data.items()
-        ],
+        ),
         batch_size=1000000
     )
 
