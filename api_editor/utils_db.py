@@ -265,6 +265,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     #         print('stopwords reins:', stopwords_reins)
     #         print('stopwords dels:', stopwords_dels)
 
+
     EDITOR_MODEL[language][0].objects.bulk_create(
         [
             EDITOR_MODEL[language][0](
@@ -273,14 +274,14 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     '0|') or editor == '' else int(editor),
                 editor_name=editor[2:] if editor.startswith('0|') else '',
                 year_month=ym,
-                o_adds=data[0],
-                o_adds_surv_48h=data[1],
-                dels=data[2],
-                dels_surv_48h=data[3],
-                reins=data[4],
-                reins_surv_48h=data[5],
-                persistent_o_adds=data[6],
-                persistent_actions=data[7],
+                o_adds=data[__ADDS__],
+                o_adds_surv_48h=data[__ADDS_48__],
+                dels=data[__DELS__],
+                dels_surv_48h=data[__DELS_48__],
+                reins=data[__REINS__],
+                reins_surv_48h=data[__REINS_48__],
+                persistent_o_adds=data[__ADDS_P__],
+                persistent_actions=data[__ACTS_P__],
                 adds_stopword_count=sum(
                     t in stopword_set for t in editors_stop[ym][editor][0]),
                 reins_stopword_count=sum(
