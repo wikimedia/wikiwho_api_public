@@ -18,13 +18,15 @@ from .fill_notindexed_editor_tables import Command as CommandBase
 
 
 def fill_indexed_editor_tables_base(language, from_ym, to_ym, log_folder, already_partitioned):
-    logger = get_logger('fill_indexed_editor_tables_{}_from_{}_{}_to_{}_{}'.
-                        format(language, from_ym.year, from_ym.month,
-                               to_ym.year, to_ym.month),
-                        log_folder, is_process=True, is_set=False, language=language)
+
     try:
-        fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned)
+        fill_indexed_editor_tables(
+            language, from_ym, to_ym, already_partitioned)
     except Exception as e:
+        logger = get_logger('fill_indexed_editor_tables_{}_from_{}_{}_to_{}_{}'.
+                            format(language, from_ym.year, from_ym.month,
+                                   to_ym.year, to_ym.month),
+                            log_folder, is_process=True, is_set=False, language=language)
         logger.exception(
             'Manage editor tables exception {}-{}-{}'.format(language, from_ym, to_ym))
 
@@ -64,10 +66,6 @@ class Command(CommandBase):
         log_folder = options['log_folder']
         if not exists(log_folder):
             mkdir(log_folder)
-        logger = get_logger('fill_indexed_editor_tables_from_{}_{}_to_{}_{}'.
-                            format(from_ym.year, from_ym.month,
-                                   to_ym.year, to_ym.month),
-                            log_folder, is_process=True, is_set=True)
 
         print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
         already_partitioned = options['already_partitioned']
@@ -92,6 +90,10 @@ class Command(CommandBase):
                     try:
                         data = job.result()
                     except Exception as exc:
+                        logger = get_logger('fill_indexed_editor_tables_from_{}_{}_to_{}_{}'.
+                                            format(
+                                                from_ym.year, from_ym.month, to_ym.year, to_ym.month),
+                                            log_folder, is_process=True, is_set=True)
                         logger.exception('{}'.format(language_))
 
                     del jobs[job]

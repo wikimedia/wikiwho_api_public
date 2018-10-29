@@ -17,11 +17,12 @@ from api_editor.utils_db import empty_notindexed_editor_tables
 
 
 def empty_notindexed_editor_tables_base(language, log_folder):
-    logger = get_logger('empty_notindexed_editor_tables_{}'.format(language), log_folder, is_process=True,
-                        is_set=False, language=language)
+
     try:
         empty_notindexed_editor_tables(language)
     except Exception as e:
+        logger = get_logger('empty_notindexed_editor_tables_{}'.format(
+            language), log_folder, is_process=True, is_set=False, language=language)
         logger.exception('{}'.format(language))
 
 
@@ -40,12 +41,11 @@ class Command(BaseCommand):
         languages = options['language'].split(',')
         # get max number of concurrent workers
         max_workers = options['max_workers']
+
         # set logging
         log_folder = options['log_folder']
         if not exists(log_folder):
             mkdir(log_folder)
-        logger = get_logger('empty_notindexed_editor_tables', log_folder,
-                            is_process=True, is_set=True)
 
         print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
         print(max_workers, languages, log_folder)
@@ -68,6 +68,8 @@ class Command(BaseCommand):
                     try:
                         data = job.result()
                     except Exception as exc:
+                        logger = get_logger('empty_notindexed_editor_tables', log_folder,
+                            is_process=True, is_set=True)
                         logger.exception('{}'.format(language_))
 
                     del jobs[job]

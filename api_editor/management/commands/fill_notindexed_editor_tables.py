@@ -30,7 +30,8 @@ def fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, up
     while retries:
         retries -= 1
         try:
-            fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update)
+            fill_notindexed_editor_tables(
+                pickle_path, from_ym, to_ym, language, update)
             return
         except WPHandlerException as e:
             if e.code in ['00', '02']:
@@ -89,18 +90,16 @@ class Command(BaseCommand):
         json_file, from_ym, to_ym, languages, max_workers, update = self.get_parameters(
             options)
 
+        # set logging
+        log_folder = options['log_folder']
+        if not exists(log_folder):
+            mkdir(log_folder)
+
         print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
         print(max_workers, languages, from_ym, to_ym)
         # Concurrent process of pickles of each language to generate editor data
         for language in languages:
-            # set logging
-            log_folder = options['log_folder']
-            if not exists(log_folder):
-                mkdir(log_folder)
-            logger = get_logger('fill_notindexed_editor_tables_{}_from_{}_{}_to_{}_{}'.
-                                format(language, from_ym.year,
-                                       from_ym.month, to_ym.year, to_ym.month),
-                                log_folder, is_process=True, is_set=True, language=language)
+
             pickle_folder = get_pickle_folder(language)
             print('Start: {} - {} at {}'.format(language,
                                                 pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
@@ -135,6 +134,9 @@ class Command(BaseCommand):
                         try:
                             data = job.result()
                         except Exception as exc:
+                            logger = get_logger('fill_notindexed_editor_tables_{}_from_{}_{}_to_{}_{}'.format(
+                                language, from_ym.year, from_ym.month, to_ym.year, to_ym.month),
+                                log_folder, is_process=True, is_set=True)
                             logger.exception(
                                 '{}-{}'.format(page_id_, language))
 
