@@ -36,7 +36,9 @@ urlpatterns = [
     # url(r'^docs/', include('rest_framework_docs.urls')),
     url(r'^$', home, name='home'),
     url(r'^sitemap\.xml$', sitemap, {'sitemaps': {'api': ApiStaticViewSitemap, 'base': BaseStaticViewSitemap}},
-        name='django.contrib.sitemaps.views.sitemap')
+        name='django.contrib.sitemaps.views.sitemap'),
+
+    url(r'^api_editor/', include('api_editor.urls')),
 ]
 
 urlpatterns += i18n_patterns(
