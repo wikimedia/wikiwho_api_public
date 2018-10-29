@@ -53,7 +53,6 @@ def prepare_editors_dict(from_ym, to_ym):
         editors_dict[datetime.strptime('{}-{:02}'.format(y, m), '%Y-%m').replace(tzinfo=pytz.UTC).date()] = \
             defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-
     return editors_dict
 
 # def prepare_editors_dict(from_ym, to_ym):
@@ -135,7 +134,6 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 editors_dict[oadd_ym][oadd_editor][__ADDS_48__] += 1
                 editors_dict[oadd_ym][oadd_editor][__ADDS_P__] += 1
                 editors_dict[oadd_ym][oadd_editor][__ACTS_P__] += 1
-
 
             if is_stop_word:
                 # stopword count for oadd
@@ -232,8 +230,6 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 if is_stop_word:
                     # stopword count for rein
                     editors_dict[rein_ym][rein_editor][__REINS_SW__] += 1
-
-
 
     EDITOR_MODEL[language][0].objects.bulk_create(
         (
