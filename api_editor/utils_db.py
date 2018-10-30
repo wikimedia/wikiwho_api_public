@@ -70,7 +70,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                                                                   'spam_ids': wikiwho.spam_ids,
                                                                   'rvcontinue': wikiwho.rvcontinue})
     # 48 hours
-    seconds_limit = 172800  
+    seconds_limit = 172800
 
     # contains an integer representing year month
     article_revisions_yms = {}
@@ -238,32 +238,24 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     ym2dt = {ym: datetime.strptime('{}-{:02}'.format(*divmod(ym, 100)), '%Y-%m').replace(
         tzinfo=pytz.UTC).date() for ym in editors_dict.keys()}
 
-    # save to the database
-    EDITOR_MODEL[language][0].objects.bulk_create(
-        (
-            EDITOR_MODEL[language][0](
-                article_id=wikiwho.page_id,
-                editor_id=ed2edid[editor]['id'],
-                editor_name=ed2edid[editor]['name'],
-                year_month=ym2dt[ym],
-                o_adds=data[__ADDS__],
-                o_adds_surv_48h=data[__ADDS_48__],
-                dels=data[__DELS__],
-                dels_surv_48h=data[__DELS_48__],
-                reins=data[__REINS__],
-                reins_surv_48h=data[__REINS_48__],
-                persistent_o_adds=data[__ADDS_P__],
-                persistent_actions=data[__ACTS_P__],
-                adds_stopword_count=data[__ADDS_SW__],
-                reins_stopword_count=data[__REINS_SW__],
-                dels_stopword_count=data[__DELS_SW__],
+    with connection.cursor() as cursor:
 
-            )
-            for ym, editor_data in editors_dict.items()
-            for editor, data in editor_data.items()
-        ),
-        batch_size=1000000
-    )
+        # create query
+        insert_query = """
+            INSERT INTO api_editor_{} 
+                (article_id, editor_id, editor_name, year_month, o_adds, o_adds_surv_48h, dels, 
+                dels_surv_48h,  reins, reins_surv_48h, persistent_o_adds, persistent_actions, 
+                adds_stopword_count, reins_stopword_count, dels_stopword_count) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
+            """.format(EDITOR_MODEL[language][0].__name__.lower())
+
+        # fill data
+        cursor.executemany(insert_query,
+                           ((wikiwho.page_id, ed2edid[editor]['id'], ed2edid[editor]['name'], ym2dt[ym], data[__ADDS__],
+                             data[__ADDS_48__], data[__DELS__], data[__DELS_48__], data[__REINS__], data[__REINS_48__],
+                               data[__ADDS_P__], data[__ACTS_P__], data[__ADDS_SW__], data[__REINS_SW__], data[__DELS_SW__])
+                               for ym, editor_data in editors_dict.items()
+                               for editor, data in editor_data.items()))
 
 
 def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=False):
