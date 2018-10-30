@@ -27,15 +27,16 @@ EDITOR_MODEL = {'en': (EditorDataEnNotIndexed, EditorDataEn, ),
 
 __ADDS__ = 0
 __ADDS_48__ = 1
-__DELS__ = 2
-__DELS_48__ = 3
-__REINS__ = 4
-__REINS_48__ = 5
-__ADDS_P__ = 6
-__ACTS_P__ = 7
-__ADDS_SW__ = 8
-__DELS_SW__ = 9
-__REINS_SW__ = 10
+__ADDS_P__ = 2
+__ADDS_SW__ = 3
+__DELS__ = 4
+__DELS_48__ = 5
+__DELS_P__ = 6
+__DELS_SW__ = 7
+__REINS__ = 8
+__REINS_48__ = 9
+__REINS_P__ = 10
+__REINS_SW__ = 11
 
 
 def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
@@ -99,7 +100,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
             }
 
     # create a dictionary to store intermediate results
-    editors_dict = {y + m:  defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    editors_dict = {y + m:  defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
                     for y in range(from_ym.year * 100, to_ym.year * 100 + 1, 100) for m in range(1, 13)}
 
     # use the date timestamps as it is faster
@@ -127,12 +128,10 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     if oadd_ym != article_revisions_yms[token.outbound[0]]:
                         # it was not deleted in this month, so it is permanent
                         editors_dict[oadd_ym][oadd_editor][__ADDS_P__] += 1
-                        editors_dict[oadd_ym][oadd_editor][__ACTS_P__] += 1
             else:
                 # there is no outbound, additions is permanent
                 editors_dict[oadd_ym][oadd_editor][__ADDS_48__] += 1
                 editors_dict[oadd_ym][oadd_editor][__ADDS_P__] += 1
-                editors_dict[oadd_ym][oadd_editor][__ACTS_P__] += 1
 
             if is_stop_word:
                 # stopword count for oadd
@@ -156,7 +155,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                         editors_dict[rein_ym][rein_editor][__REINS_48__] += 1
                         if rein_ym != article_revisions_yms[out_rev_id]:
                             # it was not deleted again this month, so it is permanent
-                            editors_dict[rein_ym][rein_editor][__ACTS_P__] += 1
+                            editors_dict[rein_ym][rein_editor][__REINS_P__] += 1
 
                     if is_stop_word:
                         # stopword count for rein
@@ -188,7 +187,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                         editors_dict[del_ym][del_editor][__DELS_48__] += 1
                         if del_ym != article_revisions_yms[in_rev_id]:
                             # the deletion last until the end of the month (permanent)
-                            editors_dict[del_ym][del_editor][__ACTS_P__] += 1
+                            editors_dict[del_ym][del_editor][__DELS_P__] += 1
 
                     if is_stop_word:
                         # stopword count for del
@@ -198,7 +197,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     # no in for this out, therefore is permament
                     editors_dict[del_ym][del_editor][__DELS__] += 1
                     editors_dict[del_ym][del_editor][__DELS_48__] += 1
-                    editors_dict[del_ym][del_editor][__ACTS_P__] += 1
+                    editors_dict[del_ym][del_editor][__DELS_P__] += 1
 
                     if is_stop_word:
                         # stopword count for del
@@ -228,7 +227,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 rein_editor = wikiwho.revisions[in_rev_id].editor
                 editors_dict[rein_ym][rein_editor][__REINS__] += 1
                 editors_dict[rein_ym][rein_editor][__REINS_48__] += 1
-                editors_dict[rein_ym][rein_editor][__ACTS_P__] += 1
+                editors_dict[rein_ym][rein_editor][__REINS_P__] += 1
 
                 if is_stop_word:
                     # stopword count for rein
@@ -243,18 +242,20 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
         # create query
         insert_query = """
             INSERT INTO api_editor_{} 
-                (article_id, editor_id, editor_name, year_month, o_adds, o_adds_surv_48h, dels, 
-                dels_surv_48h,  reins, reins_surv_48h, persistent_o_adds, persistent_actions, 
-                adds_stopword_count, reins_stopword_count, dels_stopword_count) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
+                (article_id, editor_id, editor_name, year_month, 
+                adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
+                dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
+                reins, reins_surv_48h, reins_persistent, reins_stopword_count) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
             """.format(EDITOR_MODEL[language][0].__name__.lower())
 
         # fill data
         cursor.executemany(insert_query,
-                           ((wikiwho.page_id, ed2edid[editor]['id'], ed2edid[editor]['name'], ym2dt[ym], data[__ADDS__],
-                             data[__ADDS_48__], data[__DELS__], data[__DELS_48__], data[__REINS__], data[__REINS_48__],
-                               data[__ADDS_P__], data[__ACTS_P__], data[__ADDS_SW__], data[__REINS_SW__], data[__DELS_SW__])
-                               for ym, editor_data in editors_dict.items()
+                           ((wikiwho.page_id, ed2edid[editor]['id'], ed2edid[editor]['name'], ym2dt[ym],
+                             data[__ADDS__], data[__ADDS_48__], data[__ADDS_P__], data[__ADDS_SW__],
+                             data[__DELS__], data[__DELS_48__], data[__DELS_P__], data[__DELS_SW__],
+                             data[__REINS__], data[__REINS_48__], data[__REINS_P__], data[__REINS_SW__]
+                             ) for ym, editor_data in editors_dict.items()
                                for editor, data in editor_data.items()))
 
 
@@ -315,14 +316,16 @@ def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=Fal
             EDITOR_MODEL[language][0].__name__.lower())
         insert_query = """
         INSERT INTO {} 
-        (article_id, editor_id, year_month, editor_name, o_adds, o_adds_surv_48h, 
-        dels, dels_surv_48h, reins, reins_surv_48h, persistent_o_adds, persistent_actions, 
-        adds_stopword_count, reins_stopword_count, dels_stopword_count) 
+        (article_id, editor_id, year_month, editor_name, 
+            adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
+            dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
+            reins, reins_surv_48h, reins_persistent, reins_stopword_count) 
         (
           SELECT 
-            article_id, editor_id, year_month, editor_name, o_adds, o_adds_surv_48h, 
-            dels, dels_surv_48h, reins, reins_surv_48h, persistent_o_adds, persistent_actions, 
-            adds_stopword_count, reins_stopword_count, dels_stopword_count
+            article_id, editor_id, year_month, editor_name,
+            adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
+            dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
+            reins, reins_surv_48h, reins_persistent, reins_stopword_count
           FROM {} 
         );
         """.format(master_table, not_indexed_table)
