@@ -18,13 +18,15 @@ from .fill_editor_tables import Command as CommandBase
 
 
 def manage_editor_tables_base(language, from_ym, to_ym, log_folder, already_partitioned):
-    logger = get_logger('manage_editor_tables_{}_from_{}_{}_to_{}_{}'.
-                        format(language, from_ym.year, from_ym.month, to_ym.year, to_ym.month),
-                        log_folder, is_process=True, is_set=False, language=language)
+
     try:
         manage_editor_tables(language, from_ym, to_ym, already_partitioned)
     except Exception as e:
+        logger = get_logger('manage_editor_tables_{}_from_{}_{}_to_{}_{}'.
+                    format(language, from_ym.year, from_ym.month, to_ym.year, to_ym.month),
+                    log_folder, is_process=True, is_set=False, language=language)
         logger.exception('Manage editor tables exception {}-{}-{}'.format(language, from_ym, to_ym))
+
 
 
 class Command(CommandBase):
@@ -70,25 +72,29 @@ class Command(CommandBase):
         languages_iter = iter(languages)
         languages_all = len(languages)
         languages_left = languages_all
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
-            jobs = {}
-            while languages_left:
-                for language in languages_iter:
-                    job = executor.submit(manage_editor_tables_base, language, from_ym, to_ym, log_folder, already_partitioned)
-                    jobs[job] = language
-                    if len(jobs) == max_workers:  # limit # jobs with max_workers
-                        break
+        if max_workers < 1:
+            for language in languages_iter:
+                manage_editor_tables_base(language, from_ym, to_ym, log_folder, already_partitioned)
+        else:
+            with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                jobs = {}
+                while languages_left:
+                    for language in languages_iter:
+                        job = executor.submit(manage_editor_tables_base, language, from_ym, to_ym, log_folder, already_partitioned)
+                        jobs[job] = language
+                        if len(jobs) == max_workers:  # limit # jobs with max_workers
+                            break
 
-                for job in as_completed(jobs):
-                    languages_left -= 1
-                    language_ = jobs[job]
-                    try:
-                        data = job.result()
-                    except Exception as exc:
-                        logger.exception('{}'.format(language_))
+                    for job in as_completed(jobs):
+                        languages_left -= 1
+                        language_ = jobs[job]
+                        try:
+                            data = job.result()
+                        except Exception as exc:
+                            logger.exception('{}'.format(language_))
 
-                    del jobs[job]
-                    sys.stdout.write('\rPickles left: {} - Pickles processed: {:.3f}%'.
-                                     format(languages_left, ((languages_all - languages_left) * 100) / languages_all))
-                    break  # to add a new job, if there is any
+                        del jobs[job]
+                        sys.stdout.write('\rPickles left: {} - Pickles processed: {:.3f}%'.
+                                         format(languages_left, ((languages_all - languages_left) * 100) / languages_all))
+                        break  # to add a new job, if there is any
         print('\nDone: {} - at {}'.format(language, strftime('%H:%M:%S %d-%m-%Y')))

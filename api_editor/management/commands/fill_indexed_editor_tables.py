@@ -74,30 +74,34 @@ class Command(CommandBase):
         languages_iter = iter(languages)
         languages_all = len(languages)
         languages_left = languages_all
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
-            jobs = {}
-            while languages_left:
-                for language in languages_iter:
-                    job = executor.submit(
-                        fill_indexed_editor_tables_base, language, from_ym, to_ym, log_folder, already_partitioned)
-                    jobs[job] = language
-                    if len(jobs) == max_workers:  # limit # jobs with max_workers
-                        break
+        if max_workers < 1:
+            for language in languages_iter:
+                fill_indexed_editor_tables_base(language, from_ym, to_ym, log_folder, already_partitioned)
+        else:
+            with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                jobs = {}
+                while languages_left:
+                    for language in languages_iter:
+                        job = executor.submit(
+                            fill_indexed_editor_tables_base, language, from_ym, to_ym, log_folder, already_partitioned)
+                        jobs[job] = language
+                        if len(jobs) == max_workers:  # limit # jobs with max_workers
+                            break
 
-                for job in as_completed(jobs):
-                    languages_left -= 1
-                    language_ = jobs[job]
-                    try:
-                        data = job.result()
-                    except Exception as exc:
-                        logger = get_logger('fill_indexed_editor_tables_from_{}_{}_to_{}_{}'.
-                                            format(
-                                                from_ym.year, from_ym.month, to_ym.year, to_ym.month),
-                                            log_folder, is_process=True, is_set=True)
-                        logger.exception('{}'.format(language_))
+                    for job in as_completed(jobs):
+                        languages_left -= 1
+                        language_ = jobs[job]
+                        try:
+                            data = job.result()
+                        except Exception as exc:
+                            logger = get_logger('fill_indexed_editor_tables_from_{}_{}_to_{}_{}'.
+                                                format(
+                                                    from_ym.year, from_ym.month, to_ym.year, to_ym.month),
+                                                log_folder, is_process=True, is_set=True)
+                            logger.exception('{}'.format(language_))
 
-                    del jobs[job]
-                    sys.stdout.write('\rPickles left: {} - Pickles processed: {:.3f}%'.
-                                     format(languages_left, ((languages_all - languages_left) * 100) / languages_all))
-                    break  # to add a new job, if there is any
-        print('\nDone: {} - at {}'.format(language, strftime('%H:%M:%S %d-%m-%Y')))
+                        del jobs[job]
+                        sys.stdout.write('\rPickles left: {} - Pickles processed: {:.3f}%'.
+                                         format(languages_left, ((languages_all - languages_left) * 100) / languages_all))
+                        break  # to add a new job, if there is any
+            print('\nDone: {} - at {}'.format(language, strftime('%H:%M:%S %d-%m-%Y')))

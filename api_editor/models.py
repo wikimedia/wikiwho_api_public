@@ -6,16 +6,19 @@ from base.models import BaseModel
 class EditorData(BaseModel):
     # Use editor id and name separately because indexing on int is faster
     editor_name = models.CharField(max_length=85, default='')  # max_length='0|' + 85
-    o_adds = models.IntegerField(blank=False)
-    o_adds_surv_48h = models.IntegerField(blank=False)
+    adds = models.IntegerField(blank=False)
+    adds_surv_48h = models.IntegerField(blank=False)
+    adds_persistent = models.IntegerField(blank=False)
+    adds_stopword_count = models.IntegerField(blank=False, default=0)
+
     dels = models.IntegerField(blank=False)
     dels_surv_48h = models.IntegerField(blank=False)
+    dels_persistent = models.IntegerField(blank=False)
+    dels_stopword_count = models.IntegerField(blank=False, default=0)
+
     reins = models.IntegerField(blank=False)
     reins_surv_48h = models.IntegerField(blank=False)
-    persistent_o_adds = models.IntegerField(blank=False)
-    persistent_actions = models.IntegerField(blank=False)
-    adds_stopword_count = models.IntegerField(blank=False, default=0)
-    dels_stopword_count = models.IntegerField(blank=False, default=0)
+    reins_persistent = models.IntegerField(blank=False)
     reins_stopword_count = models.IntegerField(blank=False, default=0)
 
 
