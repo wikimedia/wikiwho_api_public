@@ -2,6 +2,7 @@ from .settings_base import *
 
 DEBUG = False
 TEMPLATES[0]['OPTIONS']['debug'] = DEBUG
+SERVER_LEVEL = LEVEL_STAGING
 
 # INSTALLED_APPS += ['debug_toolbar']
 # MIDDLEWARE_CLASSES += ['debug_toolbar.middleware.DebugToolbarMiddleware']
