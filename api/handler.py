@@ -96,6 +96,7 @@ class WPHandler(object):
                 # a new pickle will be created
                 self.wikiwho = Wikiwho(self.saved_article_title)
                 self.wikiwho.page_id = self.page_id
+                self.saved_rvcontinue = self.wikiwho.rvcontinue
         else:
             try:
                 self.wikiwho = pickle_load(self.pickle_path)
@@ -104,9 +105,10 @@ class WPHandler(object):
                     # create a new pickle, this one will overwrite the problematic one
                     self.wikiwho = Wikiwho(self.saved_article_title)
                     self.wikiwho.page_id = self.page_id
+                    self.saved_rvcontinue = self.wikiwho.rvcontinue
             else:
                 self.wikiwho.title = self.saved_article_title
-        self.saved_rvcontinue = self.wikiwho.rvcontinue
+                self.saved_rvcontinue = self.wikiwho.rvcontinue
 
         # time2 = time()
         # print("Execution time enter: {}".format(time2-time1))
