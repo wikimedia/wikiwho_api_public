@@ -1,24 +1,33 @@
 from .settings_base import *
 
-DEBUG = False
+DEBUG = True
 TEMPLATES[0]['OPTIONS']['debug'] = DEBUG
 SERVER_LEVEL = LEVEL_STAGING
 
-# INSTALLED_APPS += ['debug_toolbar']
-# MIDDLEWARE_CLASSES += ['debug_toolbar.middleware.DebugToolbarMiddleware']
+INSTALLED_APPS += ['debug_toolbar',
+                   'debug_panel']
+
+MIDDLEWARE_CLASSES += ['debug_panel.middleware.DebugPanelMiddleware']
 
 SWAGGER_SETTINGS['VALIDATOR_URL'] = 'https://online.swagger.io/validator'
 
-ALLOWED_HOSTS = ['193.175.238.88',
-                 '180.163.113.82',
-                 'www.wikiwho.net',
-                 'wikiwho.net']
-
 ONLY_READ_ALLOWED = False
 
-# def custom_show_toolbar(request):
-#     return True  # show toolbar always for staging
-
-# DEBUG_TOOLBAR_CONFIG = {
-#     'SHOW_TOOLBAR_CALLBACK': custom_show_toolbar,
-# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/django/django.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
