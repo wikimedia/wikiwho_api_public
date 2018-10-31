@@ -36,7 +36,7 @@ class WPHandlerException(Exception):
 class WPHandler(object):
     def __init__(self, article_title, page_id=None, pickle_folder='', save_tables=(),
                  check_exists=True, is_xml=False, revision_id=None, log_error_into_db=True,
-                 language=None, *args, **kwargs):
+                 language=None, is_user_request=False, *args, **kwargs):
         self.article_title = article_title
         self.saved_article_title = ''
         self.revision_ids = []
@@ -56,6 +56,7 @@ class WPHandler(object):
         self.cache_set = False
         self.log_error_into_db = log_error_into_db
         self.language = language or get_language()
+        self.is_user_request = is_user_request
 
     def __enter__(self):
         # time1 = time()
@@ -91,16 +92,18 @@ class WPHandler(object):
         self.pickle_path = "{}/{}.p".format(pickle_folder, self.page_id)
         self.already_exists = os.path.exists(self.pickle_path)
         if not self.already_exists:
-            # a new pickle will be created
-            self.wikiwho = Wikiwho(self.saved_article_title)
-            self.wikiwho.page_id = self.page_id
+            if (self.is_user_request or settings.SERVER_LEVEL == setting.LEVEL_PRODUCTION):
+                # a new pickle will be created
+                self.wikiwho = Wikiwho(self.saved_article_title)
+                self.wikiwho.page_id = self.page_id
         else:
             try:
                 self.wikiwho = pickle_load(self.pickle_path)
             except EOFError:
-                # create a new pickle, this one will overwrite the problematic one
-                self.wikiwho = Wikiwho(self.saved_article_title)
-                self.wikiwho.page_id = self.page_id
+                if (self.is_user_request or settings.SERVER_LEVEL == setting.LEVEL_PRODUCTION):
+                    # create a new pickle, this one will overwrite the problematic one
+                    self.wikiwho = Wikiwho(self.saved_article_title)
+                    self.wikiwho.page_id = self.page_id
             else:
                 self.wikiwho.title = self.saved_article_title
         self.saved_rvcontinue = self.wikiwho.rvcontinue
@@ -162,6 +165,9 @@ class WPHandler(object):
                 return
             else:
                 raise WPHandlerException(*MESSAGES['only_read_allowed'])
+        elif not self.wikiwho:
+            if not (self.is_user_request or settings.SERVER_LEVEL == setting.LEVEL_PRODUCTION):
+                return
 
         self.revision_ids = revision_ids or [self.latest_revision_id]
         if self.revision_ids[-1] in self.wikiwho.revisions:
