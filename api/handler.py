@@ -92,7 +92,7 @@ class WPHandler(object):
         self.pickle_path = "{}/{}.p".format(pickle_folder, self.page_id)
         self.already_exists = os.path.exists(self.pickle_path)
         if not self.already_exists:
-            if (self.is_user_request or settings.SERVER_LEVEL == setting.LEVEL_PRODUCTION):
+            if (self.is_user_request or settings.SERVER_LEVEL == settings.LEVEL_PRODUCTION):
                 # a new pickle will be created
                 self.wikiwho = Wikiwho(self.saved_article_title)
                 self.wikiwho.page_id = self.page_id
@@ -100,7 +100,7 @@ class WPHandler(object):
             try:
                 self.wikiwho = pickle_load(self.pickle_path)
             except EOFError:
-                if (self.is_user_request or settings.SERVER_LEVEL == setting.LEVEL_PRODUCTION):
+                if (self.is_user_request or settings.SERVER_LEVEL == settings.LEVEL_PRODUCTION):
                     # create a new pickle, this one will overwrite the problematic one
                     self.wikiwho = Wikiwho(self.saved_article_title)
                     self.wikiwho.page_id = self.page_id
@@ -166,7 +166,7 @@ class WPHandler(object):
             else:
                 raise WPHandlerException(*MESSAGES['only_read_allowed'])
         elif not self.wikiwho:
-            if not (self.is_user_request or settings.SERVER_LEVEL == setting.LEVEL_PRODUCTION):
+            if not (self.is_user_request or settings.SERVER_LEVEL == settings.LEVEL_PRODUCTION):
                 return
 
         self.revision_ids = revision_ids or [self.latest_revision_id]
