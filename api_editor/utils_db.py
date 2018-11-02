@@ -262,56 +262,19 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
 def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=False):
     master_table = "api_editor_{}".format(
         EDITOR_MODEL[language][1].__name__.lower())
-    part_table = '{}{}'.format(master_table, from_ym.year)
-    if from_ym.month == 1 and not already_partitioned:
-        # new year
-        with connection.cursor() as cursor:
-            # create a new partition table for current new year
-            new_table_query = """
-            CREATE TABLE {} 
-            (CHECK ( year_month >= DATE '{}-01-01' AND year_month <= DATE '{}-12-31' )) 
-            INHERITS ({});
-            """.format(part_table, from_ym.year, from_ym.year, master_table)
-            cursor.execute(new_table_query)
-
-            # create a trigger function
-            x = "{} ( NEW.year_month >= DATE '{}-01-01' AND NEW.year_month <= DATE '{}-12-31' ) THEN INSERT INTO {} VALUES (NEW.*);"
-            trigger_function_query = """
-            CREATE OR REPLACE FUNCTION api_editor_editordata_{}_insert_trigger()
-            RETURNS TRIGGER AS $$
-            BEGIN
-                {}
-                ELSE
-                   RAISE EXCEPTION 'Date out of range. Fix the api_editor_editordata_insert_trigger() function!';
-                END IF;
-                RETURN NULL;
-            END;
-            $$
-            LANGUAGE plpgsql;
-            """.format(language,
-                       '\n'.join([x.format('IF' if year == from_ym.year else 'ELSIF', year, year,
-                                           '{}{}'.format(master_table, year))
-                                  for year in range(from_ym.year, 2000, -1)]))
-            cursor.execute(trigger_function_query)
-            # attach trigger query to the table, this has to be done only one time
-            trigger_query = """
-            CREATE TRIGGER insert_api_editor_editordata_{}_trigger
-              BEFORE INSERT ON {}
-              FOR EACH ROW EXECUTE PROCEDURE api_editor_editordata_{}_insert_trigger();
-              """.format(language, master_table, language)
-            try:
-                cursor.execute(trigger_query)
-            except ProgrammingError:
-                pass
+    
 
     with connection.cursor() as cursor:
-        if from_ym.month != 1 or already_partitioned:
-            # drop indexes in the last partition
-            cursor.execute("DROP INDEX {}_article_id;".format(part_table))
-            cursor.execute("DROP INDEX {}_year_month;".format(part_table))
-            cursor.execute("DROP INDEX {}_editor_id_ym;".format(part_table))
 
-        # fill data
+        for year in range(from_ym.year, to_ym.year + 1):
+            part_table = '{}_y{}'.format(master_table, year)
+
+            #  drop indexes in the last partition
+            cursor.execute("DROP INDEX IF EXISTS {}_article_id;".format(part_table))
+            cursor.execute("DROP INDEX IF EXISTS {}_year_month;".format(part_table))
+            cursor.execute("DROP INDEX IF EXISTS {}_editor_id_ym;".format(part_table))
+
+        # move the data to the partition tables
         not_indexed_table = "api_editor_{}".format(
             EDITOR_MODEL[language][0].__name__.lower())
         insert_query = """
@@ -331,13 +294,16 @@ def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=Fal
         """.format(master_table, not_indexed_table)
         cursor.execute(insert_query)
 
-        # re-create indexes
-        cursor.execute("CREATE INDEX {}_article_id ON {} USING btree (article_id);".format(
-            part_table, part_table))
-        cursor.execute("CREATE INDEX {}_year_month ON {} USING btree (year_month);".format(
-            part_table, part_table))
-        cursor.execute("CREATE INDEX {}_editor_id_ym ON {} USING btree (editor_id, year_month);".
-                       format(part_table, part_table))
+
+        for year in range(from_ym.year, to_ym.year):
+            part_table = '{}_y{}'.format(master_table, year + 1)
+            # # re-create indexes
+            cursor.execute("CREATE INDEX {}_article_id ON {} USING btree (article_id);".format(
+                part_table, part_table))
+            cursor.execute("CREATE INDEX {}_year_month ON {} USING btree (year_month);".format(
+                part_table, part_table))
+            cursor.execute("CREATE INDEX {}_editor_id_ym ON {} USING btree (editor_id, year_month);".
+                           format(part_table, part_table))
 
 
 def empty_notindexed_editor_tables(language):

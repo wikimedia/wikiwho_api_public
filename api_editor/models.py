@@ -2,10 +2,13 @@ from django.db import models
 
 from base.models import BaseModel
 
+import architect
+
 
 class EditorData(BaseModel):
     # Use editor id and name separately because indexing on int is faster
-    editor_name = models.CharField(max_length=85, default='')  # max_length='0|' + 85
+    editor_name = models.CharField(
+        max_length=85, default='')  # max_length='0|' + 85
     adds = models.IntegerField(blank=False)
     adds_surv_48h = models.IntegerField(blank=False)
     adds_persistent = models.IntegerField(blank=False)
@@ -20,7 +23,6 @@ class EditorData(BaseModel):
     reins_surv_48h = models.IntegerField(blank=False)
     reins_persistent = models.IntegerField(blank=False)
     reins_stopword_count = models.IntegerField(blank=False, default=0)
-
 
     @property
     def language(self):
@@ -46,17 +48,16 @@ class EditorDataEnNotIndexed(EditorDataNotIndexed):
     pass
 
 
+@architect.install('partition', type='range', subtype='date', constraint='year', column='year_month')
 class EditorDataEn(EditorDataNotIndexed):
     pass
-
-    # class Meta:
-    #     ordering = ['year_month', 'editor_id']
 
 
 class EditorDataEuNotIndexed(EditorDataNotIndexed):
     pass
 
 
+@architect.install('partition', type='range', subtype='date', constraint='year', column='year_month')
 class EditorDataEu(EditorDataNotIndexed):
     pass
 
@@ -65,6 +66,7 @@ class EditorDataDeNotIndexed(EditorDataNotIndexed):
     pass
 
 
+@architect.install('partition', type='range', subtype='date', constraint='year', column='year_month')
 class EditorDataDe(EditorDataNotIndexed):
     pass
 
@@ -73,6 +75,7 @@ class EditorDataEsNotIndexed(EditorDataNotIndexed):
     pass
 
 
+@architect.install('partition', type='range', subtype='date', constraint='year', column='year_month')
 class EditorDataEs(EditorDataNotIndexed):
     pass
 
@@ -81,5 +84,6 @@ class EditorDataTrNotIndexed(EditorDataNotIndexed):
     pass
 
 
+@architect.install('partition', type='range', subtype='date', constraint='year', column='year_month')
 class EditorDataTr(EditorDataNotIndexed):
     pass

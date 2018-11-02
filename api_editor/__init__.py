@@ -1,0 +1,1 @@
+default_app_config = 'api_editor.apps.ApiEditorConfig'

@@ -51,3 +51,4 @@ fabric3
 #fabric
 
 django-cors-headers
+architect
