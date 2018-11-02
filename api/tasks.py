@@ -63,6 +63,7 @@ def process_article(self, language, page_title):
         if e.code =='40':
             # 40: Non-pickled articles are ignored during staging
             self.update_state(state="IGNORED")
+            return e.message
         elif e.code in ['10', '11']:
             # if wp errors
             # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
@@ -86,6 +87,7 @@ def process_article_user(self, language, page_title, page_id=None, revision_id=N
         if e.code =='40':
             # 40: Non-pickled articles are ignored during staging
             self.update_state(state="IGNORED")
+            return e.message
         elif e.code in ['10', '11']:
             # if wp errors
             # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
@@ -108,6 +110,7 @@ def process_article_long(self, language, page_title, page_id=None, revision_id=N
         if e.code =='40':
             # 40: Non-pickled articles are ignored during staging
             self.update_state(state="IGNORED")
+            return e.message
         elif e.code in ['10', '11']:
             # if wp errors
             # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
