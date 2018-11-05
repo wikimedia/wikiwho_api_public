@@ -27,7 +27,6 @@ def process_article_task(language, page_title, page_id=None, revision_id=None,
         if e.code in ['03', '00']:
             # 03: if article is already under process, simply skip it. TODO wait and start a new task?
             # 00: ignore 'article doesnt exist' errors
-            # 40: Non-pickled articles are ignored during staging
             return False
         raise e
     except SoftTimeLimitExceeded as e:
