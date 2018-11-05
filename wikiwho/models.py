@@ -1,3 +1,5 @@
+
+"""
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.conf import settings
@@ -117,7 +119,6 @@ class EditorDataTr(EditorDataNotIndexed):
     pass
 
 
-"""
 class Revision(BaseModel):
     id = models.IntegerField(primary_key=True, blank=False, null=False, editable=False, help_text='Wikipedia revision id')
     article = models.ForeignKey(Article, blank=False, null=False, related_name='revisions')
