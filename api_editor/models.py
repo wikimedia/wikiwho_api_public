@@ -36,7 +36,7 @@ class EditorData(BaseModel):
 
 
 class EditorDataNotIndexed(EditorData):
-    article_id = models.IntegerField(blank=False, null=False)
+    page_id = models.IntegerField(blank=False, null=False)
     editor_id = models.IntegerField(blank=False, null=False)
     year_month = models.DateField(blank=False, null=False)
 

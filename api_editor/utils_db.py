@@ -11,7 +11,6 @@ from api.handler import WPHandler, WPHandlerException
 from api.utils_pickles import pickle_load
 from api.utils import Timeout
 
-from wikiwho.models import Article
 from api_editor.models import (
     EditorDataEnNotIndexed, EditorDataEn,
     EditorDataEuNotIndexed, EditorDataEu,
@@ -65,11 +64,6 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     with open(join(dirname(realpath(__file__)), 'stop_word_list.txt'), 'r') as f:
         stopword_set = set(f.read().splitlines())
 
-    # update or create the article
-    article, created = Article.objects.update_or_create(page_id=wikiwho.page_id, language=language,
-                                                        defaults={'title': wikiwho.title,
-                                                                  'spam_ids': wikiwho.spam_ids,
-                                                                  'rvcontinue': wikiwho.rvcontinue})
     # 48 hours
     seconds_limit = 172800
 
@@ -242,7 +236,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
         # create query
         insert_query = """
             INSERT INTO api_editor_{} 
-                (article_id, editor_id, editor_name, year_month, 
+                (page_id, editor_id, editor_name, year_month, 
                 adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
                 dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
                 reins, reins_surv_48h, reins_persistent, reins_stopword_count) 
@@ -270,7 +264,7 @@ def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=Fal
             part_table = '{}_y{}'.format(master_table, year)
 
             #  drop indexes in the last partition
-            cursor.execute("DROP INDEX IF EXISTS {}_article_id;".format(part_table))
+            cursor.execute("DROP INDEX IF EXISTS {}_page_id;".format(part_table))
             cursor.execute("DROP INDEX IF EXISTS {}_year_month;".format(part_table))
             cursor.execute("DROP INDEX IF EXISTS {}_editor_id_ym;".format(part_table))
 
@@ -279,13 +273,13 @@ def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=Fal
             EDITOR_MODEL[language][0].__name__.lower())
         insert_query = """
         INSERT INTO {} 
-        (article_id, editor_id, year_month, editor_name, 
+        (page_id, editor_id, year_month, editor_name, 
             adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
             dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
             reins, reins_surv_48h, reins_persistent, reins_stopword_count) 
         (
           SELECT 
-            article_id, editor_id, year_month, editor_name,
+            page_id, editor_id, year_month, editor_name,
             adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
             dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
             reins, reins_surv_48h, reins_persistent, reins_stopword_count
@@ -298,7 +292,7 @@ def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=Fal
         for year in range(from_ym.year, to_ym.year):
             part_table = '{}_y{}'.format(master_table, year + 1)
             # # re-create indexes
-            cursor.execute("CREATE INDEX {}_article_id ON {} USING btree (article_id);".format(
+            cursor.execute("CREATE INDEX {}_page_id ON {} USING btree (page_id);".format(
                 part_table, part_table))
             cursor.execute("CREATE INDEX {}_year_month ON {} USING btree (year_month);".format(
                 part_table, part_table))
