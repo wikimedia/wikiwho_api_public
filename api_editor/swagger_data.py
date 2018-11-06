@@ -158,7 +158,7 @@ custom_data = {
                                 'type': 'integer'},
                                ],
                 'responses': responses,
-                'tags': ['editor', 'editions'],
+                'tags': ['editor'],
                 'summary': 'Get the total of edition per page of an editor'
             }
             },

@@ -72,7 +72,7 @@ class EditorApiView(LoggingMixin, APIView):
                                          'adds', 'adds_surv_48h', 'adds_persistent', 'adds_stopword_count',
                                          'dels', 'dels_surv_48h', 'dels_persistent', 'dels_stopword_count',
                                          'reins', 'reins_surv_48h', 'reins_persistent', 'reins_stopword_count'
-                                         ).filter(article_id=self.page_id)
+                                         ).filter(page_id=self.page_id)
 
         response['editions'] = list(qs)
         response['page_id'] = self.page_id
