@@ -255,8 +255,17 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
 
 def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=False):
     master_table = "api_editor_{}".format(
-        EDITOR_MODEL[language][1].__name__.lower())
-    
+        EDITOR_MODEL[language][1].__name__.lower()) 
+    not_indexed_table = "api_editor_{}".format(
+        EDITOR_MODEL[language][0].__name__.lower())
+
+
+    # let's create an index on the non index table so the selects of the inserts
+    # are faster
+    index_not_index = """
+        CREATE INDEX IF NOT EXIST {}_year_month 
+        ON {} USING btree (year_month);
+    """.format(not_indexed_table, not_indexed_table)
 
     with connection.cursor() as cursor:
 
@@ -268,29 +277,38 @@ def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=Fal
             cursor.execute("DROP INDEX IF EXISTS {}_year_month;".format(part_table))
             cursor.execute("DROP INDEX IF EXISTS {}_editor_id_ym;".format(part_table))
 
-        # move the data to the partition tables
-        not_indexed_table = "api_editor_{}".format(
-            EDITOR_MODEL[language][0].__name__.lower())
-        insert_query = """
-        INSERT INTO {} 
-        (page_id, editor_id, year_month, editor_name, 
-            adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
-            dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
-            reins, reins_surv_48h, reins_persistent, reins_stopword_count) 
-        (
-          SELECT 
-            page_id, editor_id, year_month, editor_name,
-            adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
-            dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
-            reins, reins_surv_48h, reins_persistent, reins_stopword_count
-          FROM {} 
-        );
-        """.format(master_table, not_indexed_table)
-        cursor.execute(insert_query)
+
+            # create the table if not exists
+            new_table_query = """
+                CREATE TABLE IF NOT EXISTS {} 
+                (CHECK ( year_month >= '{}-01-01'::DATE AND year_month <= '{}-12-31'::DATE )) 
+                INHERITS ({});
+                """.format(part_table, year, year, master_table)
+            cursor.execute(new_table_query)
 
 
-        for year in range(from_ym.year, to_ym.year):
-            part_table = '{}_y{}'.format(master_table, year + 1)
+
+            # move the data to the partition tables
+            insert_query = """
+                INSERT INTO {} 
+                (page_id, editor_id, year_month, editor_name, 
+                    adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
+                    dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
+                    reins, reins_surv_48h, reins_persistent, reins_stopword_count) 
+                (
+                  SELECT 
+                    page_id, editor_id, year_month, editor_name,
+                    adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
+                    dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
+                    reins, reins_surv_48h, reins_persistent, reins_stopword_count
+                  FROM {}
+                  WHERE (year_month >= '{}-01-01'::DATE AND year_month <= '{}-12-31'::DATE )
+                );
+            """.format(part_table, not_indexed_table, year, year)
+            cursor.execute(insert_query)
+
+
+            part_table = '{}_y{}'.format(master_table, year)
             # # re-create indexes
             cursor.execute("CREATE INDEX {}_page_id ON {} USING btree (page_id);".format(
                 part_table, part_table))
