@@ -27,4 +27,4 @@ class Timer():
 
     def __exit__(self, *a):
         t2 = process_time()
-        print(f'{self.name}: {t2 - self.t1}')
+        print(str(self.name) + ': ' + str(t2 - self.t1))

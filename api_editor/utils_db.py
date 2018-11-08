@@ -10,6 +10,7 @@ from django.db.utils import ProgrammingError
 from api.handler import WPHandler, WPHandlerException
 from api.utils_pickles import pickle_load
 from api.utils import Timeout
+from api_editor.utils import Timer
 
 from api_editor.models import (
     EditorDataEnNotIndexed, EditorDataEn,
@@ -39,6 +40,7 @@ __REINS_SW__ = 11
 
 
 def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
+
     try:
         wikiwho = pickle_load(pickle_path)
         title = wikiwho.title
@@ -258,25 +260,26 @@ def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=Fal
         EDITOR_MODEL[language][1].__name__.lower()) 
     not_indexed_table = "api_editor_{}".format(
         EDITOR_MODEL[language][0].__name__.lower())
-
-
-    # let's create an index on the non index table so the selects of the inserts
-    # are faster
-    index_not_index = """
-        CREATE INDEX IF NOT EXIST {}_year_month 
-        ON {} USING btree (year_month);
-    """.format(not_indexed_table, not_indexed_table)
-
+    
     with connection.cursor() as cursor:
 
+        # let's create an index on the non index table so the selects of the inserts
+        # are faster
+        index_notindexed = """
+            CREATE INDEX IF NOT EXISTS {}_year_month 
+            ON {} USING btree (year_month);
+        """.format(not_indexed_table, not_indexed_table)
+
+        cursor.execute(index_notindexed)
+
         for year in range(from_ym.year, to_ym.year + 1):
+        
             part_table = '{}_y{}'.format(master_table, year)
 
             #  drop indexes in the last partition
             cursor.execute("DROP INDEX IF EXISTS {}_page_id;".format(part_table))
             cursor.execute("DROP INDEX IF EXISTS {}_year_month;".format(part_table))
             cursor.execute("DROP INDEX IF EXISTS {}_editor_id_ym;".format(part_table))
-
 
             # create the table if not exists
             new_table_query = """
@@ -285,8 +288,6 @@ def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=Fal
                 INHERITS ({});
                 """.format(part_table, year, year, master_table)
             cursor.execute(new_table_query)
-
-
 
             # move the data to the partition tables
             insert_query = """
@@ -309,7 +310,8 @@ def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=Fal
 
 
             part_table = '{}_y{}'.format(master_table, year)
-            # # re-create indexes
+
+            # re-create indexes
             cursor.execute("CREATE INDEX {}_page_id ON {} USING btree (page_id);".format(
                 part_table, part_table))
             cursor.execute("CREATE INDEX {}_year_month ON {} USING btree (year_month);".format(
@@ -317,6 +319,19 @@ def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=Fal
             cursor.execute("CREATE INDEX {}_editor_id_ym ON {} USING btree (editor_id, year_month);".
                            format(part_table, part_table))
 
-
 def empty_notindexed_editor_tables(language):
+
     EDITOR_MODEL[language][0].objects.all().delete()
+
+    not_indexed_table = "api_editor_{}".format(
+        EDITOR_MODEL[language][0].__name__.lower())
+
+    with connection.cursor() as cursor:
+
+        # remove index so inserts are fast
+        unindex_notindexed = "DROP INDEX IF EXISTS {}_year_month".format(
+            not_indexed_table)
+
+        cursor.execute(unindex_notindexed)
+        connection.commit()
+
