@@ -192,7 +192,7 @@ class WPHandler(object):
         params = {'pageids': self.page_id, 'action': 'query', 'prop': 'revisions',
                   'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
                   'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer',
-                  'rvendid': self.revision_ids[-1]}
+                  'rvendid': self.revision_ids[-1], 'rvslots': '*'}
         while True:
             # continue downloading as long as we reach to the given rev_id limit
             if rvcontinue != '0' and rvcontinue != '1':
