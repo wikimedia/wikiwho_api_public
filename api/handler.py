@@ -79,8 +79,9 @@ class WPHandler(object):
             d = get_latest_revision_data(self.language, self.page_id, self.article_title, self.revision_id)
             self.latest_revision_id = d['latest_revision_id']
             self.page_id = d['page_id']
-            if (LongFailedArticle.objects.filter(page_id=self.page_id, language=self.language).exists() or 
-               RecursionErrorArticle.objects.filter(page_id=self.page_id, language=self.language).exists()):
+            if not settings.TESTING and (
+                (LongFailedArticle.objects.filter(page_id=self.page_id, language=self.language).exists() or 
+                RecursionErrorArticle.objects.filter(page_id=self.page_id, language=self.language).exists())):
                 raise WPHandlerException(MESSAGES['never_finished_article'][0],
                                          MESSAGES['never_finished_article'][1]) 
             self.saved_article_title = d['article_db_title']
@@ -92,7 +93,8 @@ class WPHandler(object):
         self.pickle_path = "{}/{}.p".format(pickle_folder, self.page_id)
         self.already_exists = os.path.exists(self.pickle_path)
         if not self.already_exists:
-            if not (self.is_user_request or settings.SERVER_LEVEL == settings.LEVEL_PRODUCTION):
+            if not settings.TESTING and (
+                not (self.is_user_request or settings.SERVER_LEVEL == settings.LEVEL_PRODUCTION)):
                  raise WPHandlerException(MESSAGES['ignore_article_in_staging'][0].format(self.saved_article_title),
                                           MESSAGES['ignore_article_in_staging'][1])
 
