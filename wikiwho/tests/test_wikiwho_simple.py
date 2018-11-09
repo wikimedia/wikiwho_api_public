@@ -89,7 +89,7 @@ def pytest_generate_tests(metafunc):
 
 
 def _test_json(wp, temp_folder, article_title, extended_test=True, from_db=False):
-    test_json_folder = '{}/tests_ignore/jsons/after_rvendid'.\
+    test_json_folder = '{}/tests_ignore/jsons/after_wikipedia_editor_problem'.\
         format(dirname(dirname(dirname(realpath(__file__)))))
 
     v = WikiwhoView()
@@ -287,21 +287,6 @@ class TestWikiwho:
             wp.handle([revision_id], is_api_call=False)
         _test_json(wp, temp_folder['tmp_test_json_output'], article_title)
 
-    @pytest.mark.django_db
-    def test_json_output_db(self, temp_folder, article_title, revision_id):
-        """
-        Tests json outputs of given revisions of articles in gold standard. Revision data is taken from wp api and
-        processed data is stored in database.
-        If there are unexpected differences in jsons, authorship of each token in gold standard should be
-        checked by running test_authorship or manually.
-        :param revision_id: Revision id where authorship of token in gold standard is tested.
-        """
-        # TODO test
-        with WPHandler(article_title, pickle_folder=temp_folder['pickle_folder'],
-                       save_tables=('article', 'revision', 'token', )) as wp:
-            wp.handle([revision_id], is_api_call=False)
-        _test_json(wp, temp_folder['tmp_test_json_output'], article_title, from_db=True)
-
     def test_json_output_xml(self, temp_folder, article_title, revision_id):
         """
         Tests json outputs of given revisions of articles in gold standard. Revision data is taken from wp xml dumps and
@@ -312,19 +297,6 @@ class TestWikiwho:
         :param revision_id: Revision id where authorship of token in gold standard is tested.
         """
         _test_json_from_xml(temp_folder, article_title, revision_id, save_tables=())
-
-    @pytest.mark.django_db
-    def test_json_output_xml_db(self, temp_folder, article_title, revision_id):
-        """
-        Tests json outputs of given revisions of articles in gold standard. Revision data is taken from wp xml dumps and
-        processed data is stored in database.
-        If there are unexpected differences in jsons, authorship of each token in gold standard should be
-        checked by running test_authorship or manually.
-        The xml file dumps taken from here: https://dumps.wikimedia.org/enwiki/20161101/
-        :param revision_id: Revision id where authorship of token in gold standard is tested.
-        """
-        # TODO test
-        _test_json_from_xml(temp_folder, article_title, revision_id, save_tables=('article', 'revision', 'token', ))
 
     def test_continue_logic(self, temp_folder, article_title, revision_id_start, revision_id_end):
         """
@@ -338,26 +310,6 @@ class TestWikiwho:
 
         # continue creating revisions of this article until revision_id_end
         with WPHandler(article_title, pickle_folder=temp_folder['pickle_folder']) as wp:
-            wp.handle([revision_id_end], is_api_call=False)
-        _test_json(wp, temp_folder['tmp_test_continue_logic'], article_title)
-        assert wp.already_exists is True
-
-    @pytest.mark.django_db
-    def test_continue_logic_db(self, temp_folder, article_title, revision_id_start, revision_id_end):
-        """
-        :param revision_id_start: Correct revision id of first token of article in gold standard.
-        :param revision_id_end: Revision id where authorship of token in gold standard is tested.
-        """
-        # TODO update and finish
-        # first create article and revisions until revision_id_start
-        with WPHandler(article_title, pickle_folder=temp_folder['pickle_folder'],
-                       save_tables=('article', 'revision', 'token', )) as wp:
-            wp.handle([revision_id_start], is_api_call=False)
-        assert wp.already_exists is False
-
-        # continue creating revisions of this article until revision_id_end
-        with WPHandler(article_title, pickle_folder=temp_folder['pickle_folder'],
-                       save_tables=('article', 'revision', 'token', )) as wp:
             wp.handle([revision_id_end], is_api_call=False)
         _test_json(wp, temp_folder['tmp_test_continue_logic'], article_title)
         assert wp.already_exists is True
