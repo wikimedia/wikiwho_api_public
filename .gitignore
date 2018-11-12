@@ -9,6 +9,7 @@ static/
 # django settings
 wikiwho_api/settings.py
 wikiwho_api/settings_test.py
+wikiwho_api/settings_testenv.py
 
 # local
 master_old_test/
