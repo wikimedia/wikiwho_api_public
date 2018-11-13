@@ -16,65 +16,124 @@ headers = {
 }
 
 definitions = {}
-definitions["edition"] = {
-    "allOf": [
-        {"required": ["page_id"], 
-         "properties": {"page_id": {"type": "integer"}}},
+#########################################################
+###### This is OK, but uses too much bandwidth  #########
+#########################################################
+# definitions["edition_json"] = {
+#     "allOf": [
+#         {"required": ["page_id"],
+#          "properties": {"page_id": {"type": "integer"}}},
 
-        {"required": ["adds"], 
-         "properties": {"adds": {"type": "integer"}}},
-        {"required": ["adds_surv_48h"], 
-         "properties": {"adds_surv_48h": {"type": "integer"}}},
-        {"required": ["adds_persistent"], 
-         "properties": {"adds_persistent": {"type": "integer"}}},
-        {"required": ["adds_stopword_count"], 
-         "properties": {"adds_stopword_count": {"type": "integer"}}},
+#         {"required": ["adds"],
+#          "properties": {"adds": {"type": "integer"}}},
+#         {"required": ["adds_surv_48h"],
+#          "properties": {"adds_surv_48h": {"type": "integer"}}},
+#         {"required": ["adds_persistent"],
+#          "properties": {"adds_persistent": {"type": "integer"}}},
+#         {"required": ["adds_stopword_count"],
+#          "properties": {"adds_stopword_count": {"type": "integer"}}},
 
-        {"required": ["dels"], 
-         "properties": {"dels": {"type": "integer"}}},
-        {"required": ["dels_surv_48h"], 
-         "properties": {"dels_surv_48h": {"type": "integer"}}},
-        {"required": ["dels_persistent"], 
-         "properties": {"dels_persistent": {"type": "integer"}}},
-        {"required": ["dels_stopword_count"], 
-         "properties": {"dels_stopword_count": {"type": "integer"}}},
+#         {"required": ["dels"],
+#          "properties": {"dels": {"type": "integer"}}},
+#         {"required": ["dels_surv_48h"],
+#          "properties": {"dels_surv_48h": {"type": "integer"}}},
+#         {"required": ["dels_persistent"],
+#          "properties": {"dels_persistent": {"type": "integer"}}},
+#         {"required": ["dels_stopword_count"],
+#          "properties": {"dels_stopword_count": {"type": "integer"}}},
 
-        {"required": ["reins"], 
-         "properties": {"reins": {"type": "integer"}}},
-        {"required": ["reins_surv_48h"], 
-         "properties": {"reins_surv_48h": {"type": "integer"}}},
-        {"required": ["reins_persistent"], 
-         "properties": {"reins_persistent": {"type": "integer"}}},
-        {"required": ["reins_stopword_count"], "properties": {
-            "reins_stopword_count": {"type": "integer"}}},
+#         {"required": ["reins"],
+#          "properties": {"reins": {"type": "integer"}}},
+#         {"required": ["reins_surv_48h"],
+#          "properties": {"reins_surv_48h": {"type": "integer"}}},
+#         {"required": ["reins_persistent"],
+#          "properties": {"reins_persistent": {"type": "integer"}}},
+#         {"required": ["reins_stopword_count"], "properties": {
+#             "reins_stopword_count": {"type": "integer"}}},
 
 
-    ],
+#     ],
+# }
+#########################################################
+#########################################################
+#########################################################
+
+
+
+########################################################################
+###### This would be ideal but it is not supported by OpenAPI  #########
+########################################################################
+#'editor_id',
+#'adds', 'adds_surv_48h', 'adds_persistent', 'adds_stopword_count',
+#'dels', 'dels_surv_48h', 'dels_persistent', 'dels_stopword_count',
+#'reins', 'reins_surv_48h', 'reins_persistent', 'reins_stopword_count'
+
+# definitions["editions_columns"] = {
+#     "type": "array",
+#     "items": {
+#         "type": [
+#             "string",
+#             "string", "string", "string", "string",
+#             "string", "string", "string", "string",
+#             "string", "string", "string", "string"
+#             ]
+#     }
+# }
+
+# definitions["editions_array"] = {
+#     "type": "array",
+#     "items": {
+#         "type": [
+#             "integer",
+#             "integer", "integer", "integer", "integer",
+#             "integer", "integer", "integer", "integer",
+#             "integer", "integer", "integer", "integer"
+#             ],
+#         "format": [
+#             "int64",
+#             "int64", "int64", "int64", "int64",
+#             "int64", "int64", "int64", "int64",
+#             "int64", "int64", "int64", "int64"
+#             ]
+#     }
+# }
+########################################################################
+########################################################################
+
+
+############################################
+######### This is poor, but its fast #######
+############################################
+definitions["editions_columns"] = {
+    "type": "array",
+    "items": {
+        "type": "string"
+    }
 }
 
+definitions["editions_types"] = {
+    "type": "array",
+    "items": {
+        "type": "string"
+    }
+}
 
-# definitions["edition_alt"] = {
-#     'required': [
-#             'page_id',
-#             'adds','adds_surv_48h','adds_persistent','adds_stopword_count',
-#             'dels','dels_surv_48h','dels_persistent','dels_stopword_count',
-#             'reins','reins_surv_48h','reins_persistent','reins_stopword_count'],
-#      'properties': {
-#             'page_id': {'type': 'integer'},
-#             'adds': {'type': 'integer'},
-#             'adds_surv_48h': {'type': 'integer'},
-#             'adds_persistent': {'type': 'integer'},
-#             'adds_stopword_count': {'type': 'integer'},
-#             'dels': {'type': 'integer'},
-#             'dels_surv_48h': {'type': 'integer'},
-#             'dels_persistent': {'type': 'integer'},
-#             'dels_stopword_count': {'type': 'integer'},
-#             'reins': {'type': 'integer'},
-#             'reins_surv_48h': {'type': 'integer'},
-#             'reins_persistent': {'type': 'integer'},
-#             'reins_stopword_count': {'type': 'integer'},
-#         }
-#     },
+definitions["editions_formats"] = {
+    "type": "array",
+    "items": {
+        "type": "string"
+    }
+}
+
+definitions["editions_array"] = {
+    "type": "array",
+    "items": {
+        "type": "object"
+    }
+}
+############################################
+############################################
+
 
 
 definitions["Editor"] = {
@@ -91,10 +150,26 @@ definitions["Editor"] = {
             "example": 189253
         },
 
-        "editions": {
+        "editions_columns": {
             "type": "array",
-            "items": definitions['edition']
+            "items": definitions['editions_columns']
         },
+
+        "editions_types": {
+            "type": "array",
+            "items": definitions['editions_types']
+        },
+
+        "editions_formats": {
+            "type": "array",
+            "items": definitions['editions_formats']
+        },
+
+        "editions_data": {
+            "type": "array",
+            "items": definitions['editions_array']
+        },
+
 
         "success": {
             "type": "boolean",

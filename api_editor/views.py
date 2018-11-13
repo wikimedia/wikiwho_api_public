@@ -64,18 +64,27 @@ class EditorApiView(LoggingMixin, APIView):
     def get(self, request, version, page_id):  # , page_id=None):
         response = {}
 
-        # EditorDataEn.objects().filter(page_id=self.page_id)
-
+        # there is a bug related to the page_id
         self.page_id = int(page_id)
 
-        qs = EditorDataEn.objects.values('editor_id',
-                                         'adds', 'adds_surv_48h', 'adds_persistent', 'adds_stopword_count',
-                                         'dels', 'dels_surv_48h', 'dels_persistent', 'dels_stopword_count',
-                                         'reins', 'reins_surv_48h', 'reins_persistent', 'reins_stopword_count'
-                                         ).filter(page_id=self.page_id)
+        cols = ['year_month', 'editor_id',
+                'adds', 'adds_surv_48h', 'adds_persistent', 'adds_stopword_count',
+                'dels', 'dels_surv_48h', 'dels_persistent', 'dels_stopword_count',
+                'reins', 'reins_surv_48h', 'reins_persistent', 'reins_stopword_count']
 
-        response['editions'] = list(qs)
-        response['page_id'] = self.page_id
         response['success'] = True
+        response['page_id'] = self.page_id
+        response['editions_columns'] = cols
+        response['editions_types'] = ['string', 'integer',
+                'integer', 'integer', 'integer', 'integer',
+                'integer', 'integer', 'integer', 'integer',
+                'integer', 'integer', 'integer', 'integer']
+        response['editions_formats'] = ['date', 'int64',
+                'int64', 'int64', 'int64', 'int64',
+                'int64', 'int64', 'int64', 'int64',
+                'int64', 'int64', 'int64', 'int64']
+
+        response['editions_data'] = EditorDataEn.objects.values(
+            *cols).filter(page_id=self.page_id).values_list(*cols)
 
         return Response(response, status=status.HTTP_200_OK)
