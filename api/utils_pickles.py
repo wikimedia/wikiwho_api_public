@@ -7,6 +7,7 @@ import errno
 from os.path import getsize
 
 from six.moves import cPickle as pickle
+from six.moves.cPickle import UnpicklingError
 
 from django.conf import settings
 from django.utils.translation import get_language
@@ -79,13 +80,13 @@ def pickle_load(pickle_path):
             with OpenFileLock(pickle_path, 'rb', timeout=settings.PICKLE_OPEN_TIMEOUT) as f:
                 obj = pickle.load(f)
             return obj
-        except EOFError:  # TODO should we also catch BlockingIOError and retry?
+        except (EOFError,  UnpicklingError) as e:  # TODO should we also catch BlockingIOError and retry?
             # if EOFError, retry
             # EOFError Ran out of input
             # EOFError usually happens when pickle file is empty (size 0)
             time.sleep(0.1)
             if not retries:
-                raise
+                raise e
 
 
 def pickle_load_only_id(page_id, language=None):

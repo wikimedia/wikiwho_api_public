@@ -15,7 +15,7 @@ from deployment.gunicorn_config import timeout as gunicorn_timeout
 from deployment.celery_config import user_task_soft_time_limit
 from wikiwho.wikiwho_simple import Wikiwho
 from .utils import get_latest_revision_data, create_wp_session, Timeout, generate_rvcontinue, get_wp_api_url
-from .utils_pickles import pickle_dump, pickle_load, get_pickle_folder
+from .utils_pickles import pickle_dump, pickle_load, get_pickle_folder, UnpicklingError
 from .models import RecursionErrorArticle, LongFailedArticle
 from .messages import MESSAGES
 
@@ -105,7 +105,7 @@ class WPHandler(object):
         else:
             try:
                 self.wikiwho = pickle_load(self.pickle_path)
-            except EOFError:
+            except (EOFError,  UnpicklingError) as e: 
                 # create a new pickle, this one will overwrite the problematic one
                 self.wikiwho = Wikiwho(self.saved_article_title)
                 self.wikiwho.page_id = self.page_id
