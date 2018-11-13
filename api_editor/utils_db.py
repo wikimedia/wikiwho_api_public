@@ -8,7 +8,7 @@ from django.utils.dateparse import parse_datetime, datetime_re
 from django.db.utils import ProgrammingError
 
 from api.handler import WPHandler, WPHandlerException
-from api.utils_pickles import pickle_load
+from api.utils_pickles import pickle_load, UnpicklingError
 from api.utils import Timeout
 from api_editor.utils import Timer
 
@@ -44,7 +44,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     try:
         wikiwho = pickle_load(pickle_path)
         title = wikiwho.title
-    except EOFError:
+    except (EOFError,  UnpicklingError) as e: 
         title = None
         update = True
         # TODO log correpted pickle and dont set upgrade flag
