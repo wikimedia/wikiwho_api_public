@@ -16,44 +16,45 @@ headers = {
 }
 
 definitions = {}
-#########################################################
-###### This is OK, but uses too much bandwidth  #########
-#########################################################
-# definitions["edition_json"] = {
-#     "allOf": [
-#         {"required": ["page_id"],
-#          "properties": {"page_id": {"type": "integer"}}},
+##################################################################
+###### This is OK, but it mighte use too much bandwidth  #########
+##################################################################
+definitions["edition"] = {
+    "allOf": [
+        {"required": ["editor_id"],
+         "properties": {"editor_id": {"type": "integer"}}},
+        {"required": ["year_month"],
+         "properties": {"year_month": {"type": "string"}}},
 
-#         {"required": ["adds"],
-#          "properties": {"adds": {"type": "integer"}}},
-#         {"required": ["adds_surv_48h"],
-#          "properties": {"adds_surv_48h": {"type": "integer"}}},
-#         {"required": ["adds_persistent"],
-#          "properties": {"adds_persistent": {"type": "integer"}}},
-#         {"required": ["adds_stopword_count"],
-#          "properties": {"adds_stopword_count": {"type": "integer"}}},
+        {"required": ["adds"],
+         "properties": {"adds": {"type": "integer"}}},
+        {"required": ["adds_surv_48h"],
+         "properties": {"adds_surv_48h": {"type": "integer"}}},
+        {"required": ["adds_persistent"],
+         "properties": {"adds_persistent": {"type": "integer"}}},
+        {"required": ["adds_stopword_count"],
+         "properties": {"adds_stopword_count": {"type": "integer"}}},
 
-#         {"required": ["dels"],
-#          "properties": {"dels": {"type": "integer"}}},
-#         {"required": ["dels_surv_48h"],
-#          "properties": {"dels_surv_48h": {"type": "integer"}}},
-#         {"required": ["dels_persistent"],
-#          "properties": {"dels_persistent": {"type": "integer"}}},
-#         {"required": ["dels_stopword_count"],
-#          "properties": {"dels_stopword_count": {"type": "integer"}}},
+        {"required": ["dels"],
+         "properties": {"dels": {"type": "integer"}}},
+        {"required": ["dels_surv_48h"],
+         "properties": {"dels_surv_48h": {"type": "integer"}}},
+        {"required": ["dels_persistent"],
+         "properties": {"dels_persistent": {"type": "integer"}}},
+        {"required": ["dels_stopword_count"],
+         "properties": {"dels_stopword_count": {"type": "integer"}}},
 
-#         {"required": ["reins"],
-#          "properties": {"reins": {"type": "integer"}}},
-#         {"required": ["reins_surv_48h"],
-#          "properties": {"reins_surv_48h": {"type": "integer"}}},
-#         {"required": ["reins_persistent"],
-#          "properties": {"reins_persistent": {"type": "integer"}}},
-#         {"required": ["reins_stopword_count"], "properties": {
-#             "reins_stopword_count": {"type": "integer"}}},
+        {"required": ["reins"],
+         "properties": {"reins": {"type": "integer"}}},
+        {"required": ["reins_surv_48h"],
+         "properties": {"reins_surv_48h": {"type": "integer"}}},
+        {"required": ["reins_persistent"],
+         "properties": {"reins_persistent": {"type": "integer"}}},
+        {"required": ["reins_stopword_count"], "properties": {
+          "reins_stopword_count": {"type": "integer"}}},
 
-
-#     ],
-# }
+    ],
+}
 #########################################################
 #########################################################
 #########################################################
@@ -101,31 +102,31 @@ definitions = {}
 ########################################################################
 
 
-############################################
-######### This is poor, but its fast #######
-############################################
-definitions["editions_columns"] = {
+#######################################################
+######### This is poor, but it should be faster #######
+#######################################################
+definitions["editordata_columns"] = {
     "type": "array",
     "items": {
         "type": "string"
     }
 }
 
-definitions["editions_types"] = {
+definitions["editordata_types"] = {
     "type": "array",
     "items": {
         "type": "string"
     }
 }
 
-definitions["editions_formats"] = {
+definitions["editordata_formats"] = {
     "type": "array",
     "items": {
         "type": "string"
     }
 }
 
-definitions["editions_array"] = {
+definitions["editordata_array"] = {
     "type": "array",
     "items": {
         "type": "object"
@@ -136,11 +137,14 @@ definitions["editions_array"] = {
 
 
 
-definitions["Editor"] = {
+definitions["EditorData"] = {
     "required": [
         "page_id",
-        "editions",
-        "success"
+        "success",
+        "editordata_columns",
+        "editordata_types",
+        "editordata_formats",
+        "editordata"
     ],
     "properties": {
 
@@ -150,40 +154,82 @@ definitions["Editor"] = {
             "example": 189253
         },
 
-        "editions_columns": {
-            "type": "array",
-            "items": definitions['editions_columns']
-        },
-
-        "editions_types": {
-            "type": "array",
-            "items": definitions['editions_types']
-        },
-
-        "editions_formats": {
-            "type": "array",
-            "items": definitions['editions_formats']
-        },
-
-        "editions_data": {
-            "type": "array",
-            "items": definitions['editions_array']
-        },
-
-
         "success": {
             "type": "boolean",
             "example": True
+        },
+
+        "editordata_columns": {
+            "type": "array",
+            "items": definitions['editordata_columns']
+        },
+
+        "editordata_types": {
+            "type": "array",
+            "items": definitions['editordata_types']
+        },
+
+        "editordata_formats": {
+            "type": "array",
+            "items": definitions['editordata_formats']
+        },
+
+        "editordata": {
+            "type": "array",
+            "items": definitions['editordata_array']
         },
 
 
     },
 }
 
-responses = {
+definitions["Editor"] = {
+    "required": [
+        "page_id",
+        "success",
+        "editions"
+    ],
+    "properties": {
+
+        "page_id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 189253
+        },
+
+        "success": {
+            "type": "boolean",
+            "example": True
+        },
+
+        "editions": {
+            "type": "array",
+            "items": definitions['edition']
+        },
+    },
+}
+
+
+responses_editor = {
     '200': {
         'description': 'OK',
         'schema': definitions['Editor']
+    },
+    '400': {
+        'description': 'BAD REQUEST',
+    },
+    # '408': {
+    #     'description': 'REQUEST TIMEOUT',
+    # },
+    '503': {
+        'description': 'WP SERVICE UNAVAILABLE',
+    },
+}
+
+responses_editordata = {
+    '200': {
+        'description': 'OK',
+        'schema': definitions['EditorData']
     },
     '400': {
         'description': 'BAD REQUEST',
@@ -232,29 +278,25 @@ custom_data = {
                                 'required': True,
                                 'type': 'integer'},
                                ],
-                'responses': responses,
+                'responses': responses_editor,
                 'tags': ['editor'],
                 'summary': 'Get the total of edition per page of an editor'
             }
             },
-         # '/{page_id}/{page_id}/':
-         #    {'get': {'description': 'Outputs the extended HTML of the given revision.',
-         #             'produces': ['application/json'],
-         #             'parameters': [{'description': 'The title of the requested article',
-         #                             'in': 'path',
-         #                             'name': 'page_title',
-         #                             'required': True,
-         #                             'type': 'string'},
-         #                            {'description': 'Revision ID to get extended html for',
-         #                             'in': 'path',
-         #                             'name': 'rev_id',
-         #                             'required': True,
-         #                             'type': 'integer'},
-         #                            ],
-         #             'responses': responses,
-         #             'tags': ['Extended html'],
-         #             'summary': 'Get the extended html of a specific revision of an article'
-         #             }
-         #     },
+         '/editor_data/{page_id}/':
+            {'get': {
+                    'description': 'Outputs all the editors that have edited a page, and the number of editions in a table format\n\n',
+                    'produces': ['application/json'],
+                    'parameters': [{'description': 'The id of the editor',
+                                'in': 'path',
+                                'name': 'page_id',
+                                'required': True,
+                                'type': 'integer'},
+                               ],
+                    'responses': responses_editordata,
+                    'tags': ['editor'],
+                    'summary': 'Get the total of edition per page of an editor'
+                     }
+             },
          },
 }
