@@ -112,7 +112,19 @@ class LoggingMixin(object):
         # self.request.log.response = response.rendered_content
         self.request.log.status_code = response.status_code
         self.request.log.response_ms = response_ms
-        self.request.log.page_id = self.page_id
+        
+        # priorizes page_id as the main instance in the log
+        if hasattr(self, 'page_id'):
+            print('here')
+            self.request.log.instance_id = self.page_id
+            self.request.log.type_id = 'page_id'
+        elif hasattr(self, 'editor_id'):
+            self.request.log.instance_id = self.editor_id
+            self.request.log.type_id = 'editor_id'
+        elif hasattr(self, 'rev_id'):
+            self.request.log.instance_id = self.rev_id
+            self.request.log.type_id = 'rev_id'
+        
         # self.request.log.save(update_fields=['user', 'status_code', 'response_ms', 'page_id'])
         self.request.log.save()
 

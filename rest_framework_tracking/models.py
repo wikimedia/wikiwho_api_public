@@ -74,4 +74,6 @@ class BaseAPIRequestLog(models.Model):
 
 
 class APIRequestLog(BaseAPIRequestLog):
-    page_id = models.IntegerField(blank=True, null=True, db_index=True, help_text='Article id')
+    instance_id = models.IntegerField(blank=True, null=True, db_index=True, help_text='id of the most relevant instance')
+    type_id = models.CharField(max_length=15, blank=True, null=True, default='page_id',
+        db_index=True, help_text='most relevant instance')
