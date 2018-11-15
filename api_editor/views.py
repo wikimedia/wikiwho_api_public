@@ -23,8 +23,7 @@ from django.utils.translation import get_language
 from rest_framework_tracking.mixins import LoggingMixin
 from api_editor.swagger_data import custom_data
 
-from .models import EditorDataEn
-
+from .models import EditorDataEn, EditorDataEu, EditorDataDe, EditorDataEs, EditorDataTr
 
 class MyOpenAPIRenderer(OpenAPIRenderer):
     """
@@ -61,14 +60,21 @@ class EditorApiView(LoggingMixin, APIView):
         authentication.SessionAuthentication, authentication.BasicAuthentication)
     renderer_classes = [JSONRenderer]  # to disable browsable api
 
+    EDITOR_MODEL = {
+        'en': EditorDataEn,
+        'eu': EditorDataEu,
+        'de': EditorDataDe,
+        'es': EditorDataEs,
+        'tr': EditorDataTr
+    }
+
     def get(self, request, version, page_id=None, editor_id=None):
-        response = {}
 
         # query parameters
         start_date = self.request.query_params.get('start')
         end_date = self.request.query_params.get('end')
 
-        qs = EditorDataEn.objects.values(
+        qs = EditorApiView.EDITOR_MODEL[get_language()].objects.values(
             'year_month', 'page_id', 'editor_id',
             'adds', 'adds_surv_48h', 'adds_persistent', 'adds_stopword_count',
             'dels', 'dels_surv_48h', 'dels_persistent', 'dels_stopword_count',
@@ -89,6 +95,7 @@ class EditorApiView(LoggingMixin, APIView):
         if end_date:
             qs = qs.filter(year_month__lte=end_date)
 
+        response = {}
         response['editions'] = list(qs)
         response['success'] = True
 
