@@ -282,11 +282,10 @@ custom_data = {
                                 'in': 'path',
                                 'name': 'editor_id',
                                 'required': True,
-                                'type': 'integer',
-                                'example': 3},
+                                'type': 'integer'},
                                ] + query_params,
                 'responses': responses_editor,
-                'tags': ['editor'],
+                'tags': ['Standard Format'],
                 'summary': 'Get monthly editions for an editor'
             }
         },
@@ -301,7 +300,7 @@ custom_data = {
                                 'type': 'integer'},
                                ] + query_params,
                 'responses': responses_editor,
-                'tags': ['editor'],
+                'tags': ['Standard Format'],
                 'summary': 'Get all monthly editions on a page per month.'
             }
         },
@@ -321,23 +320,58 @@ custom_data = {
                                 'type': 'integer'},
                                ] + query_params,
                 'responses': responses_editor,
-                'tags': ['editor'],
+                'tags': ['Standard Format'],
                 'summary': 'Get monthly editions on a page for an editor'
             }
         },
-        '/editor_data/{page_id}/': {
+        '/as_table/editor/{editor_id}/': {
             'get': {
-                'description': 'Outputs all the editors that have edited a page, and the number of editions in a table format\n\n',
+                'description': ('Outputs monthly editions for an editor (include all pages).\n\n'),
                 'produces': ['application/json'],
                 'parameters': [{'description': 'The id of the editor',
+                                'in': 'path',
+                                'name': 'editor_id',
+                                'required': True,
+                                'type': 'integer'},
+                               ] + query_params,
+                'responses': responses_editordata,
+                'tags': ['Table Format'],
+                'summary': 'Get monthly editions for an editor'
+            }
+        },
+        '/as_table/page/{page_id}/': {
+            'get': {
+                'description': ('Outputs the monthly editions on a page per month (include all editors).\n\n'),
+                'produces': ['application/json'],
+                'parameters': [{'description': 'The id of the page',
                                 'in': 'path',
                                 'name': 'page_id',
                                 'required': True,
                                 'type': 'integer'},
-                               ],
+                               ] + query_params,
                 'responses': responses_editordata,
-                'tags': ['editor_data'],
-                'summary': 'Get the total of edition per page of an editor'
+                'tags': ['Table Format'],
+                'summary': 'Get all monthly editions on a page per month.'
+            }
+        },
+        '/as_table/page/editor/{page_id}/{editor_id}/': {
+            'get': {
+                'description': ('Outputs the monthly editions on a page for an editor.\n\n'),
+                'produces': ['application/json'],
+                'parameters': [{'description': 'The id of the page',
+                                'in': 'path',
+                                'name': 'page_id',
+                                'required': True,
+                                'type': 'integer'},
+                                {'description': 'The id of the editor',
+                                'in': 'path',
+                                'name': 'editor_id',
+                                'required': True,
+                                'type': 'integer'},
+                               ] + query_params,
+                'responses': responses_editordata,
+                'tags': ['Table Format'],
+                'summary': 'Get monthly editions on a page for an editor'
             }
         },
     },
