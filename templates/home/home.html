@@ -110,6 +110,11 @@
                                 <a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor {{ language.code|title }}</a>
                             </li>
                         {% endfor %}
+                        {% for language in languages %}
+                            <li>
+                                <a href="{% translate_url language.code 'api_editor:swagger' wc_version_url %}">Editions API {{ language.code|title }}</a>
+                            </li>
+                        {% endfor %}
                     </ul>
                 </li>
                 {#            <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>#}
