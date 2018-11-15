@@ -1,4 +1,5 @@
-# specification for swagger ui v2.0: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md
+# specification for swagger ui v2.0:
+# https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md
 
 headers = {
     "X-Rate-Limit-Limit": {
@@ -15,16 +16,37 @@ headers = {
     }
 }
 
+query_params = [{
+    'description': ('Starting from date (inclusive, in YYYY-MM-DD format). The response will '
+                    'always contain full months, so it is better to explicitely use YYYY-MM-01'),
+    'in': 'query',
+    'name': 'start',
+    'required': False,
+    'type': 'string',
+    'format': 'date'
+}, {
+    'description': ('Ending in this date (inclusive, in YYYY-MM-DD format). The response will '
+                    'always contain full months, so it is better to explicitely use YYYY-MM-01'),
+    'in': 'query',
+    'name': 'end',
+    'required': False,
+    'type': 'string',
+    'format': 'date'
+}, ]
+
+
 definitions = {}
 ##################################################################
 ###### This is OK, but it mighte use too much bandwidth  #########
 ##################################################################
 definitions["edition"] = {
     "allOf": [
-        {"required": ["editor_id"],
-         "properties": {"editor_id": {"type": "integer"}}},
         {"required": ["year_month"],
          "properties": {"year_month": {"type": "string"}}},
+        {"required": ["page_id"],
+         "properties": {"page_id": {"type": "integer"}}},
+        {"required": ["editor_id"],
+         "properties": {"editor_id": {"type": "integer"}}},
 
         {"required": ["adds"],
          "properties": {"adds": {"type": "integer"}}},
@@ -51,14 +73,13 @@ definitions["edition"] = {
         {"required": ["reins_persistent"],
          "properties": {"reins_persistent": {"type": "integer"}}},
         {"required": ["reins_stopword_count"], "properties": {
-          "reins_stopword_count": {"type": "integer"}}},
+            "reins_stopword_count": {"type": "integer"}}},
 
     ],
 }
 #########################################################
 #########################################################
 #########################################################
-
 
 
 ########################################################################
@@ -136,10 +157,8 @@ definitions["editordata_array"] = {
 ############################################
 
 
-
 definitions["EditorData"] = {
     "required": [
-        "page_id",
         "success",
         "editordata_columns",
         "editordata_types",
@@ -147,12 +166,6 @@ definitions["EditorData"] = {
         "editordata"
     ],
     "properties": {
-
-        "page_id": {
-            "type": "integer",
-            "format": "int64",
-            "example": 189253
-        },
 
         "success": {
             "type": "boolean",
@@ -185,17 +198,10 @@ definitions["EditorData"] = {
 
 definitions["Editor"] = {
     "required": [
-        "page_id",
         "success",
         "editions"
     ],
     "properties": {
-
-        "page_id": {
-            "type": "integer",
-            "format": "int64",
-            "example": 189253
-        },
 
         "success": {
             "type": "boolean",
@@ -267,10 +273,61 @@ custom_data = {
     #                    'GFM syntax can be used for rich text representation.',
     #     'url': ''
     # },
-    'paths':
-        {'/{page_id}/':
-            {'get': {
-                'description': 'Outputs all the editors that have edited a page, and the number of editions.\n\n',
+    'paths': {
+        '/editor/{editor_id}/': {
+            'get': {
+                'description': ('Outputs monthly editions for an editor (include all pages).\n\n'),
+                'produces': ['application/json'],
+                'parameters': [{'description': 'The id of the editor',
+                                'in': 'path',
+                                'name': 'editor_id',
+                                'required': True,
+                                'type': 'integer',
+                                'example': 3},
+                               ] + query_params,
+                'responses': responses_editor,
+                'tags': ['editor'],
+                'summary': 'Get monthly editions for an editor'
+            }
+        },
+        '/page/{page_id}/': {
+            'get': {
+                'description': ('Outputs the monthly editions on a page per month (include all editors).\n\n'),
+                'produces': ['application/json'],
+                'parameters': [{'description': 'The id of the page',
+                                'in': 'path',
+                                'name': 'page_id',
+                                'required': True,
+                                'type': 'integer'},
+                               ] + query_params,
+                'responses': responses_editor,
+                'tags': ['editor'],
+                'summary': 'Get all monthly editions on a page per month.'
+            }
+        },
+        '/page/editor/{page_id}/{editor_id}/': {
+            'get': {
+                'description': ('Outputs the monthly editions on a page for an editor.\n\n'),
+                'produces': ['application/json'],
+                'parameters': [{'description': 'The id of the page',
+                                'in': 'path',
+                                'name': 'page_id',
+                                'required': True,
+                                'type': 'integer'},
+                               {'description': 'The id of the editor',
+                                'in': 'path',
+                                'name': 'editor_id',
+                                'required': True,
+                                'type': 'integer'},
+                               ] + query_params,
+                'responses': responses_editor,
+                'tags': ['editor'],
+                'summary': 'Get monthly editions on a page for an editor'
+            }
+        },
+        '/editor_data/{page_id}/': {
+            'get': {
+                'description': 'Outputs all the editors that have edited a page, and the number of editions in a table format\n\n',
                 'produces': ['application/json'],
                 'parameters': [{'description': 'The id of the editor',
                                 'in': 'path',
@@ -278,25 +335,10 @@ custom_data = {
                                 'required': True,
                                 'type': 'integer'},
                                ],
-                'responses': responses_editor,
-                'tags': ['editor'],
+                'responses': responses_editordata,
+                'tags': ['editor_data'],
                 'summary': 'Get the total of edition per page of an editor'
             }
-            },
-         '/editor_data/{page_id}/':
-            {'get': {
-                    'description': 'Outputs all the editors that have edited a page, and the number of editions in a table format\n\n',
-                    'produces': ['application/json'],
-                    'parameters': [{'description': 'The id of the editor',
-                                'in': 'path',
-                                'name': 'page_id',
-                                'required': True,
-                                'type': 'integer'},
-                               ],
-                    'responses': responses_editordata,
-                    'tags': ['editor'],
-                    'summary': 'Get the total of edition per page of an editor'
-                     }
-             },
-         },
+        },
+    },
 }
