@@ -52,7 +52,7 @@ def fill_indexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, log
             while languages_left:
                 for language in languages_iter:
                     job = executor.submit(
-                        fill_indexed_editor_tables_base, language, from_ym, to_ym, log_folder, already_partitioned)
+                        fill_indexed_editor_tables_base, language, from_ym, to_ym, log_folder)
                     jobs[job] = language
                     if len(jobs) == max_workers:  # limit # jobs with max_workers
                         break
@@ -90,9 +90,6 @@ class Command(CommandBase):
                             required=True)
         parser.add_argument('-m', '--max_workers', type=int, help='Number of processors/threads to run parallel. ',
                             required=True)
-        parser.add_argument('-a', '--already_partitioned', action='store_true',
-                            help='If three is there already a partition for this year month. Default is False.',
-                            default=False, required=False)
 
     def get_parameters(self, options):
         from_ym = options['from_ym']

@@ -3,7 +3,7 @@ from .settings_base import *
 DEBUG = True
 TEMPLATES[0]['OPTIONS']['debug'] = DEBUG
 SERVER_LEVEL = LEVEL_STAGING
-ACTIONS_LOGS = '/home/ww_staging/actions_logs'
+ACTIONS_LOG = '/home/ww_staging/actions_log'
 ACTIONS_MAX_WORKERS = 4
 
 ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en']
