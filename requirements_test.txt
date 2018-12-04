@@ -52,3 +52,4 @@ fabric3
 
 django-cors-headers
 architect
+django-crontab

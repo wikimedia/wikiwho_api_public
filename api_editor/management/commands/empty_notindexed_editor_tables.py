@@ -38,20 +38,26 @@ class Command(BaseCommand):
                             required=True)
 
     def handle(self, *args, **options):
-        languages = options['language'].split(',')
-        # get max number of concurrent workers
-        max_workers = options['max_workers']
+        empty_notindexed_editor_tables(
+            languages=options['language'].split(','),
+            max_workers=options['max_workers'], log_folder=options['log_folder'])
 
-        # set logging
-        log_folder = options['log_folder']
-        if not exists(log_folder):
-            mkdir(log_folder)
 
-        print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
-        print(max_workers, languages, log_folder)
-        languages_iter = iter(languages)
-        languages_all = len(languages)
-        languages_left = languages_all
+def empty_notindexed_editor_tables_batch(languages, max_workers, log_folder):
+    if not exists(log_folder):
+        mkdir(log_folder)
+
+    print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
+    print(max_workers, languages, log_folder)
+    languages_iter = iter(languages)
+    languages_all = len(languages)
+    languages_left = languages_all
+    if max_workers < 1:
+        for language in languages_iter:
+            empty_notindexed_editor_tables_base(
+                language, log_folder)
+            print(f'{language} not indexed table has been emptied')
+    else:
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
             jobs = {}
             while languages_left:
@@ -69,11 +75,11 @@ class Command(BaseCommand):
                         data = job.result()
                     except Exception as exc:
                         logger = get_logger('empty_notindexed_editor_tables', log_folder,
-                            is_process=True, is_set=True)
+                                            is_process=True, is_set=True)
                         logger.exception('{}'.format(language_))
 
                     del jobs[job]
                     sys.stdout.write('\rPickles left: {} - Pickles processed: {:.3f}%'.
                                      format(languages_left, ((languages_all - languages_left) * 100) / languages_all))
                     break  # to add a new job, if there is any
-        print('\nDone: {} - at {}'.format(language, strftime('%H:%M:%S %d-%m-%Y')))
+    print('\nDone: {} - at {}'.format(language, strftime('%H:%M:%S %d-%m-%Y')))

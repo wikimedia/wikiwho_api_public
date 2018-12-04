@@ -22,10 +22,11 @@ INSTALLED_APPS = [
     'wikiwho',
     'account_app',
     'crispy_forms',
+    'django_crontab',
     'rest_framework_tracking',
     'corsheaders',
     'WhoColor',  # to collect static files
-    'api_editor'
+    'api_editor',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -183,6 +184,11 @@ SWAGGER_SETTINGS = {
 # REST_FRAMEWORK_EXTENSIONS = {
 #     'DEFAULT_CACHE_ERRORS': False
 # }
+
+ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en']
+CRONJOBS = [
+    ('* 23 7 * *', 'api_editor.cron.update_actions_tables', f'>> /dev/null 2>> /var/django/crontab.log')
+]
 
 # where pickles are saved
 PICKLE_FOLDER = 'pickles_api'

@@ -255,7 +255,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                                for editor, data in editor_data.items()))
 
 
-def fill_indexed_editor_tables(language, from_ym, to_ym, already_partitioned=False):
+def fill_indexed_editor_tables(language, from_ym, to_ym):
     master_table = "api_editor_{}".format(
         EDITOR_MODEL[language][1].__name__.lower()) 
     not_indexed_table = "api_editor_{}".format(

@@ -4,6 +4,13 @@ from .settings_base import *
 DEBUG = True
 TEMPLATES[0]['OPTIONS']['debug'] = DEBUG
 SERVER_LEVEL = LEVEL_LOCAL
+ACTIONS_LOG = '/home/ulloaro/git/wikiwho_api/tmp_pickles/action_logs'
+ACTIONS_MAX_WORKERS = -1
+
+ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en']
+CRONJOBS = [
+    ('*/1 * * * *', 'api_editor.cron.update_actions_tables', f'>> /tmp/cron_prints.log 2>> /tmp/cron_errors.log')
+]
 
 ALLOWED_HOSTS = ['local_host', '127.0.0.1']
 INTERNAL_IPS = ['127.0.0.1']

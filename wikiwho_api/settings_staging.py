@@ -3,6 +3,14 @@ from .settings_base import *
 DEBUG = True
 TEMPLATES[0]['OPTIONS']['debug'] = DEBUG
 SERVER_LEVEL = LEVEL_STAGING
+ACTIONS_LOGS = '/home/ww_staging/editor_logs'
+ACTIONS_MAX_WORKERS = 4
+
+CRONTAB_COMMAND_SUFFIX = '2>&1'
+CRONJOBS = [
+    ('*/5 * * * *', 'api_editor.cron.update_actions_tables', f'>> {ACTIONS_LOG}/base.log')
+]
+
 
 INSTALLED_APPS += ['debug_toolbar',
                    'debug_panel']
