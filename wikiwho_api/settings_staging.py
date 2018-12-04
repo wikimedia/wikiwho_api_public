@@ -8,7 +8,7 @@ ACTIONS_MAX_WORKERS = 4
 
 ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en']
 CRONJOBS = [
-    ('* 23 7 * *', 'api_editor.cron.update_actions_tables', f'>> /dev/null 2>> /var/log/django/crontab.log')
+    ('0 23 7 * *', 'api_editor.cron.update_actions_tables', f'>> /dev/null 2>> /var/log/django/crontab.log')
 ]
 
 
