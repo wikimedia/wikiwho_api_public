@@ -38,7 +38,7 @@ class Command(BaseCommand):
                             required=True)
 
     def handle(self, *args, **options):
-        empty_notindexed_editor_tables(
+        empty_notindexed_editor_tables_batch(
             languages=options['language'].split(','),
             max_workers=options['max_workers'], log_folder=options['log_folder'])
 
