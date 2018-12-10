@@ -44,7 +44,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     try:
         wikiwho = pickle_load(pickle_path)
         title = wikiwho.title
-    except (EOFError,  UnpicklingError) as e: 
+    except (EOFError,  UnpicklingError) as e:
         title = None
         update = True
         # TODO log correpted pickle and dont set upgrade flag
@@ -150,8 +150,10 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                         # the reinsertion has survived 48 hours
                         editors_dict[rein_ym][rein_editor][__REINS_48__] += 1
                         if rein_ym != article_revisions_yms[out_rev_id]:
-                            # it was not deleted again this month, so it is permanent
-                            editors_dict[rein_ym][rein_editor][__REINS_P__] += 1
+                            # it was not deleted again this month, so it is
+                            # permanent
+                            editors_dict[rein_ym][
+                                rein_editor][__REINS_P__] += 1
 
                     if is_stop_word:
                         # stopword count for rein
@@ -182,7 +184,8 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                         # the deletion lasted at least 48 hours
                         editors_dict[del_ym][del_editor][__DELS_48__] += 1
                         if del_ym != article_revisions_yms[in_rev_id]:
-                            # the deletion last until the end of the month (permanent)
+                            # the deletion last until the end of the month
+                            # (permanent)
                             editors_dict[del_ym][del_editor][__DELS_P__] += 1
 
                     if is_stop_word:
@@ -198,7 +201,8 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     if is_stop_word:
                         # stopword count for del
                         editors_dict[del_ym][del_editor][__DELS_SW__] += 1
-                    # break the loop (nothing else happen to this token during this month)
+                    # break the loop (nothing else happen to this token during
+                    # this month)
                     break
 
             elif out_rev_ts > to_ym_ts:
@@ -212,7 +216,8 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     # there is a reinsertion to be processed in the next loop
                     rein_ym = article_revisions_yms[in_rev_id]
                 else:
-                    # break the loop (nothing else happen to this token during this month)
+                    # break the loop (nothing else happen to this token during
+                    # this month)
                     break
 
         # last reinsertion
@@ -248,19 +253,22 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
         # fill data
         cursor.executemany(insert_query,
                            ((wikiwho.page_id, ed2edid[editor]['id'], ed2edid[editor]['name'], ym2dt[ym],
-                             data[__ADDS__], data[__ADDS_48__], data[__ADDS_P__], data[__ADDS_SW__],
-                             data[__DELS__], data[__DELS_48__], data[__DELS_P__], data[__DELS_SW__],
-                             data[__REINS__], data[__REINS_48__], data[__REINS_P__], data[__REINS_SW__]
+                             data[__ADDS__], data[__ADDS_48__], data[
+                                 __ADDS_P__], data[__ADDS_SW__],
+                             data[__DELS__], data[__DELS_48__], data[
+                                 __DELS_P__], data[__DELS_SW__],
+                             data[__REINS__], data[__REINS_48__], data[
+                                 __REINS_P__], data[__REINS_SW__]
                              ) for ym, editor_data in editors_dict.items()
                                for editor, data in editor_data.items()))
 
 
 def fill_indexed_editor_tables(language, from_ym, to_ym):
     master_table = "api_editor_{}".format(
-        EDITOR_MODEL[language][1].__name__.lower()) 
+        EDITOR_MODEL[language][1].__name__.lower())
     not_indexed_table = "api_editor_{}".format(
         EDITOR_MODEL[language][0].__name__.lower())
-    
+
     with connection.cursor() as cursor:
 
         # let's create an index on the non index table so the selects of the inserts
@@ -273,13 +281,16 @@ def fill_indexed_editor_tables(language, from_ym, to_ym):
         cursor.execute(index_notindexed)
 
         for year in range(from_ym.year, to_ym.year + 1):
-        
+
             part_table = '{}_y{}'.format(master_table, year)
 
             #  drop indexes in the last partition
-            cursor.execute("DROP INDEX IF EXISTS {}_page_id;".format(part_table))
-            cursor.execute("DROP INDEX IF EXISTS {}_year_month;".format(part_table))
-            cursor.execute("DROP INDEX IF EXISTS {}_editor_id_ym;".format(part_table))
+            cursor.execute(
+                "DROP INDEX IF EXISTS {}_page_id;".format(part_table))
+            cursor.execute(
+                "DROP INDEX IF EXISTS {}_year_month;".format(part_table))
+            cursor.execute(
+                "DROP INDEX IF EXISTS {}_editor_id_ym;".format(part_table))
 
             # create the table if not exists
             new_table_query = """
@@ -308,7 +319,6 @@ def fill_indexed_editor_tables(language, from_ym, to_ym):
             """.format(part_table, not_indexed_table, year, year)
             cursor.execute(insert_query)
 
-
             part_table = '{}_y{}'.format(master_table, year)
 
             # re-create indexes
@@ -319,19 +329,22 @@ def fill_indexed_editor_tables(language, from_ym, to_ym):
             cursor.execute("CREATE INDEX {}_editor_id_ym ON {} USING btree (editor_id, year_month);".
                            format(part_table, part_table))
 
+
 def empty_notindexed_editor_tables(language):
 
+    # delete all rows
     EDITOR_MODEL[language][0].objects.all().delete()
 
+    # get the name of the table
     not_indexed_table = "api_editor_{}".format(
         EDITOR_MODEL[language][0].__name__.lower())
 
     with connection.cursor() as cursor:
 
-        # remove index so inserts are fast
-        unindex_notindexed = "DROP INDEX IF EXISTS {}_year_month".format(
-            not_indexed_table)
+        # remove index so inserts are fast, this index is created in the
+        # fill_indexed_editor_tables so the selection to move to the index
+        # table is fast
+        cursor.execute(f"DROP INDEX IF EXISTS {not_indexed_table}_year_month")
 
-        cursor.execute(unindex_notindexed)
-        connection.commit()
-
+        # vacuum table to free space up
+        cursor.execute(f"VACUUM (VERBOSE,FULL,ANALYZE) {not_indexed_table};")
