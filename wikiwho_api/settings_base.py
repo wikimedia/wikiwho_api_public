@@ -187,7 +187,7 @@ SWAGGER_SETTINGS = {
 
 ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en']
 CRONJOBS = [
-    ('0 12 6 * *', 'api_editor.cron.update_actions_tables', f'>> /dev/null 2>> /var/log/django/crontab.log')
+    ('0 1 3 * *', 'api_editor.cron.update_actions_tables', f'>> /dev/null 2>> /var/log/django/crontab.log')
 ]
 
 # where pickles are saved
