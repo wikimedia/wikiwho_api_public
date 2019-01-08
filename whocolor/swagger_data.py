@@ -130,7 +130,9 @@ custom_data = {
         #                'Example api: http://petstore.swagger.io/',
         'description': 'Documentation can be found at [api.wikiwho.net](https://api.wikiwho.net).\n\n'
                        '### **Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
-                       '(https://www.gesis.org/en/institute/departments/computational-social-science/)',
+                       '(https://www.gesis.org/en/institute/departments/computational-social-science/)\n\n'
+                       'Data from this API is published under the CC-BY-SA 4.0 license. Original revision data '
+                       'is retrieved from Wikimedia servers and the terms for reuse put forth by Wikimedia apply.',
     },
     'basePath': '/whocolor/{}'.format(version_url),
     'host': 'www.wikiwho.net',

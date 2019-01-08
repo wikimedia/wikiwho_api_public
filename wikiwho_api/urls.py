@@ -44,6 +44,7 @@ urlpatterns += i18n_patterns(
     url(r'^api/(?P<version>(v1.0.0-beta|v1.0.0))/', include('api.urls', namespace='api')),
     url(r'^api/', ApiRedirectView.as_view()),
     url(r'^whocolor/(?P<version>(v1.0.0-beta|v1.0.0))/', include('whocolor.urls', namespace='whocolor')),
+    url(r'^edit_persistence/(?P<version>(v1.0.0-beta|v1.0.0))/', include('api_editor.urls', namespace='edit_persistence')),
     url(r'^api_editor/(?P<version>(v1.0.0-beta|v1.0.0))/', include('api_editor.urls', namespace='api_editor')),
     # prefix_default_language=False
 )
