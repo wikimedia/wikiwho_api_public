@@ -253,7 +253,7 @@ version_url = 'v{}'.format(version)
 custom_data = {
     'swagger': '2.0',
     'info': {
-        'title': 'WikiWho Editor API',
+        'title': 'WikiWho Edit Persistence API',
         # 'termsOfService': '',
         'version': version,
         # 'license': {'name': 'TODO licence?', 'url': ''},

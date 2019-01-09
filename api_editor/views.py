@@ -50,7 +50,7 @@ class MyOpenAPIRenderer(OpenAPIRenderer):
 @renderer_classes([MyOpenAPIRenderer, SwaggerUIRenderer])
 def schema_view(request, version):
     generator = SchemaGenerator(
-        title='WikiWho Editor API', urlconf='api_editor.urls')
+        title='WikiWho Edit Persistence API', urlconf='api_editor.urls')
     schema = generator.get_schema(request=request)
     # print(type(schema), schema)
     return Response(schema)
