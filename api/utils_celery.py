@@ -19,7 +19,7 @@ inspector = app.control.inspect([worker_name_default, worker_name_user])
 # reserved: List of currently reserved tasks, not including scheduled/active.
 # scheduled: List of currently scheduled ETA/countdown tasks.
 
-if setting.DEBUG:
+if settings.DEBUG:
     logger = get_base_logger('events_streamer', settings.EVENTS_STREAM_LOG, level=logging.DEBUG)
 else:
     logger = get_base_logger('events_streamer', settings.EVENTS_STREAM_LOG, level=logging.WARNING)
