@@ -34,6 +34,8 @@ def get_logger(name, log_folder, is_process=True, is_set=True, language=None):
 
 
 def get_base_logger(name, log_folder, level=logging.DEBUG):
+    if not exists(log_folder):
+        mkdir(log_folder)
 
     logger = logging.getLogger(name)
     logger.setLevel(level)
