@@ -6,6 +6,8 @@ SERVER_LEVEL = LEVEL_STAGING
 ACTIONS_LOG = '/home/ww_staging/actions_log'
 ACTIONS_MAX_WORKERS = 4
 
+EVENTS_STREAM_LOG = '/home/ww_staging/events_stream_log'
+
 ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en']
 CRONJOBS = [
     ('0 23 7 * *', 'api_editor.cron.update_actions_tables', f'>> /dev/null 2>> /var/log/django/crontab.log')

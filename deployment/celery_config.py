@@ -24,6 +24,7 @@ worker_name_user = 'worker_user@ww_host'
 default_task_soft_time_limit = 3600  # 60 minutes
 long_task_soft_time_limit = 3600 * 6  # 6 hours
 user_task_soft_time_limit = default_task_soft_time_limit
+broker_heartbeat = 0
 
 task_queues = (
     Queue('default', queue_arguments={'x-max-priority': 2, }, ),

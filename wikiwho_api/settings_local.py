@@ -7,6 +7,8 @@ SERVER_LEVEL = LEVEL_LOCAL
 ACTIONS_LOG = '/home/ulloaro/git/wikiwho_api/tmp_pickles/actions_log'
 ACTIONS_MAX_WORKERS = 2
 
+EVENTS_STREAM_LOG = '/home/ulloaro/git/wikiwho_api/tmp_pickles/events_stream_log'
+
 ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en']
 CRONJOBS = [
     ('*/1 * * * *', 'api_editor.cron.update_actions_tables', f'>> /tmp/cron_prints.log 2>> /tmp/cron_errors.log')

@@ -35,7 +35,7 @@ def get_logger(name, log_folder, is_process=True, is_set=True, language=None):
 
 def get_base_logger(name, log_folder, level=logging.DEBUG):
 
-    logger = logging.getLogger('name')
+    logger = logging.getLogger(name)
     logger.setLevel(level)
 
     # create file handler which logs even debug messages

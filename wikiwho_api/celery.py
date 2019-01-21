@@ -20,6 +20,6 @@ app.config_from_object('deployment.celery_config')  # custom celery_config.py
 app.autodiscover_tasks()
 
 
-@app.task(bind=True)
+@app.task(bind=True, ignore_result=True)
 def debug_task(self):
     print('Request: {0!r}'.format(self.request))

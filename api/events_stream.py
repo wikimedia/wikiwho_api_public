@@ -48,7 +48,7 @@ def stream_response_with_requests(url):
     return requests.get(url, stream=True)
 
 
-def iter_changed_pages():
+def iter_changed_pages(logger):
     while True:
         try:
             url = 'https://stream.wikimedia.org/v2/stream/recentchange'
@@ -84,3 +84,7 @@ def iter_changed_pages():
         except ProtocolError as e:
             # restart events stream
             pass
+        except Exception as e:
+            logger.error("Unexpected error retrieving event:\n" + str(e))
+            logger.info("The process will continue.")
+
