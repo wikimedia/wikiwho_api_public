@@ -20,6 +20,7 @@ from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns, static
 from django.views.generic import TemplateView
 from django.contrib.sitemaps.views import sitemap
+from django.http import HttpResponse
 
 from base.views import clear_cache, clear_sessions, download, home
 from base.sitemaps import BaseStaticViewSitemap, ApiStaticViewSitemap
@@ -37,7 +38,7 @@ urlpatterns = [
     url(r'^$', home, name='home'),
     url(r'^sitemap\.xml$', sitemap, {'sitemaps': {'api': ApiStaticViewSitemap, 'base': BaseStaticViewSitemap}},
         name='django.contrib.sitemaps.views.sitemap'),
-
+    url(r'^robots.txt$', lambda r: HttpResponse("User-agent: *\nDisallow:", content_type="text/plain")),
 ]
 
 urlpatterns += i18n_patterns(
