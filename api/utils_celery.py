@@ -5,7 +5,7 @@ from wikiwho_api.celery import app
 from deployment.celery_config import worker_name_default, worker_name_user
 from django.conf import settings
 
-from base.utils_log import get_base_logger
+from base.utils_log import get_base_logger, get_stream_base_logger
 from .events_stream import iter_changed_pages
 from .tasks import process_article
 # from .utils_pickles import get_pickle_size
