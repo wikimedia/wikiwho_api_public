@@ -19,12 +19,8 @@ inspector = app.control.inspect([worker_name_default, worker_name_user])
 # reserved: List of currently reserved tasks, not including scheduled/active.
 # scheduled: List of currently scheduled ETA/countdown tasks.
 
-if settings.DEBUG:
-    logger = get_base_logger('events_streamer', settings.EVENTS_STREAM_LOG, level=logging.DEBUG)
-else:
-    logger = get_base_logger('events_streamer', settings.EVENTS_STREAM_LOG, level=logging.WARNING)
-
-
+logger = get_base_logger('events_streamer', settings.EVENTS_STREAM_LOG, level=logging.WARNING)
+streamer = get_stream_base_logger = get_base_logger('streamer', level=logging.DEBUG)
 
 def get_active_task_pages():
     """Return page titles of tasks that are running right now."""
@@ -75,7 +71,7 @@ def process_changed_articles():
     for language, page_title in iter_changed_pages(logger):
         # print(len(get_inactive_task_pages()))
         if page_title not in get_inactive_task_pages():
-            logger.info(f"Processing {page_title} ({language})")
+            streamer.info(f"Processing {page_title} ({language})")
             # if already not registered to celery
             process_article.delay(language, page_title)
             # FIXME event data doesnt contain pageid! decide a limit + settings.PICKLE_BIG_SIZE_LIMIT

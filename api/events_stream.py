@@ -85,6 +85,6 @@ def iter_changed_pages(logger):
             # restart events stream
             pass
         except Exception as e:
-            logger.error("Unexpected error retrieving event:\n" + str(e))
-            logger.info("The process will continue.")
+            logger.error("Unexpected error retrieving event:\n" + str(e) + ".\nThe process will continue anyway.")
+
 
