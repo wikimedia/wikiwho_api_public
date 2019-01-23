@@ -20,7 +20,7 @@ inspector = app.control.inspect([worker_name_default, worker_name_user])
 # scheduled: List of currently scheduled ETA/countdown tasks.
 
 logger = get_base_logger('events_streamer', settings.EVENTS_STREAM_LOG, level=logging.WARNING)
-streamer = get_stream_base_logger = get_base_logger('streamer', level=logging.DEBUG)
+streamer = get_stream_base_logger('streamer', level=logging.DEBUG)
 
 def get_active_task_pages():
     """Return page titles of tasks that are running right now."""
