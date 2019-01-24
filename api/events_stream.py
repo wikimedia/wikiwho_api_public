@@ -3,6 +3,7 @@ from json import loads
 import urllib3
 from urllib3.exceptions import ProtocolError
 from sseclient import SSEClient
+import certifi
 
 
 class EventSource(SSEClient):
@@ -29,7 +30,7 @@ class EventSource(SSEClient):
 
 def stream_response(url):
     """Get a streaming response for the given event feed using urllib3."""
-    http = urllib3.PoolManager()
+    http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
     # the .stream(chunk_size) is important here!  Without it, the
     # response body seems to be accessed in an inefficient manner.
     return http.request('GET', url, preload_content=False).stream(1024)
@@ -54,34 +55,22 @@ def iter_changed_pages(logger):
         try:
             url = 'https://stream.wikimedia.org/v2/stream/recentchange'
             event_source = stream_response(url)
-            # event_source = stream_response_with_requests(url)
-            # import time
-            # start = time.time()
-            # counter = 0
+
             for event in EventSource(event_source).events():
                 # page_id = event.data.split('"id":')[1].split(',"')[0] --> this is event id!
                 data = event.data
                 if not data:
                     continue
-                # page_title = data.split('"title":')[1].split(',"')[0][1:-1]
-                # if data.split('"wiki":"')[1].split('"')[0] == 'enwiki' and \
-                #    data.split('"namespace":')[1].split(',"')[0] == '0' and \
-                #    page_title and page_title != 'null' and \
-                #    data.split('"type":"')[1].split('"')[0] in ['edit', 'new']:
-                #     # counter += 1
-                #     yield page_title  # , time.time() - start, counter
                 try:
                     change = loads(data)
                 except ValueError:  # JSONDecodeError
                     continue
                 page_title = change.get('title')
                 wiki = change.get('wiki')
-                logger.error(change)
                 if wiki in wikis and change.get('namespace') == 0 and \
                    page_title and change.get('type') in ['edit', 'new']:
-                    language = wiki.split('wiki')[0]
-                    # yield change
-                    yield language, page_title
+                    # yield language, page_title
+                    yield wiki[:2], page_title
         except ProtocolError as e:
             # restart events stream
             pass
