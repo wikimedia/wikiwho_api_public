@@ -49,6 +49,7 @@ def stream_response_with_requests(url):
 
 
 def iter_changed_pages(logger):
+    wikis = ['enwiki', 'euwiki', 'dewiki', 'trwiki', 'eswiki']
     while True:
         try:
             url = 'https://stream.wikimedia.org/v2/stream/recentchange'
@@ -75,7 +76,7 @@ def iter_changed_pages(logger):
                     continue
                 page_title = change.get('title')
                 wiki = change.get('wiki')
-                wikis = ['enwiki', 'euwiki', 'dewiki', 'trwiki', 'eswiki']
+                logger.error(change)
                 if wiki in wikis and change.get('namespace') == 0 and \
                    page_title and change.get('type') in ['edit', 'new']:
                     language = wiki.split('wiki')[0]
