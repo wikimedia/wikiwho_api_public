@@ -5,7 +5,7 @@ DEBUG = True
 TEMPLATES[0]['OPTIONS']['debug'] = DEBUG
 SERVER_LEVEL = LEVEL_LOCAL
 ACTIONS_LOG = '/home/ulloaro/git/wikiwho_api/tmp_pickles/actions_log'
-ACTIONS_MAX_WORKERS = 2
+ACTIONS_MAX_WORKERS = 0
 
 EVENTS_STREAM_LOG = '/home/ulloaro/git/wikiwho_api/tmp_pickles/events_stream_log'
 

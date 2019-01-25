@@ -52,6 +52,16 @@ def fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, up
                 raise
 
 
+def get_not_updated_pickles(pickles_list):
+    _bulk = []
+    for p_path in pickles_list:
+        p_date = pytz.UTC.localize(datetime.fromtimestamp(getmtime(p_path)))
+        p_name = basename(p_path)[:-2]
+        _bulk.append(p_name)
+
+
+
+
 def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, log_folder, json_file=None, update=False):
     # set logging
     if not exists(log_folder):
@@ -79,6 +89,9 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
             pickles_all = len(pickles_list)
             pickles_left = pickles_all
             pickles_iter = iter(pickles_list)
+
+
+        import ipdb; ipdb.set_trace()  # breakpoint e4b2ccab //
 
         if max_workers < 1:
             for curr, pickle_path in enumerate(pickles_iter, 1):
@@ -134,10 +147,10 @@ class Command(BaseCommand):
             '-lang', '--language', help="Wikipedia language. Ex: 'en' or 'en,eu,de'", required=True)
         parser.add_argument('-log', '--log_folder',
                             help='Folder where to write logs.',
-                            required=True, default=settings.ACTIONS_LOG)
+                            default=settings.ACTIONS_LOG)
         parser.add_argument('-m', '--max_workers', type=int,
                             help='Number of processors/threads to run parallel.',
-                            required=True, default=settings.ACTIONS_MAX_WORKERS)
+                            default=settings.ACTIONS_MAX_WORKERS)
         parser.add_argument('-u', '--update', action='store_true',
                             help='Update pickles from WP api before generating editor data. Default is False.',
                             default=False, required=False)
