@@ -9,6 +9,9 @@ import glob
 import pytz
 import sys
 import json
+import logging
+from itertools import islice
+
 from os.path import join, basename, exists, getmtime
 from os import mkdir
 from time import strftime, sleep, ctime
@@ -21,19 +24,25 @@ from django.core.management.base import BaseCommand
 
 from api.utils_pickles import get_pickle_folder
 from api.handler import WPHandlerException
-from base.utils_log import get_logger
+from api.utils import get_latest_revision_timestamps
+from api.wp_connection import MediaWiki
+
+from base.utils_log import get_logger, get_stream_base_logger
 from api_editor.utils_db import fill_notindexed_editor_tables
 from django.conf import settings
 
 
 def fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, update):
     retries = 6
+
     while retries:
         retries -= 1
         try:
-            if pytz.UTC.localize(datetime.fromtimestamp(getmtime(pickle_path))) >= from_ym:
+            if update or not exists (pickle_path) \
+                    or (pytz.UTC.localize(datetime.fromtimestamp(getmtime(pickle_path))) >= from_ym):
                 fill_notindexed_editor_tables(
                     pickle_path, from_ym, to_ym, language, update)
+
             return
         except WPHandlerException as e:
             if e.code in ['00', '02']:
@@ -52,23 +61,102 @@ def fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, up
                 raise
 
 
-def get_not_updated_pickles(pickles_list):
-    _bulk = []
-    for p_path in pickles_list:
-        p_date = pytz.UTC.localize(datetime.fromtimestamp(getmtime(p_path)))
-        p_name = basename(p_path)[:-2]
-        _bulk.append(p_name)
+def non_updated_pickles(language, pickle_folder, _all, logger):
+
+    # utcfromtimestamp gives the universal time of the file, it takes into consideration
+    # if the file was created during +01:00 (winter time) or +02:00 (summer
+    # time) for Germany
+    _files = {
+        basename(p_path)[:-2]: pytz.UTC.localize(datetime.utcfromtimestamp(getmtime(p_path)))
+        for p_path in glob.iglob(join(pickle_folder, '*.p'))
+    }
+
+    pickles_list = list(glob.iglob(join(pickle_folder, '*.p')))
+    total_files = len(_files)
+    pickles_left = total_files
+
+    _index = {}
+    _found = {}
+    _new = {}
+    _to_update = {}
+    _updated = {}
+
+    for req, result in get_latest_revision_timestamps(language, _all, logger):
+        for page in result['pages']:
+            pageid = str(page['pageid'])
+            if pageid in _index:
+                logger.warning(f"ERROR! The page id {pagid} exists already "
+                               "(found twice in Wikipedia!)")
+
+            _index[pageid] = {
+                'title': page['title'],
+                'ts': pytz.UTC.localize(MediaWiki.parse_date(
+                    page['revisions'][0]['timestamp']))
+            }
+            if pageid in _files:
+                _index[pageid]['ts_file'] = _files.pop(pageid)
+                _found[pageid] = _index[pageid]
+                if _index[pageid]['ts_file'] < _index[pageid]['ts']:
+                    _to_update[pageid] = _index[pageid]
+                    yield pageid, True
+                else:
+                    _updated[pageid] = _index[pageid]
+                    yield pageid, False
+            else:
+                _new[pageid] = _index[pageid]
+                if not (settings.DEBUG or settings.TESTING):
+                    logger.warning(f"Pickle was not found for {pageid}")
+                    yield pageid, True
+
+            sys.stdout.write('\rLeft: {} - Found: {:.3f}% - New: {} - Processed: {}'.
+                  format(total_files - len(_found),
+                         len(_found) * 100 / total_files,
+                         len(_new), len(_index)))
+
+    if len(_files) > 0:
+
+        logger.warning("There were files in the pickles directory that were "
+                       "not return by the Wikipedia API")
+
+        processed = len(_found)
+        for pageid, date in _files.items():
+            yield pageid, True
+            processed += 1
+            sys.stdout.write('\rLeft: {} - Found: {:.3f}% - New: {} - Processed: {}'.
+                  format(total_files - len(_found),
+                         len(_found) * 100 / total_files,
+                         len(_new), len(_index)))
+
+    logger.info(f"""
+        ---------------------------------------------------------------------------------------------
+        REPORT for {language} LANGUAGE:
+        Total pages found in Wikipedia: {len(_index)}
+        Total files found in the pickles directory: {total_files}
+        Files in the pickles directory NOT FOUND in Wikipedia: {len(_files)}
+            Examples: {str(list(islice(_files, 10)))}
+
+        Files in the pickles directory FOUND in Wikipedia: {len(_found)}
+            Examples: {str(list(islice(_found, 10)))}
+        
+        New Files in Wikipedia (not found in pickles directory): {len(_new)}
+            Examples: {str(list(islice(_new, 10)))}
+        
+        Number of files that required an update (based on file modification date): {len(_to_update)}
+            Examples: {str(list(islice(_to_update, 10)))}
+
+        Number of files that were already updated (based on file modification date): {len(_updated)}
+            Examples: {str(list(islice(_updated, 10)))}
+        ---------------------------------------------------------------------------------------------
+        """)
 
 
-
-
-def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, log_folder, json_file=None, update=False):
+def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, log_folder):
     # set logging
     if not exists(log_folder):
         mkdir(log_folder)
 
     print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
-    print(max_workers, languages, from_ym, to_ym)
+    print(f"Workers: {max_workers} - Languages: {languages} - From: {from_ym} - To: {to_ym}")
     # Concurrent process of pickles of each language to generate editor data
     for language in languages:
 
@@ -76,56 +164,50 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
         print('Start: {} - {} at {}'.format(language,
                                             pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
 
-        if json_file:
-            with open(json_file, 'r') as f:
-                pickles_dict = json.loads(f.read())
-                pickles_list = [join(pickle_folder, '{}.p'.format(
-                    page_id)) for page_id in pickles_dict[language]]
-                pickles_all = len(pickles_list)
-                pickles_left = pickles_all
-                pickles_iter = iter(pickles_list)
-        else:
-            pickles_list = list(glob.iglob(join(pickle_folder, '*.p')))
-            pickles_all = len(pickles_list)
-            pickles_left = pickles_all
-            pickles_iter = iter(pickles_list)
+        parallel = max_workers >= 1
+        logger = get_logger('fill_notindexed_editor_tables_{}_from_{}_{}_to_{}_{}'.format(
+            language, from_ym.year, from_ym.month, to_ym.year, to_ym.month),
+            log_folder, language=language, is_process=parallel, is_set=True, level=logging.INFO)
 
-
-        import ipdb; ipdb.set_trace()  # breakpoint e4b2ccab //
-
-        if max_workers < 1:
-            for curr, pickle_path in enumerate(pickles_iter, 1):
+        if not parallel:
+            for pageid, update in non_updated_pickles(language, pickle_folder, True, logger):
                 fill_notindexed_editor_tables_base(
-                    pickle_path, from_ym, to_ym, language, update)
-                sys.stdout.write('\rPickles left: {} - Pickles processed: {:.3f}%'.
-                                 format(pickles_all - curr, curr * 100 / pickles_all))
+                    join(pickle_folder, f'{pageid}.p'),
+                    from_ym, to_ym, language, update)
         else:
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
                 jobs = {}
-                while pickles_left:
-                    for pickle_path in pickles_iter:
-                        page_id = basename(pickle_path)[:-2]
+                all_jobs_sent = False
+                sent_jobs = 0
+                processed_jobs = 0
+
+                while (not all_jobs_sent) or (processed_jobs < sent_jobs):
+
+                    # assume is over, but if there is pickles, set to False
+                    all_jobs_sent = True
+
+                    for pageid, update in non_updated_pickles(language, pickle_folder, True, logger):
+                        # there is at least the current job, loop again
+                        all_jobs_sent = False
+
+                        pickle_path = join(pickle_folder, f'{pageid}.p')
                         job = executor.submit(
                             fill_notindexed_editor_tables_base, pickle_path, from_ym, to_ym, language, update)
-                        jobs[job] = page_id
+                        sent_jobs += 1
+                        jobs[job] = pageid
                         if len(jobs) == max_workers:  # limit # jobs with max_workers
                             break
 
                     for job in as_completed(jobs):
-                        pickles_left -= 1
-                        page_id_ = jobs[job]
+                        pageid = jobs[job]
                         try:
+                            processed_jobs += 1
                             data = job.result()
                         except Exception as exc:
-                            logger = get_logger('fill_notindexed_editor_tables_{}_from_{}_{}_to_{}_{}'.format(
-                                language, from_ym.year, from_ym.month, to_ym.year, to_ym.month),
-                                log_folder, is_process=True, is_set=True)
                             logger.exception(
                                 '{}-{}'.format(page_id_, language))
 
                         del jobs[job]
-                        sys.stdout.write('\rPickles left: {} - Pickles processed: {:.3f}%'.
-                                         format(pickles_left, ((pickles_all - pickles_left) * 100) / pickles_all))
                         break  # to add a new job, if there is any
         print('\nDone: {} - {} at {}'.format(language,
                                              pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
@@ -136,9 +218,6 @@ class Command(BaseCommand):
     help = 'Generates editor data and fills the editor database per ym, editor, article.'
 
     def add_arguments(self, parser):
-        parser.add_argument('-f', '--file', required=False,
-                            help='Pickles json file {"en": [list of page ids], "de" [], }. '
-                                 'If not given, list is taken from relevant pickle folder for each language.')
         parser.add_argument('-from', '--from_ym', required=True,
                             help='Year-month to create data from [YYYY-MM]. Included.')
         parser.add_argument('-to', '--to_ym', required=True,
@@ -151,15 +230,8 @@ class Command(BaseCommand):
         parser.add_argument('-m', '--max_workers', type=int,
                             help='Number of processors/threads to run parallel.',
                             default=settings.ACTIONS_MAX_WORKERS)
-        parser.add_argument('-u', '--update', action='store_true',
-                            help='Update pickles from WP api before generating editor data. Default is False.',
-                            default=False, required=False)
-        # parser.add_argument('-t', '--timeout', type=float, required=False,
-        #                     help='Timeout value for each processor for analyzing articles [minutes]')
-        # parser.add_argument('-c', '--check_exists', action='store_true', help='', default=False, required=False)
 
     def get_parameters(self, options):
-        json_file = options['file'] or None
         from_ym = options['from_ym']
         from_ym = datetime.strptime(from_ym, '%Y-%m').replace(tzinfo=pytz.UTC)
         to_ym = options['to_ym']
@@ -167,8 +239,7 @@ class Command(BaseCommand):
             to_ym, '%Y-%m').replace(tzinfo=pytz.UTC) - timedelta(seconds=1)
         languages = options['language'].split(',')
         max_workers = options['max_workers']
-        update = options['update']
-        return from_ym, to_ym, languages, max_workers, options['log_folder'], update, json_file
+        return from_ym, to_ym, languages, max_workers, options['log_folder']
 
     def handle(self, *args, **options):
         fill_notindexed_editor_tables_batch(*self.get_parameters(options))

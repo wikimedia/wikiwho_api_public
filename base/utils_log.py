@@ -4,7 +4,7 @@ from time import strftime
 import logging
 
 
-def get_logger(name, log_folder, is_process=True, is_set=True, language=None):
+def get_logger(name, log_folder, is_process=True, is_set=True, language=None, level=logging.INFO):
     if language:
         log_folder = join(log_folder, 'logs')
         if not exists(log_folder):
@@ -16,10 +16,10 @@ def get_logger(name, log_folder, is_process=True, is_set=True, language=None):
         mkdir(log_folder)
 
     logger = logging.getLogger(name)
-    file_handler = logging.FileHandler('{}/{}_at_{}.log'.format(log_folder,
-                                                                name,
-                                                                strftime("%Y-%m-%d-%H:%M:%S")))
-    file_handler.setLevel(logging.ERROR)
+    logger.setLevel(level)
+    file_handler = logging.FileHandler(join(log_folder,'{}_at_{}.log'.format(name,
+                                                                strftime("%Y-%m-%d-%H:%M:%S"))))
+
     if is_process:
         format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
     else:

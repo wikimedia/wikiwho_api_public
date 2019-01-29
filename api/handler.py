@@ -36,11 +36,11 @@ class WPHandlerException(Exception):
 class WPHandler(object):
     def __init__(self, article_title, page_id=None, pickle_folder='', save_tables=(),
                  check_exists=True, is_xml=False, revision_id=None, log_error_into_db=True,
-                 language=None, is_user_request=False, *args, **kwargs):
+                 language=None, is_user_request=False, wikiwho = None, *args, **kwargs):
         self.article_title = article_title
         self.saved_article_title = ''
         self.revision_ids = []
-        self.wikiwho = None
+        self.wikiwho = wikiwho
         self.pickle_folder = pickle_folder
         self.pickle_path = ''
         self.saved_rvcontinue = ''
@@ -104,7 +104,10 @@ class WPHandler(object):
                
         else:
             try:
-                self.wikiwho = pickle_load(self.pickle_path)
+                if self.wikiwho is None:
+                    self.wikiwho = pickle_load(self.pickle_path)
+                else:
+                    self.wikiwho.page_id = self.page_id
             except (EOFError,  UnpicklingError) as e: 
                 # create a new pickle, this one will overwrite the problematic one
                 self.wikiwho = Wikiwho(self.saved_article_title)

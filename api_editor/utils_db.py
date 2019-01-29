@@ -44,8 +44,9 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     try:
         wikiwho = pickle_load(pickle_path)
         title = wikiwho.title
-    except (EOFError,  UnpicklingError) as e:
+    except (EOFError,  UnpicklingError, FileNotFoundError) as e:
         title = None
+        wikiwho = None
         update = True
         # TODO log correpted pickle and dont set upgrade flag
 
@@ -55,7 +56,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
         try:
             timeout = 3600 * 6  # 6 hours
             with Timeout(seconds=timeout, error_message='Timeout {} seconds - page id {}'.format(timeout, page_id)):
-                with WPHandler(title, page_id=page_id, language=language) as wp:
+                with WPHandler(title, page_id=page_id, wikiwho=wikiwho, language=language) as wp:
                     wp.handle(revision_ids=[],
                               is_api_call=False, timeout=timeout)
                     wikiwho = wp.wikiwho

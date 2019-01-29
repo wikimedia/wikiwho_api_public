@@ -4,6 +4,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import signal
+import pytz
+import sys
 
 # from six.moves import urllib
 from lxml import etree
@@ -15,11 +17,105 @@ from copy import deepcopy
 from django.conf import settings
 from django.utils.translation import get_language
 from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
-from wp_connection import MediaWiki
+from .wp_connection import MediaWiki
 
 
 def get_wp_api_url(language=None):
     return settings.WP_API_URL.format(language or get_language())
+
+
+def create_wp_session(language=None):
+    # create session
+    session = requests.session()
+    session.auth = (settings.WP_USER, settings.WP_PASSWORD)
+    session.headers.update(settings.WP_HEADERS)
+    # get token to log in
+    wp_api_url = get_wp_api_url(language)
+    r1 = session.post(wp_api_url, data={'action': 'query', 'meta': 'tokens',
+                                        'type': 'login', 'format': 'json'})
+    token = r1.json()["query"]["tokens"]["logintoken"]
+    # token = urllib.parse.quote(token)
+    # log in
+    r2 = session.post(wp_api_url, data={'action': 'login', 'format': 'json', 'lgname': settings.WP_USER,
+                                        'lgpassword': settings.WP_PASSWORD, 'lgtoken': token})
+    return session
+
+
+def create_wiki_session(language, logger):
+    wiki = MediaWiki(get_wp_api_url(language), headers=settings.WP_HEADERS)
+
+    if wiki.login(settings.WP_USER, settings.WP_PASSWORD):
+        return wiki
+    else:
+        logger.error("Login into wikipedia failed")
+        raise Exception("Login into wikipedia failed")
+
+
+def insistent_request(wiki_session, params, logger, attempts=10):
+
+    for attempt in range(1, attempts + 1):
+        try:
+            # return wiki_session.get(wiki_session, params=params).json()
+            return wiki_session.call(params)
+        except Exception as exc:
+            import ipdb
+            ipdb.set_trace()  # breakpoint a1974868 //
+            if attempt == attempts:
+                logger.error(str(exc))
+            else:
+                logger.exception(f"Request ({url}) failed (attempt {attempt} of {attempts})")
+                raise exc
+
+
+def query(wiki_session, params, _all, logger, request_number=3, lastContinue={}):
+
+    params['action'] = 'query'
+    params['format'] = 'json'
+    counter = 0
+    while _all | (counter < request_number):
+
+        # Clone original params
+        req = params.copy()
+
+        # Modify it with the values returned in the 'continue' section of the
+        # last result.
+        req.update(lastContinue)
+
+        # Call API
+        result = insistent_request(wiki_session, req, logger)
+
+        if 'error' in result:
+            logger.error("ERROR in result: " + str(result['error']) + "\n"
+                         "Full result of the request: " + str(result))
+            raise Exception(result['error'])
+        if 'warnings' in result:
+            logger.error(result['warnings'])
+        if 'query' in result:
+            counter += 1
+            yield req, result['query']
+        if 'continue' not in result:
+            break
+
+        lastContinue = result['continue']
+
+
+def get_latest_revision_timestamps(language, _all, logger):
+
+    wiki_session = create_wiki_session(language, logger)
+    #wiki_session = create_wp_session(language)
+
+    params = {'action': 'query',
+              'prop': 'revisions',
+              'generator': 'allpages',
+              'gaplimit': 'max',
+              'rvprop': 'timestamp',
+              'gapnamespace': '0',
+              'format': 'json',
+              'formatversion': '2'
+              }
+
+    for req, result in query(wiki_session, params, _all, logger):
+        yield req, result
 
 
 def get_page_data_from_wp_api(params, language='en'):
@@ -137,70 +233,6 @@ def get_revision_timestamp(revision_ids, language):
     timestamps = {str(rev['revid']): rev['timestamp']
                   for rev in page['revisions']}
     return [timestamps[rev_id] for rev_id in revision_ids]
-
-
-def create_wp_session(language=None):
-    # create session
-    session = requests.session()
-    session.auth = (settings.WP_USER, settings.WP_PASSWORD)
-    session.headers.update(settings.WP_HEADERS)
-    # get token to log in
-    wp_api_url = get_wp_api_url(language)
-    r1 = session.post(wp_api_url, data={'action': 'query', 'meta': 'tokens',
-                                        'type': 'login', 'format': 'json'})
-    token = r1.json()["query"]["tokens"]["logintoken"]
-    # token = urllib.parse.quote(token)
-    # log in
-    r2 = session.post(wp_api_url, data={'action': 'login', 'format': 'json', 'lgname': settings.WP_USER,
-                                        'lgpassword': settings.WP_PASSWORD, 'lgtoken': token})
-    return session
-
-
-def query(wiki, request, _all=True, request_number=3):
-    request['action'] = 'query'
-    request['format'] = 'json'
-    lastContinue = {}
-    counter = 0
-    while _all | (counter < request_number):
-
-        # Clone original request
-        req = request.copy()
-
-        # Modify it with the values returned in the 'continue' section of the last result.
-        req.update(lastContinue)
-
-        # Call API
-        result = insistent_request(wiki, req)
-
-        if 'error' in result:
-            raise Exception(result['error'])
-        if 'warnings' in result:
-            print(result['warnings'])
-        if 'query' in result:
-            counter += 1
-            yield result['query']
-        if 'continue' not in result:
-            break
-
-        lastContinue = result['continue']
-
-def insistent_request(wiki, params, attempts=10):
-    for attempt in range(1, attempts + 1):
-        try:
-            #return wiki.get(wiki, params=params).json()
-            return wiki.call(params)
-        except Exception as exc:
-            if attempt == self.attempts:
-                raise exc
-            else:
-                print(f"Request ({url}) failed (attempt {attempt + 1} of {self.attempts}) ")
-
-def create_wiki_session(language=None):
-    wiki = MediaWiki(get_wp_api_url(language), user_agent=settings.WP_HEADERS)
-    if wiki.login(settings.WP_USER, settings.WP_PASSWORD):
-        return wiki
-    else:
-        raise Exception("Login into wikipedia failed")
 
 
 class Timeout:

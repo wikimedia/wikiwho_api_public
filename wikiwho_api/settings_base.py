@@ -206,7 +206,7 @@ WP_API_URL = 'https://{}/w/api.php'.format(WP_SERVER)
 WP_REQUEST_TIMEOUT = 30  # [seconds]
 # WP_HEADERS_USER_AGENT = 'wikiwho-api'
 WP_HEADERS_USER_AGENT = 'Wikiwho API'
-WP_HEADERS_FROM = 'fabian.floeck@gesis.org and kenan.erdogan@gesis.org'
+WP_HEADERS_FROM = 'fabian.floeck@gesis.org, kenan.erdogan@gesis.org, and roberto.ulloa@gesis.org'
 WP_HEADERS = {'User-Agent': WP_HEADERS_USER_AGENT, 'From': WP_HEADERS_FROM}
 WP_HEADERS_EXTENDED = {'User-Agent': WP_HEADERS_USER_AGENT, 'From': WP_HEADERS_FROM, "Accept": "*/*", "Host": WP_SERVER}
 

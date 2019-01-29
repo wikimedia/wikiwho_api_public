@@ -80,7 +80,7 @@ def pickle_load(pickle_path):
             with OpenFileLock(pickle_path, 'rb', timeout=settings.PICKLE_OPEN_TIMEOUT) as f:
                 obj = pickle.load(f)
             return obj
-        except (EOFError,  UnpicklingError) as e:  # TODO should we also catch BlockingIOError and retry?
+        except (EOFError,  UnpicklingError, FileNotFoundError) as e:  # TODO should we also catch BlockingIOError and retry?
             # if EOFError, retry
             # EOFError Ran out of input
             # EOFError usually happens when pickle file is empty (size 0)
