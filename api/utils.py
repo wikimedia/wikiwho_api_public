@@ -15,6 +15,7 @@ from copy import deepcopy
 from django.conf import settings
 from django.utils.translation import get_language
 from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
+from wp_connection import MediaWiki
 
 
 def get_wp_api_url(language=None):
@@ -47,7 +48,8 @@ def get_page_data_from_wp_api(params, language='en'):
             raise Exception('Please provide only 1 page title in params.')
         page_title = titles[0]
     else:
-        raise Exception('Please provide "pageids" or "titles" parameter in params.')
+        raise Exception(
+            'Please provide "pageids" or "titles" parameter in params.')
     rvcontinue = params.get('rvcontinue', '0')
 
     session = create_wp_session()
@@ -57,13 +59,15 @@ def get_page_data_from_wp_api(params, language='en'):
         if rvcontinue != '0' and rvcontinue != '1':
             params['rvcontinue'] = rvcontinue
 
-        # IIRC the params flag means the params you see tacked onto the end of your url, while data is the POST data.
+        # IIRC the params flag means the params you see tacked onto the end of
+        # your url, while data is the POST data.
         result = session.get(url=get_wp_api_url(language), headers=settings.WP_HEADERS,
                              params=params, timeout=settings.WP_REQUEST_TIMEOUT)
         result = result.json()
 
         if 'error' in result:
-            raise Exception('Wikipedia API returned the following error:' + str(result['error']))
+            raise Exception(
+                'Wikipedia API returned the following error:' + str(result['error']))
 
         # if 'query' in result:
         pages = result['query']['pages']
@@ -92,7 +96,8 @@ def get_latest_revision_data(language, page_id=None, article_title=None, revisio
     params.update({'action': "query", 'prop': 'info', 'format': 'json'})
     # params = {'action': "query", 'titles': article_title, 'format': 'json'}
     # make get request
-    resp_ = requests.get(get_wp_api_url(language), params=params, headers=settings.WP_HEADERS)
+    resp_ = requests.get(get_wp_api_url(language),
+                         params=params, headers=settings.WP_HEADERS)
     response = resp_.json()  # convert response into dict
     pages = response["query"].get('pages')
     is_pages = False
@@ -129,7 +134,8 @@ def get_revision_timestamp(revision_ids, language):
         # given rev ids must belong to 1 article
         return {'error': 'Bad revision ids.'}
     _, page = pages.popitem()
-    timestamps = {str(rev['revid']): rev['timestamp'] for rev in page['revisions']}
+    timestamps = {str(rev['revid']): rev['timestamp']
+                  for rev in page['revisions']}
     return [timestamps[rev_id] for rev_id in revision_ids]
 
 
@@ -150,7 +156,55 @@ def create_wp_session(language=None):
     return session
 
 
+def query(wiki, request, _all=True, request_number=3):
+    request['action'] = 'query'
+    request['format'] = 'json'
+    lastContinue = {}
+    counter = 0
+    while _all | (counter < request_number):
+
+        # Clone original request
+        req = request.copy()
+
+        # Modify it with the values returned in the 'continue' section of the last result.
+        req.update(lastContinue)
+
+        # Call API
+        result = insistent_request(wiki, req)
+
+        if 'error' in result:
+            raise Exception(result['error'])
+        if 'warnings' in result:
+            print(result['warnings'])
+        if 'query' in result:
+            counter += 1
+            yield result['query']
+        if 'continue' not in result:
+            break
+
+        lastContinue = result['continue']
+
+def insistent_request(wiki, params, attempts=10):
+    for attempt in range(1, attempts + 1):
+        try:
+            #return wiki.get(wiki, params=params).json()
+            return wiki.call(params)
+        except Exception as exc:
+            if attempt == self.attempts:
+                raise exc
+            else:
+                print(f"Request ({url}) failed (attempt {attempt + 1} of {self.attempts}) ")
+
+def create_wiki_session(language=None):
+    wiki = MediaWiki(get_wp_api_url(language), user_agent=settings.WP_HEADERS)
+    if wiki.login(settings.WP_USER, settings.WP_PASSWORD):
+        return wiki
+    else:
+        raise Exception("Login into wikipedia failed")
+
+
 class Timeout:
+
     def __init__(self, seconds=1, error_message='Timeout'):
         self.seconds = seconds
         self.error_message = error_message
@@ -182,7 +236,8 @@ def generate_rvcontinue(language, rev_id, rev_ts=None):
         if 'error' in rev_ts_list:
             return '0', '0'
         rev_ts = rev_ts_list[0]
-    timestamp = datetime.strptime(rev_ts, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
+    timestamp = datetime.strptime(
+        rev_ts, '%Y-%m-%dT%H:%M:%SZ') + timedelta(seconds=1)
     rvcontinue = timestamp.strftime('%Y%m%d%H%M%S') + "|" + str(rev_id + 1)
     if return_ts:
         return rvcontinue, rev_ts
@@ -191,7 +246,8 @@ def generate_rvcontinue(language, rev_id, rev_ts=None):
 
 
 def revert_rvcontinue(rvcontinue):
-    timestamp = datetime.strptime(rvcontinue.split('|')[0], '%Y%m%d%H%M%S') - timedelta(seconds=1)
+    timestamp = datetime.strptime(rvcontinue.split(
+        '|')[0], '%Y%m%d%H%M%S') - timedelta(seconds=1)
     timestamp = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
     return timestamp
 
@@ -253,7 +309,8 @@ def get_article_xml(article_name):
             params['rvcontinue'] = rvcontinue
             print(rvcontinue)
         try:
-            result = session.get(url=get_wp_api_url(), headers=headers, params=params)
+            result = session.get(url=get_wp_api_url(),
+                                 headers=headers, params=params)
         except:
             print("HTTP Response error! Try again later!")
         p = etree.XMLParser(huge_tree=True, encoding='utf-8')
@@ -262,7 +319,8 @@ def get_article_xml(article_name):
         except TypeError:
             root = etree.fromstring(result.content, parser=p)
         if root.find('error') is not None:
-            print("Wikipedia API returned the following error: " + str(root.find('error').get('info')))
+            print("Wikipedia API returned the following error: " +
+                  str(root.find('error').get('info')))
         query = root.find('query')
         if query is not None:
             pages = query.find('pages')
@@ -270,7 +328,8 @@ def get_article_xml(article_name):
                 page = pages.find('page')
                 if page is not None:
                     if page.get('_idx') == '-1':
-                        print("The article ({}) you are trying to request does not exist!".format(article_name))
+                        print("The article ({}) you are trying to request does not exist!".format(
+                            article_name))
                     else:
                         if mediawiki_page.find('title') is None:
                             title = etree.SubElement(mediawiki_page, "title")
@@ -280,13 +339,16 @@ def get_article_xml(article_name):
                             id = etree.SubElement(mediawiki_page, "id")
                             id.text = page.get('pageid', '')
                         for rev in root.find('query').find('pages').find('page').find('revisions').findall('rev'):
-                            revision = etree.SubElement(mediawiki_page, "revision")
+                            revision = etree.SubElement(
+                                mediawiki_page, "revision")
                             id = etree.SubElement(revision, "id")
                             id.text = rev.get('revid')
                             timestamp = etree.SubElement(revision, "timestamp")
                             timestamp.text = rev.get('timestamp', '')
-                            contributor = etree.SubElement(revision, "contributor")
-                            username = etree.SubElement(contributor, "username")
+                            contributor = etree.SubElement(
+                                revision, "contributor")
+                            username = etree.SubElement(
+                                contributor, "username")
                             username.text = rev.get('user', '')
                             id = etree.SubElement(contributor, "id")
                             id.text = rev.get('userid', '0')
@@ -305,4 +367,5 @@ def get_article_xml(article_name):
             rvcontinue = False
     document = etree.ElementTree(mediawiki)
     document.write(xml_file)
-    # document.write(xml_file, pretty_print=True, xml_declaration=True, encoding)
+    # document.write(xml_file, pretty_print=True, xml_declaration=True,
+    # encoding)
