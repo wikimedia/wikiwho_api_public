@@ -6,6 +6,7 @@ from os.path import basename, join, dirname, realpath
 from django.db import connection
 from django.utils.dateparse import parse_datetime, datetime_re
 from django.db.utils import ProgrammingError
+from django.conf import settings
 
 from api.handler import WPHandler, WPHandlerException
 from api.utils_pickles import pickle_load, UnpicklingError
@@ -54,7 +55,10 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
         # update pickle until latest revision
         page_id = int(basename(pickle_path)[:-2])
         try:
-            timeout = 3600 * 6  # 6 hours
+            if (settings.DEBUG or settings.TESTING):
+                timeout = 60 * 2
+            else:
+                timeout = 3600 * 6  # 6 hours
             with Timeout(seconds=timeout, error_message='Timeout {} seconds - page id {}'.format(timeout, page_id)):
                 with WPHandler(title, page_id=page_id, wikiwho=wikiwho, language=language) as wp:
                     wp.handle(revision_ids=[],

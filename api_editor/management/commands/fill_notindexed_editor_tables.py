@@ -44,15 +44,20 @@ def fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, up
                     pickle_path, from_ym, to_ym, language, update)
 
             return
-        except WPHandlerException as e:
+        except WPHandlerException as e:          
             if e.code in ['00', '02']:
                 # article does not exist on wp anymore
                 # and invalid namespace (probably page was an article and then is moved at some point)
                 # dont try to update it, process what we have
-                update = False
-                sleep(30)
-                if not retries:
-                    raise
+                if update:
+                    retries += 1
+
+                    # if we are not updating there is no need to do the sleep
+                    update = False
+                else:
+                    if not retries:
+                        raise
+                    sleep(30)
             else:
                 raise e
         except (UnboundLocalError, JSONDecodeError):
@@ -61,8 +66,7 @@ def fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, up
                 raise
 
 
-def non_updated_pickles(language, pickle_folder, _all, logger):
-
+def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
     # utcfromtimestamp gives the universal time of the file, it takes into consideration
     # if the file was created during +01:00 (winter time) or +02:00 (summer
     # time) for Germany
@@ -81,51 +85,41 @@ def non_updated_pickles(language, pickle_folder, _all, logger):
     _to_update = {}
     _updated = {}
 
-    for req, result in get_latest_revision_timestamps(language, _all, logger):
-        for page in result['pages']:
-            pageid = str(page['pageid'])
-            if pageid in _index:
-                logger.warning(f"ERROR! The page id {pagid} exists already "
-                               "(found twice in Wikipedia!)")
+    try:
+        for req, result in get_latest_revision_timestamps(language, _all, logger):
+            for page in result['pages']:
+                pageid = str(page['pageid'])
+                if pageid in _index:
+                    logger.warning(f"ERROR! The page id {pagid} exists already "
+                                   "(found twice in Wikipedia!)")
 
-            _index[pageid] = {
-                'title': page['title'],
-                'ts': pytz.UTC.localize(MediaWiki.parse_date(
-                    page['revisions'][0]['timestamp']))
-            }
-            if pageid in _files:
-                _index[pageid]['ts_file'] = _files.pop(pageid)
-                _found[pageid] = _index[pageid]
-                if _index[pageid]['ts_file'] < _index[pageid]['ts']:
-                    _to_update[pageid] = _index[pageid]
-                    yield pageid, True
+                _index[pageid] = {
+                    'title': page['title'],
+                    'ts': pytz.UTC.localize(MediaWiki.parse_date(
+                        page['revisions'][0]['timestamp']))
+                }
+                if pageid in _files:
+                    _index[pageid]['ts_file'] = _files.pop(pageid)
+                    _found[pageid] = _index[pageid]
+                    if _index[pageid]['ts_file'] < _index[pageid]['ts']:
+                        _to_update[pageid] = _index[pageid]
+                        yield pageid, True
+                    else:
+                        _updated[pageid] = _index[pageid]
+                        yield pageid, False
                 else:
-                    _updated[pageid] = _index[pageid]
-                    yield pageid, False
-            else:
-                _new[pageid] = _index[pageid]
-                if not (settings.DEBUG or settings.TESTING):
-                    logger.warning(f"Pickle was not found for {pageid}")
-                    yield pageid, True
+                    _new[pageid] = _index[pageid]
+                    if not (settings.DEBUG or settings.TESTING):
+                        logger.warning(f"Pickle was not found for {pageid}")
+                        yield pageid, True
 
-            sys.stdout.write('\rLeft: {} - Found: {:.3f}% - New: {} - Processed: {}'.
-                  format(total_files - len(_found),
-                         len(_found) * 100 / total_files,
-                         len(_new), len(_index)))
-
-    if len(_files) > 0:
-
-        logger.warning("There were files in the pickles directory that were "
-                       "not return by the Wikipedia API")
-
-        processed = len(_found)
-        for pageid, date in _files.items():
-            yield pageid, True
-            processed += 1
-            sys.stdout.write('\rLeft: {} - Found: {:.3f}% - New: {} - Processed: {}'.
-                  format(total_files - len(_found),
-                         len(_found) * 100 / total_files,
-                         len(_new), len(_index)))
+                sys.stdout.write(
+                    '\rLeft: {} Found: {:.3f}% New: {} Processed: {} Outdated: {} Updated: {} Processing: {}'.
+                    format(total_files - len(_found), len(_found) * 100 / total_files,
+                           len(_new), len(_index), len(_to_update), len(_updated), pageid))
+    except Exception as exc:
+        logger.exception("Failure iterating over the latest revision timestamps\n"
+                         f"The las page processed page ({pageid}) was {_index[pageid]}")
 
     logger.info(f"""
         ---------------------------------------------------------------------------------------------
@@ -149,31 +143,65 @@ def non_updated_pickles(language, pickle_folder, _all, logger):
         ---------------------------------------------------------------------------------------------
         """)
 
+    _ts = strftime("%Y-%m-%d-%H:%M:%S")
+    with open(join(log_folder, f'new_{_ts}.json'), 'w') as fp:
+        json.dump(_new, fp, default=str)
+
+    with open(join(log_folder, f'not_in_wikipedia_{_ts}.json'), 'w') as fp:
+        json.dump(_files, fp, default=str)
+
+    with open(join(log_folder, f'needed_update_{_ts}.json'), 'w') as fp:
+        json.dump(_to_update, fp, default=str)
+
+
+    if len(_files) > 0:
+
+        logger.warning("There were files in the pickles directory that were "
+                       "not return by the Wikipedia API")
+
+        processed = len(_found)
+        for pageid, date in _files.items():
+            yield pageid, True
+            processed += 1
+            sys.stdout.write(
+                    '\rLeft: {} Found: {:.3f}% New: {} Processed: {} Outdated: {} Updated: {} Processing: {}'.
+                    format(total_files - len(_found), len(_found) * 100 / total_files,
+                           len(_new), len(_index), len(_to_update), len(_updated), pageid))
+
+
 
 def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, log_folder):
     # set logging
     if not exists(log_folder):
         mkdir(log_folder)
 
+    parallel = max_workers >= 1
+    logger = get_logger('fill_notindexed_editor_tables_from_{}_to_{}'.format(
+        str(from_ym.date()), str(to_ym.date())),
+        log_folder, is_process=parallel, is_set=True, level=logging.INFO)
+
     print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
     print(f"Workers: {max_workers} - Languages: {languages} - From: {from_ym} - To: {to_ym}")
+
+
     # Concurrent process of pickles of each language to generate editor data
     for language in languages:
-
         pickle_folder = get_pickle_folder(language)
+        non_updated_pickles_iter = non_updated_pickles(language, pickle_folder, True, logger, log_folder)
+
+
         print('Start: {} - {} at {}'.format(language,
                                             pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
 
-        parallel = max_workers >= 1
-        logger = get_logger('fill_notindexed_editor_tables_{}_from_{}_{}_to_{}_{}'.format(
-            language, from_ym.year, from_ym.month, to_ym.year, to_ym.month),
-            log_folder, language=language, is_process=parallel, is_set=True, level=logging.INFO)
-
         if not parallel:
-            for pageid, update in non_updated_pickles(language, pickle_folder, True, logger):
-                fill_notindexed_editor_tables_base(
-                    join(pickle_folder, f'{pageid}.p'),
-                    from_ym, to_ym, language, update)
+            for pageid, update in non_updated_pickles_iter:
+                try:
+                    fill_notindexed_editor_tables_base(
+                        join(pickle_folder, f'{pageid}.p'),
+                        from_ym, to_ym, language, update, )
+                except Exception as e:
+                    logger.exception("Uncontrolled error")
+                    logger.info("ERROR: " + str(e))
         else:
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
                 jobs = {}
@@ -186,7 +214,7 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
                     # assume is over, but if there is pickles, set to False
                     all_jobs_sent = True
 
-                    for pageid, update in non_updated_pickles(language, pickle_folder, True, logger):
+                    for pageid, update in non_updated_pickles_iter:
                         # there is at least the current job, loop again
                         all_jobs_sent = False
 

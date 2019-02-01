@@ -58,8 +58,6 @@ def insistent_request(wiki_session, params, logger, attempts=10):
             # return wiki_session.get(wiki_session, params=params).json()
             return wiki_session.call(params)
         except Exception as exc:
-            import ipdb
-            ipdb.set_trace()  # breakpoint a1974868 //
             if attempt == attempts:
                 logger.error(str(exc))
             else:
