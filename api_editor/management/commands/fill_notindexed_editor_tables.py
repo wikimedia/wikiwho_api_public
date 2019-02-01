@@ -70,12 +70,20 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
     # utcfromtimestamp gives the universal time of the file, it takes into consideration
     # if the file was created during +01:00 (winter time) or +02:00 (summer
     # time) for Germany
+
+    json_folder = join(log_folder, language)
+    _date = strftime("%Y-%m-%d")
+    if not exists(json_folder):
+        mkdir(json_folder)
+
     _files = {
         basename(p_path)[:-2]: pytz.UTC.localize(datetime.utcfromtimestamp(getmtime(p_path)))
         for p_path in glob.iglob(join(pickle_folder, '*.p'))
     }
 
-    pickles_list = list(glob.iglob(join(pickle_folder, '*.p')))
+    with open(join(json_folder, f'{_date}-files_index.json'), 'w') as fp:
+        json.dump(_files, fp, default=str)
+
     total_files = len(_files)
     print(f'Total files in the directory: {total_files}')
 
@@ -128,7 +136,6 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
         logger.exception("Failure iterating over the latest revision timestamps\n"
                          f"The las page processed page ({pageid}) was {_index[pageid]}")
 
-    json_folder = join(log_folder, language)
     logger.info(f"""
         ---------------------------------------------------------------------------------------------
         REPORT for {language} LANGUAGE:
@@ -153,16 +160,13 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
         ---------------------------------------------------------------------------------------------
         """)
 
-    _ts = strftime("%Y-%m-%d-%H:%M:%S")
-    if not exists(json_folder):
-        mkdir(json_folder)
-    with open(join(json_folder, f'{_ts}_new.json'), 'w') as fp:
+    with open(join(json_folder, f'{_date}-new.json'), 'w') as fp:
         json.dump(_new, fp, default=str)
 
-    with open(join(json_folder, f'{_ts}_not_in_wikipedia.json'), 'w') as fp:
+    with open(join(json_folder, f'{_date}-not_in_wikipedia.json'), 'w') as fp:
         json.dump(_files, fp, default=str)
 
-    with open(join(json_folder, f'{_ts}_needed_update.json'), 'w') as fp:
+    with open(join(json_folder, f'{_date}-needed_update.json'), 'w') as fp:
         json.dump(_to_update, fp, default=str)
 
 
