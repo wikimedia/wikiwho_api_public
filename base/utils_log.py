@@ -4,26 +4,21 @@ from time import strftime
 import logging
 
 
-def get_logger(name, log_folder, is_process=True, is_set=True, language=None, level=logging.INFO):
+def get_logger(name, log_folder, is_process=True, is_set=True, language='', level=logging.INFO, descriptor=''):
     if language:
-        log_folder = join(log_folder, 'logs')
-        if not exists(log_folder):
-            mkdir(log_folder)
-        log_folder = join(log_folder, language)
-    else:
-        log_folder = join(log_folder, 'logs')
+        descriptor = f'LNG:{language} {descriptor}'
+        
     if not exists(log_folder):
         mkdir(log_folder)
 
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    file_handler = logging.FileHandler(join(log_folder,'{}_at_{}.log'.format(name,
-                                                                strftime("%Y-%m-%d-%H:%M:%S"))))
+    file_handler = logging.FileHandler(join(log_folder,f'{name}.log'))
 
     if is_process:
-        format_ = '%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s'
+        format_ = f'%(asctime)s %(processName)-10s {descriptor} %(levelname)-8s %(message)s'
     else:
-        format_ = '%(asctime)s %(threadName)-10s %(name)s %(levelname)-8s %(message)s'
+        format_ = f'%(asctime)s %(threadName)-10s {descriptor} %(levelname)-8s %(message)s'
     formatter = logging.Formatter(format_)
     file_handler.setFormatter(formatter)
     if is_set:
