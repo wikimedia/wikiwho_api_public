@@ -9,9 +9,10 @@ ACTIONS_MAX_WORKERS = 0
 
 EVENTS_STREAM_LOG = '/home/ulloaro/git/wikiwho_api/tmp_pickles/events_stream_log'
 
-ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en']
+#ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en']
+ACTIONS_LANGUAGES = ['eu']
 CRONJOBS = [
-    ('*/1 * * * *', 'api_editor.cron.update_actions_tables', f'>> /tmp/cron_prints.log 2>> /tmp/cron_errors.log')
+    ('23 * * * *', 'api_editor.cron.update_actions_tables', f'>> /tmp/cron_prints.log 2>> /tmp/cron_errors.log')
 ]
 
 ALLOWED_HOSTS = ['local_host', '127.0.0.1']

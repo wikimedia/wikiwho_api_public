@@ -21,6 +21,7 @@ from simplejson import JSONDecodeError
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from django.core.management.base import BaseCommand
+from django.conf import settings
 
 from api.utils_pickles import get_pickle_folder
 from api.handler import WPHandlerException
@@ -29,7 +30,6 @@ from api.wp_connection import MediaWiki
 
 from base.utils_log import get_logger, get_stream_base_logger
 from api_editor.utils_db import fill_notindexed_editor_tables
-from django.conf import settings
 
 
 def fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, update):
@@ -42,7 +42,6 @@ def fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, up
                     or (pytz.UTC.localize(datetime.fromtimestamp(getmtime(pickle_path))) >= from_ym):
                 fill_notindexed_editor_tables(
                     pickle_path, from_ym, to_ym, language, update)
-
             return
         except WPHandlerException as e:
             if e.code in ['00', '02']:
@@ -56,14 +55,14 @@ def fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, up
                     update = False
                 else:
                     if not retries:
-                        raise
+                        raise e
                     sleep(30)
             else:
                 raise e
-        except (UnboundLocalError, JSONDecodeError):
+        except (UnboundLocalError, JSONDecodeError) as exc:
             sleep(30)
             if not retries:
-                raise
+                raise exc
 
 
 def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
@@ -93,48 +92,52 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
     _to_update = {}
     _updated = {}
 
-    try:
-        for req, result in get_latest_revision_timestamps(language, _all, logger):
-            for page in result['pages']:
-                pageid = str(page['pageid'])
-                if pageid in _index:
-                    logger.warning(f"ERROR! The page id {pagid} exists already "
-                                   "(found twice in Wikipedia!)")
+    if total_files == 0:
+        logger.error(f"No pickles found in the directory: {pickle_folder}")
+    else:
+        try:
+            for req, result in get_latest_revision_timestamps(language, _all, logger):
+                for page in result['pages']:
+                    pageid = str(page['pageid'])
+                    if pageid in _index:
+                        logger.warning(f"ERROR! The page id {pagid} exists already "
+                                       "(found twice in Wikipedia!)")
 
-                _index[pageid] = {
-                    'title': page['title'],
-                    'ts': pytz.UTC.localize(MediaWiki.parse_date(
-                        page['revisions'][0]['timestamp']))
-                }
-                if pageid in _files:
-                    _index[pageid]['ts_file'] = _files.pop(pageid)
-                    _found[pageid] = _index[pageid]
-                    if _index[pageid]['ts_file'] < _index[pageid]['ts']:
-                        _to_update[pageid] = _index[pageid]
-                        yield pageid, True
+                    _index[pageid] = {
+                        'title': page['title'],
+                        'ts': pytz.UTC.localize(MediaWiki.parse_date(
+                            page['revisions'][0]['timestamp']))
+                    }
+                    if pageid in _files:
+                        _index[pageid]['ts_file'] = _files.pop(pageid)
+                        _found[pageid] = _index[pageid]
+                        if _index[pageid]['ts_file'] < _index[pageid]['ts']:
+                            _to_update[pageid] = _index[pageid]
+                            yield pageid, True
+                        else:
+                            _updated[pageid] = _index[pageid]
+                            yield pageid, False
                     else:
-                        _updated[pageid] = _index[pageid]
-                        yield pageid, False
-                else:
-                    _new[pageid] = _index[pageid]
-                    if not (settings.DEBUG or settings.TESTING):
-                        logger.warning(f"Pickle was not found for {pageid}")
-                        yield pageid, True
+                        _new[pageid] = _index[pageid]
+                        if not (settings.DEBUG or settings.TESTING):
+                            logger.warning(f"Pickle was not found for {pageid}")
+                            yield pageid, True
 
-                sys.stdout.write(
-                    ('\rProcessed: {}({:.3f}%) Left: {} New: {} Found: {:.3f}% '
-                        'Outdated: {} Updated: {} Current Page ID: {} ').
-                    format(
-                        len(_index) - len(_new),
-                        (len(_index) - len(_new)) * 100 / total_files,
-                        total_files - len(_found),
-                        len(_new),
-                        len(_found) * 100 / total_files,
-                        len(_to_update),
-                        len(_updated), pageid))
-    except Exception as exc:
-        logger.exception("Failure iterating over the latest revision timestamps\n"
-                         f"The las page processed page ({pageid}) was {_index[pageid]}")
+                    sys.stdout.write(
+                        ('\rLeft: {} ({:.3f}%) Processed: {} New: {} Found: {} ({:.3f}%) '
+                            'Outdated: {} Updated: {} Current Page ID: {} ').
+                        format(
+                            total_files - len(_found),
+                            (total_files - len(_found)) * 100 / total_files,
+                            len(_index),
+                            len(_new),
+                            len(_found),
+                            len(_found) * 100 / total_files,
+                            len(_to_update),
+                            len(_updated), pageid))
+        except Exception as exc:
+            logger.exception("Failure iterating over the latest revision timestamps\n"
+                             f"The las page processed page ({pageid}) was {_index[pageid]}")
 
     logger.info(f"""
         ---------------------------------------------------------------------------------------------
@@ -198,10 +201,10 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
                 try:
                     fill_notindexed_editor_tables_base(
                         join(pickle_folder, f'{pageid}.p'),
-                        from_ym, to_ym, language, update, )
-                except Exception as e:
-                    logger.exception("Uncontrolled error")
-                    logger.info("ERROR: " + str(e))
+                        from_ym, to_ym, language, update)
+                except Exception as exc:
+                    logger.exception(
+                        '{}-{}'.format(pageid, language))
         else:
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
                 jobs = {}
@@ -220,7 +223,8 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
 
                         pickle_path = join(pickle_folder, f'{pageid}.p')
                         job = executor.submit(
-                            fill_notindexed_editor_tables_base, pickle_path, from_ym, to_ym, language, update)
+                            fill_notindexed_editor_tables_base, pickle_path, from_ym, to_ym,
+                            language, update)
                         sent_jobs += 1
                         jobs[job] = pageid
                         if len(jobs) == max_workers:  # limit # jobs with max_workers
@@ -233,7 +237,7 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
                             data = job.result()
                         except Exception as exc:
                             logger.exception(
-                                '{}-{}'.format(page_id_, language))
+                                '{}-{}'.format(pageid, language))
 
                         del jobs[job]
                         break  # to add a new job, if there is any
@@ -250,8 +254,8 @@ class Command(BaseCommand):
                             help='Year-month to create data from [YYYY-MM]. Included.')
         parser.add_argument('-to', '--to_ym', required=True,
                             help='Year-month to create data until [YYYY-MM]. Not included.')
-        parser.add_argument(
-            '-lang', '--language', help="Wikipedia language. Ex: 'en' or 'en,eu,de'", required=True)
+        parser.add_argument('-lang', '--language',
+                            help="Wikipedia language. Ex: 'en' or 'en,eu,de'", required=True)
         parser.add_argument('-log', '--log_folder',
                             help='Folder where to write logs.',
                             default=settings.ACTIONS_LOG)
