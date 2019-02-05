@@ -240,6 +240,13 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
 
                         del jobs[job]
                         break  # to add a new job, if there is any
+
+                for job in as_completed(jobs):
+                    import ipdb; ipdb.set_trace()  # breakpoint e629c564 //
+
+                if len(jobs) > 0:
+                    import ipdb; ipdb.set_trace()  # breakpoint 533bf6c4 //
+                    
         print('\nDone: {} - {} at {}'.format(language,
                                              pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
     print('Done at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
