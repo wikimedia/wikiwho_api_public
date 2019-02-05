@@ -63,9 +63,14 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 with WPHandler(title, page_id=page_id, wikiwho=wikiwho, language=language) as wp:
                     wp.handle(revision_ids=[],
                               is_api_call=False, timeout=timeout)
-                    wikiwho = wp.wikiwho
+                    if wp.wikiwho is None:
+                        raise Exception('Handler did not return any WikiWho object')
+                    else: 
+                        wikiwho = wp.wikiwho
         except WPHandlerException as e:
             if e.code != '30':
+                raise e
+            if wikiwho is None:
                 raise e
 
     with open(join(dirname(realpath(__file__)), 'stop_word_list.txt'), 'r') as f:
