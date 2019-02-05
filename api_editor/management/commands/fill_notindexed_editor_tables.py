@@ -184,18 +184,19 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
     print('Start at {}'.format(strftime('%H:%M:%S %d-%m-%Y')))
     print(f"Workers: {max_workers} - Languages: {languages} - From: {from_ym} - To: {to_ym}")
 
-    # Concurrent process of pickles of each language to generate editor data
-    for language in languages:
-        logger.info(f"Start processing NOT INDEXED tables for {language}")
 
-        pickle_folder = get_pickle_folder(language)
-        non_updated_pickles_iter = non_updated_pickles(
-            language, pickle_folder, True, logger, log_folder)
+    if not parallel:
+        # Concurrent process of pickles of each language to generate editor data
+        for language in languages:
+            logger.info(f"Start processing NOT INDEXED tables for {language}")
 
-        print('Start: {} - {} at {}'.format(language,
-                                            pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
+            pickle_folder = get_pickle_folder(language)
+            non_updated_pickles_iter = non_updated_pickles(
+                language, pickle_folder, True, logger, log_folder)
 
-        if not parallel:
+            print('Start: {} - {} at {}'.format(language,
+                                                pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
+
             for pageid, update in non_updated_pickles_iter:
                 try:
                     fill_notindexed_editor_tables_base(
@@ -204,8 +205,19 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
                 except Exception as exc:
                     logger.exception(
                         '{}-{}'.format(pageid, language))
-        else:
-            with ProcessPoolExecutor(max_workers=max_workers) as executor:
+    else:
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                # Concurrent process of pickles of each language to generate editor data
+            for language in languages:
+                logger.info(f"Start processing NOT INDEXED tables for {language}")
+
+                pickle_folder = get_pickle_folder(language)
+                non_updated_pickles_iter = non_updated_pickles(
+                    language, pickle_folder, True, logger, log_folder)
+
+                print('Start: {} - {} at {}'.format(language,
+                                                    pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
+
                 jobs = {}
                 all_jobs_sent = False
                 sent_jobs = 0
@@ -241,11 +253,6 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
                         del jobs[job]
                         break  # to add a new job, if there is any
 
-                for job in as_completed(jobs):
-                    import ipdb; ipdb.set_trace()  # breakpoint e629c564 //
-
-                if len(jobs) > 0:
-                    import ipdb; ipdb.set_trace()  # breakpoint 533bf6c4 //
                     
         print('\nDone: {} - {} at {}'.format(language,
                                              pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
