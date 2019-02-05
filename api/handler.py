@@ -68,7 +68,7 @@ class WPHandler(object):
                                          MESSAGES['invalid_page_id'][1])
             if (LongFailedArticle.objects.filter(page_id=self.page_id, language=self.language).exists() or 
                RecursionErrorArticle.objects.filter(page_id=self.page_id, language=self.language).exists()):
-                raise WPHandlerException(MESSAGES['never_finished_article'][0],
+                raise WPHandlerException(MESSAGES['never_finished_article'][0] + f' Page Id: {self.page_id}',
                                          MESSAGES['never_finished_article'][1])
 
         if self.is_xml:
