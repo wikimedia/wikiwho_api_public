@@ -109,7 +109,8 @@ def get_latest_revision_timestamps(language, _all, logger):
               'rvprop': 'timestamp',
               'gapnamespace': '0',
               'format': 'json',
-              'formatversion': '2'
+              'formatversion': '2',
+              'gapfilterredir': 'nonredirects'
               }
 
     for req, result in query(wiki_session, params, _all, logger):

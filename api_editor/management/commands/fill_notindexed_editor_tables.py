@@ -120,7 +120,6 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
                     else:
                         _new[pageid] = _index[pageid]
                         if not (settings.DEBUG or settings.TESTING):
-                            logger.warning(f"Pickle was not found for {pageid}")
                             yield pageid, True
 
                     sys.stdout.write(
