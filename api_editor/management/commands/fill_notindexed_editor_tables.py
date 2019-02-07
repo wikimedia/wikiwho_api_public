@@ -100,8 +100,9 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
                 for page in result['pages']:
                     pageid = str(page['pageid'])
                     if pageid in _index:
-                        logger.warning(f"ERROR! The page id {pagid} exists already "
-                                       "(found twice in Wikipedia!)")
+                        logger.warning(f"ERROR! The page id {pageid} exists already "
+                                       "(found twice in Wikipedia!) with two titles: "
+                                       f"'{_index[pageid]['title']}' and '{page['title']}'")
 
                     _index[pageid] = {
                         'title': page['title'],

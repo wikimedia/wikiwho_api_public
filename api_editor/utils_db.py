@@ -70,6 +70,8 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
         except WPHandlerException as e:
             if e.code != '30':
                 raise e
+            elif wikiwho is None:
+                return
             if wikiwho is None:
                 raise e
 
