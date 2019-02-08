@@ -71,8 +71,8 @@ def query(wiki_session, params, _all, logger, request_number=3, lastContinue={})
     params['format'] = 'json'
     counter = 0
 
-    if (settings.DEBUG or settings.TESTING):
-        lastContinue = {'gapcontinue': 'z', 'continue': 'gapcontinue||'}
+    #if (settings.DEBUG or settings.TESTING):
+    #    lastContinue = {'gapcontinue': 'z', 'continue': 'gapcontinue||'}
 
     while _all | (counter < request_number):
 
@@ -114,7 +114,7 @@ def get_latest_revision_timestamps(language, _all, logger):
               'gapnamespace': '0',
               'format': 'json',
               'formatversion': '2',
-              'gapfilterredir': 'nonredirects'
+              #'gapfilterredir': 'nonredirects'
               }
 
     for req, result in query(wiki_session, params, _all, logger):
