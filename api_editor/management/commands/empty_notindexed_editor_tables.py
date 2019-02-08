@@ -13,6 +13,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
+from django import db
 
 from base.utils_log import get_logger
 from api_editor.utils_db import empty_notindexed_editor_tables
@@ -83,4 +84,8 @@ def empty_notindexed_editor_tables_batch(languages, max_workers, log_folder):
                     sys.stdout.write('\rLanguages left: {} - Languages processed: {:.3f}%'.
                                      format(languages_left, languages_all - languages_left))
                     break  # to add a new job, if there is any
+
+        # force all connections to close (necessary for the SSL PostgreSQL connections to work)
+        db.connections.close_all()
+        
     print('\nDone: {} - at {}'.format(language, strftime('%H:%M:%S %d-%m-%Y')))

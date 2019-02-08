@@ -71,8 +71,8 @@ def query(wiki_session, params, _all, logger, request_number=3, lastContinue={})
     params['format'] = 'json'
     counter = 0
 
-    # if (settings.DEBUG or settings.TESTING):
-    #     lastContinue = {'gapcontinue': 'z', 'continue': 'gapcontinue||'}
+    if (settings.DEBUG or settings.TESTING):
+        lastContinue = {'gapcontinue': 'z', 'continue': 'gapcontinue||'}
 
     while _all | (counter < request_number):
 
