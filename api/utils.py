@@ -60,9 +60,10 @@ def insistent_request(wiki_session, params, logger, attempts=10):
         except Exception as exc:
             if attempt == attempts:
                 logger.error(str(exc))
-            else:
-                logger.exception(f"Request ({url}) failed (attempt {attempt} of {attempts})")
                 raise exc
+            else:
+                logger.exception(f"Request ({wiki_session._api_url}: {str(params)}) failed "
+                    "(attempt {attempt} of {attempts})")
 
 
 def query(wiki_session, params, _all, logger, request_number=3, lastContinue={}):
@@ -71,7 +72,7 @@ def query(wiki_session, params, _all, logger, request_number=3, lastContinue={})
     params['format'] = 'json'
     counter = 0
 
-    #if (settings.DEBUG or settings.TESTING):
+    # if (settings.DEBUG or settings.TESTING):
     #    lastContinue = {'gapcontinue': 'z', 'continue': 'gapcontinue||'}
 
     while _all | (counter < request_number):

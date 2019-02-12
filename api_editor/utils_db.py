@@ -3,6 +3,8 @@ from datetime import datetime
 from collections import defaultdict
 from os.path import basename, join, dirname, realpath
 
+from deployment.celery_config import long_task_soft_time_limit
+
 from django.db import connection
 from django.utils.dateparse import parse_datetime, datetime_re
 from django.db.utils import ProgrammingError
@@ -10,6 +12,7 @@ from django.conf import settings
 
 from api.handler import WPHandler, WPHandlerException
 from api.utils_pickles import pickle_load, UnpicklingError
+from api.tasks import save_long_failed_article
 from api.utils import Timeout
 from api_editor.utils import Timer
 
@@ -50,7 +53,6 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
         wikiwho = None
         update = True
         # TODO log correpted pickle and dont set upgrade flag
-
     if update:
         # update pickle until latest revision
         page_id = int(basename(pickle_path)[:-2])
@@ -58,22 +60,21 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
             if (settings.DEBUG or settings.TESTING):
                 timeout = 60 * 2
             else:
-                timeout = 3600 * 6  # 6 hours
+                timeout = long_task_soft_time_limit  # 6 hours
             with Timeout(seconds=timeout, error_message='Timeout {} seconds - page id {}'.format(timeout, page_id)):
                 with WPHandler(title, page_id=page_id, wikiwho=wikiwho, language=language) as wp:
                     wp.handle(revision_ids=[],
                               is_api_call=False, timeout=timeout)
                     if wp.wikiwho is None:
-                        raise Exception('Handler did not return any WikiWho object')
-                    else: 
+                        raise Exception(
+                            'Handler did not return any WikiWho object')
+                    else:
                         wikiwho = wp.wikiwho
         except WPHandlerException as e:
-            if e.code != '30':
-                raise e
-            elif wikiwho is None:
-                return
             if wikiwho is None:
                 raise e
+        except TimeoutError as e:
+            save_long_failed_article(wp, language)
 
     with open(join(dirname(realpath(__file__)), 'stop_word_list.txt'), 'r') as f:
         stopword_set = set(f.read().splitlines())

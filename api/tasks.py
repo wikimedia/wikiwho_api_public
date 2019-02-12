@@ -32,25 +32,27 @@ def process_article_task(language, page_title, page_id=None, revision_id=None,
     except SoftTimeLimitExceeded as e:
         cache.delete(cache_key)
         if raise_soft_time_limit:
-            failed_rev_id = int(wp.wikiwho.revision_curr.id)
-            failed_article, created = LongFailedArticle.objects.get_or_create(page_id=wp.page_id,
-                                                                              language=language,
-                                                                              defaults={'count': 1,
-                                                                                        'title': wp.saved_article_title or '',
-                                                                                        'revisions': [failed_rev_id]})
-            if not created:
-                failed_article.count += 1
-                if failed_rev_id not in failed_article.revisions:
-                    failed_article.revisions.append(failed_rev_id)
-                    failed_article.save(update_fields=['count', 'modified', 'revisions'])
-                else:
-                    failed_article.save(update_fields=['count', 'modified'])
+            save_long_failed_article(wp, language)
             raise e
         else:
             process_article_long.delay(language, wp.saved_article_title or '', wp.page_id, revision_id)
     #         process_article_long.apply_async([page_title], queue='long_lasting')
     return True
 
+def save_long_failed_article(wp, language):
+    failed_rev_id = int(wp.wikiwho.revision_curr.id)
+    failed_article, created = LongFailedArticle.objects.get_or_create(page_id=wp.page_id,
+                                                                      language=language,
+                                                                      defaults={'count': 1,
+                                                                                'title': wp.saved_article_title or '',
+                                                                                'revisions': [failed_rev_id]})
+    if not created:
+        failed_article.count += 1
+        if failed_rev_id not in failed_article.revisions:
+            failed_article.revisions.append(failed_rev_id)
+            failed_article.save(update_fields=['count', 'modified', 'revisions'])
+        else:
+            failed_article.save(update_fields=['count', 'modified'])
 
 # retry max 6 times (default value of max_retries is 3) and
 # wait 360 seconds (default value of default_retry_delay is 180) between each retry.

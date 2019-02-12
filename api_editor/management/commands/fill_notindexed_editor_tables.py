@@ -93,12 +93,24 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
     _to_update = {}
     _updated = {}
 
+    # FOR TESTING USING FILES
+    # _test =  [(None, {'pages': [{
+    #     'ns': 0,
+    #     'pageid': pid,
+    #     'revisions': [{'timestamp': ts}],
+    #     'title': ''
+    # } for pid, ts in _files.items()]})]
+
     if total_files == 0:
         logger.error(f"No pickles found in the directory: {pickle_folder}")
     else:
         try:
+            # FOR TESTING USING FILES
+            # for req, result in _test:
             for req, result in get_latest_revision_timestamps(language, _all, logger):
+
                 for page in result['pages']:
+
                     pageid = str(page['pageid'])
                     if pageid in _index:
                         logger.warning(f"ERROR! The page id {pageid} exists already "
@@ -109,11 +121,14 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
                         'title': page['title'],
                         'ts': pytz.UTC.localize(MediaWiki.parse_date(
                             page['revisions'][0]['timestamp']))
+                        # FOR TESTING USING FILES
+                        # if isinstance(page['revisions'][0]['timestamp'], str)
+                        # else page['revisions'][0]['timestamp']
                     }
                     if pageid in _files:
                         _index[pageid]['ts_file'] = _files.pop(pageid)
                         _found[pageid] = _index[pageid]
-                        if _index[pageid]['ts_file'] < _index[pageid]['ts']:
+                        if _index[pageid]['ts_file'] <= _index[pageid]['ts']:
                             _to_update[pageid] = _index[pageid]
                             yield pageid, True
                         else:
@@ -137,8 +152,10 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
                             len(_to_update),
                             len(_updated), pageid))
         except Exception as exc:
-            logger.exception("Failure iterating over the latest revision timestamps\n"
-                             f"The las page processed page ({pageid}) was {_index[pageid]}")
+            msg = "Failure iterating over Wikipedia latest revisions ids.\n"
+            if 'pageid' in locals() and pageid in _index:
+                msg += f"The las page processed page ({pageid}) was {_index[pageid]} for {language}"
+            logger.exception(msg)
 
     logger.info(f"""
         ---------------------------------------------------------------------------------------------
@@ -172,6 +189,25 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
 
     with open(join(json_folder, f'{_date}-needed_update.json'), 'w') as fp:
         json.dump(_to_update, fp, default=str)
+
+    # sent the rest of the files in the directory in case they were recently
+    # removed
+    logger.info("Processing files (pickles) that were not found in Wikipedia not found files ")
+
+    try:
+        total_files = len(_files)
+        for ctr, (pageid, ts) in enumerate(_files.items(), 1):
+            yield pageid, False
+            sys.stdout.write(
+                ('\rRemaining: {} ({:.3f}%) Counter: {} Total: {} Current Page ID: {} ').
+                format(
+                    total_files - ctr,
+                    (total_files - ctr) * 100 / total_files,
+                    ctr,
+                    total_files,
+                    pageid))
+    except Exception as exc:
+        logger.exception("Error processing the remaining files")
 
 
 def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, log_folder):
