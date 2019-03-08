@@ -238,6 +238,8 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
                     fill_notindexed_editor_tables_base(
                         join(pickle_folder, f'{pageid}.p'),
                         from_ym, to_ym, language, update)
+                except WPHandlerException as wp_exc:                   
+                    logger.error('{}-{}: {}'.format(pageid, language, wp_exc.message))
                 except Exception as exc:
                     logger.exception(
                         '{}-{}'.format(pageid, language))
@@ -273,6 +275,8 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
                         try:
                             processed_jobs += 1
                             data = job.result()
+                        except WPHandlerException as wp_exc:
+                            logger.error('{}-{}: {}'.format(pageid, language, wp_exc.message))
                         except Exception as exc:
                             logger.exception(
                                 '{}-{}'.format(pageid, language))

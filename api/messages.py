@@ -15,6 +15,6 @@ MESSAGES = {
     'wp_warning': ('Wikipedia API returned the following warning:', '12'),
     'already_exists': ('Article ({}) already exists.', '20'),
     'only_read_allowed': ('Only read is allowed for now.', '21'),
-    'never_finished_article': ('Article cant be processed.', '30'),
+    'never_finished_article': ('Article cannot be processed.', '30'),
     'ignore_article_in_staging': ('Non-pickled article ({}) is ignored during staging.', '40'),
 }
