@@ -18,6 +18,7 @@ from django.conf import settings
 from django.utils.translation import get_language
 from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
 from .wp_connection import MediaWiki
+from time import sleep
 
 
 def get_wp_api_url(language=None):
@@ -51,7 +52,7 @@ def create_wiki_session(language, logger):
         raise Exception("Login into wikipedia failed")
 
 
-def insistent_request(wiki_session, params, logger, attempts=10):
+def insistent_request(wiki_session, params, logger, attempts=20):
 
     for attempt in range(1, attempts + 1):
         try:
@@ -59,11 +60,12 @@ def insistent_request(wiki_session, params, logger, attempts=10):
             return wiki_session.call(params)
         except Exception as exc:
             if attempt == attempts:
-                logger.error(str(exc))
+                logger.exception(str(exc))
                 raise exc
             else:
-                logger.exception(f"Request ({wiki_session._api_url}: {str(params)}) failed "
-                    "(attempt {attempt} of {attempts})")
+                logger.error(f"Request ({wiki_session._api_url}: {str(params)}) failed "
+                             f"(attempt {attempt} of {attempts})")
+                sleep(10)
 
 
 def query(wiki_session, params, _all, logger, request_number=3, lastContinue={}):
