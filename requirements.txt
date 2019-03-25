@@ -1,7 +1,7 @@
 # Runs on python 3.5.2
 
-git+git://github.com/wikiwho/WikiWho.git@master#egg=WikiWho
-git+git://github.com/wikiwho/WhoColor.git@master#egg=WhoColor
+WikiWho==1.0.3
+WhoColor==1.0.1
 Django<2.0
 future==0.16.0
 six==1.11.0
