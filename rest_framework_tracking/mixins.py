@@ -115,7 +115,6 @@ class LoggingMixin(object):
         
         # priorizes page_id as the main instance in the log
         if hasattr(self, 'page_id'):
-            print('here')
             self.request.log.instance_id = self.page_id
             self.request.log.type_id = 'page_id'
         elif hasattr(self, 'editor_id'):
