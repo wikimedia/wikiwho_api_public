@@ -206,7 +206,7 @@ def get_latest_revision_data(language, page_id=None, article_title=None, revisio
     if pages:
         is_pages = True
         _, page = pages.popitem()
-    if not is_pages or 'missinqg' in page or _ == '-1':
+    if not is_pages or 'missing' in page or _ == '-1':
         # article title does not exist or contains invalid character
         return {'page_id': page_id,  # only return page id. because maybe article is deleted on wp but we still have it.
                 'article_db_title': None,
