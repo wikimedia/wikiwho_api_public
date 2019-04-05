@@ -13,12 +13,12 @@ from .models import LongFailedArticle
 
 
 def process_article_task(language, page_title, page_id=None, revision_id=None,
-                         cache_key_timeout=0, raise_soft_time_limit=False):
+                         cache_key_timeout=0, raise_soft_time_limit=False, is_user_request=False):
     # if cache.get('page_{}'.format(page_id)) == '1':
     #     return False
     cache_key = None
     try:
-        with WPHandler(page_title, page_id=page_id, revision_id=revision_id, language=language) as wp:
+        with WPHandler(page_title, page_id=page_id, revision_id=revision_id, language=language, is_user_request=is_user_request) as wp:
             cache_key = wp.cache_key
             wp.handle(revision_ids=[], is_api_call=False, timeout=cache_key_timeout)
     except WPHandlerException as e:
@@ -83,7 +83,7 @@ def process_article(self, language, page_title):
 @shared_task(ignore_result=True, bind=True, soft_time_limit=user_task_soft_time_limit, max_retries=6, default_retry_delay=6 * 60)
 def process_article_user(self, language, page_title, page_id=None, revision_id=None):
     try:
-        process_article_task(language, page_title, page_id, revision_id, cache_key_timeout=user_task_soft_time_limit)
+        process_article_task(language, page_title, page_id, revision_id, cache_key_timeout=user_task_soft_time_limit, is_user_request=True)
     except WPHandlerException as e:
         if e.code =='40':
             # 40: Non-pickled articles are ignored during staging
