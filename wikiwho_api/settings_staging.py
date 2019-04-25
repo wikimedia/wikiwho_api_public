@@ -44,11 +44,11 @@ LOGGING = {
 
 # REST_FRAMEWORK and Swagger UI
 REST_FRAMEWORK = {
-    #'DEFAULT_THROTTLE_RATES': {
-        #'anon': '2000/day',
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100000/day',
         # 'user': '2000/day',
-        #'burst': '60/minute'
-    #},
+        'burst': '1000/minute'
+    },
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
     # 'DEFAULT_AUTHENTICATION_CLASSES': (
     #     'rest_framework.authentication.BasicAuthentication',
