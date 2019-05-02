@@ -89,6 +89,9 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     # contain parsed information of the editor
     ed2edid = {}
 
+    # The line below will stop the execution, and you can access the variables from here
+    # import ipdb; ipdb.set_trace()
+
     for rev_id, rev in wikiwho.revisions.items():
         #dt = parse_datetime(rev.timestamp)
         dt = datetime(**{k: pytz.utc if v == 'Z' else int(v)
