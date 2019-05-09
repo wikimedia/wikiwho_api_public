@@ -24,6 +24,10 @@ class EditorData(BaseModel):
     reins_persistent = models.IntegerField(blank=False)
     reins_stopword_count = models.IntegerField(blank=False, default=0)
 
+    elegibles = models.IntegerField(blank=False, default=0)
+    undos = models.IntegerField(blank=False, default=0)
+    conflict = models.FloatField(blank=False, default=0)
+
     @property
     def language(self):
         return self.__class__.__name__.lower().split('editordata')[-1]
