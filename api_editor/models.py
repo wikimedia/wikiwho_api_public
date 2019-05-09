@@ -25,7 +25,7 @@ class EditorData(BaseModel):
     reins_stopword_count = models.IntegerField(blank=False, default=0)
 
     elegibles = models.IntegerField(blank=False, default=0)
-    undos = models.IntegerField(blank=False, default=0)
+    conflicts = models.IntegerField(blank=False, default=0)
     conflict = models.FloatField(blank=False, default=0)
 
     @property
