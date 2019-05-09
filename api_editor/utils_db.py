@@ -1,4 +1,8 @@
 import pytz
+import numpy as np
+import pandas as pd
+
+
 from datetime import datetime
 from collections import defaultdict
 from os.path import basename, join, dirname, realpath
@@ -15,6 +19,7 @@ from api.utils_pickles import pickle_load, UnpicklingError
 from api.tasks import save_long_failed_article
 from api.utils import Timeout
 from api_editor.utils import Timer
+
 
 from api_editor.models import (
     EditorDataEnNotIndexed, EditorDataEn,
@@ -41,6 +46,10 @@ __REINS__ = 8
 __REINS_48__ = 9
 __REINS_P__ = 10
 __REINS_SW__ = 11
+__ELEGIBLE__ = 12
+__CONFLICTS__ = 13
+__SUM_LOGS__ = 14
+base = 3600
 
 
 def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
@@ -89,9 +98,6 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     # contain parsed information of the editor
     ed2edid = {}
 
-    # The line below will stop the execution, and you can access the variables from here
-    # import ipdb; ipdb.set_trace()
-
     for rev_id, rev in wikiwho.revisions.items():
         #dt = parse_datetime(rev.timestamp)
         dt = datetime(**{k: pytz.utc if v == 'Z' else int(v)
@@ -112,7 +118,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
             }
 
     # create a dictionary to store intermediate results
-    editors_dict = {y + m:  defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    editors_dict = {y + m:  defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
                     for y in range(from_ym.year * 100, to_ym.year * 100 + 1, 100) for m in range(1, 13)}
 
     # use the date timestamps as it is faster
@@ -133,6 +139,11 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
             editors_dict[oadd_ym][oadd_editor][__ADDS__] += 1
             if token.outbound:
                 first_out_ts = article_revisions_tss[token.outbound[0]]
+                if not is_stop_word:
+                    editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__ELEGIBLE__] += 1
+                    if wikiwho.revisions[token.outbound[0]].editor != oadd_editor:
+                            editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__CONFLICTS__] += 1
+                            editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__SUM_LOGS__] += np.log(base) / np.log(first_out_ts - oadd_rev_ts)
                 if first_out_ts - oadd_rev_ts >= seconds_limit:
                     # there is an outbund but survived 48 hours
                     editors_dict[oadd_ym][oadd_editor][__ADDS_48__] += 1
@@ -168,12 +179,18 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                         if rein_ym != article_revisions_yms[out_rev_id]:
                             # it was not deleted again this month, so it is
                             # permanent
-                            editors_dict[rein_ym][
-                                rein_editor][__REINS_P__] += 1
+                            editors_dict[rein_ym][rein_editor][__REINS_P__] += 1
 
                     if is_stop_word:
                         # stopword count for rein
                         editors_dict[rein_ym][rein_editor][__REINS_SW__] += 1
+                    
+                    else:
+                        editors_dict[article_revisions_yms[out_rev_id]][wikiwho.revisions[out_rev_id].editor][__ELEGIBLE__] += 1
+                        if rein_editor != wikiwho.revisions[out_rev_id].editor:
+                            editors_dict[article_revisions_yms[out_rev_id]][wikiwho.revisions[out_rev_id].editor][__CONFLICTS__] += 1
+                            editors_dict[article_revisions_yms[out_rev_id]][wikiwho.revisions[out_rev_id].editor][__SUM_LOGS__] += np.log(base) / np.log(article_revisions_tss[out_rev_id] - in_rev_ts)
+     
                 elif in_rev_ts > to_ym_ts:
                     in_rev_id = None
                     break
@@ -207,6 +224,11 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     if is_stop_word:
                         # stopword count for del
                         editors_dict[del_ym][del_editor][__DELS_SW__] += 1
+                    else:
+                        editors_dict[article_revisions_yms[in_rev_id]][wikiwho.revisions[in_rev_id].editor][__ELEGIBLE__] += 1
+                        if del_editor != wikiwho.revisions[in_rev_id].editor:
+                            editors_dict[article_revisions_yms[in_rev_id]][wikiwho.revisions[in_rev_id].editor][__CONFLICTS__] += 1
+                            editors_dict[article_revisions_yms[in_rev_id]][wikiwho.revisions[in_rev_id].editor][__SUM_LOGS__] += np.log(base) / np.log(in_rev_ts - out_rev_ts)                
 
                 else:
                     # no in for this out, therefore is permament
@@ -236,6 +258,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     # this month)
                     break
 
+        
         # last reinsertion
         # if len(token.outbound) - len(token.inbound) == 0:
         if in_rev_id is not None:
@@ -250,9 +273,11 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     # stopword count for rein
                     editors_dict[rein_ym][rein_editor][__REINS_SW__] += 1
 
+
     # map the ym to datetimes in order to do it only once
     ym2dt = {ym: datetime.strptime('{}-{:02}'.format(*divmod(ym, 100)), '%Y-%m').replace(
         tzinfo=pytz.UTC).date() for ym in editors_dict.keys()}
+
 
     with connection.cursor() as cursor:
 
@@ -262,11 +287,12 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 (page_id, editor_id, editor_name, year_month, 
                 adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
                 dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
-                reins, reins_surv_48h, reins_persistent, reins_stopword_count) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
+                reins, reins_surv_48h, reins_persistent, reins_stopword_count, 
+                conflict, elegibles, conflicts) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, %s, %s, %s);
             """.format(EDITOR_MODEL[language][0].__name__.lower())
 
-        # fill data
+         #fill data
         cursor.executemany(insert_query,
                            ((wikiwho.page_id, ed2edid[editor]['id'], ed2edid[editor]['name'], ym2dt[ym],
                              data[__ADDS__], data[__ADDS_48__], data[
@@ -274,7 +300,9 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                              data[__DELS__], data[__DELS_48__], data[
                                  __DELS_P__], data[__DELS_SW__],
                              data[__REINS__], data[__REINS_48__], data[
-                                 __REINS_P__], data[__REINS_SW__]
+                                 __REINS_P__], data[__REINS_SW__], data[
+                                 __SUM_LOGS__], data[__ELEGIBLE__], data[
+                                 __CONFLICTS__]
                              ) for ym, editor_data in editors_dict.items()
                                for editor, data in editor_data.items()))
 
@@ -322,13 +350,13 @@ def fill_indexed_editor_tables(language, from_ym, to_ym):
                 (page_id, editor_id, year_month, editor_name, 
                     adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
                     dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
-                    reins, reins_surv_48h, reins_persistent, reins_stopword_count) 
+                    reins, reins_surv_48h, reins_persistent, reins_stopword_count, elegible, conflicts, sum_logs) 
                 (
                   SELECT 
                     page_id, editor_id, year_month, editor_name,
                     adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
                     dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
-                    reins, reins_surv_48h, reins_persistent, reins_stopword_count
+                    reins, reins_surv_48h, reins_persistent, reins_stopword_count, elegible, conflicts, sum_logs
                   FROM {}
                   WHERE (year_month >= '{}-01-01'::DATE AND year_month <= '{}-12-31'::DATE )
                 );
