@@ -159,6 +159,11 @@ REST_FRAMEWORK = {
     # 'DEFAULT_AUTHENTICATION_CLASSES': (
     #     'rest_framework.authentication.BasicAuthentication',
     # ),
+    'OVERRIDE_THROTTLE_RATES': {
+        #'ulloaro': '10000/sec',
+        #'xtools_user': '10000/sec',
+        'XTools': '10000/sec',
+    },
 }
 
 SWAGGER_SETTINGS = {
