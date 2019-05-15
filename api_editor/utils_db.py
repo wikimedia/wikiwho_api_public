@@ -139,11 +139,13 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
             editors_dict[oadd_ym][oadd_editor][__ADDS__] += 1
             if token.outbound:
                 first_out_ts = article_revisions_tss[token.outbound[0]]
-                if not is_stop_word:
-                    editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__ELEGIBLE__] += 1
-                    if wikiwho.revisions[token.outbound[0]].editor != oadd_editor:
-                            editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__CONFLICTS__] += 1
-                            editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__SUM_LOGS__] += np.log(base) / np.log(first_out_ts - oadd_rev_ts)
+                #if not is_stop_word:
+                    #for an action to be elegible it should be deleted at least once and it shouldn't be a stop word
+                    #editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__ELEGIBLE__] += 1
+                    #if wikiwho.revisions[token.outbound[0]].editor != oadd_editor:
+                            # the first deletion is already the conflict
+                            #editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__CONFLICTS__] += 1
+                            #editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__SUM_LOGS__] += (np.log(base) / np.log(first_out_ts - oadd_rev_ts + 2))
                 if first_out_ts - oadd_rev_ts >= seconds_limit:
                     # there is an outbund but survived 48 hours
                     editors_dict[oadd_ym][oadd_editor][__ADDS_48__] += 1
@@ -184,12 +186,12 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     if is_stop_word:
                         # stopword count for rein
                         editors_dict[rein_ym][rein_editor][__REINS_SW__] += 1
-                    
                     else:
                         editors_dict[article_revisions_yms[out_rev_id]][wikiwho.revisions[out_rev_id].editor][__ELEGIBLE__] += 1
                         if rein_editor != wikiwho.revisions[out_rev_id].editor:
+                            # the next deletion is a conflict
                             editors_dict[article_revisions_yms[out_rev_id]][wikiwho.revisions[out_rev_id].editor][__CONFLICTS__] += 1
-                            editors_dict[article_revisions_yms[out_rev_id]][wikiwho.revisions[out_rev_id].editor][__SUM_LOGS__] += np.log(base) / np.log(article_revisions_tss[out_rev_id] - in_rev_ts)
+                            editors_dict[article_revisions_yms[out_rev_id]][wikiwho.revisions[out_rev_id].editor][__SUM_LOGS__] += (np.log(base) / np.log(article_revisions_tss[out_rev_id] - in_rev_ts + 2))
      
                 elif in_rev_ts > to_ym_ts:
                     in_rev_id = None
@@ -224,12 +226,11 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     if is_stop_word:
                         # stopword count for del
                         editors_dict[del_ym][del_editor][__DELS_SW__] += 1
-                    else:
-                        editors_dict[article_revisions_yms[in_rev_id]][wikiwho.revisions[in_rev_id].editor][__ELEGIBLE__] += 1
+                    elif i != 0:
+                        editors_dict[rein_ym][wikiwho.revisions[in_rev_id].editor][__ELEGIBLE__] += 1
                         if del_editor != wikiwho.revisions[in_rev_id].editor:
-                            editors_dict[article_revisions_yms[in_rev_id]][wikiwho.revisions[in_rev_id].editor][__CONFLICTS__] += 1
-                            editors_dict[article_revisions_yms[in_rev_id]][wikiwho.revisions[in_rev_id].editor][__SUM_LOGS__] += np.log(base) / np.log(in_rev_ts - out_rev_ts)                
-
+                            editors_dict[rein_ym][wikiwho.revisions[in_rev_id].editor][__CONFLICTS__] += 1
+                            editors_dict[rein_ym][wikiwho.revisions[in_rev_id].editor][__SUM_LOGS__] += (np.log(base) / np.log(in_rev_ts - out_rev_ts + 2))                                    
                 else:
                     # no in for this out, therefore is permament
                     editors_dict[del_ym][del_editor][__DELS__] += 1
@@ -239,6 +240,11 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     if is_stop_word:
                         # stopword count for del
                         editors_dict[del_ym][del_editor][__DELS_SW__] += 1
+                    #else:
+                        #editors_dict[del_ym][del_editor][__ELEGIBLE__] += 1
+                        #if del_editor != wikiwho.revisions[token.inbound[i]].editor:
+                            #editors_dict[del_ym][del_editor][__CONFLICTS__] += 1
+                            #editors_dict[del_ym][del_editor][__SUM_LOGS__] += (np.log(base) / np.log(out_rev_ts - article_revisions_tss[token.outbound[0]] + 2))                
                     # break the loop (nothing else happen to this token during
                     # this month)
                     break
@@ -350,13 +356,13 @@ def fill_indexed_editor_tables(language, from_ym, to_ym):
                 (page_id, editor_id, year_month, editor_name, 
                     adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
                     dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
-                    reins, reins_surv_48h, reins_persistent, reins_stopword_count, elegible, conflicts, sum_logs) 
+                    reins, reins_surv_48h, reins_persistent, reins_stopword_count, conflict, elegibles, conflicts) 
                 (
                   SELECT 
                     page_id, editor_id, year_month, editor_name,
                     adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
                     dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
-                    reins, reins_surv_48h, reins_persistent, reins_stopword_count, elegible, conflicts, sum_logs
+                    reins, reins_surv_48h, reins_persistent, reins_stopword_count, conflict, elegibles, conflicts
                   FROM {}
                   WHERE (year_month >= '{}-01-01'::DATE AND year_month <= '{}-12-31'::DATE )
                 );
