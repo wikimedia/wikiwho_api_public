@@ -122,7 +122,9 @@ custom_data = {
         # 'description': 'A short description of the application. GFM syntax can be used for rich text '
         #                'representation. \n\nSpecification: http://swagger.io/specification \n\n'
         #                'Example api: http://petstore.swagger.io/',
-        'description': 'Documentation can be found at [api.wikiwho.net](https://api.wikiwho.net)\n\n'
+        'description': 'Documentation can be found at [api.wikiwho.net](https://api.wikiwho.net).\n\n'
+                       'We recommend to use the [WikiWho Wrapper](https://pypi.org/project/wikiwho-wrapper/) '
+                       'to easily access the API requests from Python 3.\n\n'
                        '### **Created by **[GESIS - Leibniz Institute for the Social Sciences, CSS group]'
                        '(https://www.gesis.org/en/institute/departments/computational-social-science/)\n\n'
                        'Data from this API is published under the CC-BY-SA 4.0 license. Original revision data '
