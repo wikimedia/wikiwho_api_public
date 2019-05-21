@@ -31,6 +31,25 @@
                         API {{ language.code|upper }}</a>
                 {% endfor %}
             </p>
+            <h4>Quick Start</h4>
+            <p>
+                The quickest way to get started is following our <a href="https://notebooks.gesis.org/binder/jupyter/user/gesiscss-wikiwho_tutorial-ayi6dqvv/notebooks/1.%20API%20requests%20%28WikiWho%20wrapper%29.ipynb">WikiWho Tutorial</a>. Or, you can also check the <a href="https://notebooks.gesis.org/binder/v2/gh/gesiscss/wikiwho_demo/master?urlpath=%2Fapps%2F1.%20General%20Metadata%20of%20a%20Wikipedia%20Article.ipynb">WikiWho Demo</a> for some applied ideas.
+                </p>
+
+                Both of them use the  <a href="https://pypi.org/project/wikiwho-wrapper/"> WikiWho Wrapper</a>, a Python 3 package that can be installed through pypi:
+                <pre><code>pip install wikiwho_wrapper</code></pre>
+                The WikiWho wrapper provide easy access to the API:
+
+                <pre><code>from wikiwho_wrapper import WikiWho
+ww = WikiWho(lng='de') # or WikiWho(USERNAME, PASSWORD, lng='de')
+
+#You can either use api to directly access the JSON (raw format from api.wikiwho.net)
+response = ww.api.all_content("Bioglass")
+
+# Or you can use the dataview to obtain a pandas DataFrame with the data
+dataView = ww.dv.all_content("Bioglass")
+</code></pre>
+            
             <h4>Usage</h4>
             <p>
                 For each article page, the API mirrors its current state on the Wikipedia.

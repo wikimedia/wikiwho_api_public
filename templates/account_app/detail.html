@@ -27,6 +27,9 @@
             </ul>
         </div>
     {% endif %}
+        <div class="alert alert-block alert-success">
+            <p>Try your account with the <a href="https://pypi.org/project/wikiwho-wrapper/">WikiWho Wrapper</a>.</p>
+        </div>
         <form action="" method="post">
             {% csrf_token %}
             {{ user_form|crispy }}

@@ -47,10 +47,15 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100000/day',
         # 'user': '2000/day',
-        'burst': '1000/minute'
+        'burst': '5/minute'
     },
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
     # 'DEFAULT_AUTHENTICATION_CLASSES': (
     #     'rest_framework.authentication.BasicAuthentication',
     # ),
+    'OVERRIDE_THROTTLE_RATES': {
+        #'ulloaro': '10000/sec',
+        #'xtools_user': '10000/sec',
+        'XTools': '10000/sec',
+    },
 }
