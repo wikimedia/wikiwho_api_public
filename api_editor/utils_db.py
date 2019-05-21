@@ -187,11 +187,11 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                         # stopword count for rein
                         editors_dict[rein_ym][rein_editor][__REINS_SW__] += 1
                     else:
-                        editors_dict[article_revisions_yms[out_rev_id]][wikiwho.revisions[out_rev_id].editor][__ELEGIBLE__] += 1
-                        if rein_editor != wikiwho.revisions[out_rev_id].editor:
+                        editors_dict[rein_ym][rein_editor][__ELEGIBLE__] += 1
+                        if rein_editor != wikiwho.revisions[token.outbound[i-1]].editor:
                             # the next deletion is a conflict
-                            editors_dict[article_revisions_yms[out_rev_id]][wikiwho.revisions[out_rev_id].editor][__CONFLICTS__] += 1
-                            editors_dict[article_revisions_yms[out_rev_id]][wikiwho.revisions[out_rev_id].editor][__SUM_LOGS__] += (np.log(base) / np.log(article_revisions_tss[out_rev_id] - in_rev_ts + 2))
+                            editors_dict[rein_ym][rein_editor][__CONFLICTS__] += 1
+                            editors_dict[rein_ym][rein_editor][__SUM_LOGS__] += (np.log(base) / np.log(in_rev_ts - article_revisions_tss[token.outbound[i-1]] + 2))
      
                 elif in_rev_ts > to_ym_ts:
                     in_rev_id = None
@@ -227,11 +227,12 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                         # stopword count for del
                         editors_dict[del_ym][del_editor][__DELS_SW__] += 1
                     elif i != 0:
-                        editors_dict[rein_ym][wikiwho.revisions[in_rev_id].editor][__ELEGIBLE__] += 1
-                        if del_editor != wikiwho.revisions[in_rev_id].editor:
-                            editors_dict[rein_ym][wikiwho.revisions[in_rev_id].editor][__CONFLICTS__] += 1
-                            editors_dict[rein_ym][wikiwho.revisions[in_rev_id].editor][__SUM_LOGS__] += (np.log(base) / np.log(in_rev_ts - out_rev_ts + 2))                                    
-                else:
+                        editors_dict[del_ym][del_editor][__ELEGIBLE__] += 1
+                        if del_editor != wikiwho.revisions[token.inbound[i-1]].editor:
+                            editors_dict[del_ym][del_editor][__CONFLICTS__] += 1
+                            editors_dict[del_ym][del_editor][__SUM_LOGS__] += (np.log(base) / np.log(out_rev_ts - article_revisions_tss[token.inbound[i-1]] + 2))
+
+                else: # i == len(token.inbound): last out
                     # no in for this out, therefore is permament
                     editors_dict[del_ym][del_editor][__DELS__] += 1
                     editors_dict[del_ym][del_editor][__DELS_48__] += 1
@@ -240,11 +241,11 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     if is_stop_word:
                         # stopword count for del
                         editors_dict[del_ym][del_editor][__DELS_SW__] += 1
-                    #else:
-                        #editors_dict[del_ym][del_editor][__ELEGIBLE__] += 1
-                        #if del_editor != wikiwho.revisions[token.inbound[i]].editor:
-                            #editors_dict[del_ym][del_editor][__CONFLICTS__] += 1
-                            #editors_dict[del_ym][del_editor][__SUM_LOGS__] += (np.log(base) / np.log(out_rev_ts - article_revisions_tss[token.outbound[0]] + 2))                
+                    elif i != 0:
+                        editors_dict[del_ym][del_editor][__ELEGIBLE__] += 1
+                        if del_editor != wikiwho.revisions[token.inbound[i-1]].editor:
+                            editors_dict[del_ym][del_editor][__CONFLICTS__] += 1
+                            editors_dict[del_ym][del_editor][__SUM_LOGS__] += (np.log(base) / np.log(out_rev_ts - article_revisions_tss[token.outbound[0]] + 2))
                     # break the loop (nothing else happen to this token during
                     # this month)
                     break
@@ -259,7 +260,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
 
                     # there is a reinsertion to be processed in the next loop
                     rein_ym = article_revisions_yms[in_rev_id]
-                else:
+                else: # i == len(token.inbound): last out
                     # break the loop (nothing else happen to this token during
                     # this month)
                     break
@@ -278,6 +279,14 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 if is_stop_word:
                     # stopword count for rein
                     editors_dict[rein_ym][rein_editor][__REINS_SW__] += 1
+                else:
+                    editors_dict[rein_ym][rein_editor][__ELEGIBLE__] += 1
+                    if rein_editor != wikiwho.revisions[token.outbound[i-1]].editor:
+                        # the next deletion is a conflict
+                        editors_dict[rein_ym][rein_editor][__CONFLICTS__] += 1
+                        editors_dict[rein_ym][rein_editor][__SUM_LOGS__] += (np.log(base) / np.log(in_rev_ts - article_revisions_tss[token.outbound[i-1]] + 2))
+ 
+
 
 
     # map the ym to datetimes in order to do it only once
