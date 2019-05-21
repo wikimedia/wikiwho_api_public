@@ -49,7 +49,7 @@ __REINS_SW__ = 11
 __ELEGIBLE__ = 12
 __CONFLICTS__ = 13
 __SUM_LOGS__ = 14
-base = 3600
+log_base = np.log(3600)
 
 
 def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=False):
@@ -139,13 +139,6 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
             editors_dict[oadd_ym][oadd_editor][__ADDS__] += 1
             if token.outbound:
                 first_out_ts = article_revisions_tss[token.outbound[0]]
-                #if not is_stop_word:
-                    #for an action to be elegible it should be deleted at least once and it shouldn't be a stop word
-                    #editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__ELEGIBLE__] += 1
-                    #if wikiwho.revisions[token.outbound[0]].editor != oadd_editor:
-                            # the first deletion is already the conflict
-                            #editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__CONFLICTS__] += 1
-                            #editors_dict[article_revisions_yms[token.outbound[0]]][wikiwho.revisions[token.outbound[0]].editor][__SUM_LOGS__] += (np.log(base) / np.log(first_out_ts - oadd_rev_ts + 2))
                 if first_out_ts - oadd_rev_ts >= seconds_limit:
                     # there is an outbund but survived 48 hours
                     editors_dict[oadd_ym][oadd_editor][__ADDS_48__] += 1
@@ -191,8 +184,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                         if rein_editor != wikiwho.revisions[token.outbound[i-1]].editor:
                             # the next deletion is a conflict
                             editors_dict[rein_ym][rein_editor][__CONFLICTS__] += 1
-                            editors_dict[rein_ym][rein_editor][__SUM_LOGS__] += (np.log(base) / np.log(in_rev_ts - article_revisions_tss[token.outbound[i-1]] + 2))
-     
+                            editors_dict[rein_ym][rein_editor][__SUM_LOGS__] += (log_base / np.log(in_rev_ts - article_revisions_tss[token.outbound[i-1]] + 2))
                 elif in_rev_ts > to_ym_ts:
                     in_rev_id = None
                     break
@@ -230,7 +222,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                         editors_dict[del_ym][del_editor][__ELEGIBLE__] += 1
                         if del_editor != wikiwho.revisions[token.inbound[i-1]].editor:
                             editors_dict[del_ym][del_editor][__CONFLICTS__] += 1
-                            editors_dict[del_ym][del_editor][__SUM_LOGS__] += (np.log(base) / np.log(out_rev_ts - article_revisions_tss[token.inbound[i-1]] + 2))
+                            editors_dict[del_ym][del_editor][__SUM_LOGS__] += (log_base / np.log(out_rev_ts - article_revisions_tss[token.inbound[i-1]] + 2))
 
                 else: # i == len(token.inbound): last out
                     # no in for this out, therefore is permament
@@ -245,7 +237,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                         editors_dict[del_ym][del_editor][__ELEGIBLE__] += 1
                         if del_editor != wikiwho.revisions[token.inbound[i-1]].editor:
                             editors_dict[del_ym][del_editor][__CONFLICTS__] += 1
-                            editors_dict[del_ym][del_editor][__SUM_LOGS__] += (np.log(base) / np.log(out_rev_ts - article_revisions_tss[token.outbound[0]] + 2))
+                            editors_dict[del_ym][del_editor][__SUM_LOGS__] += (log_base / np.log(out_rev_ts - article_revisions_tss[token.inbound[i-1]] + 2))
                     # break the loop (nothing else happen to this token during
                     # this month)
                     break
@@ -265,7 +257,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     # this month)
                     break
 
-        
+
         # last reinsertion
         # if len(token.outbound) - len(token.inbound) == 0:
         if in_rev_id is not None:
@@ -284,9 +276,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                     if rein_editor != wikiwho.revisions[token.outbound[i-1]].editor:
                         # the next deletion is a conflict
                         editors_dict[rein_ym][rein_editor][__CONFLICTS__] += 1
-                        editors_dict[rein_ym][rein_editor][__SUM_LOGS__] += (np.log(base) / np.log(in_rev_ts - article_revisions_tss[token.outbound[i-1]] + 2))
- 
-
+                        editors_dict[rein_ym][rein_editor][__SUM_LOGS__] += (log_base / np.log(in_rev_ts - article_revisions_tss[token.outbound[i-1]] + 2))
 
 
     # map the ym to datetimes in order to do it only once
