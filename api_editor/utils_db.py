@@ -47,6 +47,7 @@ __REINS_SW__ = 11
 __ELEGIBLE__ = 12
 __CONFLICTS__ = 13
 __SUM_LOGS__ = 14
+__REVISIONS__ = 15
 log_base = np.log(3600)
 
 
@@ -96,13 +97,17 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
     # contain parsed information of the editor
     ed2edid = {}
 
+    # create a dictionary to store intermediate results
+    editors_dict = {y + m:  defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                    for y in range(from_ym.year * 100, to_ym.year * 100 + 1, 100) for m in range(1, 13)}
+
     for rev_id, rev in wikiwho.revisions.items():
         #dt = parse_datetime(rev.timestamp)
         dt = datetime(**{k: pytz.utc if v == 'Z' else int(v)
                          for k, v in datetime_re.match(rev.timestamp).groupdict().items() if v is not None})
 
         # store date as an integer
-        article_revisions_yms[rev_id] = dt.year * 100 + dt.month
+        article_revisions_yms[rev_id] = ym = dt.year * 100 + dt.month
         article_revisions_tss[rev_id] = dt.timestamp()
 
         # fill up information of new found editors
@@ -115,9 +120,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 'name': '',
             }
 
-    # create a dictionary to store intermediate results
-    editors_dict = {y + m:  defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-                    for y in range(from_ym.year * 100, to_ym.year * 100 + 1, 100) for m in range(1, 13)}
+        editors_dict[ym][rev.editor][__REVISIONS__] += 1
 
     # use the date timestamps as it is faster
     from_ym_ts = from_ym.timestamp()
@@ -291,8 +294,8 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
                 dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
                 reins, reins_surv_48h, reins_persistent, reins_stopword_count, 
-                conflict, elegibles, conflicts) 
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, %s, %s, %s);
+                conflict, elegibles, conflicts, revisions) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
             """.format(EDITOR_MODEL[language][0].__name__.lower())
 
          #fill data
@@ -305,7 +308,7 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                              data[__REINS__], data[__REINS_48__], data[
                                  __REINS_P__], data[__REINS_SW__], data[
                                  __SUM_LOGS__], data[__ELEGIBLE__], data[
-                                 __CONFLICTS__]
+                                 __CONFLICTS__], data[__REVISIONS__]
                              ) for ym, editor_data in editors_dict.items()
                                for editor, data in editor_data.items()))
 
@@ -353,13 +356,15 @@ def fill_indexed_editor_tables(language, from_ym, to_ym):
                 (page_id, editor_id, year_month, editor_name, 
                     adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
                     dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
-                    reins, reins_surv_48h, reins_persistent, reins_stopword_count, conflict, elegibles, conflicts) 
+                    reins, reins_surv_48h, reins_persistent, reins_stopword_count, 
+                    conflict, elegibles, conflicts, revisions) 
                 (
                   SELECT 
                     page_id, editor_id, year_month, editor_name,
                     adds, adds_surv_48h, adds_persistent, adds_stopword_count, 
                     dels, dels_surv_48h, dels_persistent, dels_stopword_count, 
-                    reins, reins_surv_48h, reins_persistent, reins_stopword_count, conflict, elegibles, conflicts
+                    reins, reins_surv_48h, reins_persistent, reins_stopword_count, 
+                    conflict, elegibles, conflicts, revisions
                   FROM {}
                   WHERE (year_month >= '{}-01-01'::DATE AND year_month <= '{}-12-31'::DATE )
                 );

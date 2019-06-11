@@ -27,6 +27,7 @@ class EditorData(BaseModel):
     elegibles = models.IntegerField(blank=False, default=0)
     conflicts = models.IntegerField(blank=False, default=0)
     conflict = models.FloatField(blank=False, default=0)
+    revisions = models.IntegerField(blank=False, default=0)
 
     @property
     def language(self):
