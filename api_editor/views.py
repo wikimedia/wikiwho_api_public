@@ -73,7 +73,8 @@ class EditorApiView(LoggingMixin, ViewSet):
     columns = ['year_month', 'page_id', 'editor_id',
                'adds', 'adds_surv_48h', 'adds_persistent', 'adds_stopword_count',
                'dels', 'dels_surv_48h', 'dels_persistent', 'dels_stopword_count',
-               'reins', 'reins_surv_48h', 'reins_persistent', 'reins_stopword_count']
+               'reins', 'reins_surv_48h', 'reins_persistent', 'reins_stopword_count',
+               'conflict', 'elegibles', 'conflicts', 'revisions']
 
     def get_queryset(self, request, version, page_id=None, editor_id=None):
 

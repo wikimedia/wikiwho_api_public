@@ -75,6 +75,14 @@ definitions["edition"] = {
         {"required": ["reins_stopword_count"], "properties": {
             "reins_stopword_count": {"type": "integer"}}},
 
+        {"required": ["conflict"],
+         "properties": {"conflict": {"type": "integer"}}},
+        {"required": ["elegibles"],
+         "properties": {"elegibles": {"type": "integer"}}},
+        {"required": ["conflicts"],
+         "properties": {"conflicts": {"type": "integer"}}},
+        {"required": ["revisions"],
+         "properties": {"revisions": {"type": "integer"}}},
     ],
 }
 #########################################################

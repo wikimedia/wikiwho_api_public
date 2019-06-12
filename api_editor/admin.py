@@ -10,12 +10,14 @@ class EditorDataNotIndexedAdmin(BaseAdmin):
     list_display = ('id', 'page_id_', 'editor_id_', 'editor_name', 'year_month',
                     'adds', 'adds_surv_48h', 'adds_persistent', 'adds_stopword_count', 
                     'dels', 'dels_surv_48h', 'dels_persistent', 'dels_stopword_count', 
-                    'reins', 'reins_surv_48h', 'reins_persistent', 'reins_stopword_count',)
+                    'reins', 'reins_surv_48h', 'reins_persistent', 'reins_stopword_count',
+                    'conflict', 'elegibles', 'conflicts', 'revisions',)
 
     readonly_fields = ('id', 'page_id', 'editor_id', 'editor_name', 'year_month',
                     'adds', 'adds_surv_48h', 'adds_persistent', 'adds_stopword_count', 
                     'dels', 'dels_surv_48h', 'dels_persistent', 'dels_stopword_count', 
-                    'reins', 'reins_surv_48h', 'reins_persistent', 'reins_stopword_count',)
+                    'reins', 'reins_surv_48h', 'reins_persistent', 'reins_stopword_count',
+                    'conflict', 'elegibles', 'conflicts', 'revisions',)
     search_fields = ('editor_id', 'page_id', )
     date_hierarchy = 'year_month'
 
