@@ -180,7 +180,7 @@ custom_data = {
                       'summary': 'Get the content of a specific revision of an article'
                       }
               },
-         '/rev_content/{article_title}/':
+         '/latest_rev_content/{article_title}/':
              {'get': {'description': 'Outputs the content of the most recent (last) revision of the given article, '
                                      ' as available on Wikipedia.\n\n'
                                      '#### Query parameter explanations:\n\n'
