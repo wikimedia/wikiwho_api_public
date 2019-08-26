@@ -25,7 +25,7 @@ urlpatterns = [
         WikiwhoApiView.as_view(actions={'get': 'get_range_rev_content'}), name='rev_content_slice'),
 
     # /rev_content/{article_title}/{rev_id}/
-    url(r'^rev_content/(?P<article_title>.+)/(?P<rev_id>[0-9]{5,})/$',
+    url(r'^rev_content/(?P<article_title>.+)/(?P<rev_id>[0-9]+)/$',
         WikiwhoApiView.as_view(actions={'get': 'get_article_rev_content'}), name='rev_content_title_rev_id'),
 
 
