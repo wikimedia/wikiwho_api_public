@@ -145,7 +145,7 @@ custom_data = {
     #     'url': ''
     # },
     'paths':
-        {'/rev_content/page_id/{page_id}/':
+        {'/latest_rev_content/page_id/{page_id}/':
          # {'get': {'description': '# Some description \n **with** *markdown* \n\n [Markdown Cheatsheet]
          # (https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)',
              {'get': {'description': 'Outputs the content of the most recent (last) revision of the given article, '
@@ -231,7 +231,7 @@ custom_data = {
                       'summary': 'Get the content of a specific revision of an article'
                       }
               },
-         '/rev_content/{article_title}/{start_rev_id}/{end_rev_id}/':
+         '/range_rev_content/{article_title}/{start_rev_id}/{end_rev_id}/':
              {'get': {'description': 'Outputs the content of revisions from start revision to end revision ordered '
                                      'by timestamp.\n\n'
                                      'Note: We only consider the **timestamp** of a revision ID for its '
