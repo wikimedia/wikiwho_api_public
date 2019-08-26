@@ -21,6 +21,7 @@ urlpatterns = [
     url(r'^range_rev_content/(?P<article_title>.+)/(?P<start_rev_id>[0-9]+)/(?P<end_rev_id>[0-9]+)/$',
         WikiwhoApiView.as_view(actions={'get': 'get_range_rev_content'}), name='rev_content_slice'),
     # Backwards compatibility (it did not work with "NGC_5544/5")
+    # HACK:  the revision ids are required to have at least 5 digits (i.e. revid > 9999)
     url(r'^rev_content/(?P<article_title>.+)/(?P<start_rev_id>[0-9]{5,})/(?P<end_rev_id>[0-9]{5,})/$',
         WikiwhoApiView.as_view(actions={'get': 'get_range_rev_content'}), name='rev_content_slice'),
 
