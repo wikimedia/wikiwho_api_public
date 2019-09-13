@@ -68,7 +68,7 @@ class WPHandler(object):
         self.log_error_into_db = log_error_into_db
         self.language = language or get_language()
         self.is_user_request = is_user_request
-        self.client = Elasticsearch()
+        self.chobj_error = ''
 
     def __enter__(self):
         # time1 = time()
@@ -173,30 +173,41 @@ class WPHandler(object):
 
     def get_resuming_chob_revid(self):
         try:
+            client = Elasticsearch()
+
             # Check if this has been processed in the past
-            if self.wikiwho.ordered_revisions and len(Search(using=self.client, 
-                index="chobs").filter("term", page_id=self.page_id)[0].execute()) > 0:
+            if self.wikiwho.ordered_revisions and len(Search(using=client, 
+                index="chobs_" + self.language).filter(
+                "term", page_id=self.page_id)[0].execute()) > 0:
                 return self.wikiwho.ordered_revisions[-1]
             else:
                 return -1
         except elasticsearch.exceptions.NotFoundError as exc:
             return -1
+        except Exception as e:
+            self.chobj_error += f'Error querying previous chobs (page_id={self.page_id})\b'
+            return -2
 
     def load_chobs(self, context, starting_revid):
-        try:
-            co = ChobjerPickle(ww_pickle=self.wikiwho,
-                               context=context, starting_revid=starting_revid)
+        if self.language == 'de':
+            try:
+                co = ChobjerPickle(ww_pickle=self.wikiwho,
+                                   context=context, starting_revid=starting_revid)
 
-            pages = ({
-                "_index": "chobs",
-                "_type": "chob",
-                "_source": chob
-            } for chob in co.iter_chobjs())
+                pages = ({
+                    "_index": "chobs_" + self.language,
+                    "_type": "chob",
+                    "_source": chob
+                } for chob in co.iter_chobjs())
 
-            helpers.bulk(Elasticsearch(), pages)
-        except Exception as e:
-            print(str(e))
-            print(f'error in article {article}')
+            except Exception as e:
+                self.chobj_error += f'Error calculating chobs (page_id={self.page_id})\b'
+
+            try:
+                helpers.bulk(Elasticsearch(), pages)
+            except Exception as e:
+                self.chobj_error += f'Error storing chobs (page_id={self.page_id})\b'
+            
 
     def handle(self, revision_ids, is_api_call=True, timeout=None):
         """
@@ -225,6 +236,7 @@ class WPHandler(object):
         # the pickle is up to date
         self.revision_ids = revision_ids or [self.latest_revision_id]
         chobstart_revid = self.get_resuming_chob_revid()
+
         if self.revision_ids[-1] in self.wikiwho.revisions:
             if chobstart_revid == -1:
                 self.load_chobs(settings.CHOBS_CONTEXT, chobstart_revid)
