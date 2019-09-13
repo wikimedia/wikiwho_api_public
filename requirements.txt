@@ -53,6 +53,6 @@ urllib3==1.24.1
 WhoColor==1.0.1
 WikiWho==1.0.3
 
-e git+git@github.com:gesiscss/wikiwho_chobj.git#egg=wikiwho_chobj
+-e git+git@github.com:gesiscss/wikiwho_chobj.git#egg=wikiwho_chobj
 # Elasticsearch 7.x
 elasticsearch-dsl>=7.0.0,<8.0.0
