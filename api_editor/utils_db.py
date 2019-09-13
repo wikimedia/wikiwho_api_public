@@ -78,6 +78,9 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                             'Handler did not return any WikiWho object')
                     else:
                         wikiwho = wp.wikiwho
+
+                if wp.chobj_error != '':
+                    raise Exception(wp.chobj_error)
         except WPHandlerException as e:
             if wikiwho is None:
                 raise e
@@ -120,7 +123,8 @@ def fill_notindexed_editor_tables(pickle_path, from_ym, to_ym, language, update=
                 'name': '',
             }
 
-        editors_dict[ym][rev.editor][__REVISIONS__] += 1
+        if ym in editors_dict:
+            editors_dict[ym][rev.editor][__REVISIONS__] += 1
 
     # use the date timestamps as it is faster
     from_ym_ts = from_ym.timestamp()

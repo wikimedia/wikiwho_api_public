@@ -29,7 +29,8 @@ def update_actions_tables():
             to_ym=to_ym,
             languages=settings.ACTIONS_LANGUAGES,
             max_workers=settings.ACTIONS_MAX_WORKERS,
-            log_folder=settings.ACTIONS_LOG)
+            log_folder=settings.ACTIONS_LOG,
+            only_directory=False)
         logger.info("NOT INDEXED editor tables were filled")
 
         logger.info("Filling INDEXED editor tables")

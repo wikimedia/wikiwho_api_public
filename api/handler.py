@@ -189,7 +189,7 @@ class WPHandler(object):
             return -2
 
     def load_chobs(self, context, starting_revid):
-        if self.language == 'de':
+        if self.language == 'tr':
             try:
                 co = ChobjerPickle(ww_pickle=self.wikiwho,
                                    context=context, starting_revid=starting_revid)

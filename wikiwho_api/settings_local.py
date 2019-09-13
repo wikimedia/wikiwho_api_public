@@ -15,7 +15,7 @@ CRONJOBS = [
     ('23 * * * *', 'api_editor.cron.update_actions_tables', f'>> /tmp/cron_prints.log 2>> /tmp/cron_errors.log')
 ]
 
-ALLOWED_HOSTS = ['local_host', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 INTERNAL_IPS = ['127.0.0.1']
 
 # Pickle folder paths without ending /

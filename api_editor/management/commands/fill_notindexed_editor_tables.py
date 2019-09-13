@@ -66,7 +66,7 @@ def fill_notindexed_editor_tables_base(pickle_path, from_ym, to_ym, language, up
                 raise exc
 
 
-def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
+def non_updated_pickles(language, pickle_folder, _all, logger, log_folder, only_directory):
     # utcfromtimestamp gives the universal time of the file, it takes into consideration
     # if the file was created during +01:00 (winter time) or +02:00 (summer
     # time) for Germany
@@ -100,6 +100,17 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
     #     'revisions': [{'timestamp': ts}],
     #     'title': ''
     # } for pid, ts in _files.items()]})]
+
+    if only_directory:
+        for i, pageid in enumerate(_files.keys()):
+            yield pageid, True
+            sys.stdout.write(
+                        ('\rLeft: {} ({:.3f}%) Processed: {} Current Page ID: {} ').
+                        format(
+                            total_files - i,
+                            (total_files - i) * 100 / total_files,
+                            i, pageid))
+        return
 
     if total_files == 0:
         logger.error(f"No pickles found in the directory: {pickle_folder}")
@@ -210,12 +221,12 @@ def non_updated_pickles(language, pickle_folder, _all, logger, log_folder):
         logger.exception("Error processing the remaining files")
 
 
-def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, log_folder):
+def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, log_folder, only_directory):
     # set logging
     if not exists(log_folder):
         mkdir(log_folder)
 
-    parallel = max_workers >= 1
+    parallel = max_workers > 1
     logger = get_logger('fill_notindexed_editor_tables',
                         log_folder, is_process=parallel, is_set=True, level=logging.INFO,
                         descriptor=f'From:{from_ym.date()} To:{to_ym.date()}')
@@ -227,7 +238,7 @@ def fill_notindexed_editor_tables_batch(from_ym, to_ym, languages, max_workers, 
 
         pickle_folder = get_pickle_folder(language)
         non_updated_pickles_iter = non_updated_pickles(
-            language, pickle_folder, True, logger, log_folder)
+            language, pickle_folder, True, logger, log_folder, only_directory)
 
         print('Start: {} - {} at {}'.format(language,
                                             pickle_folder, strftime('%H:%M:%S %d-%m-%Y')))
@@ -309,6 +320,8 @@ class Command(BaseCommand):
         parser.add_argument('-m', '--max_workers', type=int,
                             help='Number of processors/threads to run parallel.',
                             default=settings.ACTIONS_MAX_WORKERS)
+        parser.add_argument('--only_directory', help='Process only the files in the directory', 
+            action='store_true')
 
     def get_parameters(self, options):
         from_ym = options['from_ym']
@@ -318,7 +331,8 @@ class Command(BaseCommand):
             to_ym, '%Y-%m').replace(tzinfo=pytz.UTC) - timedelta(seconds=1)
         languages = options['language'].split(',')
         max_workers = options['max_workers']
-        return from_ym, to_ym, languages, max_workers, options['log_folder']
+        only_directory = options['only_directory']
+        return from_ym, to_ym, languages, max_workers, options['log_folder'], only_directory
 
     def handle(self, *args, **options):
         fill_notindexed_editor_tables_batch(*self.get_parameters(options))
