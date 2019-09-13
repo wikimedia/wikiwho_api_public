@@ -11,13 +11,18 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils.translation import get_language, get_language_info
 
+from wikiwho.wikiwho_simple import Wikiwho
+from wikiwho_chobj import ChobjerPickle
+
 from deployment.gunicorn_config import timeout as gunicorn_timeout
 from deployment.celery_config import user_task_soft_time_limit
-from wikiwho.wikiwho_simple import Wikiwho
+
 from .utils import get_latest_revision_data, create_wp_session, Timeout, generate_rvcontinue, get_wp_api_url
 from .utils_pickles import pickle_dump, pickle_load, get_pickle_folder, UnpicklingError
 from .models import RecursionErrorArticle, LongFailedArticle
 from .messages import MESSAGES
+
+
 
 sys.setrecursionlimit(5000)  # default is 1000
 # http://neopythonic.blogspot.de/2009/04/tail-recursion-elimination.html
@@ -161,6 +166,7 @@ class WPHandler(object):
         """
         # time1 = time()
         # check if article exists
+
         if self.latest_revision_id is None:
             raise WPHandlerException(MESSAGES['article_not_in_wp'][0].format(self.article_title or self.page_id,
                                                                              get_language_info(self.language)['name'].lower()),
@@ -174,8 +180,11 @@ class WPHandler(object):
             else:
                 raise WPHandlerException(*MESSAGES['only_read_allowed'])
 
+        # the pickle is up to date
         self.revision_ids = revision_ids or [self.latest_revision_id]
         if self.revision_ids[-1] in self.wikiwho.revisions:
+            co = ChobjerPickle(ww_pickle=self.wikiwho, context=5, starting_revid=-1)
+            chobs = [x for x in co.iter_chobjs()]
             return
 
         # set cache key to prevent processing an article simultaneously
@@ -262,6 +271,8 @@ class WPHandler(object):
                 break
             rvcontinue = result['continue']['rvcontinue']
             self.wikiwho.rvcontinue = rvcontinue  # used at end to decide if there is new revisions to be saved
+
+            
 
         # time2 = time()
         # print("Execution time handle: {}".format(time2-time1))

@@ -11,7 +11,7 @@ from os.path import join
 from django.core.management.base import BaseCommand
 from api.utils_pickles import get_pickle_folder
 from api_editor.utils_db import fill_notindexed_editor_tables
-from .tasks import process_article
+from api.tasks import process_article
 
 
 class Command(BaseCommand):
@@ -20,7 +20,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('-lang', '--language',
                             help="Wikipedia language. Ex: 'en'", required=True)
-        parser.add_argument('-t', '--title', type=int,
+        parser.add_argument('-t', '--title', 
                             help='Wikipedia Page title that will be analized.',
                             default='Bioglass')
         parser.add_argument('--celeryed', help='Process with celery', action='store_true')
@@ -30,7 +30,7 @@ class Command(BaseCommand):
         language = options['language']
         title = options['title']
 
-        if celeryed:
-            process_article.delay(language, page_title)
+        if options['celeryed']:
+            process_article.delay(language, title)
         else:
-            process_article(language, page_title)
+            process_article(language, title)

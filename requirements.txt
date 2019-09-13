@@ -52,3 +52,5 @@ urllib3==1.24.1
 
 WhoColor==1.0.1
 WikiWho==1.0.3
+
+e git+git@github.com:gesiscss/wikiwho_chobj.git#egg=wikiwho_chobj
