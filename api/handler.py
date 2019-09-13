@@ -11,6 +11,11 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils.translation import get_language, get_language_info
 
+import elasticsearch
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
+from elasticsearch import helpers
+
 from wikiwho.wikiwho_simple import Wikiwho
 from wikiwho_chobj import ChobjerPickle
 
@@ -23,13 +28,13 @@ from .models import RecursionErrorArticle, LongFailedArticle
 from .messages import MESSAGES
 
 
-
 sys.setrecursionlimit(5000)  # default is 1000
 # http://neopythonic.blogspot.de/2009/04/tail-recursion-elimination.html
 # session = create_wp_session()
 
 
 class WPHandlerException(Exception):
+
     def __init__(self, message, code):
         self.message = message
         self.code = code
@@ -39,9 +44,10 @@ class WPHandlerException(Exception):
 
 
 class WPHandler(object):
+
     def __init__(self, article_title, page_id=None, pickle_folder='', save_tables=(),
                  check_exists=True, is_xml=False, revision_id=None, log_error_into_db=True,
-                 language=None, is_user_request=False, wikiwho = None, *args, **kwargs):
+                 language=None, is_user_request=False, wikiwho=None, *args, **kwargs):
         self.article_title = article_title
         self.saved_article_title = ''
         self.revision_ids = []
@@ -62,6 +68,7 @@ class WPHandler(object):
         self.log_error_into_db = log_error_into_db
         self.language = language or get_language()
         self.is_user_request = is_user_request
+        self.client = Elasticsearch()
 
     def __enter__(self):
         # time1 = time()
@@ -71,8 +78,8 @@ class WPHandler(object):
             if not 0 < self.page_id < 2147483647:
                 raise WPHandlerException(MESSAGES['invalid_page_id'][0].format(self.page_id),
                                          MESSAGES['invalid_page_id'][1])
-            if (LongFailedArticle.objects.filter(page_id=self.page_id, language=self.language).exists() or 
-               RecursionErrorArticle.objects.filter(page_id=self.page_id, language=self.language).exists()):
+            if (LongFailedArticle.objects.filter(page_id=self.page_id, language=self.language).exists() or
+                    RecursionErrorArticle.objects.filter(page_id=self.page_id, language=self.language).exists()):
                 raise WPHandlerException(MESSAGES['never_finished_article'][0] + f' Page Id: {self.page_id}',
                                          MESSAGES['never_finished_article'][1])
 
@@ -81,40 +88,43 @@ class WPHandler(object):
             # self.page_id = self.page_id
         else:
             # get db title from wp api
-            d = get_latest_revision_data(self.language, self.page_id, self.article_title, self.revision_id)
+            d = get_latest_revision_data(
+                self.language, self.page_id, self.article_title, self.revision_id)
             self.latest_revision_id = d['latest_revision_id']
             self.page_id = d['page_id']
             if not settings.TESTING and (
-                (LongFailedArticle.objects.filter(page_id=self.page_id, language=self.language).exists() or 
-                RecursionErrorArticle.objects.filter(page_id=self.page_id, language=self.language).exists())):
+                (LongFailedArticle.objects.filter(page_id=self.page_id, language=self.language).exists() or
+                 RecursionErrorArticle.objects.filter(page_id=self.page_id, language=self.language).exists())):
                 raise WPHandlerException(MESSAGES['never_finished_article'][0],
-                                         MESSAGES['never_finished_article'][1]) 
+                                         MESSAGES['never_finished_article'][1])
             self.saved_article_title = d['article_db_title']
             self.namespace = d['namespace']
             if not settings.TESTING:
-                self.cache_key = 'page_{}_{}'.format(self.language, self.page_id)
+                self.cache_key = 'page_{}_{}'.format(
+                    self.language, self.page_id)
 
         pickle_folder = self.pickle_folder or get_pickle_folder(self.language)
         self.pickle_path = "{}/{}.p".format(pickle_folder, self.page_id)
         self.already_exists = os.path.exists(self.pickle_path)
         if not self.already_exists:
             if not settings.TESTING and (
-                not (self.is_user_request or settings.SERVER_LEVEL == settings.LEVEL_PRODUCTION)):
-                 raise WPHandlerException(MESSAGES['ignore_article_in_staging'][0].format(self.saved_article_title),
-                                          MESSAGES['ignore_article_in_staging'][1])
+                    not (self.is_user_request or settings.SERVER_LEVEL == settings.LEVEL_PRODUCTION)):
+                raise WPHandlerException(MESSAGES['ignore_article_in_staging'][0].format(self.saved_article_title),
+                                         MESSAGES['ignore_article_in_staging'][1])
 
             # a new pickle will be created
             self.wikiwho = Wikiwho(self.saved_article_title)
             self.wikiwho.page_id = self.page_id
-               
+
         else:
             try:
                 if self.wikiwho is None:
                     self.wikiwho = pickle_load(self.pickle_path)
                 else:
                     self.wikiwho.page_id = self.page_id
-            except (EOFError,  UnpicklingError) as e: 
-                # create a new pickle, this one will overwrite the problematic one
+            except (EOFError,  UnpicklingError) as e:
+                # create a new pickle, this one will overwrite the problematic
+                # one
                 self.wikiwho = Wikiwho(self.saved_article_title)
                 self.wikiwho.page_id = self.page_id
             else:
@@ -132,16 +142,20 @@ class WPHandler(object):
             # if all revisions were detected as spam,
             # wikiwho object holds no information (it is in initial status, rvcontinue=0)
             # or if last processed revision is a spam
-            self.wikiwho.rvcontinue, last_spam_ts = generate_rvcontinue(self.language, self.wikiwho.spam_ids[-1])
+            self.wikiwho.rvcontinue, last_spam_ts = generate_rvcontinue(
+                self.language, self.wikiwho.spam_ids[-1])
             if rev.timestamp != 0 and (rev.timestamp > last_spam_ts or last_spam_ts == '0'):
                 # rev id comparison was wrong
-                self.wikiwho.rvcontinue = generate_rvcontinue(self.language, rev.id, rev.timestamp)
+                self.wikiwho.rvcontinue = generate_rvcontinue(
+                    self.language, rev.id, rev.timestamp)
         else:
-            self.wikiwho.rvcontinue = generate_rvcontinue(self.language, rev.id, rev.timestamp)
+            self.wikiwho.rvcontinue = generate_rvcontinue(
+                self.language, rev.id, rev.timestamp)
 
     def handle_from_xml_dump(self, page, timeout=None):
         # this handle is used only to fill the db so if already exists, skip this article
-        # here we don't have rvcontinue check to analyse article as we have in handle method
+        # here we don't have rvcontinue check to analyse article as we have in
+        # handle method
         if self.check_exists and self.already_exists:
             # no continue logic for xml processing
             # return
@@ -155,6 +169,34 @@ class WPHandler(object):
         else:
             self.wikiwho.analyse_article_from_xml_dump(page)
         self._set_wikiwho_rvcontinue()
+
+
+    def get_resuming_chob_revid(self):
+        try:
+            # Check if this has been processed in the past
+            if self.wikiwho.ordered_revisions and len(Search(using=self.client, 
+                index="chobs").filter("term", page_id=self.page_id)[0].execute()) > 0:
+                return self.wikiwho.ordered_revisions[-1]
+            else:
+                return -1
+        except elasticsearch.exceptions.NotFoundError as exc:
+            return -1
+
+    def load_chobs(self, context, starting_revid):
+        try:
+            co = ChobjerPickle(ww_pickle=self.wikiwho,
+                               context=context, starting_revid=starting_revid)
+
+            pages = ({
+                "_index": "chobs",
+                "_type": "chob",
+                "_source": chob
+            } for chob in co.iter_chobjs())
+
+            helpers.bulk(Elasticsearch(), pages)
+        except Exception as e:
+            print(str(e))
+            print(f'error in article {article}')
 
     def handle(self, revision_ids, is_api_call=True, timeout=None):
         """
@@ -182,10 +224,12 @@ class WPHandler(object):
 
         # the pickle is up to date
         self.revision_ids = revision_ids or [self.latest_revision_id]
+        chobstart_revid = self.get_resuming_chob_revid()
         if self.revision_ids[-1] in self.wikiwho.revisions:
-            co = ChobjerPickle(ww_pickle=self.wikiwho, context=5, starting_revid=-1)
-            chobs = [x for x in co.iter_chobjs()]
+            if chobstart_revid == -1:
+                self.load_chobs(settings.CHOBS_CONTEXT, chobstart_revid)
             return
+
 
         # set cache key to prevent processing an article simultaneously
         if not settings.TESTING:
@@ -199,14 +243,16 @@ class WPHandler(object):
                                          MESSAGES['revision_under_process'][1])
 
         # process new revisions of the article
-        rvcontinue = self.saved_rvcontinue  # holds the last revision id which is saved. 0 for new article
+        # holds the last revision id which is saved. 0 for new article
+        rvcontinue = self.saved_rvcontinue
         session = create_wp_session(self.language)
         params = {'pageids': self.page_id, 'action': 'query', 'prop': 'revisions',
                   'rvprop': 'content|ids|timestamp|sha1|comment|flags|user|userid',
                   'rvlimit': 'max', 'format': 'json', 'continue': '', 'rvdir': 'newer',
                   'rvendid': self.revision_ids[-1]}
         while True:
-            # continue downloading as long as we reach to the given rev_id limit
+            # continue downloading as long as we reach to the given rev_id
+            # limit
             if rvcontinue != '0' and rvcontinue != '1':
                 params['rvcontinue'] = rvcontinue
             try:
@@ -262,18 +308,21 @@ class WPHandler(object):
                             failed_article.count += 1
                             if failed_rev_id not in failed_article.revisions:
                                 failed_article.revisions.append(failed_rev_id)
-                                failed_article.save(update_fields=['count', 'modified', 'revisions'])
+                                failed_article.save(
+                                    update_fields=['count', 'modified', 'revisions'])
                             else:
-                                failed_article.save(update_fields=['count', 'modified'])
+                                failed_article.save(
+                                    update_fields=['count', 'modified'])
                     raise e
             if 'continue' not in result:
                 self._set_wikiwho_rvcontinue()
                 break
             rvcontinue = result['continue']['rvcontinue']
-            self.wikiwho.rvcontinue = rvcontinue  # used at end to decide if there is new revisions to be saved
+            # used at end to decide if there is new revisions to be saved
+            self.wikiwho.rvcontinue = rvcontinue
 
-            
-
+        
+        self.load_chobs(settings.CHOBS_CONTEXT, chobstart_revid)
         # time2 = time()
         # print("Execution time handle: {}".format(time2-time1))
 
