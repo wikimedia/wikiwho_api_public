@@ -43,3 +43,5 @@ SWAGGER_SETTINGS['VALIDATOR_URL'] = 'https://online.swagger.io/validator'
 # the console (DEBUG=True) or discarded (DEBUG=False) by means of the
 # require_debug_true filter.
 # https://docs.djangoproject.com/en/1.10/topics/logging/#examples
+
+CHOBS_LANGUAGES = ('en', 'tr', 'de', 'es', 'eu')

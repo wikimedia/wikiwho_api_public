@@ -203,12 +203,12 @@ class WPHandler(object):
                     ww_pickle=self.wikiwho, context=settings.CHOBS_CONTEXT, 
                     starting_revid=starting_revid).iter_chobjs())
             except Exception as e:
-                self.chobj_error += f'Error calculating chobs (page_id={self.page_id})\b'
+                self.chobj_error += str(e) + f'\nError calculating chobs (page_id={self.page_id})\n'
 
             try:
                 helpers.bulk(Elasticsearch(), pages)
             except Exception as e:
-                self.chobj_error += f'Error storing chobs (page_id={self.page_id})\b'
+                self.chobj_error += str(e) + f'\nError storing chobs (page_id={self.page_id})\n'
             
 
     def handle(self, revision_ids, is_api_call=True, timeout=None):

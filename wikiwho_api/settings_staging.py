@@ -59,3 +59,6 @@ REST_FRAMEWORK = {
         'XTools': '10000/sec',
     },
 }
+
+
+CHOBS_LANGUAGES = ('en', 'tr', 'de', 'es', 'eu')
