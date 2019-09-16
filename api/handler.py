@@ -18,6 +18,7 @@ from elasticsearch import helpers
 
 from wikiwho.wikiwho_simple import Wikiwho
 from wikiwho_chobj import ChobjerPickle
+from wikiwho_chobj.utils import Timer
 
 from deployment.gunicorn_config import timeout as gunicorn_timeout
 from deployment.celery_config import user_task_soft_time_limit
@@ -172,34 +173,35 @@ class WPHandler(object):
 
 
     def get_resuming_chob_revid(self):
+        """ return the last revision id of which chobs were processed
+        """
         try:
-            client = Elasticsearch()
-
-            # Check if this has been processed in the past
-            if self.wikiwho.ordered_revisions and len(Search(using=client, 
-                index="chobs_" + self.language).filter(
-                "term", page_id=self.page_id)[0].execute()) > 0:
-                return self.wikiwho.ordered_revisions[-1]
-            else:
-                return -1
-        except elasticsearch.exceptions.NotFoundError as exc:
+            return Search(using=Elasticsearch(),  
+                index="chobs_" + self.language).source('to_rev').filter( 
+                "term", page_id=self.page_id)[0].sort('-to_timestamp')[0].execute(
+                ).hits[0].to_rev
+        except IndexError as exc1:
+            # No results for that page
             return -1
-        except Exception as e:
+        except elasticsearch.exceptions.NotFoundError as exc2:
+            # The elasticsearc index for that language is new
+            return -1
+        except Exception as exc3:
             self.chobj_error += f'Error querying previous chobs (page_id={self.page_id})\b'
             return -2
 
-    def load_chobs(self, context, starting_revid):
-        if self.language == 'tr':
-            try:
-                co = ChobjerPickle(ww_pickle=self.wikiwho,
-                                   context=context, starting_revid=starting_revid)
+    def load_chobs(self, starting_revid):
+        """Calculate and save the chobs in the elasticsearch database"""
 
+        if self.language in settings.CHOBS_LANGUAGES:
+            try:
                 pages = ({
                     "_index": "chobs_" + self.language,
                     "_type": "chob",
                     "_source": chob
-                } for chob in co.iter_chobjs())
-
+                } for chob in ChobjerPickle(
+                    ww_pickle=self.wikiwho, context=settings.CHOBS_CONTEXT, 
+                    starting_revid=starting_revid).iter_chobjs())
             except Exception as e:
                 self.chobj_error += f'Error calculating chobs (page_id={self.page_id})\b'
 
@@ -239,7 +241,7 @@ class WPHandler(object):
 
         if self.revision_ids[-1] in self.wikiwho.revisions:
             if chobstart_revid == -1:
-                self.load_chobs(settings.CHOBS_CONTEXT, chobstart_revid)
+                self.load_chobs(chobstart_revid)
             return
 
 
@@ -334,7 +336,7 @@ class WPHandler(object):
             self.wikiwho.rvcontinue = rvcontinue
 
         
-        self.load_chobs(settings.CHOBS_CONTEXT, chobstart_revid)
+        self.load_chobs(chobstart_revid)
         # time2 = time()
         # print("Execution time handle: {}".format(time2-time1))
 
