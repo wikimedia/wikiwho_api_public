@@ -163,6 +163,7 @@ REST_FRAMEWORK = {
         #'ulloaro': '10000/sec',
         #'xtools_user': '10000/sec',
         'XTools': '10000/sec',
+        'WhoWroteThat': '3000/minute',
     },
 }
 
