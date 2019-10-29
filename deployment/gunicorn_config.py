@@ -229,3 +229,6 @@ def worker_abort(worker):
 #     import logging
 #     logger = logging.getLogger(__name__)
 #     logger.error("Gunicorn worker received SIGABRT signal. This call generally happens on timeout.")
+
+max_requests=10
+max_requests_jitter=10
