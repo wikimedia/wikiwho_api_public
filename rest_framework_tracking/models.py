@@ -27,7 +27,7 @@ class BaseAPIRequestLog(models.Model):
     view_class = models.CharField(max_length=200)
 
     # remote IP address of request
-    # remote_addr = models.GenericIPAddressField(null=True)
+    remote_addr = models.GenericIPAddressField(null=True)
 
     # originating host of request
     # host = models.URLField(null=True)
