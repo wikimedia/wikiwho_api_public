@@ -3,7 +3,7 @@ import os
 import subprocess
 
 from django.conf import settings
-from api.utils import create_wp_session, get_wp_api_url
+from api.utils import create_wp_session2, get_wp_api_url
 
 from WhoColor.utils import WikipediaRevText as WikipediaRevTextBase, WikipediaUser as WikipediaUserBase
 
@@ -27,7 +27,7 @@ class WikipediaUser(WikipediaUserBase):
 
     def __init__(self, language='en'):
         self.language = language
-        self.session = create_wp_session(self.language)
+        self.session = create_wp_session2(self.language)
 
     def _prepare_request(self, editor_ids):
         data = super(WikipediaUser, self)._prepare_request(editor_ids)

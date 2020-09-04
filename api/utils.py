@@ -41,6 +41,12 @@ def create_wp_session(language=None):
                                         'lgpassword': settings.WP_PASSWORD, 'lgtoken': token})
     return session
 
+def create_wp_session2(language=None):
+    # create session
+    session = requests.session()
+    session.auth = (settings.WP_USER, settings.WP_PASSWORD)
+    session.headers.update(settings.WP_HEADERS)
+    return session
 
 def create_wiki_session(language, logger):
     wiki = MediaWiki(get_wp_api_url(language), headers=settings.WP_HEADERS)
