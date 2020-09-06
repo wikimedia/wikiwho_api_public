@@ -28,34 +28,34 @@ def get_wp_api_url(language=None):
 def create_wp_session(language=None):
     # create session
     session = requests.session()
-    session.auth = (settings.WP_USER, settings.WP_PASSWORD)
+    #session.auth = (settings.WP_USER, settings.WP_PASSWORD)
     session.headers.update(settings.WP_HEADERS)
     # get token to log in
-    wp_api_url = get_wp_api_url(language)
-    r1 = session.post(wp_api_url, data={'action': 'query', 'meta': 'tokens',
-                                        'type': 'login', 'format': 'json'})
-    token = r1.json()["query"]["tokens"]["logintoken"]
+    #wp_api_url = get_wp_api_url(language)
+    #r1 = session.post(wp_api_url, data={'action': 'query', 'meta': 'tokens',
+    #                                    'type': 'login', 'format': 'json'})
+    #token = r1.json()["query"]["tokens"]["logintoken"]
     # token = urllib.parse.quote(token)
     # log in
-    r2 = session.post(wp_api_url, data={'action': 'login', 'format': 'json', 'lgname': settings.WP_USER,
-                                        'lgpassword': settings.WP_PASSWORD, 'lgtoken': token})
+    #r2 = session.post(wp_api_url, data={'action': 'login', 'format': 'json', 'lgname': settings.WP_USER,
+    #                                    'lgpassword': settings.WP_PASSWORD, 'lgtoken': token})
     return session
 
 def create_wp_session2(language=None):
     # create session
     session = requests.session()
-    session.auth = (settings.WP_USER, settings.WP_PASSWORD)
+    #session.auth = (settings.WP_USER, settings.WP_PASSWORD)
     session.headers.update(settings.WP_HEADERS)
     return session
 
 def create_wiki_session(language, logger):
     wiki = MediaWiki(get_wp_api_url(language), headers=settings.WP_HEADERS)
-
-    if wiki.login(settings.WP_USER, settings.WP_PASSWORD):
-        return wiki
-    else:
-        logger.error("Login into wikipedia failed")
-        raise Exception("Login into wikipedia failed")
+    return wiki
+    #if wiki.login(settings.WP_USER, settings.WP_PASSWORD):
+    #    return wiki
+    #else:
+    #    logger.error("Login into wikipedia failed")
+    #    raise Exception("Login into wikipedia failed")
 
 
 def insistent_request(wiki_session, params, logger, attempts=20):
