@@ -19,7 +19,7 @@ from django.utils.translation import get_language
 from rest_framework.throttling import UserRateThrottle  # , AnonRateThrottle
 from .wp_connection import MediaWiki
 from time import sleep
-
+from requests_oauthlib import OAuth1
 
 def get_wp_api_url(language=None):
     return settings.WP_API_URL.format(language or get_language())
@@ -29,6 +29,10 @@ def create_wp_session(language=None):
     # create session
     session = requests.session()
     #session.auth = (settings.WP_USER, settings.WP_PASSWORD)
+    session.auth = OAuth1(settings.WP_CONSUMER_TOKEN,
+               client_secret=settings.WP_CONSUMER_SECRET,
+               resource_owner_key=settings.WP_ACCESS_TOKEN,
+               resource_owner_secret=settings.WP_ACCESS_SECRET)
     session.headers.update(settings.WP_HEADERS)
     # get token to log in
     #wp_api_url = get_wp_api_url(language)
