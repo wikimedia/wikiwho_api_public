@@ -17,7 +17,7 @@ CRONJOBS = [
 INSTALLED_APPS += ['debug_toolbar',
                    'debug_panel']
 
-MIDDLEWARE_CLASSES += ['debug_panel.middleware.DebugPanelMiddleware']
+MIDDLEWARE += ['debug_panel.middleware.DebugPanelMiddleware']
 
 SWAGGER_SETTINGS['VALIDATOR_URL'] = 'https://online.swagger.io/validator'
 

@@ -3,6 +3,7 @@
 *.pyc
 *.sqlite3
 assets/images/fav/
+env
 # all collected static files
 static/
 
