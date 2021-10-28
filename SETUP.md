@@ -29,3 +29,7 @@ DATABASES = {
 ```
 
 * changing the MIDDLEWARE variable name in the settings just silences a warning.
+
+### Running Celery in development
+
+* Instead of the complex instructions for running Celery from the wiki, you can run a worker directly from a terminal (once rabbitmq is set up). `celery -A wikiwho_api worker --loglevel=INFO`
