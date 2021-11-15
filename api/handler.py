@@ -237,12 +237,12 @@ class WPHandler(object):
 
         # the pickle is up to date
         self.revision_ids = revision_ids or [self.latest_revision_id]
-        chobstart_revid = self.get_resuming_chob_revid()
+        # chobstart_revid = self.get_resuming_chob_revid()
 
-        if self.revision_ids[-1] in self.wikiwho.revisions:
-            if chobstart_revid == -1:
-                self.load_chobs(chobstart_revid)
-            return
+        # if self.revision_ids[-1] in self.wikiwho.revisions:
+        #     if chobstart_revid == -1:
+        #         self.load_chobs(chobstart_revid)
+        #     return
 
 
         # set cache key to prevent processing an article simultaneously
@@ -255,6 +255,7 @@ class WPHandler(object):
                                                                                       self.article_title or self.page_id,
                                                                                       user_task_soft_time_limit),
                                          MESSAGES['revision_under_process'][1])
+
 
         # process new revisions of the article
         # holds the last revision id which is saved. 0 for new article
@@ -336,7 +337,7 @@ class WPHandler(object):
             self.wikiwho.rvcontinue = rvcontinue
 
         
-        self.load_chobs(chobstart_revid)
+        # self.load_chobs(chobstart_revid)
         # time2 = time()
         # print("Execution time handle: {}".format(time2-time1))
 

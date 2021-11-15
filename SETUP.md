@@ -30,6 +30,12 @@ DATABASES = {
 
 * changing the MIDDLEWARE variable name in the settings just silences a warning.
 
+### Registering an OAuth consumer
+
+The app requires OAuth consumer credentials to make API requests. Register an 'owner-only' consumer with only basic permissions here: https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose
+
+Put the 4 values into settings.py as WP_CONSUMER_TOKEN, WP_CONSUMER_SECRET, WP_ACCESS_TOKEN, and WP_ACCESS_SECRET. (You don't need to set WP_USER or WP_PASSWORD.)
+
 ### Running Celery in development
 
 * Instead of the complex instructions for running Celery from the wiki, you can run a worker directly from a terminal (once rabbitmq is set up). `celery -A wikiwho_api worker --loglevel=INFO`

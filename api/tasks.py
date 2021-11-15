@@ -17,7 +17,6 @@ def process_article_task(language, page_title, page_id=None, revision_id=None,
     # if cache.get('page_{}'.format(page_id)) == '1':
     #     return False
     cache_key = None
-
     try:
         with WPHandler(page_title, page_id=page_id, revision_id=revision_id, language=language, is_user_request=is_user_request) as wp:
             cache_key = wp.cache_key
