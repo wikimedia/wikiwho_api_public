@@ -30,13 +30,13 @@ Fabric3==1.14.post1
 flower==0.9.3
 future==0.17.1
 gunicorn==19.9.0
-lxml==4.3.3
+lxml==4.6.3
 Markdown==3.1
 mwpersistence==0.2.4
 mwreverts==0.1.5
 mwxml==0.3.3
 openpyxl==2.6.2
-psycopg2==2.7.3.2
+psycopg2==2.9.2
 
 pytest-django==3.1.2
 pytest-xdist==1.28.0
