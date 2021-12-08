@@ -9,13 +9,13 @@ PROJECT_NAME = 'wikiwho_api'
 
 @task
 def staging():
-    env.hosts = ['nuser@staging.wikiwho.net']
+    env.hosts = ['wikiwho@staging.wikiwho.net']
     env.environment = 'staging'
 
 
 @task
 def production():
-    env.hosts = ['nuser@www.wikiwho.net']
+    env.hosts = ['wikiwho@www.wikiwho.net']
     env.environment = 'production'
 
 
@@ -42,11 +42,11 @@ def deploy(branch='master', mode='base'):
     # TODO pip install yok!
     # fab production deploy
     # fab production deploy:branch=dev,mode=full
-    remote_project_root = '/home/nuser/wikiwho_api'
+    remote_project_root = '/home/wikiwho/wikiwho_api'
     with cd(remote_project_root):
         # with prefix('workon iwwa'):  # FIXME
         # with prefix('conda activate twwa'):
-        with prefix('source /home/nuser/venvs/iwwa/bin/activate'):
+        with prefix('source /home/wikiwho/venvs/iwwa/bin/activate'):
             # run('which python')
             run('git checkout {}'.format(branch))
             run('git pull')

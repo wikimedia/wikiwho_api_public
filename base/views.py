@@ -23,7 +23,7 @@ def clear_sessions(request):
 
 
 def download(request, file_name):
-    download_path = '/home/nuser/dumps/wikiwho_dataset/outputs/download'
+    download_path = '/home/wikiwho/dumps/wikiwho_dataset/outputs/download'
     file_path = os.path.join(download_path, file_name)
     if os.path.dirname(file_path) == download_path and os.path.exists(file_path):
         with open(file_path, 'rb') as fh:

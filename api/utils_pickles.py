@@ -104,7 +104,7 @@ def get_pickle_size(page_id, language=None):
 
 
 def find_pickles_randomly(pickle_folder_path=None, n=2, output_folder=None):
-    # output_folder = '/home/nuser/wikiwho_api/tests_ignore/mwpersistence/random_1000/wikiwho'
+    # output_folder = '/home/wikiwho/wikiwho_api/tests_ignore/mwpersistence/random_1000/wikiwho'
     from os.path import getsize, join
     from os import listdir
     from random import sample

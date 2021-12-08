@@ -216,7 +216,7 @@ def _test_json_from_xml(temp_folder, article_title, revision_id, save_tables=())
                                                           article_zips[article_title])
     if not exists(xml_file_path):
         # server
-        xml_file_path = '/home/nuser/pdisk/xmls_7z/batch_all/{}'.format(article_zips[article_title])
+        xml_file_path = '/home/wikiwho/pdisk/xmls_7z/batch_all/{}'.format(article_zips[article_title])
     dump = Dump.from_file(reader(xml_file_path))
     title_matched = False
     for page in dump:

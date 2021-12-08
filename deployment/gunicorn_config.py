@@ -18,7 +18,7 @@ import multiprocessing
 #       range.
 #
 
-bind = 'unix:/home/nuser/wikiwho_api/ww_api_gunicorn.sock'
+bind = 'unix:/home/wikiwho/wikiwho_api/ww_api_gunicorn.sock'
 backlog = 2048  # default
 
 #
@@ -123,7 +123,7 @@ spew = False  # default
 daemon = False  # default
 pidfile = None  # default
 umask = 0  # default
-user = "nuser"
+user = "wikiwho"
 group = "www-data"
 tmp_upload_dir = None  # default
 

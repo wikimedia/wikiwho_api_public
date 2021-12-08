@@ -4,7 +4,7 @@ USERNAME="postgres"
 
 function perform_backups()
 {
-    BACKUP_DIR="/home/nuser/db_disk/postgres_backups/ww_api_live/"
+    BACKUP_DIR="/home/wikiwho/db_disk/postgres_backups/ww_api_live/"
     if ! mkdir -p $BACKUP_DIR; then
         echo "Cannot create backup directory in $BACKUP_DIR. Go and fix it!" 1>&2
         exit 1;

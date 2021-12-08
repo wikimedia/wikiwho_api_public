@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # create last month's editor data
 venv='iwwa366'
-wikiwho_api='/home/nuser/wikiwho_api'
-logs_folder='/home/nuser/dumps/actions_logs'
-python_cmd='/home/nuser/venvs/iwwa366/bin/python'
+wikiwho_api='/home/wikiwho/wikiwho_api'
+logs_folder='/home/wikiwho/dumps/actions_logs'
+python_cmd='/home/wikiwho/venvs/iwwa366/bin/python'
 $threads=12
 
 venv='wikiwho_api'

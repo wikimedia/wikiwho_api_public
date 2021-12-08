@@ -4,10 +4,10 @@ from .settings_base import *
 DEBUG = True
 TEMPLATES[0]['OPTIONS']['debug'] = DEBUG
 SERVER_LEVEL = LEVEL_LOCAL
-ACTIONS_LOG = '/home/ulloaro/git/wikiwho_api/tmp_pickles/actions_log'
+ACTIONS_LOG = '/home/wikiwho/wikiwho_api/tmp_pickles/actions_log'
 ACTIONS_MAX_WORKERS = 0
 
-EVENTS_STREAM_LOG = '/home/ulloaro/git/wikiwho_api/tmp_pickles/events_stream_log'
+EVENTS_STREAM_LOG = '/home/wikiwho/wikiwho_api/tmp_pickles/events_stream_log'
 
 #ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en']
 ACTIONS_LANGUAGES = ['eu']
