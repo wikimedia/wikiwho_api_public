@@ -40,6 +40,8 @@ ExecStart=/home/wikiwho/wikiwho_api/env/bin/gunicorn --config /home/wikiwho/wiki
 WantedBy=multi-user.target
 """ > /etc/systemd/system/ww_gunicorn.service
 
+
+# Add nginx config and enable it
 echo """
 server {
     listen 80;
@@ -63,3 +65,5 @@ server {
     }
 }
 """ > /etc/nginx/sites-available/wikiwho
+rm /etc/nginx/sites-enabled/default
+ln -s /etc/nginx/sites-available/wikiwho /etc/nginx/sites-enabled/wikiwho

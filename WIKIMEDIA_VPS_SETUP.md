@@ -3,7 +3,7 @@
    * Debian 11
    * `webservice` security group
    * Paste or upload Customization Script: `wikimedia_cloud_customization_script.sh`
-2. Add a Web Proxy on Horizon
+2. Add a Web Proxy on Horizon (`wikiwho-api.wmcloud.org` or something else from the `settings_wmcloud.py` hosts entry)
 3. SSH into the VPS
 4. Transfer the wikiwho_api codebase to the VPS and copy it to `/home/wikiwho`. (FIXME: Use git once the repo is public.)
    1. Zip it into wikiwho_api.zip
@@ -26,7 +26,7 @@
    1. `python3 -m venv env`
    2. `. env/bin/activate`
 11.  Install the Python dependencies: `pip install -r requirements.txt -r requirements_local.txt -r requirements_test.txt`
-12.  Create `wikiwho_api/settings.py` (in the wikiwho_api subdirectory, not the top git directory), with an import from one of the environment-specific settings files plus SECRET_KEY, WP_CONSUMER_TOKEN, WP_CONSUMER_SECRET, WP_ACCESS_TOKEN, WP_ACCESS_SECRET, and DATABASES (at least).
+12.  Create `wikiwho_api/settings.py` (in the wikiwho_api subdirectory, not the top git directory), with an import from `settings_wmcloud` plus SECRET_KEY, WP_CONSUMER_TOKEN, WP_CONSUMER_SECRET, WP_ACCESS_TOKEN, WP_ACCESS_SECRET, and DATABASES.
      1. Generate a secret key: `python manage.py generate_secret_key`
 13. `python manage.py migrate`
 14. `python manage.py collectstatic --noinput -c`
@@ -34,3 +34,4 @@
     1.  `sudo systemctl enable ww_gunicorn`
     2.  `sudo systemctl start ww_gunicorn`
     3.  `sudo systemctl status ww_gunicorn` to check if it's running
+16. Home should be working now!
