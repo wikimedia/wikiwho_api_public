@@ -19,7 +19,7 @@ chown wikiwho /var/log/django
 # Install Python prerequisites
 apt-get install -y python3-dev graphviz libgraphviz-dev pkg-config python3-venv postgresql libpq-dev libxml2-dev libxslt-dev virtualenvwrapper
 # Install production webservice prerequisites
-apt-get install -y nginx memcached libcache-memcached-perl libanyevent-perl
+apt-get install -y nginx memcached libcache-memcached-perl libanyevent-perl rabbitmq-server
 
 # Per wiki: Change the swappiness to a lower value to better use of RAM memory and not swap
 sysctl -w vm.swappiness=5
@@ -67,3 +67,38 @@ server {
 """ > /etc/nginx/sites-available/wikiwho
 rm /etc/nginx/sites-enabled/default
 ln -s /etc/nginx/sites-available/wikiwho /etc/nginx/sites-enabled/wikiwho
+
+# Set up rabbitmq
+rabbitmqctl add_user ww_worker ww_worker_password
+rabbitmqctl add_vhost ww_vhost
+rabbitmqctl set_user_tags ww_worker ww_tag
+rabbitmqctl set_permissions -p ww_vhost ww_worker ".*" ".*" ".*"
+rabbitmq-plugins enable rabbitmq_management
+rabbitmq-server -detached
+
+# Add Celery config
+# This is the latest (as of 2021) generic daemon config from the celery/celery repo on GitHub
+# See https://github.com/celery/celery/blob/master/extra/generic-init.d/celeryd
+curl https://raw.githubusercontent.com/celery/celery/af270f074acdd417df722d9b387ea959b5d9b653/extra/generic-init.d/celeryd -o /etc/init.d/celeryd
+chmod 755 /etc/init.d/celeryd
+
+echo """
+# CELERY Conf for init script /etc/init.d/celeryd
+CELERYD_NODES="worker_default worker_user worker_long"
+CELERY_BIN="/home/wikiwho/wikiwho_api/env/bin/celery"
+CELERY_APP="wikiwho_api"
+CELERYD_CHDIR="/home/wikiwho/wikiwho_api"
+CELERYD_OPTS="--hostname=ww_host -Q:worker_default default -c:worker_default 8 -Q:worker_user user -c:worker_user 4 -Q:worker_long long -c:worker_long 4"
+CELERYD_LOG_LEVEL="WARNING"
+CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
+CELERYD_PID_FILE="/var/run/celery/%n.pid"
+CELERYD_USER="wikiwho"
+CELERYD_GROUP="wikiwho"
+CELERY_CREATE_DIRS=1
+BROKER_HEARTBEAT=0
+""" > /etc/default/celeryd
+
+mkdir /var/log/celery
+chown wikiwho /var/log/celery
+mkdir /var/run/celery
+chown wikiwho /var/run/celery

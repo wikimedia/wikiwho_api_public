@@ -34,4 +34,6 @@
     1.  `sudo systemctl enable ww_gunicorn`
     2.  `sudo systemctl start ww_gunicorn`
     3.  `sudo systemctl status ww_gunicorn` to check if it's running
-16. Home should be working now!
+16. Start Celery:
+    1.  `sudo /etc/init.d/celeryd start`
+17. Home page and API should be working now!
