@@ -34,7 +34,7 @@ After=network.target
 User=wikiwho
 Group=www-data
 WorkingDirectory=/home/wikiwho/wikiwho_api
-ExecStart=/home/wikiwho/wikiwho_api/env/bin/gunicorn --config /home/wikiwho/wikiwho_api/deployment/gunicorn_config.py wikiwho_>
+ExecStart=/home/wikiwho/wikiwho_api/env/bin/gunicorn --config /home/wikiwho/wikiwho_api/deployment/gunicorn_config.py wikiwho_api.wsgi:application
 
 [Install]
 WantedBy=multi-user.target
