@@ -4,6 +4,9 @@ Future of WikiWho
 The WikiWho API is being transferred to [Wikimedia](https://wikimedia.org/), who will support the project in the future.
 
 
+![wikiwho logo](./assets/images/logo_white.png)
+
+
 Introduction
 ==========
 
@@ -47,6 +50,6 @@ We are also working on providing insights about editors of Wikipedia, based on W
 Contributors
 ===========
 
-WikiWho was first conceived as a dissertation project at Karlsruhe Institute of Technology by Fabian Flöck and collaborators and was then hosted, maintained and further developed at the [GESIS – Leibniz Institute for the Social Sciences, CSS Department](https://www.gesis.org/institut/abteilungen/computational-social-science).
+WikiWho was first conceived as a dissertation project at [Karlsruhe Institute of Technology](https://www.kit.edu/english/) by (Fabian Flöck)[https://f-squared.org/] and collaborators and was then hosted, maintained and further developed at the [GESIS – Leibniz Institute for the Social Sciences, CSS Department](https://www.gesis.org/institut/abteilungen/computational-social-science).
 
 The WikiWho API is being transferred to [Wikimedia](https://wikimedia.org/), who will support the project in the future.
