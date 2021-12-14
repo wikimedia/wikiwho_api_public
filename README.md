@@ -15,7 +15,7 @@ WikiWho Algorithm
 
 Given a revisioned text document, WikiWho parses the complete set of all historical revisions (versions) in order to find out who wrote and/or removed and/or reinserted which exact text at token level at what revision. This means that for every token (~word), its individual add/removal/reintroduction history becomes available.
 
-The original algorithm working behind the scenes is described in a (WWW 2014 paper)[https://dl.acm.org/doi/10.1145/2566486.2568026], along with an extensive evaluation resulting in 95% accuracy on fairly revision-rich articles. The current code version is available on [GitHub](https://github.com/wikiwho/WikiWho).
+The original algorithm working behind the scenes is described in a [WWW 2014 paper](https://dl.acm.org/doi/10.1145/2566486.2568026), along with an extensive evaluation resulting in 95% accuracy on fairly revision-rich articles. The current code version is available on [GitHub](https://github.com/wikiwho/WikiWho).
 
 In a nutshell, the approach divides each revision into hierarchically nested paragraph, sentence and token elements and tracks their appearance through the complete content graph it builds in this way over all revisions. It is implemented currently for Wikitext, but can run on any kind of text in principle (although tokenization rules might have to be adapted).
 
