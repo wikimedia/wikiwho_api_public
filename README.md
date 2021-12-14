@@ -1,10 +1,12 @@
+
+
+![wikiwho logo](./assets/images/logo_white.png)
+
+
 Future of WikiWho
 ==============
 
 The WikiWho API is being transferred to [Wikimedia](https://wikimedia.org/), who will support the project in the future.
-
-
-![wikiwho logo](./assets/images/logo_white.png)
 
 
 Introduction
