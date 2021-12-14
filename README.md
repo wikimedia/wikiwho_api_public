@@ -40,7 +40,7 @@ Another, related use case is the **extraction of relations between editors** in 
 
 Yet, the WikiWho data can be leveraged for much more intricate modeling of interactions, taking for instance into account the semantic content of changes, prior interactions of editors, etc.
 
-![](https://www.wikiwho.net/static/images/alberto185_multipolar.png)
+![interactions](./assets/images/alberto185_multipolar.png)
 
 We are also working on providing insights about editors of Wikipedia, based on WikiWho data: What they are working on, how successful they are in adding, deleting and replacing content, etc. A pilot project in this vein is a set of interactive, "clickable" Jupyter Notebooks called IWAAN that allow interactive analysis of article dynamics and editor behavior and that can be [launched directly in the cloud here](https://notebooks.gesis.org/binder/v2/gh/gesiscss/IWAAN/master?filepath=1_General_Metadata.ipynb). (Source code available [on GitHub](https://github.com/gesiscss/IWAAN))
 
