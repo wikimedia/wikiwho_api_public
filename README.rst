@@ -25,7 +25,8 @@ Toy example for how the token metadata is generated:
 In this way, it becomes possible to track – for each single token – all original additions, deletes, reinserts and redeletes and in which revision they took place. Which in turn allows to infer the editor, timestamp, etc. of those revisions. Also, individual tokens retain a unique ID, making it possible to distinguish two tokens with identical strings in different text positions.
 
 
-### Tools and further use cases
+Tools and further use cases
+===========================
 
 From the generated provenance and change data further new forms of data can be mined and novel tools can be built.
 
