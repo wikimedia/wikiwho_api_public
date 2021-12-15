@@ -1,6 +1,6 @@
 
 
-![wikiwho logo](./assets/images/logo_white.png)
+![wikiwho logo](./assets/images/logo_black_background.png)
 
 
 Future of WikiWho
@@ -25,6 +25,7 @@ The original algorithm working behind the scenes is described in a [WWW 2014 pap
 In a nutshell, the approach divides each revision into hierarchically nested paragraph, sentence and token elements and tracks their appearance through the complete content graph it builds in this way over all revisions. It is implemented currently for Wikitext, but can run on any kind of text in principle (although tokenization rules might have to be adapted).
 
 Toy example for how the token metadata is generated:
+
 ![toy example](./assets/images/ex_figure2.png)
 
 In this way, it becomes possible to track – for each single token – all original additions, deletes, reinserts and redeletes and in which revision they took place. Which in turn allows to infer the editor, timestamp, etc. of those revisions. Also, individual tokens retain a unique ID, making it possible to distinguish two tokens with identical strings in different text positions.
