@@ -20,7 +20,7 @@ django-cors-headers
 django-crispy-forms
 django-crontab
 django-extensions
-django-registration==2.5.2
+django-registration==3.1.2
 django-rest-swagger==2.1.2
 Django<2.0
 djangorestframework
