@@ -8,8 +8,7 @@ useradd -m wikiwho
 # Set default shell
 usermod --shell /bin/bash wikiwho
 
-# Set up the directory structure
-mkdir -p /home/wikiwho/p_disk/{en,eu,es,de,tr}
+# Set up the directory structure (except for the pickles, which live on a Cinder volume)
 mkdir /home/wikiwho/dumps
 chown -R wikiwho /home/wikiwho
 

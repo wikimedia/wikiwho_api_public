@@ -19,8 +19,8 @@ ALLOWED_HOSTS = ['wikiwho-api.wmcloud.org']
 ONLY_READ_ALLOWED = False
 
 ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en']
-PICKLE_FOLDER_EN = 'tmp_pickles/en'
-PICKLE_FOLDER_EU = 'tmp_pickles/eu'
-PICKLE_FOLDER_ES = 'tmp_pickles/es'
-PICKLE_FOLDER_DE = 'tmp_pickles/de'
-PICKLE_FOLDER_TR = 'tmp_pickles/tr'
+PICKLE_FOLDER_EN = '/pickles/en'
+PICKLE_FOLDER_EU = '/pickles/eu'
+PICKLE_FOLDER_ES = '/pickles/es'
+PICKLE_FOLDER_DE = '/pickles/de'
+PICKLE_FOLDER_TR = '/pickles/tr'
