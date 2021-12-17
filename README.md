@@ -56,3 +56,23 @@ Contributors
 WikiWho was first conceived as a dissertation project at [Karlsruhe Institute of Technology](https://www.kit.edu/english/) by [Fabian Flöck](https://f-squared.org/) and collaborators and was then hosted, maintained and further developed at the [GESIS – Leibniz Institute for the Social Sciences, CSS Department](https://www.gesis.org/institut/abteilungen/computational-social-science).
 
 The WikiWho API is being transferred to [Wikimedia](https://wikimedia.org/), who will support the project in the future.
+
+References
+===========
+
+1. Flöck, F., & Acosta, M. (2014). WikiWho: Precise and efficient attribution of authorship of revisioned content. In *Proceedings of the 23rd International Conference on World Wide Web* (pp. 843-854). [https://dl.acm.org/doi/10.1145/2566486.2568026](https://dl.acm.org/doi/10.1145/2566486.2568026)
+2. Flöck, F., Laniado, D., Stadthaus, F., & Acosta, M. (2015). Towards better visual tools for exploring Wikipedia article development — The use case of "Gamergate Controversy". In *Ninth International AAAI Conference on Web and Social Media, 9*(5), 48-55. [https://ojs.aaai.org/index.php/ICWSM/article/view/14701](https://ojs.aaai.org/index.php/ICWSM/article/view/14701)
+3. Flöck, F., & Acosta, M. (2015). whoVIS: Visualizing editor interactions and dynamics in collaborative writing over time. In *Proceedings of the 24th International Conference on World Wide Web *(pp. 191-194). [https://doi.org/10.1145/2740908.2742846](https://doi.org/10.1145/2740908.2742846)
+4. Flöck, F., Erdogan, K., & Acosta, M. (2017). TokTrack: A Complete Token Provenance and Change Tracking Dataset for the English Wikipedia. In *Proceedings of the International AAAI Conference on Web and Social Media, 11*(1), 408-417. Retrieved from [https://ojs.aaai.org/index.php/ICWSM/article/view/14860](https://ojs.aaai.org/index.php/ICWSM/article/view/14860)
+5. Zagovora, O., Ulloa, R., Weller, K., & Flöck, F. (2021). 'I Updated the ': The Evolution of References in the English Wikipedia and the Implications for Altmetrics. *Quantitative Science Studies 2021*, 1-38. [https://doi.org/10.1162/qss_a_00171](https://doi.org/10.1162/qss_a_00171)
+6. Körner, M., Sennikova, T., Windhäuser, F., Wagner, C., & Flöck, F. (2016). Wikiwhere: An interactive tool for studying the geographical provenance of Wikipedia references. *arXiv preprint arXiv:1612.00985*. [https://arxiv.org/abs/1612.00985](https://arxiv.org/abs/1612.00985)
+7. Zagovora, O., Ulloa, R., Weller, K., & Flöck, F. (2020). *Individual edit histories of all references in the English Wikipedia \[Data set\]*. Zenodo. [http://doi.org/10.5281/zenodo.3964990](http://doi.org/10.5281/zenodo.3964990)
+
+
+List of related projects
+===========
+
+1. [WhoColor](https://github.com/wikiwho/WhoColor)
+2. [whoVIS](https://github.com/wikiwho/whovis)
+3. [IWAAN - Interactive Wikipedia Article Analysis Notebooks](https://github.com/gesiscss/IWAAN) 
+4. [Wikipedia References](https://github.com/gesiscss/wikipedia_references)
