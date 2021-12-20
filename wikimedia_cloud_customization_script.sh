@@ -22,6 +22,7 @@ apt-get install -y nginx memcached libcache-memcached-perl libanyevent-perl rabb
 
 # Per wiki: Change the swappiness to a lower value to better use of RAM memory and not swap
 sysctl -w vm.swappiness=5
+echo "vm.swappiness=5" >> /etc/sysctl.conf
 
 # Add gunicorn service
 echo """
@@ -101,3 +102,40 @@ mkdir /var/log/celery
 chown wikiwho /var/log/celery
 mkdir /var/run/celery
 chown wikiwho /var/run/celery
+
+# Add Flower config for monitoring Celery
+# FIXME: This configuration doesn't seem to work; no logs are produced.
+echo """
+[Unit]
+Description=Flower service for monitoring Celery
+After=network.target
+
+[Service]
+User=wikiwho
+Group=www-data
+WorkingDirectory=/home/wikiwho/wikiwho_api
+ExecStart=/home/wikiwho/wikiwho_api/env/bin/flower --address=localhost --conf='deployment/flower_config.py' --log_file_prefix=/var/log/celery/flower.log --basic_auth=ww_worker:ww_worker_password --broker_api=http://guest:guest@localhost:15672/api/
+
+[Install]
+WantedBy=multi-user.target
+""" > /etc/systemd/system/ww_flower.service
+
+
+# Add event-stream listening service
+echo """
+[Unit]
+Description=events_stream daemon
+After=network.target
+
+[Service]
+User=wikiwho
+Group=www-data
+WorkingDirectory=/home/wikiwho/wikiwho_api
+ExecStart=/home/wikiwho/wikiwho_api/env/bin/python manage.py celery_changed_articles
+
+[Install]
+WantedBy=multi-user.target
+""" > /etc/systemd/system/ww_events_stream.service
+
+mkdir /var/log/django/events_streamer
+chown wikiwho:www-data /var/log/django/events_streamer

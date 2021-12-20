@@ -42,6 +42,23 @@
     1.  `sudo systemctl enable ww_gunicorn`
     2.  `sudo systemctl start ww_gunicorn`
     3.  `sudo systemctl status ww_gunicorn` to check if it's running
+    4.  API and homepage should be working now.
 18. Start Celery:
     1.  `sudo /etc/init.d/celeryd start`
-19. Home page and API should be working now!
+19. Import dumps (as user `wikiwho`)
+    1.  `sudo su wikiwho`
+    2.  `mkdir -p /pickles/{en,eu,es,de,tr}`
+    3.  Download the latest dumps for each of the languages to import, eg:
+        1.  `cd `/pickles/dumps/en`
+        2.  `wget -r -np -nd -c -A 7z https://dumps.wikimedia.your.org/enwiki/20211201/`
+    4.  For each language, generate pickles from the XML dumps, eg:
+        1.  `cd ~/wikiwho_api`
+        2.  `. env/bin/activate`
+        1.  `nohup python manage.py generate_articles_from_wp_xmls -p '/pickles/dumps/en/' -t 30 -m 24 -lang en -c
+20. Start Flower and event_stream services
+    1.  `sudo systemctl enable ww_flower.service`
+    2.  `sudo systemctl start ww_flower.service`
+    3.  `sudo systemctl status ww_flower.service` to check if it's running
+    4.  `sudo systemctl enable ww_events_stream.service`
+    5.  `systemctl start ww_events_stream.service`
+    6.  `systemctl status ww_events_stream.service` to check if it's running
