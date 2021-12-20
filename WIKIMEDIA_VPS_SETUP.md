@@ -54,7 +54,7 @@
     4.  For each language, generate pickles from the XML dumps, eg:
         1.  `cd ~/wikiwho_api`
         2.  `. env/bin/activate`
-        1.  `nohup python manage.py generate_articles_from_wp_xmls -p '/pickles/dumps/en/' -t 30 -m 24 -lang en -c
+        1.  `nohup python manage.py generate_articles_from_wp_xmls -p '/pickles/dumps/en/' -t 30 -m 24 -lang en -c`
 20. Start Flower and event_stream services
     1.  `sudo systemctl enable ww_flower.service`
     2.  `sudo systemctl start ww_flower.service`
