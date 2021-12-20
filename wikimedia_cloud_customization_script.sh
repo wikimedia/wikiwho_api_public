@@ -18,7 +18,7 @@ chown wikiwho /var/log/django
 # Install Python prerequisites
 apt-get install -y python3-dev graphviz libgraphviz-dev pkg-config python3-venv postgresql libpq-dev libxml2-dev libxslt-dev virtualenvwrapper
 # Install production webservice prerequisites
-apt-get install -y nginx memcached libcache-memcached-perl libanyevent-perl rabbitmq-server
+apt-get install -y nginx memcached libcache-memcached-perl libanyevent-perl rabbitmq-server p7zip-full
 
 # Per wiki: Change the swappiness to a lower value to better use of RAM memory and not swap
 sysctl -w vm.swappiness=5
