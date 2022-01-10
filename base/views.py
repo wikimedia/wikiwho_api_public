@@ -38,3 +38,7 @@ def home(request):
     if 'api.wikiwho.net' in request.META.get('HTTP_HOST', ''):
         home_template = 'home/home_api.html'
     return render(request, home_template, {})
+
+def gesis_home(request):
+    home_template = 'home/gesis_home.html'
+    return render(request, home_template, {})
