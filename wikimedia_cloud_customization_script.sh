@@ -42,7 +42,22 @@ WantedBy=multi-user.target
 
 
 # Add nginx config and enable it
+# Based on XFF headers, we rate limit each IP (60/min).
+# Requests from XTools are not rate limited.
+# Rate limit allowlist strategy from https://serverfault.com/questions/177461/how-to-rate-limit-in-nginx-but-including-excluding-certain-ip-addresses
 echo """
+geo \$http_x_forwarded_for \$allowlist {
+  default 0;
+  172.16.5.123 1; # XTools
+}
+
+map \$allowlist \$limit {
+  0     \$http_x_forwared_for;
+  1     "";
+}
+
+limit_req_zone \$limit zone=wikiwho_limit:16m rate=1r/s;
+
 server {
     listen 80;
     server_name wikiwho.toolforge.org;
@@ -59,6 +74,7 @@ server {
     }
 
     location / {
+            limit_req zone=wikiwho_limit burst=10;
             include proxy_params;
             proxy_pass http://unix:/home/wikiwho/wikiwho_api/ww_api_gunicorn.sock;
             proxy_read_timeout 360s;  # default is 60s
