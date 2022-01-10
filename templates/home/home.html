@@ -110,24 +110,11 @@
                                 <a href="{% translate_url language.code 'whocolor:swagger' wc_version_url %}">WhoColor {{ language.code|title }}</a>
                             </li>
                         {% endfor %}
-                        {% for language in languages %}
-                            <li>
-                                <a href="{% translate_url language.code 'edit_persistence:swagger' wc_version_url %}">Edit Persistence {{ language.code|title }}</a>
-                            </li>
-                        {% endfor %}
                     </ul>
                 </li>
                 {#            <li><a href="{% url 'api:swagger' ww_version_url %}">API</a></li>#}
                 {#            <li><a href="{% url 'whocolor:swagger' wc_version_url %}">WhoColor API</a></li>#}
-                <li><a href="{% url 'contact' %}">Contact/Imprint</a></li>
-                {% if request.user.is_authenticated %}
-                    {#                        <li>Hello {{ request.user }}</li>#}
-                    <li><a href="{% url 'account:detail' %}">My Account</a></li>
-                    <li><a href="{% url 'account:logout' %}">Logout</a></li>
-                {% else %}
-                    <li><a href="{% url 'account:register' %}">Register</a></li>
-                    <li><a href="{% url 'account:login' %}">Login</a></li>
-                {% endif %}
+
             </ul>
         </div><!--/.nav-collapse -->
     </div>
@@ -144,13 +131,6 @@
                         &nbsp;A service for mining changes and interactions from revisioned writing platforms.
                     </p>
                 </div>
-                <div class="col-xs-3">
-                    <div class="clearfix">
-                        <img src="{% static 'images/GESIS-Logo.svg' %}" class="img-responsive pull-right"
-                             style="max-width: 60%; margin-bottom: 20px">
-                    </div>
-                    <img src="{% static 'images/Logo_KIT.svg' %}" class="img-responsive pull-right"
-                         style="max-width: 30%"></div>
             </div>
 
         {% endblock title %}
