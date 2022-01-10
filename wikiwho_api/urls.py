@@ -22,7 +22,7 @@ from django.views.generic import TemplateView
 from django.contrib.sitemaps.views import sitemap
 from django.http import HttpResponse
 
-from base.views import clear_cache, clear_sessions, download, home
+from base.views import clear_cache, clear_sessions, download, home, gesis_home
 from base.sitemaps import BaseStaticViewSitemap, ApiStaticViewSitemap
 from api.views import ApiRedirectView
 
@@ -43,6 +43,7 @@ urlpatterns = [
     url(r'^contact/$', TemplateView.as_view(template_name='contact/contact.html'), name='contact'),
     # url(r'^docs/', include('rest_framework_docs.urls')),
     url(r'^$', home, name='home'),
+    url(r'^gesis_home', gesis_home, name='gesis_home'),
     url(r'^sitemap\.xml$', sitemap, {'sitemaps': {'api': ApiStaticViewSitemap, 'base': BaseStaticViewSitemap}},
         name='django.contrib.sitemaps.views.sitemap'),
     url('^api_xtra/', redirect_view),
