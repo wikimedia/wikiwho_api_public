@@ -24,3 +24,6 @@ PICKLE_FOLDER_EU = '/pickles/eu'
 PICKLE_FOLDER_ES = '/pickles/es'
 PICKLE_FOLDER_DE = '/pickles/de'
 PICKLE_FOLDER_TR = '/pickles/tr'
+
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['anon'] = '100/sec'
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['burst'] = '100/sec'
