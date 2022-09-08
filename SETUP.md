@@ -1,3 +1,18 @@
+## Development setup
+
+* Use python3.9 or earlier.
+  
+* `sudo apt-get install -y python3-dev graphviz libgraphviz-dev pkg-config python3-venv postgresql libpq-dev libxml2-dev libxslt-dev virtualenvwrapper`
+* clone the project and enter the project directory
+* `python -m venv env`
+* `. env/bin/activate`
+* `pip install --upgrade setuptools`
+* `pip install -r requirements.txt -r requirements_local.txt -r requirements_test.txt`
+* create `wikiwho_api/settings.py`
+* set up the database
+* run a server with `python manage.py runserver
+
+
 ## Notes from trying to stand up app
 
 ### Requirements
