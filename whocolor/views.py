@@ -58,6 +58,15 @@ class WhoColorApiView(LoggingMixin, APIView):
         self.page_id = page_id
 
     def get(self, request, version, page_title, rev_id=None):
+        # This is a workaround for titles that have a `/` in them.
+        # You can pass rev_id 0 and it will treat it the same way as if no rev_id was passed.
+        # This is necessary for page titles like "Post-9/11" where — even when encoded as "%2f" —
+        # the slash in the title causes the urlpattern to mis-match the title as a truncated title
+        # followed by a rev_id.
+        # For example, /en/whocolor/v1.0.0-beta/Post-9%2f11/0/?origin=* will work for "Post-9/11".
+        if (rev_id == '0'):
+            rev_id = None
+
         response = {}
         try:
             language = get_language()
