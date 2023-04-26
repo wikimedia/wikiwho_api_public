@@ -50,7 +50,7 @@ def stream_response_with_requests(url):
 
 
 def iter_changed_pages(logger):
-    wikis = ['enwiki', 'euwiki', 'dewiki', 'trwiki', 'eswiki']
+    wikis = ['enwiki', 'euwiki', 'dewiki', 'trwiki', 'eswiki', 'frwiki']
     while True:
         try:
             url = 'https://stream.wikimedia.org/v2/stream/recentchange'
