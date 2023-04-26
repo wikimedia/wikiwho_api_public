@@ -1,3 +1,5 @@
+# Setting up WikiWho from scratch
+
 1. Create a VPS on horizon.wikimedia.org
    * 24 core, 122GB RAM machine
    * Debian 11
@@ -62,3 +64,25 @@
     4.  `sudo systemctl enable ww_events_stream.service`
     5.  `systemctl start ww_events_stream.service`
     6.  `systemctl status ww_events_stream.service` to check if it's running
+
+# Adding new languages to WikiWho
+
+1. Download the dumps into the a volume (new languages most likely should go in the new `pickle_storage02`, mounted to `/pickles-02`)
+    1. `mkdir /pickles-02/{lang}`
+    2. `mkdir /pickles-02/dumps/{lang}`
+    3. `cd /pickles-02/dumps/{lang}`
+    4. `screen`
+    5. `wget -r -np -nd -c -A 7z https://dumps.wikimedia.org/{lang}wiki/{datestamp}/` (use the latest complete dump; newer version may be available at https://dumps.wikimedia.your.org)
+    6. The hit Ctrl+A and the `d` key to detch from screen and keep the downloading of the dumps running in the background.
+    7. When you thnk it may be finished, verify by reentering the screen session with `screen -r`, then type `exit` if it's finished or use Ctrl+A and `d` to detch again.
+3. Create a pull request to add the new language to the app, except for EventStreams ([example PR](https://github.com/wikimedia/wikiwho_api/pull/8)).
+    1. The migrations can be created with `python manage.py makemigrations rest_framework_tracking --empty` and `python manage.py rest_framework_tracking api --empty`, and then fill in the code accordingly, using previous migrations as a guide. These migrations may eventually not be necessary, pending the outcome of [T335322](https://phabricator.wikimedia.org/T335322).
+4. Start the import process on the VPS instance:
+    1. `sudo su wikiwho`
+    2. `cd ~/wikiwho_api`
+    3. `. env/bin/activate`
+    4. `nohup python manage.py generate_articles_from_wp_xmls -p '/pickles/dumps/{lang}/' -t 30 -m 24 -lang {lang} -c` then Ctrl+Z and then enter `bg` to background the process.
+    5. After typing `top`, you should see ~24 `python` processes running. You can monitor progress with `ls -al /pickles-02/{lang}/ | wc -l` and that number should eventually roughly equal the total number of articles on the wiki. Note this command will run very slow after there are hundreds of thousands or millions of pickle files.
+    6. Once complete, create a PR to add the wiki to EventStreams ([example PR](https://github.com/wikimedia/wikiwho_api/pull/7)).
+    7. Back on the VPS, restart the Flower and EventStreams services with (using your account and not `wikiwho`): `sudo systemctl restart ww_flower.service` and `sudo systemctl restart ww_events_stream.service`
+    8. Update clients accordingly (XTools, Who Wrote That?, Programs & Events Dashboard, etc.)
