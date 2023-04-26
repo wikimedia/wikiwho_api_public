@@ -72,7 +72,9 @@
     2. `mkdir /pickles-02/dumps/{lang}`
     3. `cd /pickles-02/dumps/{lang}`
     4. `screen`
-    5. `wget -r -np -nd -c -A 7z https://dumps.wikimedia.org/{lang}wiki/{datestamp}/` (use the latest complete dump; newer version may be available at https://dumps.wikimedia.your.org)
+    5. `wget -r -np -nd -c -A 7z https://dumps.wikimedia.org/{lang}wiki/{datestamp}/`
+        1. Use the latest complete dump. Newer versions may be available at https://dumps.wikimedia.your.org
+        2. If you get an error or otherwise no files were downloaded, the dump may be incomplete. Try using an older dump.
     6. The hit Ctrl+A and the `d` key to detach from screen and keep the downloading of the dumps running in the background.
     7. When you thnk it may be finished, verify by reentering the screen session with `screen -r`, then type `exit` if it's finished or use Ctrl+A and `d` to detch again.
 3. Create a pull request to add the new language to the app, except for EventStreams ([example PR](https://github.com/wikimedia/wikiwho_api/pull/8)).
