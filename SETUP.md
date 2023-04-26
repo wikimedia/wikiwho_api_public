@@ -10,14 +10,14 @@
 * `pip install -r requirements.txt -r requirements_local.txt -r requirements_test.txt`
 * create `wikiwho_api/settings.py`
 * set up the database
-* run a server with `python manage.py runserver
+* run a server with `python manage.py runserver`
 
 
 ## Notes from trying to stand up app
 
 ### Requirements
 
-* I had to edit the line `-e git+git@github.com:gesiscss/wikiwho_chobj.git#egg=wikiwho_chobj`. It's public, so the equivalent is `-e git://github.com/gesiscss/wikiwho_chobj.git#egg=wikiwho_chobj`
+* I had to edit the line `-e git+git@github.com:gesiscss/wikiwho_chobj.git#egg=wikiwho_chobj`. It's public, so the equivalent is `-e git://github.com/gesiscss/wikiwho_chobj.git#egg=wikiwho_chobj` (this has now been changed to `wikiwho_chobj @ git+https://github.com/gesiscss/wikiwho_chobj@master` which should work).
 * I had to relax the pytest version requirement (in both requirements.txt and requirements_test.txt).
 * I'm using a virtualenv, so I added `env` to the .gitignore
 * Installation didn't work until I had an up-to-date version of `pip3`.
@@ -53,4 +53,8 @@ Put the 4 values into settings.py as WP_CONSUMER_TOKEN, WP_CONSUMER_SECRET, WP_A
 
 ### Running Celery in development
 
-* Instead of the complex instructions for running Celery from the wiki, you can run a worker directly from a terminal (once rabbitmq is set up). `celery -A wikiwho_api worker --loglevel=INFO`
+Instead of the complex instructions for running Celery from the wiki, you can run a worker directly from a terminal (once rabbitmq is set up).
+
+1. [Install RabbitMQ](https://www.rabbitmq.com/download.html). Linux users should be okay to install with just `sudo apt-get rabbitmq-server`.
+2. Within the virtual env, start celery with `celery -A wikiwho_api worker --loglevel=INFO`
+3. If you need to test with EventStreams, start that worker with `python manage.py celery_changed_articles`
