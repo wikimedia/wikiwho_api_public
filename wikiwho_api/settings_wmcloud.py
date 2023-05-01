@@ -18,7 +18,7 @@ ALLOWED_HOSTS = ['wikiwho-api.wmcloud.org', 'wikiwho.wmflabs.org']
 
 ONLY_READ_ALLOWED = False
 
-ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en', 'fr', 'it', 'hu', 'id']
+ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en', 'fr', 'it', 'hu', 'id', 'ja']
 
 # On pickle_storage volume, mounted to /pickles
 PICKLE_FOLDER_EN = '/pickles/en'
@@ -32,6 +32,7 @@ PICKLE_FOLDER_FR = '/pickles-02/fr'
 PICKLE_FOLDER_IT = '/pickles-02/it'
 PICKLE_FOLDER_HU = '/pickles-02/hu'
 PICKLE_FOLDER_ID = '/pickles-02/id'
+PICKLE_FOLDER_JA = '/pickles-02/ja'
 
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['anon'] = '100/sec'
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['burst'] = '100/sec'
