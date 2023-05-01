@@ -78,7 +78,7 @@
     6. The hit Ctrl+A and the `d` key to detach from screen and keep the downloading of the dumps running in the background.
     7. When you thnk it may be finished, verify by reentering the screen session with `screen -r`, then type `exit` if it's finished or use Ctrl+A and `d` to detch again.
 3. Create a pull request to add the new language to the app, except for EventStreams ([example PR](https://github.com/wikimedia/wikiwho_api/pull/8)).
-    1. The migrations can be created with `python manage.py rest_framework_tracking api --empty`, and then fill in the code accordingly, using previous migrations as a guide. These migrations may eventually not be necessary, pending the outcome of [T335322](https://phabricator.wikimedia.org/T335322).
+    1. The migrations can be created with `python manage.py makemigrations rest_framework_tracking api --empty`, and then fill in the code accordingly, using previous migrations as a guide. These migrations may eventually not be necessary, pending the outcome of [T335322](https://phabricator.wikimedia.org/T335322).
 4. Start the import process on the VPS instance:
     1. `sudo su wikiwho`
     2. `cd ~/wikiwho_api`
