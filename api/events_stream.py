@@ -4,6 +4,7 @@ import urllib3
 from urllib3.exceptions import ProtocolError
 from sseclient import SSEClient
 import certifi
+from django.conf import settings
 
 
 class EventSource(SSEClient):
@@ -50,14 +51,13 @@ def stream_response_with_requests(url):
 
 
 def iter_changed_pages(logger):
-    wikis = ['enwiki', 'euwiki', 'dewiki', 'trwiki', 'eswiki', 'frwiki', 'itwiki', 'huwiki', 'jawiki', 'idwiki', 'ptwiki']
+    wikis = settings.EVENT_STREAM_WIKIS
     while True:
         try:
             url = 'https://stream.wikimedia.org/v2/stream/recentchange'
             event_source = stream_response(url)
 
             for event in EventSource(event_source).events():
-                # page_id = event.data.split('"id":')[1].split(',"')[0] --> this is event id!
                 data = event.data
                 if not data:
                     continue
@@ -67,10 +67,15 @@ def iter_changed_pages(logger):
                     continue
                 page_title = change.get('title')
                 wiki = change.get('wiki')
-                if wiki in wikis and change.get('namespace') == 0 and \
-                   page_title and change.get('type') in ['edit', 'new']:
-                    # yield language, page_title
-                    yield wiki[:2], page_title
+                if wiki in wikis and change.get('namespace') == 0 and page_title:
+                    language = change.get('server_name').split('.')[0]
+                    # yield language, page_title, action
+                    # Do this only for applicable event types.
+                    if change.get('type') in ['edit', 'new']:
+                        yield language, page_title, change
+                    elif change.get('type') == 'log' and change.get('log_type') == 'delete' and \
+                            change.get('log_action') == 'delete':
+                        yield language, page_title, change
         except ProtocolError as e:
             # restart events stream
             pass

@@ -251,6 +251,25 @@ def get_revision_timestamp(revision_ids, language):
     return [timestamps[rev_id] for rev_id in revision_ids]
 
 
+def get_page_id_from_deletion_log_id(page_title, language, log_id):
+    params = {
+        'action': 'query',
+        'list': 'logevents',
+        'leprop': 'ids',
+        'letype': 'delete',
+        'letile': page_title,
+        'format': 'json',
+    }
+    resp_ = requests.get(get_wp_api_url(language),
+                         params=params, headers=settings.WP_HEADERS)
+    response = resp_.json()
+    events = response['query'].get('logevents')
+    for event in events:
+        if event['logid'] == log_id:
+            return event['logpage']
+    return None
+
+
 class Timeout:
 
     def __init__(self, seconds=1, error_message='Timeout'):
@@ -270,7 +289,7 @@ class Timeout:
 
 def generate_rvcontinue(language, rev_id, rev_ts=None):
     """
-    :param rev_id: Revision id, must be integer. 
+    :param rev_id: Revision id, must be integer.
     :param rev_ts: revision timestamp, must be string representation.
     :return: rvcontinue
     """

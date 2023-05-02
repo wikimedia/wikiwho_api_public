@@ -7,8 +7,7 @@ from django.conf import settings
 
 from base.utils_log import get_base_logger, get_stream_base_logger
 from .events_stream import iter_changed_pages
-from .tasks import process_article
-# from .utils_pickles import get_pickle_size
+from .tasks import process_article, process_article_deletion
 
 # worker_name = app.control.inspect().ping().popitem()[0]
 # give name of the worker to speed up
@@ -59,9 +58,15 @@ def get_inactive_task_pages():
 
 
 def process_changed_articles():
-    for language, page_title in iter_changed_pages(logger):
+    for language, page_title, change in iter_changed_pages(logger):
         # print(len(get_inactive_task_pages()))
-        if page_title not in get_inactive_task_pages():
-            streamer.info(f"EVENT: {page_title} ({language})")
+
+        # Delete pickle file if the page is deleted.
+        if change.get('type') == 'log' and change.get('log_type') == 'delete' and change.get('log_action') == 'delete':
+            streamer.info(f"EVENT (delete): {page_title} ({language})")
+            process_article_deletion.delay(language, page_title, change.get('log_id'))
+        # Otherwise, queue the article for processing
+        elif page_title not in get_inactive_task_pages():
+            streamer.info(f"EVENT ({change.get('type')}): {page_title} ({language})")
             # if already not registered to celery
             process_article.delay(language, page_title)

@@ -5,6 +5,7 @@ import io
 import fcntl
 import errno
 from os.path import getsize
+from os import remove
 
 from six.moves import cPickle as pickle
 from six.moves.cPickle import UnpicklingError
@@ -87,6 +88,17 @@ def pickle_load(pickle_path):
             time.sleep(0.1)
             if not retries:
                 raise e
+
+
+def pickle_delete(page_id, language):
+    pickle_path = "{}/{}.p".format(get_pickle_folder(language), page_id)
+    try:
+        remove(pickle_path)
+    except Exception as e:
+        # TODO: add a logging channel for utils_pickles
+        # Simply silently ignore for now.
+        return False
+    return True
 
 
 def pickle_load_only_id(page_id, language=None):

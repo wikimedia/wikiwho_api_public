@@ -9,7 +9,14 @@ from django.core.cache import cache
 from deployment.celery_config import default_task_soft_time_limit, user_task_soft_time_limit, long_task_soft_time_limit
 from .handler import WPHandler, WPHandlerException
 from .models import LongFailedArticle
-# from wikiwho.utils_db import wikiwho_to_db
+from .utils import get_page_id_from_deletion_log_id
+from .utils_pickles import pickle_delete
+
+import logging
+from django.conf import settings
+from base.utils_log import get_base_logger
+
+logger = get_base_logger('events_streamer', settings.EVENTS_STREAM_LOG, level=logging.WARNING)
 
 
 def process_article_task(language, page_title, page_id=None, revision_id=None,
@@ -111,6 +118,35 @@ def process_article_long(self, language, page_title, page_id=None, revision_id=N
         process_article_task(language, page_title, page_id, revision_id,
                              cache_key_timeout=long_task_soft_time_limit,
                              raise_soft_time_limit=True)
+    except WPHandlerException as e:
+        if e.code =='40':
+            # 40: Non-pickled articles are ignored during staging
+            self.update_state(state="IGNORED")
+            return e.message
+        elif e.code in ['10', '11']:
+            # if wp errors
+            # NOTE: actually 10 should not occur because we set is_api_call=False in the process_article_task!
+            raise self.retry(exc=e)
+        else:
+            raise e
+    except (ValueError, ConnectionError, ReadTimeout, JSONDecodeError) as e:
+        raise self.retry(exc=e)
+
+
+# This is a celery task because it gets called immediately when a page is deleted, and sometimes
+# on the first run the logevents API doesn't give results because it reads from the replica database.
+# Retry max 3 times, wait 30 seconds between each retry.
+@shared_task(ignore_result=True, bind=True, soft_time_limit=default_task_soft_time_limit, max_retries=3, default_retry_delay=10)
+def process_article_deletion(self, language, page_title, log_id):
+    try:
+        page_id = get_page_id_from_deletion_log_id(page_title, language, log_id)
+        if page_id is None:
+            logger.error(f"Failed to retrieve page ID for '{page_title}' ({language}).")
+            e = BaseException('process_article_deletion retry')
+            raise self.retry(exc=e)
+        else:
+            pickle_delete(page_id, language)
+            logger.info(f"DELETED: {page_title} ({language})")
     except WPHandlerException as e:
         if e.code =='40':
             # 40: Non-pickled articles are ignored during staging
