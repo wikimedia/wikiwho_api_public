@@ -50,6 +50,7 @@ def process_article_task(language, page_title, page_id=None, revision_id=None,
     #         process_article_long.apply_async([page_title], queue='long_lasting')
     return True
 
+
 def save_long_failed_article(wp, language):
     failed_rev_id = int(wp.wikiwho.revision_curr.id)
     failed_article, created = LongFailedArticle.objects.get_or_create(page_id=wp.page_id,
@@ -64,6 +65,7 @@ def save_long_failed_article(wp, language):
             failed_article.save(update_fields=['count', 'modified', 'revisions'])
         else:
             failed_article.save(update_fields=['count', 'modified'])
+
 
 # retry max 6 times (default value of max_retries is 3) and
 # wait 360 seconds (default value of default_retry_delay is 180) between each retry.
@@ -133,11 +135,16 @@ def process_article_long(self, language, page_title, page_id=None, revision_id=N
         raise self.retry(exc=e)
 
 
+def process_article_deletion(language, page_id):
+    pickle_delete(page_id, language)
+    logger.info(f"DELETED: {page_id} ({language})")
+
+
 # This is a celery task because it gets called immediately when a page is deleted, and sometimes
 # on the first run the logevents API doesn't give results because it reads from the replica database.
-# Retry max 3 times, wait 30 seconds between each retry.
+# Retry max 3 times, wait 10 seconds between each retry.
 @shared_task(ignore_result=True, bind=True, soft_time_limit=default_task_soft_time_limit, max_retries=3, default_retry_delay=10)
-def process_article_deletion(self, language, page_title, log_id):
+def process_article_deletion_from_log_id(self, language, page_title, log_id):
     try:
         page_id = get_page_id_from_deletion_log_id(page_title, language, log_id)
         if page_id is None:
@@ -145,8 +152,7 @@ def process_article_deletion(self, language, page_title, log_id):
             e = BaseException('process_article_deletion retry')
             raise self.retry(exc=e)
         else:
-            pickle_delete(page_id, language)
-            logger.info(f"DELETED: {page_title} ({language})")
+            process_article_deletion(language, page_id)
     except WPHandlerException as e:
         if e.code =='40':
             # 40: Non-pickled articles are ignored during staging

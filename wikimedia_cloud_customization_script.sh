@@ -153,5 +153,21 @@ ExecStart=/home/wikiwho/wikiwho_api/env/bin/python manage.py celery_changed_arti
 WantedBy=multi-user.target
 """ > /etc/systemd/system/ww_events_stream.service
 
+# Add deletion stream listening service
+echo """
+[Unit]
+Description=revision-visibility-change daemon
+After=network.target
+
+[Service]
+User=wikiwho
+Group=www-data
+WorkingDirectory=/home/wikiwho/wikiwho_api
+ExecStart=/home/wikiwho/wikiwho_api/env/bin/python manage.py celery_deletion_events
+
+[Install]
+WantedBy=multi-user.target
+""" > /etc/systemd/system/ww_events_stream_deletion.service
+
 mkdir /var/log/django/events_streamer
 chown wikiwho:www-data /var/log/django/events_streamer
