@@ -87,12 +87,12 @@
     5. `python manage.py migrate`
     6. `nohup python manage.py generate_articles_from_wp_xmls -p '/pickles/dumps/{lang}/' -t 30 -m 24 -lang {lang} -c` then Ctrl+Z and then enter `bg` to background the process.
     7. After typing `top`, you should see ~24 `python` processes running. You can monitor progress with `ls -al /pickles-02/{lang}/ | wc -l` and that number should eventually roughly equal the total number of articles on the wiki. Note this command will run very slow after there are hundreds of thousands or millions of pickle files.
-    8. Once complete, create a PR to add the wiki to EventStreams ([example PR](https://github.com/wikimedia/wikiwho_api/pull/7)).
-    9. Back on the VPS, using your account and not `wikiwho`:
+ 5. Once complete, create a PR to add the wiki to EventStreams ([example PR](https://github.com/wikimedia/wikiwho_api/pull/7)).
+ 9. Deploy and restart services (using your account and not `wikiwho`):
        1. Pull in latest changes
        2. Restart the Flower and EventStreams services with `sudo systemctl restart ww_flower.service` and `sudo systemctl restart ww_events_stream.service`
        3. Restart Celery with `sudo /etc/init.d/celeryd restart`
-    10. Update clients accordingly (XTools, Who Wrote That?, Programs & Events Dashboard, etc.)
+ 10. Update clients accordingly (XTools, Who Wrote That?, Programs & Events Dashboard, etc.)
 
 # Troubleshooting
 
