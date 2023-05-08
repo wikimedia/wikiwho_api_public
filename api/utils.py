@@ -257,7 +257,7 @@ def get_page_id_from_deletion_log_id(page_title, language, log_id):
         'list': 'logevents',
         'leprop': 'ids',
         'letype': 'delete',
-        'letile': page_title,
+        'letitle': page_title,
         'format': 'json',
     }
     resp_ = requests.get(get_wp_api_url(language),
