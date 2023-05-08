@@ -198,7 +198,7 @@ SWAGGER_SETTINGS = {
 #     'DEFAULT_CACHE_ERRORS': False
 # }
 
-ACTIONS_LANGUAGES = ['tr', 'eu', 'es', 'de', 'en', 'fr', 'it', 'hu', 'id', 'ja', 'pt', 'nl']
+ACTIONS_LANGUAGES = ['de', 'en', 'es', 'eu', 'fr', 'hu', 'id', 'it', 'ja', 'nl', 'pt', 'tr']
 CRONJOBS = [
     ('0 1 3 * *', 'api_editor.cron.update_actions_tables', f'>> /dev/null 2>> /var/log/django/crontab.log')
 ]
@@ -257,3 +257,5 @@ SERVER_LEVEL = LEVEL_LOCAL
 
 CHOBS_CONTEXT = 5
 CHOBS_LANGUAGES = ('de')
+
+EVENT_STREAM_WIKIS = ['dewiki', 'enwiki', 'eswiki', 'euwiki', 'frwiki', 'huwiki', 'itwiki', 'trwiki']

@@ -43,6 +43,9 @@ task_routes = {
             'queue': 'long',
             'routing_key': 'long',
         },
+        'api.tasks.process_article_deletion': {
+            'queue': 'default',
+        }
 }
 
 # How many messages to prefetch at a time multiplied by the number of concurrent processes.
