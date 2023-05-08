@@ -18,8 +18,8 @@ ALLOWED_HOSTS = ['wikiwho-api.wmcloud.org', 'wikiwho.wmflabs.org']
 
 ONLY_READ_ALLOWED = False
 
-ACTIONS_LANGUAGES = ['de', 'en', 'es', 'eu', 'fr', 'hu', 'id', 'it', 'ja', 'nl', 'pt', 'tr']
-EVENT_STREAM_WIKIS = ['dewiki', 'enwiki', 'eswiki', 'euwiki', 'frwiki', 'huwiki', 'itwiki', 'nlwiki', 'trwiki']
+ACTIONS_LANGUAGES = ['de', 'en', 'es', 'eu', 'fr', 'hu', 'id', 'it', 'ja', 'nl', 'pl', 'pt', 'tr']
+EVENT_STREAM_WIKIS = ['dewiki', 'enwiki', 'eswiki', 'euwiki', 'frwiki', 'huwiki', 'idwiki', 'itwiki', 'jawiki', 'nlwiki', 'ptwiki', 'trwiki']
 
 # On pickle_storage volume, mounted to /pickles
 PICKLE_FOLDER_DE = '/pickles/de'
@@ -34,8 +34,9 @@ PICKLE_FOLDER_HU = '/pickles-02/hu'
 PICKLE_FOLDER_ID = '/pickles-02/id'
 PICKLE_FOLDER_IT = '/pickles-02/it'
 PICKLE_FOLDER_JA = '/pickles-02/ja'
-PICKLE_FOLDER_PT = '/pickles-02/pt'
 PICKLE_FOLDER_NL = '/pickles-02/nl'
+PICKLE_FOLDER_PL = '/pickles-02/pl'
+PICKLE_FOLDER_PT = '/pickles-02/pt'
 
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['anon'] = '100/sec'
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['burst'] = '100/sec'
