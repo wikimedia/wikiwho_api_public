@@ -101,19 +101,19 @@ USE_TZ = True
 LANGUAGE_CODE = 'en'
 # from django.utils.translation import ugettext_lazy as _
 LANGUAGES = (
-    ('en', 'English'),
     ('de', 'German'),
-    ('eu', 'Basque'),  # Euskara
-    ('tr', 'Turkish'),
+    ('en', 'English'),
     ('es', 'Spanish'),
+    ('eu', 'Basque'),
     ('fr', 'French'),
-    ('it', 'Italian'),
     ('hu', 'Hungarian'),
     ('id', 'Indonesian'),
+    ('it', 'Italian'),
     ('ja', 'Japanese'),
-    ('pt', 'Portuguese'),
     ('nl', 'Dutch'),
     ('pl', 'Polish'),
+    ('pt', 'Portuguese'),
+    ('tr', 'Turkish'),
 )
 # LOCALE_PATHS = (
 #     os.path.join(BASE_DIR, 'locale').replace('\\', '/'),
