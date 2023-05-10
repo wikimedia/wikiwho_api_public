@@ -259,4 +259,5 @@ SERVER_LEVEL = LEVEL_LOCAL
 CHOBS_CONTEXT = 5
 CHOBS_LANGUAGES = ('de')
 
+# Overridden in settings_wmcloud.py, should probably be removed from here (?)
 EVENT_STREAM_WIKIS = ['dewiki', 'enwiki', 'eswiki', 'euwiki', 'frwiki', 'huwiki', 'itwiki', 'trwiki']

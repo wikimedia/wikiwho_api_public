@@ -19,7 +19,7 @@ ALLOWED_HOSTS = ['wikiwho-api.wmcloud.org', 'wikiwho.wmflabs.org']
 ONLY_READ_ALLOWED = False
 
 ACTIONS_LANGUAGES = ['de', 'en', 'es', 'eu', 'fr', 'hu', 'id', 'it', 'ja', 'nl', 'pl', 'pt', 'tr']
-EVENT_STREAM_WIKIS = ['dewiki', 'enwiki', 'eswiki', 'euwiki', 'frwiki', 'huwiki', 'idwiki', 'itwiki', 'jawiki', 'nlwiki', 'ptwiki', 'trwiki']
+EVENT_STREAM_WIKIS = ['dewiki', 'enwiki', 'eswiki', 'euwiki', 'frwiki', 'huwiki', 'idwiki', 'itwiki', 'jawiki', 'nlwiki', 'plwiki', 'ptwiki', 'trwiki']
 
 # On pickle_storage volume, mounted to /pickles
 PICKLE_FOLDER_DE = '/pickles/de'
