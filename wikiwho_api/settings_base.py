@@ -101,6 +101,7 @@ USE_TZ = True
 LANGUAGE_CODE = 'en'
 # from django.utils.translation import ugettext_lazy as _
 LANGUAGES = (
+    ('ar', 'Arabic'),
     ('de', 'German'),
     ('en', 'English'),
     ('es', 'Spanish'),
@@ -199,7 +200,7 @@ SWAGGER_SETTINGS = {
 #     'DEFAULT_CACHE_ERRORS': False
 # }
 
-ACTIONS_LANGUAGES = ['de', 'en', 'es', 'eu', 'fr', 'hu', 'id', 'it', 'ja', 'nl', 'pl', 'pt', 'tr']
+ACTIONS_LANGUAGES = ['ar', 'de', 'en', 'es', 'eu', 'fr', 'hu', 'id', 'it', 'ja', 'nl', 'pl', 'pt', 'tr']
 CRONJOBS = [
     ('0 1 3 * *', 'api_editor.cron.update_actions_tables', f'>> /dev/null 2>> /var/log/django/crontab.log')
 ]
