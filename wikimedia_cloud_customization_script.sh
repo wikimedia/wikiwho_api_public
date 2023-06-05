@@ -16,7 +16,7 @@ mkdir /var/log/django
 chown wikiwho /var/log/django
 
 # Install Python prerequisites
-apt-get install -y python3-dev graphviz libgraphviz-dev pkg-config python3-venv postgresql libpq-dev libxml2-dev libxslt-dev virtualenvwrapper
+apt-get install -y python3.9-dev build-essential graphviz libgraphviz-dev pkg-config python3-venv postgresql libpq-dev libxml2-dev libxslt-dev virtualenvwrapper
 # Install production webservice prerequisites
 apt-get install -y nginx memcached libcache-memcached-perl libanyevent-perl rabbitmq-server p7zip-full
 
@@ -48,7 +48,7 @@ WantedBy=multi-user.target
 echo """
 geo \$http_x_forwarded_for \$allowlist {
   default 0;
-  172.16.5.123 1; # XTools
+  172.16.2.178 1; # XTools
 }
 
 map \$allowlist \$limit {
@@ -60,7 +60,7 @@ limit_req_zone \$limit zone=wikiwho_limit:16m rate=1r/s;
 
 server {
     listen 80;
-    server_name wikiwho.toolforge.org;
+    server_name wikiwho.wmcloud.org;
 
     add_header X-Frame-Options DENY;
     add_header X-Content-Type-Options nosniff;
@@ -93,13 +93,35 @@ rabbitmq-plugins enable rabbitmq_management
 rabbitmq-server -detached
 
 # Add Celery config
-# This is the latest (as of 2021) generic daemon config from the celery/celery repo on GitHub
-# See https://github.com/celery/celery/blob/master/extra/generic-init.d/celeryd
-curl https://raw.githubusercontent.com/celery/celery/af270f074acdd417df722d9b387ea959b5d9b653/extra/generic-init.d/celeryd -o /etc/init.d/celeryd
-chmod 755 /etc/init.d/celeryd
-
 echo """
-# CELERY Conf for init script /etc/init.d/celeryd
+[Unit]
+Description=Celery Service
+After=network.target
+Requires=ww_flower.service
+
+[Service]
+Type=forking
+User=celery
+Group=celery
+EnvironmentFile=/etc/conf.d/celery
+WorkingDirectory=/opt/celery
+ExecStart=/bin/sh -c '\${CELERY_BIN} -A \$CELERY_APP multi start \$CELERYD_NODES \\
+	--pidfile=\${CELERYD_PID_FILE} --logfile=\${CELERYD_LOG_FILE} \\
+	--loglevel="\${CELERYD_LOG_LEVEL}" \$CELERYD_OPTS'
+ExecStop=/bin/sh -c '\${CELERY_BIN} multi stopwait \$CELERYD_NODES \\
+	--pidfile=\${CELERYD_PID_FILE} --logfile=\${CELERYD_LOG_FILE}'
+ExecReload=/bin/sh -c '\${CELERY_BIN} -A \$CELERY_APP multi restart \$CELERYD_NODES \\
+	--pidfile=\${CELERYD_PID_FILE} --logfile=\${CELERYD_LOG_FILE} \\
+	--loglevel="\${CELERYD_LOG_LEVEL}" \$CELERYD_OPTS'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+""" > /etc/systemd/system/ww_celery.service
+
+mkdir /etc/conf.d
+echo """
+# CELERY Conf for systemd service /etc/systemd/system/ww_celery.service
 CELERYD_NODES="worker_default worker_user worker_long"
 CELERY_BIN="/home/wikiwho/wikiwho_api/env/bin/celery"
 CELERY_APP="wikiwho_api"
@@ -112,7 +134,7 @@ CELERYD_USER="wikiwho"
 CELERYD_GROUP="wikiwho"
 CELERY_CREATE_DIRS=1
 BROKER_HEARTBEAT=0
-""" > /etc/default/celeryd
+""" > /etc/conf.d/celery
 
 mkdir /var/log/celery
 chown wikiwho /var/log/celery
