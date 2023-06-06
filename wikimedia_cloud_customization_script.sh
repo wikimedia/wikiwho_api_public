@@ -100,19 +100,18 @@ After=network.target
 Requires=ww_flower.service
 
 [Service]
-Type=forking
-User=celery
-Group=celery
+User=wikiwho
+Group=wikiwho
 EnvironmentFile=/etc/conf.d/celery
 WorkingDirectory=/opt/celery
-ExecStart=/bin/sh -c '\${CELERY_BIN} -A \$CELERY_APP multi start \$CELERYD_NODES \\
-	--pidfile=\${CELERYD_PID_FILE} --logfile=\${CELERYD_LOG_FILE} \\
-	--loglevel="\${CELERYD_LOG_LEVEL}" \$CELERYD_OPTS'
-ExecStop=/bin/sh -c '\${CELERY_BIN} multi stopwait \$CELERYD_NODES \\
-	--pidfile=\${CELERYD_PID_FILE} --logfile=\${CELERYD_LOG_FILE}'
-ExecReload=/bin/sh -c '\${CELERY_BIN} -A \$CELERY_APP multi restart \$CELERYD_NODES \\
-	--pidfile=\${CELERYD_PID_FILE} --logfile=\${CELERYD_LOG_FILE} \\
-	--loglevel="\${CELERYD_LOG_LEVEL}" \$CELERYD_OPTS'
+ExecStart=/bin/bash -c "\${CELERY_BIN} -A \${CELERY_APP} multi start \${CELERYD_NODES} \
+        --pidfile=\${CELERYD_PID_FILE} --logfile=\${CELERYD_LOG_FILE} \
+        --loglevel=\${CELERYD_LOG_LEVEL} \${CELERYD_OPTS}"
+ExecStop=/bin/bash -c "\${CELERY_BIN} multi stopwait \${CELERYD_NODES} \
+        --pidfile=\${CELERYD_PID_FILE} --logfile=\${CELERYD_LOG_FILE}"
+ExecReload=/bin/bash -c "\${CELERY_BIN} -A \${CELERY_APP} multi restart \${CELERYD_NODES} \
+        --pidfile=\${CELERYD_PID_FILE} --logfile=\${CELERYD_LOG_FILE} \
+        --loglevel=\${CELERYD_LOG_LEVEL} \${CELERYD_OPTS}"
 Restart=always
 
 [Install]

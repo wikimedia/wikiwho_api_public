@@ -41,21 +41,21 @@
     2.  `sudo systemctl start ww_gunicorn`
     3.  `sudo systemctl status ww_gunicorn` to check if it's running
     4.  API and homepage should be working now.
-18. Start Celery:
+16. Start Celery:
     1.  `sudo systemctl enable ww_celery`
     2.  `sudo systemctl start ww_celery`
     3.  `sudo systemctl status ww_celery` to check if it's running
-19. Import dumps (as user `wikiwho`)
+17. Import dumps (as user `wikiwho`)
     1.  `sudo su wikiwho`
     2.  `mkdir -p /pickles/{en,eu,es,de,tr}`
     3.  Download the latest dumps for each of the languages to import, eg:
-        1.  `cd `/pickles/dumps/en`
+        1.  `cd /pickles/dumps/en`
         2.  `wget -r -np -nd -c -A 7z https://dumps.wikimedia.your.org/enwiki/20211201/`
     4.  For each language, generate pickles from the XML dumps, eg:
         1.  `cd ~/wikiwho_api`
         2.  `. env/bin/activate`
-        1.  `nohup python manage.py generate_articles_from_wp_xmls -p '/pickles/dumps/en/' -t 30 -m 24 -lang en -c`
-20. Start Flower and event_stream services
+        3.  `nohup python manage.py generate_articles_from_wp_xmls -p '/pickles/dumps/en/' -t 30 -m 24 -lang en -c`
+18. Start Flower and event_stream services
     1.  `sudo systemctl enable ww_flower.service`
     2.  `sudo systemctl start ww_flower.service`
     3.  `sudo systemctl status ww_flower.service` to check if it's running
@@ -65,7 +65,7 @@
 
 # Adding new languages to WikiWho
 
-1. Download the dumps into the a volume (new languages most likely should go in the new `pickle_storage02`, mounted to `/pickles-02`)
+1. Download the dumps into a volume (new languages most likely should go in the new `pickle_storage02`, mounted to `/pickles-02`)
     1. `mkdir /pickles-02/{lang}`
     2. `mkdir /pickles-02/dumps/{lang}`
     3. `cd /pickles-02/dumps/{lang}`
@@ -75,9 +75,9 @@
         2. If you get an error or otherwise no files were downloaded, the dump may be incomplete. Try using an older dump.
     6. The hit Ctrl+A and the `d` key to detach from screen and keep the downloading of the dumps running in the background.
     7. When you thnk it may be finished, verify by reentering the screen session with `screen -r`, then type `exit` if it's finished or use Ctrl+A and `d` to detch again.
-3. Create a pull request to add the new language to the app, except for EventStreams ([example PR](https://github.com/wikimedia/wikiwho_api/pull/8)).
+2. Create a pull request to add the new language to the app, except for EventStreams ([example PR](https://github.com/wikimedia/wikiwho_api/pull/8)).
     1. The migrations can be created with `python manage.py makemigrations rest_framework_tracking api --empty`, and then fill in the code accordingly, using previous migrations as a guide. These migrations may eventually not be necessary, pending the outcome of [T335322](https://phabricator.wikimedia.org/T335322).
-4. Start the import process on the VPS instance:
+3. Start the import process on the VPS instance:
     1. `sudo su wikiwho`
     2. `cd ~/wikiwho_api`
     3. `git pull origin main`
@@ -85,12 +85,12 @@
     5. `python manage.py migrate`
     6. `nohup python manage.py generate_articles_from_wp_xmls -p '/pickles/dumps/{lang}/' -t 30 -m 24 -lang {lang} -c` then Ctrl+Z and then enter `bg` to background the process.
     7. After typing `top`, you should see ~24 `python` processes running. You can monitor progress with `ls -al /pickles-02/{lang}/ | wc -l` and that number should eventually roughly equal the total number of articles on the wiki. Note this command will run very slow after there are hundreds of thousands or millions of pickle files.
- 5. Once complete, create a PR to add the wiki to EventStreams ([example PR](https://github.com/wikimedia/wikiwho_api/pull/7)).
- 9. Deploy and restart services (using your account and not `wikiwho`):
+4.  Once complete, create a PR to add the wiki to EventStreams ([example PR](https://github.com/wikimedia/wikiwho_api/pull/7)).
+5.  Deploy and restart services (using your account and not `wikiwho`):
        1. Pull in latest changes
        2. Restart the Flower and EventStreams services with `sudo systemctl restart ww_flower.service` and `sudo systemctl restart ww_events_stream.service`
        3. Restart Celery with `sudo /etc/init.d/celeryd restart`
- 10. Update clients accordingly (XTools, Who Wrote That?, Programs & Events Dashboard, etc.)
+6.  Update clients accordingly (XTools, Who Wrote That?, Programs & Events Dashboard, etc.)
 
 # Troubleshooting
 
