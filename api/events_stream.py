@@ -83,3 +83,39 @@ def iter_changed_pages(logger):
             logger.error("Unexpected error retrieving event:\n" + str(e) + ".\nThe process will continue anyway.")
 
 
+# Listens to the mediawiki.revision-visibility-change stream which announces revision deletion and suppression events.
+# Full page deletion is still handled by the main EventStreams listener.
+def iter_deletion_events(logger):
+    wikis = settings.EVENT_STREAM_WIKIS
+    while True:
+        try:
+            url = 'https://stream.wikimedia.org/v2/stream/mediawiki.revision-visibility-change'
+            event_source = stream_response(url)
+
+            for event in EventSource(event_source).events():
+                data = event.data
+                if not data:
+                    continue
+                try:
+                    change = loads(data)
+                except ValueError:
+                    continue
+
+                page_id = change.get('page_id')
+                if change.get('database') in wikis and change.get('page_namespace') == 0 and page_id:
+                    before = change.get('prior_state').get('visibility')
+                    after = change.get('visibility')
+
+                    # Only act if there was a change in visibility.
+                    if (before.get('text') and not after.get('text')) or \
+                            (before.get('user') and not after.get('user')) or \
+                            (not before.get('text') and after.get('text')) or \
+                            (not before.get('user') and after.get('user')):
+                        language = change.get('meta').get('domain').split('.')[0]
+                        # yield language, page_Id
+                        yield language, page_id
+        except ProtocolError as e:
+            # restart events stream
+            pass
+        except Exception as e:
+            logger.error("Unexpected error retrieving event:\n" + str(e) + ".\nThe process will continue anyway.")

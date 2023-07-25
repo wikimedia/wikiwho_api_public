@@ -62,8 +62,10 @@
     2.  `sudo systemctl start ww_flower.service`
     3.  `sudo systemctl status ww_flower.service` to check if it's running
     4.  `sudo systemctl enable ww_events_stream.service`
-    5.  `systemctl start ww_events_stream.service`
-    6.  `systemctl status ww_events_stream.service` to check if it's running
+    5.  `sudo systemctl start ww_events_stream.service`
+    6.  `sudo systemctl status ww_events_stream.service` to check if it's running
+    7.  `sudo systemctl start ww_events_stream_deletion.service`
+    8.  `sudo systemctl status ww_events_stream_deletion.service` to check if it's running
 
 # Adding new languages to WikiWho
 
