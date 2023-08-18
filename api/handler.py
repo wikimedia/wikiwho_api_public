@@ -96,7 +96,7 @@ class WPHandler(object):
             if not settings.TESTING and (
                 (LongFailedArticle.objects.filter(page_id=self.page_id, language=self.language).exists() or
                  RecursionErrorArticle.objects.filter(page_id=self.page_id, language=self.language).exists())):
-                raise WPHandlerException(MESSAGES['never_finished_article'][0],
+                raise WPHandlerException(MESSAGES['never_finished_article'][0] + f' Page Id: {self.page_id}',
                                          MESSAGES['never_finished_article'][1])
             self.saved_article_title = d['article_db_title']
             self.namespace = d['namespace']
@@ -176,8 +176,8 @@ class WPHandler(object):
         """ return the last revision id of which chobs were processed
         """
         try:
-            return Search(using=Elasticsearch(),  
-                index="chobs_" + self.language).source('to_rev').filter( 
+            return Search(using=Elasticsearch(),
+                index="chobs_" + self.language).source('to_rev').filter(
                 "term", page_id=self.page_id)[0].sort('-to_timestamp')[0].execute(
                 ).hits[0].to_rev
         except IndexError as exc1:
@@ -200,7 +200,7 @@ class WPHandler(object):
                     "_type": "chob",
                     "_source": chob
                 } for chob in ChobjerPickle(
-                    ww_pickle=self.wikiwho, context=settings.CHOBS_CONTEXT, 
+                    ww_pickle=self.wikiwho, context=settings.CHOBS_CONTEXT,
                     starting_revid=starting_revid).iter_chobjs())
             except Exception as e:
                 self.chobj_error += str(e) + f'\nError calculating chobs (page_id={self.page_id})\n'
@@ -209,7 +209,7 @@ class WPHandler(object):
                 helpers.bulk(Elasticsearch(), pages)
             except Exception as e:
                 self.chobj_error += str(e) + f'\nError storing chobs (page_id={self.page_id})\n'
-            
+
 
     def handle(self, revision_ids, is_api_call=True, timeout=None):
         """
@@ -336,7 +336,7 @@ class WPHandler(object):
             # used at end to decide if there is new revisions to be saved
             self.wikiwho.rvcontinue = rvcontinue
 
-        
+
         # self.load_chobs(chobstart_revid)
         # time2 = time()
         # print("Execution time handle: {}".format(time2-time1))
