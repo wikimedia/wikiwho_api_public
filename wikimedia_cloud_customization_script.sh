@@ -100,10 +100,11 @@ After=network.target
 Requires=ww_flower.service
 
 [Service]
+Type=forking
 User=wikiwho
 Group=wikiwho
 EnvironmentFile=/etc/conf.d/celery
-WorkingDirectory=/opt/celery
+WorkingDirectory=/home/wikiwho/wikiwho_api
 ExecStart=/bin/bash -c "\${CELERY_BIN} -A \${CELERY_APP} multi start \${CELERYD_NODES} \
         --pidfile=\${CELERYD_PID_FILE} --logfile=\${CELERYD_LOG_FILE} \
         --loglevel=\${CELERYD_LOG_LEVEL} \${CELERYD_OPTS}"
