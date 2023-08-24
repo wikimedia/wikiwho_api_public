@@ -1,0 +1,12 @@
+[Unit]
+Description=Flower service for monitoring Celery
+After=network.target
+
+[Service]
+User=wikiwho
+Group=www-data
+WorkingDirectory=/home/wikiwho/wikiwho_api
+ExecStart=/home/wikiwho/wikiwho_api/env/bin/flower --address=localhost --conf='deployment/flower_config.py' --log_file_prefix=/var/log/celery/flower.log --broker_api=http://guest:guest@localhost:15672/api/
+
+[Install]
+WantedBy=multi-user.target
