@@ -91,7 +91,7 @@
 5.  Deploy and restart services (using your account and not `wikiwho`):
        1. Pull in latest changes
        2. Restart the Flower and EventStreams services with `sudo systemctl restart ww_flower.service` and `sudo systemctl restart ww_events_stream.service`
-       3. Restart Celery with `sudo /etc/init.d/celeryd restart`
+       3. Restart Celery with `sudo systemctl restart ww_celery.service`
 6.  Update clients accordingly (XTools, Who Wrote That?, Programs & Events Dashboard, etc.)
 
 # Troubleshooting
