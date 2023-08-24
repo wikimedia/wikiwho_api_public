@@ -1,0 +1,12 @@
+[Unit]
+Description=revision-visibility-change daemon
+After=network.target
+
+[Service]
+User=wikiwho
+Group=www-data
+WorkingDirectory=/home/wikiwho/wikiwho_api
+ExecStart=/home/wikiwho/wikiwho_api/env/bin/python manage.py celery_deletion_events
+
+[Install]
+WantedBy=multi-user.target

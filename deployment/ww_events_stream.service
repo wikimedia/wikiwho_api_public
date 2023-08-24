@@ -1,0 +1,12 @@
+[Unit]
+Description=events_stream daemon
+After=network.target
+
+[Service]
+User=wikiwho
+Group=www-data
+WorkingDirectory=/home/wikiwho/wikiwho_api
+ExecStart=/home/wikiwho/wikiwho_api/env/bin/python manage.py celery_changed_articles
+
+[Install]
+WantedBy=multi-user.target
