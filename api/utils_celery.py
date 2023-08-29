@@ -64,11 +64,11 @@ def process_changed_articles():
 
         # Delete pickle file if the page is deleted.
         if change.get('type') == 'log' and change.get('log_type') == 'delete' and change.get('log_action') == 'delete':
-            streamer.info(f"EVENT (delete): {page_title} ({language})")
+            streamer.info(f"EVENT (delete) @ {change.get('dt')}: {page_title} ({language})")
             process_article_deletion_from_log_id.delay(language, page_title, change.get('log_id'))
         # Otherwise, queue the article for processing
         elif page_title not in get_inactive_task_pages():
-            streamer.info(f"EVENT ({change.get('type')}): {page_title} ({language})")
+            streamer.info(f"EVENT ({change.get('type')}) @ {change.get('dt')}: {page_title} ({language})")
             # if already not registered to celery
             process_article.delay(language, page_title)
 
