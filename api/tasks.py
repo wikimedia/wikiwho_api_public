@@ -35,9 +35,12 @@ def process_article_task(language, page_title, page_id=None, revision_id=None,
     except WPHandlerException as e:
         if cache_key:
             cache.delete(cache_key)
-        if e.code in ['03', '00']:
+        if e.code == '03':
             # 03: if article is already under process, simply skip it. TODO wait and start a new task?
-            # 00: ignore 'article doesnt exist' errors
+            return False
+        if e.code == '00':
+            # 00: 'article doesnt exist' error
+            pickle_delete(page_id, language)
             return False
         raise e
     except SoftTimeLimitExceeded as e:
