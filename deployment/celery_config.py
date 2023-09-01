@@ -21,9 +21,9 @@ enable_utc = False
 worker_name_default = 'worker_default@ww_host'  # check /etc/default/celeryd
 worker_name_user = 'worker_user@ww_host'
 # task_soft_time_limit = 4  # seconds
-default_task_soft_time_limit = 3600  # 60 minutes
+default_task_soft_time_limit = 120  # 2 minutes
 long_task_soft_time_limit = 3600 * 6  # 6 hours
-user_task_soft_time_limit = default_task_soft_time_limit
+user_task_soft_time_limit = 3600  # 60 minutes
 broker_heartbeat = 0
 
 task_queues = (
