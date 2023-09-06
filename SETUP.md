@@ -55,7 +55,7 @@ Put the 4 values into settings.py as WP_CONSUMER_TOKEN, WP_CONSUMER_SECRET, WP_A
 
 Instead of the complex instructions for running Celery from the wiki, you can run a worker directly from a terminal (once rabbitmq is set up).
 
-1. [Install RabbitMQ](https://www.rabbitmq.com/download.html). Linux users should be okay to install with just `sudo apt-get rabbitmq-server`.
+1. [Install RabbitMQ](https://www.rabbitmq.com/download.html). Linux users should be okay to install with just `sudo apt-get install rabbitmq-server`.
 2. Within the virtual env, start celery with `celery -A wikiwho_api worker --loglevel=INFO`
 3. If you need to test with EventStreams, start that worker with `python manage.py celery_changed_articles`,
    and another worker for the revision deletion events with `python manage.py celery_deletion_events`.
