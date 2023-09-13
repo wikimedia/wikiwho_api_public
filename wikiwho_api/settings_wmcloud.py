@@ -14,7 +14,8 @@ EVENTS_STREAM_LOG = '/var/log/django/events_streamer'
 
 SWAGGER_SETTINGS['VALIDATOR_URL'] = 'https://online.swagger.io/validator'
 
-ALLOWED_HOSTS = ['wikiwho-api.wmcloud.org', 'wikiwho.wmflabs.org']
+ALLOWED_HOSTS = ['wikiwho-api.wmcloud.org', 'wikiwho.wmcloud.org', 'wikiwho-flower.wmcloud.org']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 ONLY_READ_ALLOWED = False
 
