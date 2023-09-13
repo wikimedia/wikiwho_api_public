@@ -103,4 +103,6 @@
 Some various tips to help troubleshoot issues in production:
 
 * Check https://wikiwho-flower.wmcloud.org to monitor Celery tasks.
-* The Celery logs will have most other info you'd need and are located at `/var/log/celery/*.log`
+* Use `sudo journalctl -u ww_events_stream` to view the logs for the `ww_events_stream`
+  service, or replace with another service name such as `nginx`.
+* See also the Celery logs at `/var/log/celery/*.log`.
