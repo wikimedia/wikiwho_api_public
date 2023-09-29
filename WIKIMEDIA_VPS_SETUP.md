@@ -68,6 +68,11 @@
     6.  `sudo systemctl status ww_events_stream.service` to check if it's running
     7.  `sudo systemctl start ww_events_stream_deletion.service`
     8.  `sudo systemctl status ww_events_stream_deletion.service` to check if it's running
+21. Add cronjob to restart services daily (see [T344936](https://phabricator.wikimedia.org/T344936)
+    for more information).
+    1.  `sudo su root`
+    2.  `crontab -e`
+    3.  Add the entry `0 0 * * * /home/wikiwho/wikiwho_api/cron/restart_services.sh`
 
 # Adding new languages to WikiWho
 
